@@ -720,7 +720,7 @@ void VkRenderFramework::InitSurface() {
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to create surface.";
     }
-    ASSERT_TRUE(m_surface.Handle() != VK_NULL_HANDLE);
+    ASSERT_TRUE(m_surface != VK_NULL_HANDLE);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -857,7 +857,7 @@ void SurfaceContext::Destroy() {
 
 // Queries the info needed to create a swapchain and assigns it to the member variables of VkRenderFramework
 void VkRenderFramework::InitSwapchainInfo() {
-    auto info = GetSwapchainInfo(m_surface.Handle());
+    auto info = GetSwapchainInfo(m_surface);
     m_surface_capabilities = info.surface_capabilities;
     m_surface_formats = info.surface_formats;
     m_surface_present_modes = info.surface_present_modes;
@@ -934,7 +934,7 @@ VkSwapchainCreateInfoKHR VkRenderFramework::GetDefaultSwapchainCreateInfo(VkSurf
 void VkRenderFramework::InitSwapchain(VkImageUsageFlags image_usage) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
-    m_swapchain = CreateSwapchain(m_surface.Handle(), image_usage, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    m_swapchain = CreateSwapchain(m_surface, image_usage, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     ASSERT_TRUE(m_swapchain.initialized());
 }
 

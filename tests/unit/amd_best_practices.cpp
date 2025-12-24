@@ -43,7 +43,7 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
         }
         CreatePipelineHelper pipe(*this);
         pipe.CreateGraphicsPipeline();
-        pipeline_Array[i] = pipe.Handle();
+        pipeline_Array[i] = pipe;
         if (i == 1) {
             // change check to too many pipelines
             m_errorMonitor->VerifyFound();

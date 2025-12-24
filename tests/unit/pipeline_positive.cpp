@@ -1178,8 +1178,8 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 0,
                            nullptr, 1, &img_barrier);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_, 0, 1, &ds.set_, 0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
@@ -1964,7 +1964,7 @@ TEST_F(PositivePipeline, SampleLocations) {
     render_pass.AddResolveAttachment(1);
     render_pass.CreateRenderPass();
 
-    VkImageView image_views[2] = {ms_image_view.handle(), resolve_image_view.handle()};
+    VkImageView image_views[2] = {ms_image_view, resolve_image_view};
     vkt::Framebuffer framebuffer(*m_device, render_pass, 2u, image_views);
 
     std::vector<VkSampleLocationEXT> sample_location(4u, {0.5f, 0.5f});
@@ -2126,7 +2126,7 @@ TEST_F(PositivePipeline, BlendDisabled) {
     render_pass_ci.pSubpasses = subpasses;
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
-    VkImageView views[2] = {non_blend_view.handle(), blend_view.handle()};
+    VkImageView views[2] = {non_blend_view, blend_view};
     vkt::Framebuffer framebuffer(*m_device, render_pass, 2u, views);
 
     VkPipelineColorBlendAttachmentState cb_attachments[2];

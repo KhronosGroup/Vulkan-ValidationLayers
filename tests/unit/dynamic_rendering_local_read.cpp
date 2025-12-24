@@ -856,7 +856,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
         }
 
         render_target_views.push_back(img->CreateView());
-        framebuffer_attachments.push_back(render_target_views.back().handle());
+        framebuffer_attachments.push_back(render_target_views.back());
         renderTargets.push_back(std::move(img));
 
         VkSubpassDescription subpass = {};

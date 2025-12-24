@@ -84,6 +84,7 @@ class DataGraphPipelineHelper {
     void CreatePipelineLayout(const std::vector<VkPushConstantRange> &push_constant_ranges = {});
     VkResult CreateDataGraphPipeline();
     const VkPipeline &Handle() const { return pipeline_; }
+    operator VkPipeline() const { return pipeline_; }
 
     // Helper function to create a simple test case
     // info_override can be any callable that takes a DataGraphPipelineHelper, error can be any args accepted by

@@ -584,7 +584,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp, fb, ds_image.Width(), ds_image.Height());
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper);
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -795,7 +795,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     rp_1.AddInputAttachment(0);
     rp_1.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer_1(*m_device, rp_1.Handle(), 1, &views[0], image_info.extent.width, image_info.extent.height);
+    vkt::Framebuffer framebuffer_1(*m_device, rp_1, 1, &views[0], image_info.extent.width, image_info.extent.height);
 
     // Render pass 2, referencing second slice
     RenderPassSingleSubpass rp_2(*this);
@@ -809,16 +809,16 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     rp_2.AddColorAttachment(0);
     rp_2.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer_2(*m_device, rp_2.Handle(), 1, &views[1], image_info.extent.width, image_info.extent.height);
+    vkt::Framebuffer framebuffer_2(*m_device, rp_2, 1, &views[1], image_info.extent.width, image_info.extent.height);
 
     m_command_buffer.Begin();
 
-    m_command_buffer.BeginRenderPass(rp_1.Handle(), framebuffer_1, image_info.extent.width, image_info.extent.height);
+    m_command_buffer.BeginRenderPass(rp_1, framebuffer_1, image_info.extent.width, image_info.extent.height);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.FullMemoryBarrier();
 
-    m_command_buffer.BeginRenderPass(rp_2.Handle(), framebuffer_2, image_info.extent.width, image_info.extent.height);
+    m_command_buffer.BeginRenderPass(rp_2, framebuffer_2, image_info.extent.width, image_info.extent.height);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();

@@ -2380,7 +2380,7 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     // Bind pipeline that has dynamic w-scaling enabled
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_dynamic.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_dynamic);
 
     const auto max_vps = m_device->Physical().limits_.maxViewports;
 

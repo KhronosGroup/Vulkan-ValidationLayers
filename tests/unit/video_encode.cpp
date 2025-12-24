@@ -1580,7 +1580,7 @@ TEST_F(NegativeVideoEncode, EncodeBufferMissingEncodeDstUsage) {
     cb.BeginVideoCoding(context.Begin());
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236");
-    cb.EncodeVideo(context.EncodeFrame().SetBitstreamBuffer(buffer.handle(), 0, create_info.size));
+    cb.EncodeVideo(context.EncodeFrame().SetBitstreamBuffer(buffer, 0, create_info.size));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -2515,7 +2515,7 @@ TEST_F(NegativeVideoEncode, EncodeInlineQueryType) {
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-queryPool-08363");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-queryType-08362");
-    cb.EncodeVideo(context.EncodeFrame().InlineQuery(query_pool.handle()));
+    cb.EncodeVideo(context.EncodeFrame().InlineQuery(query_pool));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());

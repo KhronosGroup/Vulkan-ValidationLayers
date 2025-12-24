@@ -248,7 +248,7 @@ TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesPipelineNotCreatedWithCr
     CreateComputePipelineHelper pipeline(*m_device);
     InitDefaultComputePipeline(pipeline, this);
     VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
-    pipeline_info.dataGraphPipeline = pipeline.Handle();
+    pipeline_info.dataGraphPipeline = pipeline;
 
     // query with `pData` null, to get back the required `dataSize`. Enough to trigger the VUID
     VkDataGraphPipelinePropertyQueryResultARM query_result;
@@ -281,7 +281,7 @@ TEST_F(NegativeDataGraph, SessionCreateInfoInvalidGraphPipeline) {
     InitDefaultComputePipeline(pipeline, this);
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     VkDataGraphPipelineSessionARM session;
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-09781");
@@ -300,7 +300,7 @@ TEST_F(NegativeDataGraph, SessionCreateInfoProtectedMemoryFeatureNotEnabled) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
     session_ci.flags = VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM;
 
     VkDataGraphPipelineSessionARM session;
@@ -320,7 +320,7 @@ TEST_F(NegativeDataGraph, SessionGetMemoryRequirementsBindPointNotGottenPrior) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -344,7 +344,7 @@ TEST_F(NegativeDataGraph, BindSessionTwice) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -373,7 +373,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryOffsetLargerThanSize) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -404,7 +404,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidMemoryBits) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -443,7 +443,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidOffsetAlignment) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
     session.GetMemoryReqs();
@@ -470,7 +470,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryTooSmall) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -497,7 +497,7 @@ TEST_F(NegativeDataGraph, BindProtectedSessionToUnprotectedMemory) {
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
     session_ci.flags = VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM;
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
     session.GetMemoryReqs();
@@ -534,7 +534,7 @@ TEST_F(NegativeDataGraph, BindUnprotectedSessionToProtectedMemory) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
     session.GetMemoryReqs();
@@ -571,7 +571,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectIndexTooLarge) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -598,7 +598,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectWrongBindPoint) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -630,7 +630,7 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -647,10 +647,10 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_command_buffer.End();
 
     VkSemaphoreTypeCreateInfo sem_type = vku::InitStructHelper();
@@ -678,11 +678,11 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyDataGraphPipelineSessionARM-session-09793");
-    vk::DestroyDataGraphPipelineSessionARM(*m_device, session.handle(), nullptr);
+    vk::DestroyDataGraphPipelineSessionARM(*m_device, session, nullptr);
     m_errorMonitor->VerifyFound();
 
     VkSemaphoreSignalInfo signal_sem = vku::InitStructHelper();
-    signal_sem.semaphore = sem.handle();
+    signal_sem.semaphore = sem;
     signal_sem.value = 1;
     vk::SignalSemaphore(*m_device, &signal_sem);
 
@@ -698,7 +698,7 @@ TEST_F(NegativeDataGraph, DestroySessionCreatedWithDestroyWithoutCallbacks) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     VkDataGraphPipelineSessionARM session;
     vk::CreateDataGraphPipelineSessionARM(*m_device, &session_ci, vkt::DefaultAllocator(), &session);
@@ -727,7 +727,7 @@ TEST_F(NegativeDataGraph, DestroySessionCreatedWithoutDestroyWithCallbacks) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     VkDataGraphPipelineSessionARM session;
     vk::CreateDataGraphPipelineSessionARM(*m_device, &session_ci, nullptr, &session);
@@ -750,7 +750,7 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -767,10 +767,10 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09799");
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -784,7 +784,7 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -801,9 +801,9 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09797");
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -817,7 +817,7 @@ TEST_F(NegativeDataGraph, CmdDispatchSessionNotBound) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -829,11 +829,11 @@ TEST_F(NegativeDataGraph, CmdDispatchSessionNotBound) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-session-09796");
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -859,7 +859,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
@@ -876,12 +876,12 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800"); // We are using 2 protected resources in this unprotected command buffer and so need to log the error twice
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -906,7 +906,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
     session.GetMemoryReqs();
@@ -923,12 +923,12 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09801");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09801"); // We are using 2 unprotected resources in this protected command buffer and so need to log the error twice
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1300,13 +1300,13 @@ TEST_F(NegativeDataGraph, SessionGetMemoryRequirementsIndexTooLarge) {
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
-    session_ci.dataGraphPipeline = pipeline.Handle();
+    session_ci.dataGraphPipeline = pipeline;
 
     vkt::DataGraphPipelineSession session(*m_device, session_ci);
 
     uint32_t bind_point_req_count = 0;
     VkDataGraphPipelineSessionBindPointRequirementsInfoARM bind_point_req_info = vku::InitStructHelper();
-    bind_point_req_info.session = session.handle();
+    bind_point_req_info.session = session;
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(*m_device, &bind_point_req_info, &bind_point_req_count, nullptr);
     if (bind_point_req_count == 0) {
         GTEST_FAIL() << "No bind points, " << IncorrectSpirvMessage;

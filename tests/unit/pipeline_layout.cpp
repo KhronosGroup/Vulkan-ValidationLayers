@@ -957,7 +957,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     }
     std::vector<VkDescriptorSetLayout> ds_vk_layouts;
     for (const auto &ds_layout : ds_layouts) {
-        ds_vk_layouts.push_back(ds_layout.handle());
+        ds_vk_layouts.push_back(ds_layout);
     }
 
     VkPipelineLayout pipeline_layout;

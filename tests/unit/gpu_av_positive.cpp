@@ -2390,8 +2390,8 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
-        vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+        vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 

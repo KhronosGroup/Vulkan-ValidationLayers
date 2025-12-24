@@ -96,7 +96,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     pipeline_ci.pStages = stage_create_infos;
     pipeline_ci.groupCount = 2;
     pipeline_ci.pGroups = group_create_infos;
-    pipeline_ci.layout = empty_pipeline_layout.handle();
+    pipeline_ci.layout = empty_pipeline_layout;
     pipeline_ci.pLibraryInterface = &interface_ci;
 
     VkResult err = vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
@@ -374,8 +374,8 @@ TEST_F(PositiveRayTracingPipeline, DescriptorBuffer) {
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
     uint32_t buffer_index = 0u;
     VkDeviceSize offset = 0u;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
-                                         &buffer_index, &offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &buffer_index,
+                                         &offset);
 
     vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 32u, 32u, 1u);
     m_command_buffer.End();
@@ -653,9 +653,9 @@ TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptor) {
                       {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                   });
 
-    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, uniform_buffer_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, storage_buffer_size, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorImageInfo(3, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, uniform_buffer_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, storage_buffer, 0, storage_buffer_size, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorImageInfo(3, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
     descriptor_set.UpdateDescriptorSets();
 

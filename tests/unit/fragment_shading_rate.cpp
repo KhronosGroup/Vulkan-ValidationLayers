@@ -1065,10 +1065,10 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     vkt::ImageView imageView = image.CreateView();
 
     // Create a frame buffer with a render pass with FSR attachment
-    vkt::Framebuffer framebuffer_fsr(*m_device, rp_fsr_1.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer framebuffer_fsr(*m_device, rp_fsr_1, 1, &imageView.handle());
 
     // Create a frame buffer with a render pass without FSR attachment
-    vkt::Framebuffer framebuffer_no_fsr(*m_device, rp_no_fsr.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer framebuffer_no_fsr(*m_device, rp_no_fsr, 1, &imageView.handle());
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

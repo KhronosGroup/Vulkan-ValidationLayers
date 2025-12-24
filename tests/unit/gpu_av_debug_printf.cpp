@@ -297,7 +297,7 @@ TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set_0(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    VkDescriptorSetLayout dsl_handle = descriptor_set_0.layout_.handle();
+    VkDescriptorSetLayout dsl_handle = descriptor_set_0.layout_;
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
     descriptor_set_0.WriteDescriptorBufferInfo(0, buffer, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set_0.UpdateDescriptorSets();

@@ -371,7 +371,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(rp, fb);
 
     vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
@@ -1603,7 +1603,7 @@ TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0u;
@@ -1883,7 +1883,7 @@ TEST_F(PositiveDynamicState, DepthWriteFromVertexShader) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     vk::CmdSetBlendConstants(m_command_buffer, blends);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);

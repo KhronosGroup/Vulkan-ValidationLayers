@@ -2108,7 +2108,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
         for (size_t i = 0; i < build_info_count; ++i) {
             dst_blas_buffers[i].InitNoMemory(*m_device, dst_blas_buffer_ci);
-            vk::BindBufferMemory(device(), dst_blas_buffers[i].handle(), buffer_memory, 0);
+            vk::BindBufferMemory(device(), dst_blas_buffers[i], buffer_memory, 0);
             scratch_buffers[i] = std::make_shared<vkt::Buffer>();
             scratch_buffers[i]->InitNoMemory(*m_device, scratch_buffer_ci);
             vk::BindBufferMemory(device(), scratch_buffers[i]->handle(), buffer_memory, 0);
@@ -4211,7 +4211,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10561");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstAccelerationStructureData = ptlas_buffer_address;
     m_command_buffer.End();
@@ -4224,7 +4224,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10552");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10543");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
@@ -4234,7 +4234,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_command_buffer.Begin();
     // scratchData must not be NULL
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
@@ -4244,7 +4244,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10550");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10541");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
@@ -4258,7 +4258,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10545");
     // Add this VU to avoid dst and src addres overlap warning
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
@@ -4269,7 +4269,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10548");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10547");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4387,7 +4387,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4448,7 +4448,7 @@ TEST_F(NegativeRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructures) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcAccelerationStructureData-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfos-parameter");
-    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4569,7 +4569,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirect) {
     command_info.dstSizesArray.stride = sizeof(uint32_t);
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-clusterAccelerationStructure-10443");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 }
@@ -4698,7 +4698,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectBadMemory
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4831,7 +4831,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
 
     command_info.dstImplicitData = 0;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstImplicitData-parameter");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_build_buffer.Address();
     m_command_buffer.End();
@@ -4840,7 +4840,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10470");
     command_info.input.opMode = VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV;
     command_info.dstSizesArray.deviceAddress = 0;
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
@@ -4851,7 +4851,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     command_info.dstSizesArray.stride = 3;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstAddressesArray-10474");
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstSizesArray-10475");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstAddressesArray.stride = sizeof(VkDeviceAddress);
     command_info.dstSizesArray.stride = 4;
@@ -4862,7 +4862,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_command_buffer.Begin();
     command_info.srcInfosArray.stride = sizeof(VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV) - 1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.srcInfosArray.stride = sizeof(VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV);
     m_command_buffer.End();
@@ -4872,7 +4872,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
                                        accel_struct_props.clusterTemplateByteAlignment +
                                    1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-input-10478");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_build_buffer.Address();
     m_command_buffer.End();
@@ -4883,7 +4883,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
                                1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-10480");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-10447");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.scratchData = scratch_buffer.Address();
     m_command_buffer.End();
@@ -4891,7 +4891,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_command_buffer.Begin();
     command_info.dstImplicitData = scratch_buffer.Address();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstImplicitData-10456");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_build_buffer.Address();
     m_command_buffer.End();
@@ -4899,7 +4899,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_command_buffer.Begin();
     command_info.dstAddressesArray.deviceAddress = scratch_buffer.Address();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstAddressesArray-10455");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstAddressesArray.deviceAddress = dst_buffer.Address();
     m_command_buffer.End();
@@ -4907,7 +4907,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_command_buffer.Begin();
     command_info.srcInfosCount = (src_count_buffer.Address() / 4) * 4 + 1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-10481");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.srcInfosCount = src_count_buffer.Address();
     m_command_buffer.End();
@@ -4922,7 +4922,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
         implicit_build_buffer.Address() / accel_struct_props.clusterByteAlignment * accel_struct_props.clusterByteAlignment + 1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476");
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-input-10477");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_build_buffer.Address();
     m_command_buffer.End();
@@ -4936,7 +4936,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     command_info.dstImplicitData = implicit_build_buffer.Address();
     command_info.dstAddressesArray.deviceAddress = 0;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -5042,24 +5042,24 @@ TEST_F(NegativeRayTracing, ClusterAccelerationStructureTriangleClusterInput) {
 
     tri_cluster.vertexFormat = VK_FORMAT_R32_SFLOAT;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-10439");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     tri_cluster.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 
     tri_cluster.maxClusterTriangleCount = accel_struct_props.maxTrianglesPerCluster + 1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-maxClusterTriangleCount-10440");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     tri_cluster.maxClusterTriangleCount = max_triangle_per_cluster;
 
     tri_cluster.maxClusterVertexCount = accel_struct_props.maxVerticesPerCluster + 1;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-maxClusterVertexCount-10441");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     tri_cluster.maxClusterVertexCount = max_triangle_per_cluster * 3;
     tri_cluster.minPositionTruncateBitCount = 33;
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-minPositionTruncateBitCount-10442");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -5346,7 +5346,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10457");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 
@@ -5354,7 +5354,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
     command_info.dstImplicitData = dst_buffer_wrong_usage.Address();
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10459");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 
@@ -5367,7 +5367,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10467");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_buffer.Address();
@@ -5375,7 +5375,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
     command_info.scratchData = small_scratch_buffer.Address();
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-10446");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
     command_info.scratchData = scratch_buffer.Address();
@@ -5419,9 +5419,9 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
     }
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pNext-10444");
-    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 

@@ -298,7 +298,7 @@ TEST_F(NegativeParent, Instance_PhysicalDeviceAndSurface) {
 
     VkBool32 supported = VK_FALSE;
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceSupportKHR-commonparent");
-    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, instance2_surface.Handle(), &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, instance2_surface, &supported);
     m_errorMonitor->VerifyFound();
 }
 
@@ -316,7 +316,7 @@ TEST_F(NegativeParent, Instance_DeviceAndSurface) {
 
     VkDeviceGroupPresentModeFlagsKHR flags = 0;
     m_errorMonitor->SetDesiredError("VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent");
-    vk::GetDeviceGroupSurfacePresentModesKHR(*m_device, instance2_surface.Handle(), &flags);
+    vk::GetDeviceGroupSurfacePresentModesKHR(*m_device, instance2_surface, &flags);
     m_errorMonitor->VerifyFound();
 }
 
@@ -336,7 +336,7 @@ TEST_F(NegativeParent, Instance_Surface) {
     }
 
     auto swapchain_ci = vku::InitStruct<VkSwapchainCreateInfoKHR>();
-    swapchain_ci.surface = instance2_surface.Handle();
+    swapchain_ci.surface = instance2_surface;
     swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
@@ -383,7 +383,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     vkt::Device instance2_device(instance2_physical_device, m_device_extension_names);
 
     auto swapchain_ci = vku::InitStruct<VkSwapchainCreateInfoKHR>();
-    swapchain_ci.surface = instance2_surface.Handle();
+    swapchain_ci.surface = instance2_surface;
     swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
@@ -400,7 +400,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     vkt::Swapchain other_device_swapchain(instance2_device, swapchain_ci);
 
     // oldSwapchain from a different device
-    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.surface = m_surface;
     swapchain_ci.oldSwapchain = other_device_swapchain;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-commonparent");
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
@@ -421,7 +421,7 @@ TEST_F(NegativeParent, Instance_Surface_2) {
 
     // surface from a different instance
     m_errorMonitor->SetDesiredError("VUID-vkDestroySurfaceKHR-surface-parent");
-    vk::DestroySurfaceKHR(instance(), instance2_surface.Handle(), nullptr);
+    vk::DestroySurfaceKHR(instance(), instance2_surface, nullptr);
     m_errorMonitor->VerifyFound();
 }
 

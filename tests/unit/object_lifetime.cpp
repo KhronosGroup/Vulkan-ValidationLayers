@@ -563,7 +563,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper);
     vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_, 0, 1,
                                 &descriptor_write);
     m_command_buffer.End();
@@ -595,7 +595,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyed) {
 
     // Create Null cmd buffer for submit
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     // Submit cmd buffer to put framebuffer and children in-flight

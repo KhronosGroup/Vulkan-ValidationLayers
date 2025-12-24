@@ -99,14 +99,14 @@ TEST_F(PositiveTensor, DescriptorBuffer) {
     tensor.BindToMem();
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
-    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.tensor = tensor;
     tensor_view_create_info.format = tensor.Format();
     tensor_view_create_info.flags = VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM;
 
     vkt::TensorView view(*m_device, tensor_view_create_info);
 
     VkTensorViewCaptureDescriptorDataInfoARM tensor_capture_desc_data_info = vku::InitStructHelper();
-    tensor_capture_desc_data_info.tensorView = view.handle();
+    tensor_capture_desc_data_info.tensorView = view;
 
     uint32_t data = 0;
     vk::GetTensorViewOpaqueCaptureDescriptorDataARM(*m_device, &tensor_capture_desc_data_info, &data);
@@ -123,7 +123,7 @@ TEST_F(PositiveTensor, DispatchShaderGLSL) {
     tensor.BindToMem();
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
-    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.tensor = tensor;
     tensor_view_create_info.format = tensor.Format();
     vkt::TensorView view(*m_device, tensor_view_create_info);
 
@@ -147,7 +147,7 @@ TEST_F(PositiveTensor, DispatchShaderGLSL) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -164,7 +164,7 @@ TEST_F(PositiveTensor, DispatchShaderSpirv) {
     tensor.BindToMem();
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
-    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.tensor = tensor;
     tensor_view_create_info.format = tensor.Format();
     vkt::TensorView view(*m_device, tensor_view_create_info);
 
@@ -189,7 +189,7 @@ TEST_F(PositiveTensor, DispatchShaderSpirv) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -228,7 +228,7 @@ TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViews) {
     tensor.BindToMem();
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
-    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.tensor = tensor;
     tensor_view_create_info.format = tensor.Format();
 
     vkt::TensorView view(*m_device, tensor_view_create_info);

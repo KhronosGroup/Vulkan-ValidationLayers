@@ -2936,9 +2936,9 @@ class VideoContext {
     }
 
     void Init(bool protected_content) {
-        ASSERT_TRUE(queue_.handle() != VK_NULL_HANDLE);
-        ASSERT_TRUE(cmd_pool_.handle() != VK_NULL_HANDLE);
-        ASSERT_TRUE(cmd_buffer_.handle() != VK_NULL_HANDLE);
+        ASSERT_TRUE(queue_ != VK_NULL_HANDLE);
+        ASSERT_TRUE(cmd_pool_ != VK_NULL_HANDLE);
+        ASSERT_TRUE(cmd_buffer_ != VK_NULL_HANDLE);
 
         {
             VkVideoSessionCreateInfoKHR create_info = *config_.SessionCreateInfo();

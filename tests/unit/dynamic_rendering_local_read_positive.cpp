@@ -358,7 +358,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, LocationsInfoNullAttachments) {
 
     VkRenderingAttachmentInfo attachment;
     attachment = vku::InitStructHelper();
-    attachment.imageView = image_view.handle();
+    attachment.imageView = image_view;
     attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -370,13 +370,13 @@ TEST_F(PositiveDynamicRenderingLocalRead, LocationsInfoNullAttachments) {
     rendering_info.pColorAttachments = &attachment;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
 
     VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 1u;
-    vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &location_info);
 
-    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    vk::CmdEndRenderingKHR(m_command_buffer);
     m_command_buffer.End();
 }
 

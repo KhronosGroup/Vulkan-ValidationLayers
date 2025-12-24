@@ -2764,7 +2764,6 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer secondary_handle = cb.handle();
 
     VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper();
     cmd_buffer_inheritance_info.renderPass = render_pass;
@@ -2779,7 +2778,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &cb.handle());
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2803,7 +2802,6 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
 
     vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer secondary_handle = cb.handle();
 
     VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper();
     cmd_buffer_inheritance_info.renderPass = render_pass;
@@ -2824,7 +2822,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     m_command_buffer.NextSubpass(VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &cb.handle());
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2839,7 +2837,6 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferContents) {
     InitRenderTarget();
 
     vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer secondary_handle = cb.handle();
 
     VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper();
     cmd_buffer_inheritance_info.renderPass = m_renderPass;
@@ -2854,7 +2851,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferContents) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-contents-09680");
-    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &cb.handle());
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();

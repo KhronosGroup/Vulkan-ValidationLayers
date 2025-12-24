@@ -1925,7 +1925,7 @@ TEST_F(PositiveSyncVal, SignalUnsignalSignalSingleSubmit) {
     cmd_info.commandBuffer = m_command_buffer;
 
     VkCommandBufferSubmitInfo cmd_info2 = vku::InitStructHelper();
-    cmd_info2.commandBuffer = command_buffer2.handle();
+    cmd_info2.commandBuffer = command_buffer2;
 
     VkSubmitInfo2 submits[3];
     submits[0] = vku::InitStructHelper();
