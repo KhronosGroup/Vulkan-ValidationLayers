@@ -368,6 +368,55 @@ bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 f
                          "(%s) must not include VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV.",
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
+
+    if ((flags & (VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) != 0) {
+        if (!enabled_features.pipelineProtectedAccess) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368", device, flags_loc,
+                             "is %s, but pipelineProtectedAccess feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, flags_loc,
+                             "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
+    bool skip = false;
+
+    if (flags_loc.function == Func::vkCreateGraphicsPipelines) {
+        skip |= ValidateCreateGraphicsPipelinesFlags(flags, flags_loc);
+    } else if (flags_loc.function == Func::vkCreateComputePipelines) {
+        skip |= ValidateCreateComputePipelinesFlags(flags, flags_loc);
+    } else if (flags_loc.function == Func::vkCreateRayTracingPipelinesKHR) {
+        skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
+    } else if (flags_loc.function == Func::vkCreateRayTracingPipelinesNV) {
+        skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
+    } else if (flags_loc.function == Func::vkCreateDataGraphPipelinesARM) {
+        skip |= ValidateCreateDataGraphPipelinesFlags(flags, flags_loc);
+    }
+
+    if ((flags & (VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT)) !=
+        0) {
+        if (!enabled_features.pipelineCreationCacheControl) {
+            skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::CacheControl_02878), device,
+                             flags_loc, "is %s but pipelineCreationCacheControl feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+
+    if ((flags & VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT) != 0) {
+        if (!enabled_features.shader64BitIndexing) {
+            skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::Shader64BitIndexing_11798), device,
+                             flags_loc, "is %s but shader64BitIndexing feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -399,7 +448,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreateGraphicsPipelinesFlags(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
 
         const auto *graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (graphics_lib_info) {
@@ -1337,6 +1386,14 @@ bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 fl
                              string_VkPipelineCreateFlags2(flags).c_str());
         }
     }
+    if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
+        if (!enabled_features.deviceGeneratedComputePipelines) {
+            skip |= LogError(
+                "VUID-VkComputePipelineCreateInfo-flags-09007", device, flags_loc,
+                "(%s) contains VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV, but deviceGeneratedComputePipelines was not enabled.",
+                string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
     return skip;
 }
 
@@ -1373,7 +1430,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreateComputePipelinesFlags(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
 
         // Make sure compute stage is selected
         if (create_info.stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {

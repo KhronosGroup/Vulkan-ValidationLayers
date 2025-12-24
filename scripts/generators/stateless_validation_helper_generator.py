@@ -63,6 +63,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateComputePipelines',
             'vkCreateRayTracingPipelinesNV',
             'vkCreateRayTracingPipelinesKHR',
+            'vkCreateDataGraphPipelinesARM',
             'vkCreateSampler',
             'vkCreateDescriptorSetLayout',
             'vkGetDescriptorSetLayoutSupport',

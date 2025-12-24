@@ -218,6 +218,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     RETURN_IF_SKIP(Init());
 
     VkPipelineCache pipeline_cache;
@@ -324,6 +325,7 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     RETURN_IF_SKIP(Init());
 
     VkPipelineCache pipeline_cache;

@@ -1,5 +1,5 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 LunarG, Inc.
  * Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,5 +72,29 @@ const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinary
     }
     return result;
 }
+
+// clang-format off
+const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagError error) {
+    switch (error) {
+        case PipelineCreateFlagError::CacheControl_02878:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878" :
+                loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905" :
+                loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871" :
+                kVUIDUndefined;
+        case PipelineCreateFlagError::Shader64BitIndexing_11798:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-flags-11798" :
+                loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-11798" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11798" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11798" :
+                // TOOD - Missing vkCreateDataGraphPipelinesARM
+                kVUIDUndefined;
+    }
+    return "UNASSIGNED-CoreChecks-unhandled-pipeline-create-flage";
+}
+// clang-format on
 
 }  // namespace vvl

@@ -44,64 +44,6 @@ bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t sub
     return phys_dev_props_core12.conformanceVersion.subminor < subminor;
 }
 
-bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2 flags, const Location &flags_loc,
-                                                   const char *vuid) const {
-    bool skip = false;
-    if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
-        const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT;
-        if ((flags & invalid_flags) != 0) {
-            skip |= LogError(vuid, device, flags_loc, "is %s but pipelineCreationCacheControl feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-    return skip;
-}
-
-bool CoreChecks::ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags2 flags, const Location &flags_loc,
-                                                       const char *vuid) const {
-    bool skip = false;
-    if (enabled_features.deviceGeneratedComputePipelines == VK_FALSE) {
-        if ((flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_NV) != 0) {
-            skip |= LogError(vuid, device, flags_loc, "is %s but deviceGeneratedComputePipelines feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-    return skip;
-}
-
-bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
-    bool skip = false;
-    if (enabled_features.pipelineProtectedAccess == VK_FALSE) {
-        const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT;
-        if ((flags & invalid_flags) != 0) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368", device, flags_loc,
-                             "is %s, but pipelineProtectedAccess feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, flags_loc,
-                         "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
-                         string_VkPipelineCreateFlags2(flags).c_str());
-    }
-    return skip;
-}
-
-bool CoreChecks::ValidatePipeline64BitIndexingFlags(VkPipelineCreateFlags2 flags, const Location &flags_loc,
-                                                    const char *vuid) const {
-    bool skip = false;
-    if (enabled_features.shader64BitIndexing == VK_FALSE) {
-        const VkPipelineCreateFlags2 invalid_flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
-        if ((flags & invalid_flags) != 0) {
-            skip |= LogError(vuid, device, flags_loc, "is %s but shader64BitIndexing feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-    return skip;
-}
-
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
 bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
                                                       const VkPipelineRobustnessCreateInfo &pipeline_robustness_info,
