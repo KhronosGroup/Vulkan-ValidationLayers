@@ -2262,7 +2262,7 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
     const bool robust_pipeline = last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_vertex_robustness;
 
     auto print_binding = [has_dynamic_descriptions](const VertexBindingState binding_description) {
-        std::stringstream ss;
+        std::ostringstream ss;
         if (has_dynamic_descriptions) {
             ss << "the last call to vkCmdSetVertexInputEXT";
         } else {

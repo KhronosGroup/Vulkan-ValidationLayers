@@ -1850,7 +1850,7 @@ bool Module::HasRuntimeArray(uint32_t type_id) const {
 }
 
 std::string InterfaceSlot::Describe() const {
-    std::stringstream msg;
+    std::ostringstream msg;
     msg << "Location = " << Location() << " | Component = " << Component() << " | Type = " << string_SpvOpcode(type) << " "
         << bit_width << " bits";
     return msg.str();

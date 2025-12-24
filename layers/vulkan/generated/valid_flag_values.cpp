@@ -1719,7 +1719,7 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkAccelerationStructureCreateFlagsKHR(value);
 
         default:
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "0x" << std::hex << value;
             return ss.str();
     }
@@ -1749,7 +1749,7 @@ std::string stateless::Context::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag
             return string_VkDataGraphPipelineSessionCreateFlagsARM(value);
 
         default:
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "0x" << std::hex << value;
             return ss.str();
     }

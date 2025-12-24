@@ -446,7 +446,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     // VkSurfaceCapabilitiesKHR::supportedTransforms.
     if (!create_info.preTransform || (create_info.preTransform & (create_info.preTransform - 1)) ||
         !(create_info.preTransform & surface_caps.supportedTransforms)) {
-        std::stringstream ss;
+        std::ostringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps.supportedTransforms) {
                 ss << "  " << string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << i)) << "\n";
@@ -461,7 +461,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
     if (!create_info.compositeAlpha || (create_info.compositeAlpha & (create_info.compositeAlpha - 1)) ||
         !((create_info.compositeAlpha) & surface_caps.supportedCompositeAlpha)) {
-        std::stringstream ss;
+        std::ostringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps.supportedCompositeAlpha) {
                 ss << "  " << string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << i)) << "\n";
@@ -543,7 +543,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
     // Found a case in the wild where |present_mode| was empty, not sure why, but skip to not have confusing error messages.
     if (!present_modes.empty() && std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
-        std::stringstream ss;
+        std::ostringstream ss;
         for (auto mode : present_modes) {
             ss << string_VkPresentModeKHR(mode) << " ";
         }

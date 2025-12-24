@@ -1620,7 +1620,7 @@ bool vvl::MutableDescriptor::Invalid() const {
 }
 
 std::string vvl::DslErrorSource::PrintMessage(const Logger &error_logger) const {
-    std::stringstream msg;
+    std::ostringstream msg;
     msg << "The VkDescriptorSetLayout was used to ";
     if (pipeline_layout_handle_ == VK_NULL_HANDLE) {
         msg << "allocate " << error_logger.FormatHandle(ds_handle_);

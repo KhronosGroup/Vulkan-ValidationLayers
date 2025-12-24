@@ -35,7 +35,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadMemoryOverLimit) {
     const uint32_t max_mesh_payload_and_shared_memory_size = mesh_shader_properties.maxMeshPayloadAndSharedMemorySize;
     const uint32_t max_mesh_payload_and_shared_ints = max_mesh_payload_and_shared_memory_size / 4;
 
-    std::stringstream task_source;
+    std::ostringstream task_source;
     task_source << R"glsl(
             #version 460
             #extension GL_EXT_mesh_shader : require
@@ -51,7 +51,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadMemoryOverLimit) {
             }
         )glsl";
 
-    std::stringstream mesh_source;
+    std::ostringstream mesh_source;
     mesh_source << R"glsl(
             #version 460
             #extension GL_EXT_mesh_shader : require
@@ -161,7 +161,7 @@ TEST_F(PositiveShaderMesh, TaskSharedMemory) {
 
     VkShaderObj mesh(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    std::stringstream task_source;
+    std::ostringstream task_source;
     task_source << R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require

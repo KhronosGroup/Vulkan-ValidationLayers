@@ -218,7 +218,7 @@ class Counter {
 
   private:
     std::string GetErrorMessage(std::thread::id tid, std::thread::id other_tid) const {
-        std::stringstream err_str;
+        std::ostringstream err_str;
         err_str << "THREADING ERROR : object of type " << string_VulkanObjectType(object_type)
                 << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
         return err_str.str();

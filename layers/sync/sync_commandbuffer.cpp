@@ -321,7 +321,7 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
             ss << attachment.GetLocation(error_obj.location, i).Fields();
             ss << " (" << sync_state_.FormatHandle(attachment.view->Handle());
@@ -371,7 +371,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
     for (uint32_t i = 0; i < (uint32_t)dynamic_rendering_info_->attachments.size(); i++) {
         const auto &attachment = dynamic_rendering_info_->attachments[i];
 
-        auto attachment_description = [this, &error_obj, &attachment, i](const auto &view, std::stringstream &ss) {
+        auto attachment_description = [this, &error_obj, &attachment, i](const auto &view, std::ostringstream &ss) {
             ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
             ss << attachment.GetLocation(error_obj.location, uint32_t(i)).Fields();
             ss << " (" << sync_state_.FormatHandle(view->Handle());
@@ -386,7 +386,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
-                std::stringstream ss;
+                std::ostringstream ss;
                 attachment_description(attachment.view, ss);
                 ss << ", resolveMode " << string_VkResolveModeFlagBits(attachment.info.resolveMode) << ")";
                 const std::string resource_description = ss.str();
@@ -403,7 +403,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.resolve_view->Handle());
 
-                std::stringstream ss;
+                std::ostringstream ss;
                 attachment_description(attachment.resolve_view, ss);
                 ss << ", resolveMode " << string_VkResolveModeFlagBits(attachment.info.resolveMode) << ")";
                 const std::string resource_description = ss.str();
@@ -424,7 +424,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
-                std::stringstream ss;
+                std::ostringstream ss;
                 attachment_description(attachment.view, ss);
                 ss << ", storeOp " << string_VkAttachmentStoreOp(attachment.info.storeOp) << ")";
                 const std::string resource_description = ss.str();
@@ -1092,7 +1092,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             *info.attachment_view.image_state, subresource_range, offset, extent, info.attachment_view.is_depth_sliced,
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << string_VkImageAspectFlagBits(aspect);
             ss << " aspect of color attachment " << clear_attachment.colorAttachment;
             ss << " (" << sync_state_.FormatHandle(info.attachment_view) << ")";
@@ -1120,7 +1120,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
                 SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kDepthStencilAttachment);
 
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << string_VkImageAspectFlagBits(aspect);
                 ss << " aspect of depth-stencil attachment (";
                 ss << sync_state_.FormatHandle(info.attachment_view) << ")";

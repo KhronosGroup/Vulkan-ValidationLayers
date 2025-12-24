@@ -675,7 +675,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
 
         out.append('''
             std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 vvl::Func func = vvl::Func::Empty;
                 switch (dynamic_state) {
         ''')
@@ -707,7 +707,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
             static std::string_view stencil_test_enable_static{"VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\\n"};
 
             std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 switch (dynamic_state) {
         ''')
         for key, value in dynamic_state_map.items():

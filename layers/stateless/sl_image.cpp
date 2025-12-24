@@ -726,7 +726,7 @@ bool Device::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info,
                     found_compatible = true;
                 }
                 if (!found_compatible) {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << "Plane 0 " << string_VkFormat(plane_0_format);
                     if (plane_count > 1) {
                         ss << "\nPlane 1 " << string_VkFormat(plane_1_format);

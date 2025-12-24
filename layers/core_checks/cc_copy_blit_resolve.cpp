@@ -45,7 +45,7 @@ struct ImageRegionIntersection {
     VkExtent3D extent = {1, 1, 1};
     bool has_intersection = false;
     std::string String() const noexcept {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "\nsubresource : { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
            << ", mipLevel: " << subresource.mipLevel << ", baseArrayLayer: " << subresource.baseArrayLayer
            << ", layerCount: " << subresource.layerCount << " },\noffset : {" << string_VkOffset3D(offset) << "},\nextent : {"
@@ -272,7 +272,7 @@ bool CoreChecks::ValidateTransferGranularityExtent(const LogObjectList &objlist,
         }
 
         if (!(x_ok && y_ok && z_ok)) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "(" << string_VkExtent3D(region_extent)
                << ") is invalid with this command buffer's queue family minImageTransferGranularity ("
                << string_VkExtent3D(granularity) << ") for copying to/from " << FormatHandle(image_state) << " ("
@@ -330,7 +330,7 @@ static std::string DescribeValidAspectMaskForFormat(VkFormat format) {
         aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
     }
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "Valid VkImageAspectFlags are " << string_VkImageAspectFlags(aspect_mask);
     return ss.str();
 }
@@ -421,14 +421,14 @@ struct ImageCopyRegion {
     }
 
     std::string DescribeSrcAndDstImage() const {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "srcImage: " << src_state.DescribeSubresourceLayers(src_subresource)
            << "dstImage: " << dst_state.DescribeSubresourceLayers(dst_subresource);
         return ss.str();
     }
 
     std::string DescribeAdjustedExtent() const {
-        std::stringstream ss;
+        std::ostringstream ss;
         if (is_adjusted_extent) {
             ss << "The VkImageCopy::extent [" << string_VkExtent3D(extent) << "] is adjusted to ["
                << string_VkExtent3D(dst_adjusted_extent) << "] because it is going from ";
@@ -1536,7 +1536,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 const bool exception = src_image_type != dst_image_type && src_layer_count == VK_REMAINING_ARRAY_LAYERS &&
                                        dst_layer_count == VK_REMAINING_ARRAY_LAYERS;
                 if (!exception && normalized_src_layer_count != normalized_dst_layer_count) {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << "(" << string_LayerCount(src_image_state->create_info, src_subresource) << ") does not match "
                        << dst_subresource_loc.dot(Field::layerCount).Fields() << " ("
                        << string_LayerCount(dst_image_state->create_info, dst_subresource) << ").";
@@ -1685,7 +1685,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             // If size is still zero, then format is invalid and will be caught in another VU
             if ((src_format_size != dst_format_size) && (src_format_size != 0) && (dst_format_size != 0)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-None-01549" : "VUID-vkCmdCopyImage-None-01549";
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "srcImage format " << string_VkFormat(src_plane_format);
                 if (is_src_multiplane) {
                     ss << " (which is the compatible format for plane "
@@ -2131,7 +2131,7 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const 
 
     if (buffer_state.create_info.size < buffer_copy_size) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle(), image_state.Handle());
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "is trying to copy " << buffer_copy_size << " bytes to/from the (" << FormatHandle(buffer_state).c_str()
            << ") which exceeds the VkBuffer total size of " << buffer_state.create_info.size
            << " bytes.\nLast texel coordinate of the image is at {x = " << last_x << ", y = " << last_y << ", z = " << last_z
@@ -2678,7 +2678,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
 bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image &src_image_state, const vvl::Image &dst_image_state,
                                                   const Location &loc) const {
     bool skip = false;
-    std::stringstream mismatch_stream{};
+    std::ostringstream mismatch_stream{};
     const VkImageCreateInfo &src_info = src_image_state.create_info;
     const VkImageCreateInfo &dst_info = dst_image_state.create_info;
 
@@ -2729,7 +2729,7 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image &src_image_st
     }
 
     if (mismatch_stream.str().length() > 0) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "The creation parameters for srcImage and dstImage differ:\n" << mismatch_stream.str();
         LogObjectList objlist(src_image_state.Handle(), dst_image_state.Handle());
         skip |= LogError("VUID-VkCopyImageToImageInfo-srcImage-09069", objlist, loc, "%s.", ss.str().c_str());
@@ -2751,7 +2751,7 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkImage image, const VkImageL
         }
     }
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "is " << string_VkImageLayout(image_layout)
        << " which is not one of the layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::" << String(supported_name)
        << "[" << layout_count << "]\nList of supported layouts:\n";

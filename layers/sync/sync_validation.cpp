@@ -1848,7 +1848,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "decode output picture ";
             ss << Location(Func::Empty, Field::pDecodeInfo).dot(Field::dstPictureResource).Fields();
             ss << " ";
@@ -1866,7 +1866,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         if (setup_resource && (setup_resource != dst_resource)) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "reconstructed picture ";
                 ss << Location(Func::Empty, Field::pDecodeInfo)
                           .dot(Field::pSetupReferenceSlot)
@@ -1889,7 +1889,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << "reference picture " << i << " ";
                     ss << Location(Func::Empty, Field::pDecodeInfo)
                               .dot(Field::pReferenceSlots, i)
@@ -1939,7 +1939,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     if (auto src_resource = vvl::VideoPictureResource(*device_state, pEncodeInfo->srcPictureResource)) {
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "encode input picture ";
             ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::srcPictureResource).Fields();
             ss << " ";
@@ -1958,7 +1958,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "reconstructed picture ";
                 ss << Location(Func::Empty, Field::pEncodeInfo)
                           .dot(Field::pSetupReferenceSlot)
@@ -1981,7 +1981,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << "reference picture " << i << " ";
                     ss << Location(Func::Empty, Field::pEncodeInfo)
                               .dot(Field::pReferenceSlots, i)
@@ -2009,7 +2009,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                 auto hazard = context->DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ,
                                                     SyncOrdering::kOrderingNone);
                 if (hazard.IsHazard()) {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << "quantization map ";
                     ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::quantizationMap).Fields();
                     ss << " ";
@@ -3106,7 +3106,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 auto hazard = context.DetectHazard(geometry_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ, geometry_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, geometry_data.Handle());
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     ss << data_description << " ";
                     ss << FormatHandle(geometry_data.Handle());
                     const std::string resource_description = ss.str();

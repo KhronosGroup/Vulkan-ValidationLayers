@@ -221,7 +221,7 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
 static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::SwapchainWaitInfo &swapchain_info,
                                                        const vvl::Semaphore &semaphore_state, VkQueue queue,
                                                        bool swapchain_fence_supported, const Logger &logger) {
-    std::stringstream ss;
+    std::ostringstream ss;
 
     const std::string semaphore_str = logger.FormatHandle(semaphore_state.Handle());
     const std::string queue_str = logger.FormatHandle(queue);
@@ -326,7 +326,7 @@ bool SemaphoreSubmitState::ValidateBinarySignal(const Location &semaphore_loc, c
     VkQueue other_queue = VK_NULL_HANDLE;
     vvl::Func other_command = vvl::Func::Empty;
     if (!CanSignalBinary(semaphore_state, other_queue, other_command)) {
-        std::stringstream initiator;
+        std::ostringstream initiator;
         if (other_command != vvl::Func::Empty) {
             initiator << String(other_command);
         }

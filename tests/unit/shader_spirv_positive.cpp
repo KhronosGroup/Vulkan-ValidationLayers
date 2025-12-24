@@ -607,7 +607,7 @@ TEST_F(PositiveShaderSpirv, OpTypeArraySpecConstant) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"

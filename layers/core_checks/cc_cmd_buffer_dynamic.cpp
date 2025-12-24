@@ -1340,7 +1340,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
         uint32_t pipeline_color_location = pipeline_color_locations ? pipeline_color_locations[i] : i;
         if (pipeline_color_location != cb_state.rendering_attachments.color_locations[i]) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[" << i << "] is "
                << pipeline_color_location;
             if (!explicit_pipeline) {
@@ -1395,7 +1395,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         uint32_t pipeline_color_index = pipeline_color_indexes ? pipeline_color_indexes[i] : i;
         if (pipeline_color_index != cb_state.rendering_attachments.color_indexes[i]) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[" << i << "] is "
                << pipeline_color_index;
             if (!explicit_pipeline) {
@@ -1414,7 +1414,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
 
     if (!EqualValuesOrBothNull(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is "
            << string_AttachmentPointer(pipeline_depth_index);
         if (!explicit_pipeline) {
@@ -1431,7 +1431,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
 
     if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is "
            << string_AttachmentPointer(pipeline_stencil_index);
         if (!explicit_pipeline) {

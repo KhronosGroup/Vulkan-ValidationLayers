@@ -186,7 +186,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
-                        std::stringstream ss;
+                        std::ostringstream ss;
                         ss << "0x" << std::hex << value;
                         return ss.str();
                 }
@@ -202,7 +202,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
-                        std::stringstream ss;
+                        std::ostringstream ss;
                         ss << "0x" << std::hex << value;
                         return ss.str();
                 }

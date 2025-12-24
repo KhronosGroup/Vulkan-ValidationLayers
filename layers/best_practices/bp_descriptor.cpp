@@ -171,7 +171,7 @@ bool BestPractices::PreCallValidateCreateDescriptorPool(VkDevice device, const V
 
     const auto* mutable_descriptor_type_ci = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     if (mutable_descriptor_type_ci && mutable_descriptor_type_ci->mutableDescriptorTypeListCount > pCreateInfo->poolSizeCount) {
-        std::stringstream msg;
+        std::ostringstream msg;
         if (pCreateInfo->poolSizeCount == 1) {
             msg << "first element";
         } else {

@@ -3609,7 +3609,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream cs_src;
+    std::ostringstream cs_src;
     // Make sure compute pipeline has a compute shader stage set
     cs_src << R"glsl(
         #version 450
@@ -4113,7 +4113,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
         GTEST_SKIP() << "maxTransformFeedbackStreams is zero";
     }
 
-    std::stringstream gsSource;
+    std::ostringstream gsSource;
     gsSource << R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback
@@ -4178,7 +4178,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
         GTEST_SKIP() << "maxTransformFeedbackStreams is zero";
     }
 
-    std::stringstream vs_src;
+    std::ostringstream vs_src;
     vs_src << R"asm(
                OpCapability Shader
                OpCapability TransformFeedback
@@ -6775,7 +6775,7 @@ TEST_F(NegativeShaderObject, MeshShaderPayloadMemoryOverLimit) {
     const uint32_t max_mesh_payload_and_shared_memory_size = mesh_shader_properties.maxMeshPayloadAndSharedMemorySize;
     const uint32_t max_mesh_payload_and_shared_ints = max_mesh_payload_and_shared_memory_size / 4;
 
-    std::stringstream mesh_source;
+    std::ostringstream mesh_source;
     mesh_source << R"glsl(
             #version 460
             #extension GL_EXT_mesh_shader : require

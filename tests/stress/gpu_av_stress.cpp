@@ -209,7 +209,7 @@ TEST_F(StressGpuAV, DescriptorIndexing2) {
     //         x[1].bn = floatBitsToUint(a * n);
     //     }
     const uint32_t field_count = 100;
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
@@ -267,7 +267,7 @@ TEST_F(StressGpuAV, DescriptorIndexingPushConstantAccess) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
 
     const uint32_t count = 150;
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference2 : require
@@ -372,7 +372,7 @@ TEST_F(StressGpuAV, DescriptorIndexingGeneralBufferOOB) {
     //     a += dot(vec4(m[31].x, m[31].y, m[31].z, m[31].w), b);
     // }
     const uint32_t array_count = 32;
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
@@ -424,7 +424,7 @@ TEST_F(StressGpuAV, BufferDeviceAddress) {
     InitRenderTarget();
     const uint32_t count = 32;
 
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable

@@ -72,9 +72,9 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
 std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);
 
-void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::ostringstream &ss);
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
-                                std::stringstream &ss);
+                                std::ostringstream &ss);
 
 // Common properties
 inline constexpr const char *kPropertyMessageType = "message_type";

@@ -505,7 +505,7 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
 
             LogObjectList objlist(queue_state_->Handle(), swapchain_handle, image_handle);
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "swapchain image " << presented.image_index << " (";
             ss << sync_state_.FormatHandle(image_handle);
             ss << " from " << sync_state_.FormatHandle(swapchain_handle) << ")";

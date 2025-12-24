@@ -109,7 +109,7 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
         // Print internal name for accesses that don't have corresponding Vulkan constants
         return access.name;
     }
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << string_VkPipelineStageFlagBits2(access.stage_mask);
     ss << "(";
     ss << string_VkAccessFlagBits2(access.access_mask);
@@ -329,7 +329,7 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo &acces
     return std::make_pair(is_stage_protected, is_access_protected);
 }
 
-static void ReportLayoutTransitionSynchronizationInsight(std::stringstream &ss, bool needs_execution_dependency,
+static void ReportLayoutTransitionSynchronizationInsight(std::ostringstream &ss, bool needs_execution_dependency,
                                                          VkPipelineStageFlags2 read_barriers = 0) {
     // TODO: analyse exact form of API is used (render pass layout transition, image barrier layout transition) and
     // print instructions for specific situation. Now we describe all possibilities.
@@ -361,7 +361,7 @@ std::string ReportProperties::FormatExtraPropertiesSection() const {
         return {};
     }
     const auto sorted = SortKeyValues(name_values);
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "[Extra properties]\n";
     bool first = true;
     for (const NameValue &property : sorted) {
@@ -413,7 +413,7 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
 
-    std::stringstream ss;
+    std::ostringstream ss;
 
     // Brief description of what happened
     ss << string_SyncHazard(hazard_type) << " hazard detected";
@@ -557,7 +557,7 @@ std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncV
     if (report_accesses.empty()) {
         return "0";
     }
-    std::stringstream out;
+    std::ostringstream out;
     bool first = true;
     for (const auto &[stages, accesses] : report_accesses) {
         if (!first) {
@@ -581,7 +581,7 @@ std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncV
     return out.str();
 }
 
-void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss) {
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::ostringstream &ss) {
     ss << "{";
     ss << logger.FormatHandle(video_picture.imageViewBinding);
     ss << ", codedOffset (" << string_VkOffset2D(video_picture.codedOffset) << ")";
@@ -591,7 +591,7 @@ void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourc
 }
 
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
-                                std::stringstream &ss) {
+                                std::ostringstream &ss) {
     ss << "{";
     ss << logger.FormatHandle(quantization_map.quantizationMap);
     ss << ", quantizationMapExtent (" << string_VkExtent2D(quantization_map.quantizationMapExtent) << ")";

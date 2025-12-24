@@ -630,7 +630,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         const uint32_t blas_array_i = error_record[kValCmdErrorPayloadDword_3];
 
         const BlasArray blas_array = blas_arrays[blas_array_i];
-        std::stringstream invalid_blas_loc;
+        std::ostringstream invalid_blas_loc;
         invalid_blas_loc << "pInfos[" << blas_array.info_i << "].pGeometries[" << blas_array.geom_i
                          << "].geometry.instances<VkAccelerationStructureInstance" << (blas_array.is_array_of_pointers ? " *" : "")
                          << ">[" << as_instance_i << ']' << (blas_array.is_array_of_pointers ? "->" : ".")
@@ -647,8 +647,8 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
                 auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
                 auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
-                std::stringstream ss_as;
-                std::stringstream ss_buffer;
+                std::ostringstream ss_as;
+                std::ostringstream ss_buffer;
                 if (found_as != as_addr_to_as_buffer.map.end()) {
                     ss_as << "Acceleration structure corresponding to reference: "
                           << gpuav.FormatHandle(found_as->second->VkHandle());
@@ -673,7 +673,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
                 auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
                 auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
-                std::stringstream error_ss;
+                std::ostringstream error_ss;
                 if (found_as != as_addr_to_as_buffer.map.end()) {
                     const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = found_as->second->GetDeviceAddressRange();
                     const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =

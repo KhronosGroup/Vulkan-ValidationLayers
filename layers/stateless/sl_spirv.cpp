@@ -1455,7 +1455,7 @@ bool SpirvValidator::ValidateExecutionModes(const spirv::Module &module_state, c
     if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::subgroup_uniform_control_flow_bit)) {
         if (!enabled_features.shaderSubgroupUniformControlFlow ||
             (phys_dev_ext_props.subgroup_props.supportedStages & stage) == 0 || stateless_data.has_invocation_repack_instruction) {
-            std::stringstream msg;
+            std::ostringstream msg;
             if (!enabled_features.shaderSubgroupUniformControlFlow) {
                 msg << "shaderSubgroupUniformControlFlow feature must be enabled";
             } else if ((phys_dev_ext_props.subgroup_props.supportedStages & stage) == 0) {

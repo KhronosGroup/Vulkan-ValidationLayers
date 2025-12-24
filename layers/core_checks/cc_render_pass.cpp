@@ -1773,7 +1773,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         (!subpass_depth_stencil_resolve ||
                          (subpass_depth_stencil_resolve->pDepthStencilResolveAttachment != VK_NULL_HANDLE &&
                           subpass_depth_stencil_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED))) {
-                        std::stringstream message;
+                        std::ostringstream message;
                         message << "has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                    "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                    "VK_TRUE and pDepthStencilAttachment has a sample count of VK_SAMPLE_COUNT_1_BIT ";
@@ -2834,7 +2834,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
 
         // Lambda function turning a vector of integers into a string
         auto vector_to_string = [&](std::vector<uint32_t> vector) {
-            std::stringstream ss;
+            std::ostringstream ss;
             size_t size = vector.size();
             for (size_t i = 0; i < used_as_fragment_shading_rate_attachment.size(); i++) {
                 if (size == 2 && i == 1) {

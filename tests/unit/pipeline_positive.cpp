@@ -586,7 +586,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
             (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         pipe.shader_stages_.clear();
 
-        std::stringstream vs_src, tes_src, geom_src;
+        std::ostringstream vs_src, tes_src, geom_src;
 
         vs_src << R"(
             #version 450

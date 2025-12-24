@@ -69,7 +69,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
     const auto input_attachments = subpass_description.pInputAttachments;
 
     auto print_index = [variable](uint32_t i) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
            << variable.decorations.input_attachment_index_start;
         if (variable.IsArray()) {
@@ -300,7 +300,7 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
 }
 
 static std::string string_DescriptorTypeSet(const vvl::unordered_set<uint32_t> &descriptor_type_set) {
-    std::stringstream ss;
+    std::ostringstream ss;
     for (auto it = descriptor_type_set.begin(); it != descriptor_type_set.end(); ++it) {
         if (ss.tellp()) ss << " or ";
         ss << string_VkDescriptorType(VkDescriptorType(*it));
@@ -1557,7 +1557,7 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module &module_
     }
 
     auto print_dsl_info = [&stage_state, &variable]() {
-        std::stringstream ss;
+        std::ostringstream ss;
         const bool has_pipeline = stage_state.shader_object_create_info == nullptr;
         if (has_pipeline) {
             ss << "VkPipelineLayoutCreateInfo::pSetLayouts[" << variable.decorations.set << "]";
@@ -1664,7 +1664,7 @@ bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module& module_state, c
         }
 
         if (!variable.all_constant_integral_expressions) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << variable.DescribeDescriptor()
                << " is an COMBINED_SAMPLED_IMAGE tied to an array of YCbCr samplers and it trying to be accessed with a "
                   "non-constant index value.\nRegardless if it is uniform or not, you can't dynamically index into an array of "
@@ -1758,7 +1758,7 @@ static const std::string GetShaderTileImageCapabilitiesString(const spirv::Modul
          {spv::CapabilityTileImageDepthReadAccessEXT, "TileImageDepthReadAccessEXT"},
          {spv::CapabilityTileImageStencilReadAccessEXT, "TileImageStencilReadAccessEXT"}}};
 
-    std::stringstream ss_capabilities;
+    std::ostringstream ss_capabilities;
     for (auto spv_capability : shader_tile_image_capabilities) {
         if (module_state.HasCapability(spv_capability.cap)) {
             if (ss_capabilities.tellp()) ss_capabilities << ", ";
@@ -1859,7 +1859,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
     if (!stage_state.entrypoint) {
         const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707" : "VUID-VkShaderCreateInfoEXT-pName-08440";
-        std::stringstream err;
+        std::ostringstream err;
         err << "\"" << stage_state.GetPName() << "\" entry point not found for stage " << string_VkShaderStageFlagBits(stage)
             << ".";
         if (stage_state.spirv_state->static_data_.entry_points.size() == 1) {
@@ -1954,7 +1954,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
                 }
 
                 if (map_entry.size != spec_const_size) {
-                    std::stringstream name;
+                    std::ostringstream name;
                     if (module_state_ptr->handle() != NullVulkanTypedHandle) {
                         name << "shader module " << FormatHandle(module_state_ptr->handle());
                     } else {
@@ -2727,7 +2727,7 @@ bool CoreChecks::ValidateTaskPayload(const spirv::Module *task_module, const spi
     }
 
     if (task_payload_size != mesh_payload_size) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "The Mesh Shader has a TaskPayloadWorkgroupEXT variable, but the Task Shader ";
         if (task_payload_size == 0) {
             ss << "never sets the TaskPayloadWorkgroupEXT variable in the call to OpEmitMeshTasksEXT";
@@ -2776,7 +2776,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
     }
 
     if (!entry_point) {
-        std::stringstream wrong_names;
+        std::ostringstream wrong_names;
         for (const auto &ep : module_spirv.static_data_.entry_points) {
             if (!wrong_names.str().empty()) {
                 wrong_names << ", ";

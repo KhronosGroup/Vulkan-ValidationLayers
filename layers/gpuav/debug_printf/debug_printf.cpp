@@ -211,7 +211,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
     uint32_t output_record_i = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
     while (debug_output_buffer[output_record_i]) {
-        std::stringstream shader_message;
+        std::ostringstream shader_message;
 
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[output_record_i]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
@@ -383,7 +383,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
     if ((output_record_i - gpuav::kDebugPrintfOutputBufferData) < output_buffer_dwords_counts) {
         // Originally we had this to log a warning, but if using the default settings, warnings are hidden.
         // We report this information the same we report the "real" debug printf message so we know it is seen
-        std::stringstream message;
+        std::ostringstream message;
         message << "[WARNING] Debug Printf message was truncated due to the buffer size ("
                 << gpuav.gpuav_settings.debug_printf_buffer_size << ") being too small for the messages consuming "
                 << output_buffer_dwords_counts

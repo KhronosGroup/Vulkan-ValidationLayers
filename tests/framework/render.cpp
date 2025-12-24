@@ -354,7 +354,7 @@ bool VkRenderFramework::IsExtensionsEnabled(const char *ext_name) const {
 }
 
 std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
-    std::stringstream ss;
+    std::ostringstream ss;
     bool first = true;
     for (const auto &ext : m_required_extensions) {
         if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {

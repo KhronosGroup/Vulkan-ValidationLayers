@@ -478,7 +478,7 @@ static bool ValidateLayerSettingsCreateInfo(const VkLayerSettingsCreateInfoEXT *
     if (!layer_settings) return valid;
     const Location loc(vvl::Func::vkCreateInstance, vvl::Field::pCreateInfo);
     const Location create_info_loc = loc.pNext(vvl::Struct::VkLayerSettingsCreateInfoEXT);
-    std::stringstream ss;
+    std::ostringstream ss;
 
     if (layer_settings->pSettings) {
         for (const auto [i, setting] : vvl::enumerate(layer_settings->pSettings, layer_settings->settingCount)) {
@@ -776,7 +776,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
 // Set as deprecated for the first time in the 1.4.335 SDK release
 static std::string GetDeprecatedEnabledDisabledWarning(const std::vector<std::string>& enabled,
                                                        const std::vector<std::string>& disabled) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "Application is using deprecated";
     if (!enabled.empty()) {
         ss << " \"enables\" (VK_LAYER_ENABLES)";

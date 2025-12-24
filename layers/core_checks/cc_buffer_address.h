@@ -100,7 +100,7 @@ class BufferAddressValidation {
         vvl::span<vvl::Buffer* const> buffer_list = validator.GetBuffersByAddress(device_address);
         if (buffer_list.empty()) {
             NearestBufferResult nearest = validator.GetNearestBuffersByAddress(device_address);
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "(0x" << std::hex << device_address
                << ") is not a valid buffer address. No call to vkGetBufferDeviceAddress has this buffer in its range.";
             if (!nearest.above_buffers.empty()) {
@@ -196,7 +196,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& v
     // Some checks only care about the address, but for those that have a range, print it here so it is the same across all error
     // messages
     if (range_size != 0) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "[0x" << std::hex << device_address << ", 0x" << (device_address + range_size) << ") (";
         if (range_size == VK_WHOLE_SIZE) {
             ss << "VK_WHOLE_SIZE";
@@ -213,7 +213,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& v
         }
         error_msg_beginning = ss.str();
     } else {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "(0x" << std::hex << device_address << ") has no buffer(s) associated that are valid.\n";
         error_msg_beginning = ss.str();
     }

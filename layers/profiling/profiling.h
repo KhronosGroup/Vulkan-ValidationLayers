@@ -42,7 +42,7 @@
 #define VVL_TracyPlot(name, value) TracyPlot(name, int64_t(value))
 #define VVL_TracyMessageStream(message)                \
     {                                                  \
-        std::stringstream tracy_ss;                    \
+        std::ostringstream tracy_ss;                   \
         tracy_ss << message;                           \
         const std::string tracy_s = tracy_ss.str();    \
         TracyMessage(tracy_s.c_str(), tracy_s.size()); \

@@ -26,7 +26,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
     csSource << R"glsl(
         #version 450
@@ -53,7 +53,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryBooleanOverLimit) {
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
     const uint32_t max_shared_bools = max_shared_memory_size / 4;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
     csSource << R"glsl(
         #version 450
@@ -84,7 +84,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"glsl(
         #version 450
         #extension GL_EXT_shared_memory_block : enable
@@ -121,7 +121,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         layout(constant_id = 0) const uint Condition = 1;
@@ -148,7 +148,7 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream cs_source;
+    std::ostringstream cs_source;
     cs_source << R"glsl(
         #version 450
         layout(constant_id = 0) const uint Condition = 0;
@@ -239,7 +239,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -278,7 +278,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -319,7 +319,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -358,7 +358,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -400,7 +400,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -758,7 +758,7 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     invocations_limit /= y_size_limit;
     z_size_limit = (z_size_limit > invocations_limit) ? invocations_limit : z_size_limit;
 
-    std::stringstream cs_text;
+    std::ostringstream cs_text;
     cs_text << "#version 450\n";
     cs_text << "layout(local_size_x = " << x_size_limit << ", ";
     cs_text << "local_size_y = " << y_size_limit << ",";

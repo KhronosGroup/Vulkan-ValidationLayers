@@ -108,7 +108,7 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer &cb_state, const Location 
 
 // This is a single location to report when a command buffer is invalid (which means it is not in a "recording state")
 bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "was called in " << FormatHandle(cb_state) << " which ";
 
     assert(cb_state.state == CbState::InvalidIncomplete || cb_state.state == CbState::InvalidComplete);
@@ -966,7 +966,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                     break;
             }
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "(" << log_.FormatHandle(secondary_state.Handle()).c_str() << ") consume inherited " << state_name << " ";
             if (format_index) {
                 if (index >= static_use_count) {

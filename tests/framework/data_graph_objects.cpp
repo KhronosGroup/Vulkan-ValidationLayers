@@ -22,7 +22,7 @@ void DataGraphPipelineHelper::CreateShaderModule(const char* spirv_source, const
 
     std::string error_msg;
     tools.SetMessageConsumer([&](spv_message_level_t, const char*, const spv_position_t& position, const char* message) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "on line " << position.line << ", column " << position.column << ": " << message;
         error_msg = ss.str();
     });
@@ -123,7 +123,7 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
 // - unused OpGraphConstantARM
 // - `inserted_line` to cause different errors
 std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const ModifiableShaderParameters& params) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << R"(
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
@@ -187,7 +187,7 @@ std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const Modifiabl
 // A command shader (for the majority of cases) that can be modified inserting
 // instructions in given sections. Without any insertions it's a basic shader.
 std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableShaderParameters& params) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << R"(
 ; SPIRV
 ; Version: 1.6
@@ -239,7 +239,7 @@ std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableSh
 
 // spirv using a descriptor array
 std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtime) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << R"(
                             OpCapability GraphARM
                             OpCapability TensorsARM

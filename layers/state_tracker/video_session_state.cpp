@@ -554,7 +554,7 @@ class RateControlStateMismatchRecorder {
 
   private:
     bool has_mismatch_{};
-    std::stringstream stream_{};
+    std::ostringstream stream_{};
     mutable std::string string_{};
 };
 
@@ -1062,7 +1062,7 @@ void VideoSessionParameters::AddEncodeH265(VkVideoEncodeH265SessionParametersAdd
 }
 
 std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
-    std::stringstream ss;
+    std::ostringstream ss;
     const vvl::VideoProfileDesc::Profile &internal_profile = profile.GetProfile();
 
     switch (internal_profile.base.videoCodecOperation) {
@@ -1248,7 +1248,7 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
 }
 
 std::string string_SupportedVideoProfiles(const SupportedVideoProfiles &profiles) {
-    std::stringstream ss;
+    std::ostringstream ss;
 
     if (!profiles.empty()) {
         for (const auto &profile : profiles) {

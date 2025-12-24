@@ -126,14 +126,14 @@ class range_view {
 
 template <typename Range>
 std::string string_range(const Range &range) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "[" << range.begin << ", " << range.end << ')';
     return ss.str();
 }
 
 template <typename Range>
 std::string string_range_hex(const Range &range) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << std::hex << "[0x" << range.begin << ", 0x" << range.end << ')';
     return ss.str();
 }

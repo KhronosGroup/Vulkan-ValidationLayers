@@ -337,7 +337,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     //     vec4 x1[value];
     //     layout(offset = OVER_LIMIT) vec4 x2;
     // };
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"asm(
                OpCapability Shader
                OpCapability WorkgroupMemoryExplicitLayoutKHR
@@ -389,7 +389,7 @@ TEST_F(NegativeShaderLimits, MaxComputeSharedMemorySizeArrayStride) {
     // shared X {
     //     float x1[]; // ArrayStride 16, not 4
     // };
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"asm(
                OpCapability Shader
                OpCapability WorkgroupMemoryExplicitLayoutKHR

@@ -69,7 +69,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     settings.allow_offset_texture_operand = enabled_features.maintenance8 == VK_TRUE;
     settings.allow_vulkan_32_bit_bitwise = enabled_features.maintenance9 == VK_TRUE;
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "spirv-val <input.spv>";
 
     if (settings.relax_block_layout) {
