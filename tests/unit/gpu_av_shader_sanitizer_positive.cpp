@@ -248,6 +248,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
             a = 2 / a;
             vec4 b = textureGather(tex, vec2(0), 0);
             c = mod(4.0, c);
+            float d = pow(c + 50.0f, 1.0f);
         }
     )glsl";
 
@@ -262,4 +263,64 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, Pow) {
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+            vec3 resultVec;
+        };
+
+        void main() {
+            result = pow(x + 1.0f, y + 1.0f);
+
+            vec3 a = vec3(x) + vec3(1.0f);
+            vec3 b = vec3(y) + vec3(1.0f);
+            resultVec = pow(a, b);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, PowConstant) {
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+            vec3 resultVec;
+        };
+
+        void main() {
+            result = pow(1.0f, 1.0f);
+            resultVec = pow(vec3(1.0f), vec3(1.0f));
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, PowVectorMix) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec3 x;
+            vec3 y;
+            vec3 result;
+        };
+
+        void main() {
+            x += vec3(1.0f, 0.0f, 1.0f);
+            y += vec3(0.0f, 1.0f, 0.0f);
+            result = pow(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
 }

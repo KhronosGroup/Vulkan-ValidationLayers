@@ -491,3 +491,112 @@ TEST_F(NegativeGpuAVShaderSanitizer, ImageGather) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVShaderSanitizer, PowScalarZero) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+        };
+
+        void main() {
+            result = pow(x, y - 1.0f);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Pow");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, PowScalarNegative) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+        };
+
+        void main() {
+            float a = x - 1.0f;
+            float b = y + 1.0f;
+            result = pow(a, b);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Pow");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, PowScalarConstant) {
+    const char* cs_source = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %var Binding 0
+               OpDecorate %var DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+   %float_n1 = OpConstant %float -1.3
+    %float_1 = OpConstant %float 1.3
+       %SSBO = OpTypeStruct %float
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+        %var = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %16 = OpExtInst %float %2 Pow %float_n1 %float_1
+         %24 = OpAccessChain %_ptr_StorageBuffer_float %var %int_0
+               OpStore %24 %16
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "SPIRV-Sanitizer-Pow");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, PowVectorZero) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec2 x;
+            vec2 y;
+            vec2 result;
+        };
+
+        void main() {
+            x.x = 3.0f;
+            y.x = 1.0f;
+            result = pow(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Pow");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, PowVectorNegative) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec4 x;
+            vec4 y;
+            vec4 result;
+        };
+
+        void main() {
+            vec4 a = x - (1.0f);
+            vec4 b = y + (1.0f);
+            result = pow(a, b);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Pow");
+}

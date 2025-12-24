@@ -48,3 +48,19 @@ void inst_sanitizer_image_gather(const uint inst_offset, const uint component)
                     0,
                     0);
 }
+
+bool inst_sanitizer_pow(const bool is_invalid, const uint inst_offset, const uint vector_size, const uint x, const uint y)
+{
+    // Using a boolean here allows us to just calculate an expression and pass the result here to save us needing to do un-fun control flow.
+    // In practice, the driver's compiler will detect this easily and fold in the function for us
+    if (is_invalid) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerPow << kErrorSubCodeShift),
+                        vector_size,
+                        x,
+                        y);
+        return false;
+    }
+    return true;
+}
