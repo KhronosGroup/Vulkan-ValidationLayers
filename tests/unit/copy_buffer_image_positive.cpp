@@ -726,7 +726,6 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     auto final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     m_command_buffer.Begin();
-    auto cb = m_command_buffer.handle();
 
     VkImageSubresourceRange src_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barriers[2];
@@ -740,10 +739,10 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     image_barriers[0].oldLayout = init_layout;
     image_barriers[0].newLayout = dst_layout;
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           image_barriers);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, image_barriers);
     VkClearColorValue clear_color{};
-    vk::CmdClearColorImage(cb, image, dst_layout, &clear_color, 1, &src_range);
+    vk::CmdClearColorImage(m_command_buffer, image, dst_layout, &clear_color, 1, &src_range);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -762,10 +761,10 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     image_barriers[1].oldLayout = init_layout;
     image_barriers[1].newLayout = dst_layout;
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2,
-                           image_barriers);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 2, image_barriers);
 
-    vk::CmdCopyImage(cb, image, src_layout, image, dst_layout, 1, &region);
+    vk::CmdCopyImage(m_command_buffer, image, src_layout, image, dst_layout, 1, &region);
 
     image_barriers[0].oldLayout = src_layout;
     image_barriers[0].newLayout = final_layout;
@@ -775,8 +774,8 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     image_barriers[1].newLayout = final_layout;
     image_barriers[1].srcAccessMask = full_transfer;
     image_barriers[1].dstAccessMask = 0;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 2,
-                           image_barriers);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0,
+                           nullptr, 2, image_barriers);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);

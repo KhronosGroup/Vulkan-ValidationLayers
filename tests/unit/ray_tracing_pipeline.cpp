@@ -1592,10 +1592,9 @@ TEST_F(NegativeRayTracingPipeline, RaygenOneMissShaderOneClosestHitShader) {
     OneOffDescriptorSet desc_set_3(m_device, {{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     OneOffDescriptorSet desc_set_4(m_device, {{4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    std::array desc_sets = {desc_set_0.layout_.handle(), desc_set_1.layout_.handle(), desc_set_2.layout_.handle(),
-                            desc_set_3.layout_.handle(), VkDescriptorSetLayout(VK_NULL_HANDLE)};
-
-    pipeline.SetPipelineSetLayouts(size32(desc_sets), desc_sets.data());
+    VkDescriptorSetLayout desc_sets[5] = {desc_set_0.layout_, desc_set_1.layout_, desc_set_2.layout_, desc_set_3.layout_,
+                                          VK_NULL_HANDLE};
+    pipeline.SetPipelineSetLayouts(5, desc_sets);
 
     m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988");
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");

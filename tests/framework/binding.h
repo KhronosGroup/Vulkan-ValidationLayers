@@ -479,7 +479,7 @@ struct TimelineSignal {
 class Queue : public internal::Handle<VkQueue> {
   public:
     explicit Queue(VkQueue queue, uint32_t index) : Handle(queue), family_index(index) {}
-    void SetName(const Device &device, const char *name) { Handle<VkQueue>::SetName(device.handle(), VK_OBJECT_TYPE_QUEUE, name); }
+    void SetName(const Device &device, const char *name) { Handle<VkQueue>::SetName(device, VK_OBJECT_TYPE_QUEUE, name); }
 
     // vkQueueSubmit()
     VkResult Submit(const CommandBuffer &cmd, const Fence &fence = no_fence);
@@ -862,7 +862,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 class Shader : public internal::NonDispHandle<VkShaderEXT> {
   public:
     Shader() = default;
-    Shader(const Device &dev, VkShaderEXT shader) { NonDispHandle::init(dev.handle(), shader); }
+    Shader(const Device &dev, VkShaderEXT shader) { NonDispHandle::init(dev, shader); }
     Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { Init(dev, info); }
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
@@ -1053,7 +1053,7 @@ class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
     void Destroy() noexcept;
 
     explicit DescriptorSet() : NonDispHandle() {}
-    explicit DescriptorSet(const Device &dev, DescriptorPool *pool, VkDescriptorSet set) : NonDispHandle(dev.handle(), set) {
+    explicit DescriptorSet(const Device &dev, DescriptorPool *pool, VkDescriptorSet set) : NonDispHandle(dev, set) {
         containing_pool_ = pool;
     }
     void SetName(const char *name) { NonDispHandle<VkDescriptorSet>::SetName(VK_OBJECT_TYPE_DESCRIPTOR_SET, name); }
@@ -1109,7 +1109,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void Init(const Device &dev, const VkCommandBufferAllocateInfo &info);
     void Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     void SetName(const Device &device, const char *name) {
-        Handle<VkCommandBuffer>::SetName(device.handle(), VK_OBJECT_TYPE_COMMAND_BUFFER, name);
+        Handle<VkCommandBuffer>::SetName(device, VK_OBJECT_TYPE_COMMAND_BUFFER, name);
     }
 
     // vkBeginCommandBuffer()
@@ -1350,7 +1350,7 @@ inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set,
                                                        VkDescriptorType type, uint32_t count,
                                                        const VkDescriptorImageInfo *image_info) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
-    write.dstSet = set.handle();
+    write.dstSet = set;
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
     write.descriptorCount = count;
@@ -1363,7 +1363,7 @@ inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set,
                                                        VkDescriptorType type, uint32_t count,
                                                        const VkDescriptorBufferInfo *buffer_info) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
-    write.dstSet = set.handle();
+    write.dstSet = set;
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
     write.descriptorCount = count;
@@ -1375,7 +1375,7 @@ inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set,
 inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                        VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
-    write.dstSet = set.handle();
+    write.dstSet = set;
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
     write.descriptorCount = count;
@@ -1472,6 +1472,7 @@ class Surface {
         }
     }
     VkSurfaceKHR Handle() const { return handle_; }
+    operator VkSurfaceKHR() const { return handle_; }
 
     Surface(Surface &&src) noexcept : instance_{src.instance_}, handle_{src.handle_} {
         src.instance_ = {};

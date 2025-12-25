@@ -649,7 +649,7 @@ TEST_F(NegativeVideoDecode, DecodeBufferMissingDecodeSrcUsage) {
     cb.BeginVideoCoding(context.Begin());
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoDecodeInfoKHR-srcBuffer-07165");
-    cb.DecodeVideo(context.DecodeFrame().SetBitstreamBuffer(buffer.handle(), 0, create_info.size));
+    cb.DecodeVideo(context.DecodeFrame().SetBitstreamBuffer(buffer, 0, create_info.size));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1678,7 +1678,7 @@ TEST_F(NegativeVideoDecode, DecodeInlineQueryType) {
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-queryPool-08368");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-queryType-08367");
-    cb.DecodeVideo(context.DecodeFrame().InlineQuery(query_pool.handle()));
+    cb.DecodeVideo(context.DecodeFrame().InlineQuery(query_pool));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());

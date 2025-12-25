@@ -1450,8 +1450,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChainsDescriptorBuffer) {
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
     uint32_t buffer_index = 0u;
     VkDeviceSize offset = 0u;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
-                                         &buffer_index, &offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &buffer_index,
+                                         &offset);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2014,10 +2014,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     const uint32_t pc_1_size = uint32_t(sizeof(VkDeviceAddress) + 2 * sizeof(uint32_t));
-    const auto pipeline_layout_2_handle = pipeline_layout_2.handle();
-    vk::CmdPushConstants(m_command_buffer, pipeline_layout_2_handle, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_1_size,
-                         &push_constants_data[0]);
-    vk::CmdPushConstants(m_command_buffer, pipeline_layout_2_handle, VK_SHADER_STAGE_FRAGMENT_BIT, pc_1_size, sizeof(uint32_t),
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout_2, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_1_size, &push_constants_data[0]);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout_2, VK_SHADER_STAGE_FRAGMENT_BIT, pc_1_size, sizeof(uint32_t),
                          &push_constants_data[2]);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2);

@@ -266,7 +266,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     }
 
     vkt::Image image(*m_device, image_ci);
-    ASSERT_TRUE(image.handle() != VK_NULL_HANDLE);
+    ASSERT_TRUE(image != VK_NULL_HANDLE);
 
     // Since the format is compatible with all image's usage, there's no need to restrict usage
     VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
@@ -275,7 +275,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     iv_ci.format = VK_FORMAT_R32G32B32A32_UINT;
     iv_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, iv_ci);
-    ASSERT_TRUE(view.handle() != VK_NULL_HANDLE);
+    ASSERT_TRUE(view != VK_NULL_HANDLE);
 
     // Since usage is inherited from the image, we need to restrict the usage to a subset
     // Compressed images do not support storage, but we want to sample from the compressed
@@ -283,7 +283,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     ivu_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     iv_ci.pNext = &ivu_ci;
     vkt::ImageView view2(*m_device, iv_ci);
-    ASSERT_TRUE(view2.handle() != VK_NULL_HANDLE);
+    ASSERT_TRUE(view2 != VK_NULL_HANDLE);
 }
 
 TEST_F(PositiveImage, ImageCompressionControl) {

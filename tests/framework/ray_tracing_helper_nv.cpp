@@ -139,7 +139,7 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 }
 
 void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
-    libraries_.emplace_back(library.Handle());
+    libraries_.emplace_back(library);
     rp_library_ci_ = vku::InitStructHelper();
     rp_library_ci_.libraryCount = size32(libraries_);
     rp_library_ci_.pLibraries = libraries_.data();
@@ -178,11 +178,11 @@ void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {
     pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_});
 
     if (isKHR) {
-        rp_ci_KHR_.layout = pipeline_layout_.handle();
+        rp_ci_KHR_.layout = pipeline_layout_;
         rp_ci_KHR_.stageCount = shader_stages_.size();
         rp_ci_KHR_.pStages = shader_stages_.data();
     } else {
-        rp_ci_.layout = pipeline_layout_.handle();
+        rp_ci_.layout = pipeline_layout_;
         rp_ci_.stageCount = shader_stages_.size();
         rp_ci_.pStages = shader_stages_.data();
     }

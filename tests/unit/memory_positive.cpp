@@ -71,7 +71,7 @@ TEST_F(PositiveMemory, MemoryDecompression) {
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
     m_command_buffer.BarrierKHR(mem_barrier);
 
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &decompress_info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &decompress_info);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
@@ -138,8 +138,8 @@ TEST_F(PositiveMemory, MemoryDecompressionIndirectCount) {
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
     m_command_buffer.BarrierKHR(mem_barrier);
 
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), decompression_method, ic_buffer.Address(),
-                                            icc_buffer.Address(), max_decompression_count, stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, decompression_method, ic_buffer.Address(), icc_buffer.Address(),
+                                            max_decompression_count, stride);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }

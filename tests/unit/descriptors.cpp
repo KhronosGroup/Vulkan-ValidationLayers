@@ -2086,7 +2086,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
 
     std::vector<VkDescriptorSetLayout> ds_vk_layouts;
     for (const auto &ds_layout : ds_layouts) {
-        ds_vk_layouts.push_back(ds_layout.handle());
+        ds_vk_layouts.push_back(ds_layout);
     }
 
     VkDescriptorSet descriptorSet[4] = {};
@@ -2510,7 +2510,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         bci.usage = test_case.buffer_usage;
         bci.size = test_case.max_range + test_case.min_align;  // Make buffer bigger than range limit
         vkt::Buffer buffer(*m_device, bci, vkt::no_mem);
-        if (buffer.handle() == VK_NULL_HANDLE) {
+        if (buffer == VK_NULL_HANDLE) {
             std::string msg = "Failed to allocate buffer of size " + std::to_string(bci.size) + " in DSBufferLimitErrors; skipped";
             printf("%s\n", msg.c_str());
             continue;
@@ -2532,7 +2532,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-vkAllocateMemory-maxMemoryAllocationSize");
 
         vkt::DeviceMemory mem(*m_device, mem_alloc);
-        if (mem.handle() == VK_NULL_HANDLE) {
+        if (mem == VK_NULL_HANDLE) {
             printf("Failed to allocate memory in DSBufferLimitErrors; skipped.\n");
             continue;
         }

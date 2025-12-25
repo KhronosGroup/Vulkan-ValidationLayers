@@ -228,7 +228,7 @@ TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
 
         // Bind helper pipeline to command buffer
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper);
         m_command_buffer.End();
 
         // pipeline will be destroyed when helper goes out of scope
@@ -518,13 +518,13 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(renderpass, framebuffer, fb_width, fb_height);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1);
 
     // VkPhysicalDeviceFeatures::variableMultisampleRate is false,
     // the two pipelines refer to the same subpass, one that does not use any attachment,
     // BUT the secondly created pipeline has a different sample samples count than the 1st, this is illegal
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-00781");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_2);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -3067,7 +3067,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
 
     vkt::RenderPass render_pass_no_flags;
     create_render_pass(0, render_pass_no_flags);
-    render_pass_handle = render_pass_no_flags.handle();
+    render_pass_handle = render_pass_no_flags;
 
     // Color attachment
     if (rasterization_order_features.rasterizationOrderColorAttachmentAccess) {

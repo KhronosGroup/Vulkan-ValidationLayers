@@ -52,7 +52,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometrySpheresData) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
         blas.GetGeometries()[0].SetSpheresIndexType(VK_INDEX_TYPE_UINT16);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -61,7 +61,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometrySpheresData) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
         blas.GetGeometries()[0].SetSpheresIndexType(VK_INDEX_TYPE_UINT32);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -71,7 +71,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometrySpheresData) {
         blas.GetGeometries()[0].SetSpheresIndexType(VK_INDEX_TYPE_NONE_KHR);
         blas.GetGeometries()[0].SetSpheresIndexAddressZero();
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -80,7 +80,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometrySpheresData) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
         blas.GetGeometries()[0].SetSpheresVertexStride(sizeof(float));
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 }
@@ -120,7 +120,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometryLinearSweptSphere
             vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
         blas.GetGeometries()[0].SetLSSpheresIndexType(VK_INDEX_TYPE_UINT16);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -130,7 +130,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometryLinearSweptSphere
             vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
         blas.GetGeometries()[0].SetLSSpheresIndexType(VK_INDEX_TYPE_UINT32);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -142,7 +142,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometryLinearSweptSphere
         blas.GetGeometries()[0].SetLSSpheresIndexType(VK_INDEX_TYPE_NONE_KHR);
         blas.GetGeometries()[0].SetLSSpheresIndexAddressZero();
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 
@@ -152,7 +152,7 @@ TEST_F(PositiveRayTracingSpheres, AccelerationStructureGeometryLinearSweptSphere
             vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
         blas.GetGeometries()[0].SetLSSpheresVertexStride(sizeof(float));
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-        blas.BuildCmdBuffer(m_command_buffer.handle());
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 }

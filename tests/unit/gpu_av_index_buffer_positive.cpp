@@ -1183,8 +1183,8 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 2u, buffer_binding_infos);
     uint32_t buffer_indices[2] = {0u, 1u};
     VkDeviceSize offsets[2] = {0u, 0u};
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 2u,
-                                         buffer_indices, offsets);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 2u, buffer_indices,
+                                         offsets);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, vvl::kU32Max, 42});

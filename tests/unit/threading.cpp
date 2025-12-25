@@ -44,7 +44,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     ThreadTestData data;
-    data.commandBuffer = commandBuffer.handle();
+    data.commandBuffer = commandBuffer;
     data.event = event;
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;

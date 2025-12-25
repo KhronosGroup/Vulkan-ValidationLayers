@@ -47,6 +47,7 @@ class RayTracingPipelineHelper {
     ~RayTracingPipelineHelper();
 
     const VkPipeline& Handle() const { return pipeline_; }
+    operator VkPipeline() const { return pipeline_; }
     void InitShaderGroups();
     void InitDescriptorSetInfo();
     void InitDescriptorSetInfoKHR();

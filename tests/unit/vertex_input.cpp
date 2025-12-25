@@ -1980,7 +1980,7 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
 
     vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offsets[2] = {0, 0};
-    VkBuffer buffers[2] = {vertex_buffer.handle(), vertex_buffer.handle()};
+    VkBuffer buffers[2] = {vertex_buffer, vertex_buffer};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

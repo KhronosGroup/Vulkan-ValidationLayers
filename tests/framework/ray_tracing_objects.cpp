@@ -198,11 +198,11 @@ GeometryKHR &GeometryKHR::SetAABBsDeviceAddress(VkDeviceAddress address) {
 GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR blas,
                                                           const VkAccelerationStructureInstanceKHR &instance) {
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
-        vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
+        vk::GetDeviceProcAddr(device, "vkGetAccelerationStructureDeviceAddressKHR"));
     assert(vkGetAccelerationStructureDeviceAddressKHR);
     VkAccelerationStructureDeviceAddressInfoKHR blas_address_info = vku::InitStructHelper();
     blas_address_info.accelerationStructure = blas;
-    const VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device.handle(), &blas_address_info);
+    const VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device, &blas_address_info);
     // Ray Tracing gems 2, page 235, is a good reference on how to fill this affine transform
     // Noting M that transform, (x, y, z) a vertex, transformation is:
     // M * (x, y, z, 1) =
@@ -561,7 +561,7 @@ void AccelerationStructureKHR::Create() {
             device_buffer_.Init(*device_, ci, buffer_memory_property_flags_, &alloc_flags);
         }
     }
-    vk_info_.buffer = device_buffer_.handle();
+    vk_info_.buffer = device_buffer_;
 
     // Create acceleration structure
     VkAccelerationStructureKHR handle;
@@ -1691,7 +1691,7 @@ vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt:
 
     // Set geometry to one instance pointing to bottom level acceleration structure
     std::vector<GeometryKHR> geometries;
-    geometries.emplace_back(GeometrySimpleDeviceInstance(device, on_device_blas.handle()));
+    geometries.emplace_back(GeometrySimpleDeviceInstance(device, on_device_blas));
     out_build_info.SetGeometries(std::move(geometries));
     out_build_info.SetBuildRanges(out_build_info.GetBuildRangeInfosFromGeometries());
 

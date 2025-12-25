@@ -34,7 +34,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresMisalignedVertexStride) {
     blas.GetGeometries()[0].SetSpheresVertexStride(1);
     // vertexStride must be a multiple of the size in bytes of the smallest component of vertexFormat
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -58,7 +58,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidStride) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Set valid vertex stride but invalid radius stride
@@ -67,7 +67,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidStride) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -101,7 +101,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidVertexFormat) {
 
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -134,7 +134,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidRadiusFormat) {
     blas.GetGeometries()[0].SetSpheresRadiusFormat(spheres_vertex_format);
 
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusFormat-10435");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -161,7 +161,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidIndexType) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -183,7 +183,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresIndexTypeNoneWithNonZeroAddress) {
     blas.GetGeometries()[0].SetSpheresIndexType(VK_INDEX_TYPE_NONE_KHR);
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11846");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -204,7 +204,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresIndexDataAddressZero) {
     blas.GetGeometries()[0].SetSpheresIndexAddressZero();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11847");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -225,7 +225,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresVertexDataAddressZero) {
     blas.GetGeometries()[0].SetSpheresVertexAddressZero();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11848");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -246,7 +246,7 @@ TEST_F(NegativeRayTracingSpheres, SpheresRadiusDataAddressZero) {
     blas.GetGeometries()[0].SetSpheresRadiusAddressZero();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11849");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -268,7 +268,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresIndexTypeNoneWithNonZeroAddress) {
     blas.GetGeometries()[0].SetLSSpheresIndexType(VK_INDEX_TYPE_NONE_KHR);
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11850");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -291,7 +291,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresIndexDataAddressZero) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427 ");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11851");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -313,7 +313,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresVertexDataAddressZero) {
     blas.GetGeometries()[0].SetLSSpheresVertexAddressZero();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11852");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -335,7 +335,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresRadiusDataAddressZero) {
     blas.GetGeometries()[0].SetLSSpheresRadiusAddressZero();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11853");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -359,7 +359,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresMisalignedVertexStride) {
     blas.GetGeometries()[0].SetLSSpheresVertexStride(1);
 
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -385,7 +385,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidStride) {
 
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     blas.GetGeometries()[0].SetLSSpheresVertexStride(3 * sizeof(float));
     // Set radius stride larger than 2^32
@@ -394,7 +394,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidStride) {
 
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -426,7 +426,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidVertexFormat) {
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
     blas.GetGeometries()[0].SetLSSpheresVertexFormat(lsspheres_vertex_format);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -458,7 +458,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidRadiusFormat) {
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
     blas.GetGeometries()[0].SetLSSpheresRadiusFormat(lsspheres_vertex_format);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusFormat-10424");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -484,7 +484,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidIndexType) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-10428");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-10428");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -509,7 +509,7 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresIndexDataNull) {
     blas.GetGeometries()[0].SetLSSpheresIndexDataNull();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427");
-    blas.BuildCmdBuffer(m_command_buffer.handle());
+    blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

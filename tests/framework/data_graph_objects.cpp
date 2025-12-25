@@ -40,7 +40,7 @@ void DataGraphPipelineHelper::CreateShaderModule(const char* spirv_source, const
 
     shader_.Init(*device_, shader_module_create_info);
     shader_module_ci_ = vku::InitStructHelper();
-    shader_module_ci_.module = shader_.handle();
+    shader_module_ci_.module = shader_;
     shader_module_ci_.pName = entrypoint ? entrypoint : "main";
 
     vvl::PnextChainAdd(&pipeline_ci_, &shader_module_ci_);
@@ -388,7 +388,7 @@ void DataGraphPipelineHelper::InitTensor(vkt::Tensor& tensor, vkt::TensorView& t
     tensor.BindToMem(memory_flags);
 
     VkTensorViewCreateInfoARM tensor_view_ci = vku::InitStructHelper();
-    tensor_view_ci.tensor = tensor.handle();
+    tensor_view_ci.tensor = tensor;
     tensor_view_ci.format = tensor.Format();
     tensor_view.Init(*device_, tensor_view_ci);
 }

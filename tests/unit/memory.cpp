@@ -52,7 +52,7 @@ TEST_F(NegativeMemory, MemoryDecompressionEnabled) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryEXT-memoryDecompression-11761");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &decompress_info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &decompress_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -101,8 +101,7 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressUnaligned) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07695");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), method, start, icc.Address(), max_decompression_count,
-                                            stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, method, start, icc.Address(), max_decompression_count, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -150,8 +149,7 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectCountAddressUnaligned) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07698");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), method, ic.Address(), count_addr, max_decompression_count,
-                                            stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, method, ic.Address(), count_addr, max_decompression_count, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -187,7 +185,7 @@ TEST_F(NegativeMemory, MemoryDecompressionCompressedSizeZero) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-compressedSize-11795");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -223,7 +221,7 @@ TEST_F(NegativeMemory, MemoryDecompressionDecompressedSizeZero) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-decompressedSize-11796");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -262,7 +260,7 @@ TEST_F(NegativeMemory, MemoryDecompressionDstRangeExceedsBuffer) {
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07688");
     // Possible the src_buffer is allocated next to the dst_buffer in the driver
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -305,7 +303,7 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectStrideInvalid) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-stride-11767");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), method, ic.Address(), icc.Address(), max_decompression_count,
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, method, ic.Address(), icc.Address(), max_decompression_count,
                                             bad_stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -374,8 +372,8 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectEnabled) {
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
     m_command_buffer.BarrierKHR(mem_barrier);
 
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), decompression_method, ic_buffer.Address(),
-                                            icc_buffer.Address(), max_decompression_count, stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, decompression_method, ic_buffer.Address(), icc_buffer.Address(),
+                                            max_decompression_count, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -429,8 +427,8 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectCount) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07694");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07697");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-11794");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), decompression_method, ic_buffer.Address(),
-                                            icc_buffer.Address(), max_decompression_count, stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, decompression_method, ic_buffer.Address(), icc_buffer.Address(),
+                                            max_decompression_count, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -479,8 +477,8 @@ TEST_F(NegativeMemory, MaxDecompressionCount) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-maxDecompressionCount-11768");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), decompression_method, ic_buffer.Address(),
-                                            icc_buffer.Address(), max_decompression_count + 1, stride);
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, decompression_method, ic_buffer.Address(), icc_buffer.Address(),
+                                            max_decompression_count + 1, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -521,7 +519,7 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressRangeSameBuffer) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-11794");
-    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT, start,
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer, VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT, start,
                                             count_buf.Address(), count, stride);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -553,7 +551,7 @@ TEST_F(NegativeMemory, MemoryDecompression) {
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07685");
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07687");
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &decompress_info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &decompress_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -593,7 +591,7 @@ TEST_F(NegativeMemory, MemoryDecompressionBufferUsage) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-srcAddress-11764");
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-dstAddress-11765");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &decompress_info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &decompress_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -640,7 +638,7 @@ TEST_F(NegativeMemory, MemoryDecompressionMethodSingleBit) {
     info.decompressionMethod = bad_method;
     info.regionCount = 1;
     info.pRegions = &region;
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -689,7 +687,7 @@ TEST_F(NegativeMemory, MemoryDecompressionSrcAddressOutOfRange) {
     m_errorMonitor->SetDesiredError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07686");
     // Possible the dst_buffer is allocated next to the src_buffer in the driver
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691");
-    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &info);
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

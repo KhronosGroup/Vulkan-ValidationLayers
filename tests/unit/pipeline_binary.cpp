@@ -148,7 +148,7 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedData) {
 
     {
         VkReleaseCapturedPipelineDataInfoKHR data_info = vku::InitStructHelper();
-        data_info.pipeline = pipe2.Handle();
+        data_info.pipeline = pipe2;
 
         vk::ReleaseCapturedPipelineDataKHR(device(), &data_info, nullptr);
 

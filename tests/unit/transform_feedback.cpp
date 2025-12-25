@@ -583,7 +583,6 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     rp_info.pSubpasses = &subpass;
     rp_info.subpassCount = 1;
     vkt::RenderPass renderpass(test_device, rp_info);
-    ASSERT_TRUE(renderpass.handle());
 
     VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);

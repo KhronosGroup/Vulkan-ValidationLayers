@@ -288,7 +288,7 @@ void Device::Init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 void Device::Init(const VkDeviceCreateInfo &info) {
     VkDevice dev;
 
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_.handle(), &info, nullptr, &dev));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_, &info, nullptr, &dev));
     Handle::init(dev);
 
     InitQueues(info);
@@ -415,11 +415,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);
         return fmt_props_3.linearTilingFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical(), format, &format_properties);
         return format_properties.linearTilingFeatures;
     }
 }
@@ -428,11 +428,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);
         return fmt_props_3.optimalTilingFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical(), format, &format_properties);
         return format_properties.optimalTilingFeatures;
     }
 }
@@ -441,11 +441,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical(), format, &fmt_props_2);
         return fmt_props_3.bufferFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical(), format, &format_properties);
         return format_properties.bufferFeatures;
     }
 }
@@ -583,7 +583,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
     submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
@@ -621,10 +621,10 @@ VkResult Queue::Submit2(const std::vector<VkCommandBuffer> &cmds, const Fence &f
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.stageMask = wait.stage_mask;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
@@ -644,10 +644,10 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const F
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const Signal &signal, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.stageMask = signal.stage_mask;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
@@ -667,14 +667,14 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Signal &signal, const Fe
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const Signal &signal, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.stageMask = wait.stage_mask;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.stageMask = signal.stage_mask;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
@@ -696,10 +696,10 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const S
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.value = wait.value;
     wait_info.stageMask = wait.stage_mask;
 
@@ -720,10 +720,10 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, const Fence &fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.value = signal.value;
     signal_info.stageMask = signal.stage_mask;
 
@@ -745,15 +745,15 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal, const Fence &fence,
                         bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.value = wait.value;
     wait_info.stageMask = wait.stage_mask;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.value = signal.value;
     signal_info.stageMask = signal.stage_mask;
 
@@ -776,14 +776,14 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const TimelineSignal &signal, const Fence &fence) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.stageMask = wait.stage_mask;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.value = signal.value;
     signal_info.stageMask = signal.stage_mask;
 
@@ -801,15 +801,15 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const T
 
 VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Signal &signal, const Fence &fence) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
-    cb_info.commandBuffer = cmd.handle();
+    cb_info.commandBuffer = cmd;
 
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
-    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.semaphore = wait.semaphore;
     wait_info.value = wait.value;
     wait_info.stageMask = wait.stage_mask;
 
     VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
-    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.semaphore = signal.semaphore;
     signal_info.stageMask = signal.stage_mask;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
@@ -863,9 +863,9 @@ void DeviceMemory::Init(const Device &dev, const VkMemoryAllocateInfo &info) {
 VkResult DeviceMemory::TryInit(const Device &dev, const VkMemoryAllocateInfo &info) {
     assert(!initialized());
     VkDeviceMemory handle = VK_NULL_HANDLE;
-    auto result = vk::AllocateMemory(dev.handle(), &info, nullptr, &handle);
+    auto result = vk::AllocateMemory(dev, &info, nullptr, &handle);
     if (result == VK_SUCCESS) {
-        NonDispHandle::init(dev.handle(), handle);
+        NonDispHandle::init(dev, handle);
     }
     return result;
 }
@@ -1063,19 +1063,15 @@ void Event::Init(const Device &dev, const VkEventCreateInfo &info) { NON_DISPATC
 
 void Event::Set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
 
-void Event::CmdSet(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
-    vk::CmdSetEvent(cmd.handle(), handle(), stage_mask);
-}
+void Event::CmdSet(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) { vk::CmdSetEvent(cmd, handle(), stage_mask); }
 
-void Event::CmdReset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
-    vk::CmdResetEvent(cmd.handle(), handle(), stage_mask);
-}
+void Event::CmdReset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) { vk::CmdResetEvent(cmd, handle(), stage_mask); }
 
 void Event::CmdWait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                     const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
                     const std::vector<VkImageMemoryBarrier> &image_barriers) {
     VkEvent event_handle = handle();
-    vk::CmdWaitEvents(cmd.handle(), 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
+    vk::CmdWaitEvents(cmd, 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
                       memory_barriers.data(), static_cast<uint32_t>(buffer_barriers.size()), buffer_barriers.data(),
                       static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
 }
@@ -1249,7 +1245,7 @@ void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags) {
     memory_ = vkt::DeviceMemory(*device_, tensor_alloc_info);
     VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
     bind_info.tensor = *this;
-    bind_info.memory = memory_.handle();
+    bind_info.memory = memory_;
     vk::BindTensorMemoryARM(*device_, 1, &bind_info);
 }
 
@@ -1675,7 +1671,7 @@ VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() 
 
 void AccelerationStructureNV::Init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory) {
     PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV =
-        (PFN_vkCreateAccelerationStructureNV)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureNV");
+        (PFN_vkCreateAccelerationStructureNV)vk::GetDeviceProcAddr(dev, "vkCreateAccelerationStructureNV");
     assert(vkCreateAccelerationStructureNV != nullptr);
 
     NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureNV, dev, &info);
@@ -1687,18 +1683,18 @@ void AccelerationStructureNV::Init(const Device &dev, const VkAccelerationStruct
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
-            (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
+            (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev, "vkBindAccelerationStructureMemoryNV");
         assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
         VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
         bind_info.accelerationStructure = handle();
-        bind_info.memory = memory_.handle();
-        ASSERT_EQ(VK_SUCCESS, vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info));
+        bind_info.memory = memory_;
+        ASSERT_EQ(VK_SUCCESS, vkBindAccelerationStructureMemoryNV(dev, 1, &bind_info));
 
         PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
-            (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV");
+            (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev, "vkGetAccelerationStructureHandleNV");
         assert(vkGetAccelerationStructureHandleNV != nullptr);
-        ASSERT_EQ(VK_SUCCESS, vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_));
+        ASSERT_EQ(VK_SUCCESS, vkGetAccelerationStructureHandleNV(dev, handle(), sizeof(uint64_t), &opaque_handle_));
     }
 }
 
@@ -1739,8 +1735,8 @@ void ShaderModule::Init(const Device &dev, const VkShaderModuleCreateInfo &info)
 VkResult ShaderModule::InitTry(const Device &dev, const VkShaderModuleCreateInfo &info) {
     VkShaderModule mod;
 
-    VkResult err = vk::CreateShaderModule(dev.handle(), &info, NULL, &mod);
-    if (err == VK_SUCCESS) NonDispHandle::init(dev.handle(), mod);
+    VkResult err = vk::CreateShaderModule(dev, &info, NULL, &mod);
+    if (err == VK_SUCCESS) NonDispHandle::init(dev, mod);
 
     return err;
 }
@@ -1754,8 +1750,8 @@ void Shader::Init(const Device &dev, const VkShaderCreateInfoEXT &info) {
 VkResult Shader::InitTry(const Device &dev, const VkShaderCreateInfoEXT &info) {
     VkShaderEXT mod;
 
-    VkResult err = vk::CreateShadersEXT(dev.handle(), 1u, &info, NULL, &mod);
-    if (err == VK_SUCCESS) NonDispHandle::init(dev.handle(), mod);
+    VkResult err = vk::CreateShadersEXT(dev, 1u, &info, NULL, &mod);
+    if (err == VK_SUCCESS) NonDispHandle::init(dev, mod);
 
     return err;
 }
@@ -1839,10 +1835,10 @@ NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 void Pipeline::Init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev, &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateGraphicsPipelines, dev, cache, 1, &info);
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev, cache, NULL);
     }
 }
 
@@ -1850,14 +1846,14 @@ VkResult Pipeline::InitTry(const Device &dev, const VkGraphicsPipelineCreateInfo
     VkPipeline pipe;
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev, &ci, NULL, &cache);
     EXPECT_EQ(VK_SUCCESS, err);
     if (err == VK_SUCCESS) {
-        err = vk::CreateGraphicsPipelines(dev.handle(), cache, 1, &info, NULL, &pipe);
+        err = vk::CreateGraphicsPipelines(dev, cache, 1, &info, NULL, &pipe);
         if (err == VK_SUCCESS) {
-            NonDispHandle::init(dev.handle(), pipe);
+            NonDispHandle::init(dev, pipe);
         }
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev, cache, NULL);
     }
 
     return err;
@@ -1866,10 +1862,10 @@ VkResult Pipeline::InitTry(const Device &dev, const VkGraphicsPipelineCreateInfo
 void Pipeline::Init(const Device &dev, const VkComputePipelineCreateInfo &info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
-    VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
+    VkResult err = vk::CreatePipelineCache(dev, &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateComputePipelines, dev, cache, 1, &info);
-        vk::DestroyPipelineCache(dev.handle(), cache, NULL);
+        vk::DestroyPipelineCache(dev, cache, NULL);
     }
 }
 
@@ -1881,10 +1877,9 @@ void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateI
     // ALL parameters need to survive until deferred operation is completed
     // In our case, it means both info and handle need to be kept alive
     // => cannot use NON_DISPATCHABLE_HANDLE_INIT because used handle is a temporary
-    const VkResult result =
-        vk::CreateRayTracingPipelinesKHR(dev.handle(), deferred_op, VK_NULL_HANDLE, 1, &info, nullptr, &handle());
+    const VkResult result = vk::CreateRayTracingPipelinesKHR(dev, deferred_op, VK_NULL_HANDLE, 1, &info, nullptr, &handle());
     ASSERT_TRUE(result == VK_OPERATION_DEFERRED_KHR || result == VK_OPERATION_NOT_DEFERRED_KHR || result == VK_SUCCESS);
-    NonDispHandle::SetDevice(dev.handle());
+    NonDispHandle::SetDevice(dev);
 }
 
 void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) {
@@ -2012,14 +2007,14 @@ void CommandBuffer::Init(const Device &dev, const VkCommandBufferAllocateInfo &i
     // Make sure commandPool is set
     assert(info.commandPool);
 
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(dev.handle(), &info, &cmd));
+    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(dev, &info, &cmd));
     Handle::init(cmd);
-    dev_handle_ = dev.handle();
+    dev_handle_ = dev;
     cmd_pool_ = info.commandPool;
 }
 
 void CommandBuffer::Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level) {
-    auto create_info = CommandBuffer::CreateInfo(pool.handle());
+    auto create_info = CommandBuffer::CreateInfo(pool);
     create_info.level = level;
     Init(dev, create_info);
 }
@@ -2149,14 +2144,14 @@ void CommandBuffer::BindShaders(const vkt::Shader &vert_shader, const vkt::Shade
 
 void CommandBuffer::BindCompShader(const vkt::Shader &comp_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    const VkShaderEXT shaders[] = {comp_shader.handle()};
+    const VkShaderEXT shaders[] = {comp_shader};
     vk::CmdBindShadersEXT(handle(), 1u, stages, shaders);
 }
 
 void CommandBuffer::BindMeshShaders(const vkt::Shader &mesh_shader, const vkt::Shader &frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT};
-    const VkShaderEXT shaders[] = {VK_NULL_HANDLE, mesh_shader.handle(), frag_shader.handle(), VK_NULL_HANDLE};
+    const VkShaderEXT shaders[] = {VK_NULL_HANDLE, mesh_shader, frag_shader, VK_NULL_HANDLE};
     vk::CmdBindShadersEXT(handle(), 4u, stages, shaders);
 }
 
@@ -2164,7 +2159,7 @@ void CommandBuffer::BindMeshShaders(const vkt::Shader &task_shader, const vkt::S
                                     const vkt::Shader &frag_shader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT};
-    const VkShaderEXT shaders[] = {task_shader.handle(), mesh_shader.handle(), frag_shader.handle(), VK_NULL_HANDLE};
+    const VkShaderEXT shaders[] = {task_shader, mesh_shader, frag_shader, VK_NULL_HANDLE};
     vk::CmdBindShadersEXT(handle(), 4u, stages, shaders);
 }
 
@@ -2185,7 +2180,7 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) { vk:
 void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
     assert(src.CreateInfo().size == dst.CreateInfo().size);
     const VkBufferCopy region = {0, 0, src.CreateInfo().size};
-    vk::CmdCopyBuffer(handle(), src.handle(), dst.handle(), 1, &region);
+    vk::CmdCopyBuffer(handle(), src, dst, 1, &region);
 }
 
 void CommandBuffer::ExecuteCommands(const CommandBuffer &secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
@@ -2304,14 +2299,14 @@ NON_DISPATCHABLE_HANDLE_DTOR(Swapchain, vk::DestroySwapchainKHR)
 void Swapchain::Init(const Device &dev, const VkSwapchainCreateInfoKHR &info) {
     assert(!initialized());
     VkSwapchainKHR handle = VK_NULL_HANDLE;
-    auto result = vk::CreateSwapchainKHR(dev.handle(), &info, nullptr, &handle);
+    auto result = vk::CreateSwapchainKHR(dev, &info, nullptr, &handle);
     // NOTE: Swapchain creation has more error codes comparing to other objects that use NON_DISPATCHABLE_HANDLE_INIT macro
     ASSERT_TRUE((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) || (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) ||
                 (result == VK_ERROR_OUT_OF_HOST_MEMORY) || (result == VK_ERROR_SURFACE_LOST_KHR) ||
                 (result == VK_ERROR_DEVICE_LOST) || (result == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) ||
                 (result == VK_ERROR_INITIALIZATION_FAILED));
     if (result == VK_SUCCESS) {
-        NonDispHandle::init(dev.handle(), handle);
+        NonDispHandle::init(dev, handle);
     }
 }
 
