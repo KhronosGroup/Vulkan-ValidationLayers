@@ -329,10 +329,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const Location& create_info_loc) const;
 
     bool ValidatePipelineVertexDivisors(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
-    bool ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
-    bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc) const;
-    bool ValidatePipeline64BitIndexingFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
     void EnqueueValidateImageBarrierAttachment(const Location& loc, core::CommandBufferSubState& cb_sub_state,
                                                const ImageBarrier& barrier);
     void EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer& cb_state,
@@ -1040,7 +1036,6 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
                                              const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
-    bool ValidateDataGraphPipelineCreateInfoFlags(VkPipelineCreateFlags2 flags, Location flags_loc) const;
     bool ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                          const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
                                                          const Location& dg_shader_ci_loc, const vvl::Pipeline& pipeline) const;

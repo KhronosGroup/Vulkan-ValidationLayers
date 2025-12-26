@@ -2469,7 +2469,8 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     flags = VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-07996");
     flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-None-09497");
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-09497");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-09007");
     flags = 0x80000000;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-None-09497");
 }

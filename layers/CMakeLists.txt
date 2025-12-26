@@ -419,6 +419,7 @@ target_sources(vvl PRIVATE
     stateless/sl_buffer.cpp
     stateless/sl_cmd_buffer_dynamic.cpp
     stateless/sl_cmd_buffer.cpp
+    stateless/sl_data_graph.cpp
     stateless/sl_descriptor.cpp
     stateless/sl_device_generated_commands.cpp
     stateless/sl_device_memory.cpp

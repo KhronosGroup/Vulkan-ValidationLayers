@@ -406,7 +406,7 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, 
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
 
         if (!enabled_features.pipelineCreationCacheControl) {
             if (flags &
@@ -518,7 +518,7 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
         } else {
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
-        skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
+        skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
 
         for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
             const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);

@@ -572,6 +572,7 @@ class Device : public vvl::base::Device {
     bool ValidatePipelineRenderingCreateInfo(const Context &context, const VkPipelineRenderingCreateInfo &rendering_struct,
                                              const Location &loc) const;
     bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
+    bool ValidateCreatePipelinesFlagsCommon(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -583,6 +584,13 @@ class Device : public vvl::base::Device {
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       const Context &context) const;
+
+    bool ValidateCreateDataGraphPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
+    bool manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                           const Context &context) const;
 
     bool ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;

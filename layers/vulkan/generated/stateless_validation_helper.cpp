@@ -25981,6 +25981,9 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     skip |= context.ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true,
                                   true, "VUID-vkCreateDataGraphPipelinesARM-createInfoCount-arraylength",
                                   "VUID-vkCreateDataGraphPipelinesARM-pPipelines-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                  pCreateInfos, pAllocator, pPipelines, context);
     return skip;
 }
 
