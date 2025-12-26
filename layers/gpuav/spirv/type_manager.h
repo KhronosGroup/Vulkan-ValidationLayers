@@ -62,6 +62,7 @@ struct Type {
     bool IsArray() const;
     bool IsSignedInt() const;
     bool IsIVec3(const TypeManager& type_manager) const;
+    // If returns 0, means it is a scalar
     uint32_t VectorSize() const;
     // 64-bit floats/int take up 2 dwords
     bool Is64Bit() const;
@@ -145,12 +146,14 @@ class TypeManager {
     const Constant& AddConstant(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Constant* FindConstantById(uint32_t id) const;
     const Constant* FindConstantInt32(uint32_t type_id, uint32_t value) const;
+    const Constant* FindConstantFloat16(uint32_t type_id, uint32_t value) const;
     const Constant* FindConstantFloat32(uint32_t type_id, uint32_t value) const;
     // most constants are uint
     const Constant& CreateConstantUInt32(uint32_t value);
     const Constant& GetConstantUInt32(uint32_t value);
     const Constant& GetConstantZeroUint32();
     const Constant& GetConstantOneUint32();
+    const Constant& GetConstantZeroFloat16();
     const Constant& GetConstantZeroFloat32();
     const Constant& GetConstantZeroVec3();
     const Constant& GetConstantZeroUvec4();
@@ -196,9 +199,11 @@ class TypeManager {
     std::vector<const Type*> linking_struct_types_;
 
     std::vector<const Constant*> int_32bit_constants_;
+    std::vector<const Constant*> float_16bit_constants_;
     std::vector<const Constant*> float_32bit_constants_;
     const Constant* uint_32bit_zero_constants_ = nullptr;
     const Constant* uint_32bit_one_constants_ = nullptr;
+    const Constant* float_16bit_zero_constants_ = nullptr;
     const Constant* float_32bit_zero_constants_ = nullptr;
     const Constant* vec3_zero_constants_ = nullptr;
     const Constant* uvec4_zero_constants_ = nullptr;

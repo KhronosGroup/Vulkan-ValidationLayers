@@ -54,6 +54,7 @@ class SanitizerPass : public Pass {
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
 
     uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    uint32_t PowCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(uint32_t sub_code);
@@ -62,6 +63,8 @@ class SanitizerPass : public Pass {
 
     // Function IDs to link in
     uint32_t link_function_ids_[glsl::kErrorSubCodeSanitizerCount];
+
+    uint32_t glsl_std450_id_ = 0;  // GLSL.std.450
 };
 
 }  // namespace spirv
