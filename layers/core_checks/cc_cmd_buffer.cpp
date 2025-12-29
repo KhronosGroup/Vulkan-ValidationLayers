@@ -123,11 +123,11 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
     for (const auto &entry : cb_state.broken_bindings) {
         ss << " " << FormatHandle(entry.first) << " was ";
         if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
-            ss << "destroy or updated without UPDATE_AFTER_BIND\n";
+            ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
         } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
-            ss << "destroy or rerecorded\n";
+            ss << "destroyed or rerecorded\n";
         } else {
-            ss << "destroy\n";
+            ss << "destroyed\n";
         }
 
         for (const auto &obj : entry.second.object_list) {
