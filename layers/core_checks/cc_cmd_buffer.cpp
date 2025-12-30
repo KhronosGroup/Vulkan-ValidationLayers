@@ -2106,7 +2106,7 @@ bool CoreChecks::PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuf
                                                       const VkTileMemoryBindInfoQCOM *tile_memory_bind_info,
                                                       const ErrorObject &error_obj) const {
     bool skip = false;
-    if (tile_memory_bind_info != NULL) {
+    if (tile_memory_bind_info) {
         skip |= ValidateTileMemoryBindInfo(*tile_memory_bind_info, error_obj.location);
     }
     return skip;
