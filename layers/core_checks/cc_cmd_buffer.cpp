@@ -314,6 +314,10 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         skip |= ValidateCustomResolveCreateInfoEXT(*custom_resolve, inheritance_loc);
     }
 
+    if (const auto tile_memory_bind = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(info.pNext)) {
+        skip |= ValidateTileMemoryBindInfo(*tile_memory_bind, inheritance_loc);
+    }
+
     return skip;
 }
 
@@ -2095,6 +2099,16 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                      const VkTileMemoryBindInfoQCOM *tile_memory_bind_info,
+                                                      const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (tile_memory_bind_info != NULL) {
+        skip |= ValidateTileMemoryBindInfo(*tile_memory_bind_info, error_obj.location);
+    }
     return skip;
 }
 

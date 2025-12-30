@@ -282,3 +282,58 @@ TEST_F(NegativeTileMemoryHeap, BindImageMemoryAlignment) {
     vk::BindImageMemory(device(), image, image_memory, badOffset);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeTileMemoryHeap, BindNonTileMemoryCommandBuffer) {
+    TEST_DESCRIPTION("Bind non Tile Memory with vkCmdBindTileMemoryQCOM in Primary/Secondary Command Buffer.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
+    mem_alloc.allocationSize = 256;
+    mem_alloc.memoryTypeIndex = 0;
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
+
+    uint32_t i = 0;
+    for (; i < memory_info.memoryTypeCount; i++) {
+        // Would require deviceCoherentMemory feature
+        if (memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
+            continue;
+        }
+        // Would require protected feature
+        if (memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
+            continue;
+        }
+        if (!(memory_info.memoryHeaps[memory_info.memoryTypes[i].heapIndex].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM)) {
+            mem_alloc.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    if (i >= memory_info.memoryTypeCount) {
+        GTEST_SKIP() << "No invalid memory type index could be found";
+    }
+
+    vkt::DeviceMemory non_tile_memory(*m_device, mem_alloc);
+
+    VkTileMemoryBindInfoQCOM tile_mem_bind_info = vku::InitStructHelper();
+    tile_mem_bind_info.memory = non_tile_memory;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemoryBindInfoQCOM-memory-10726");
+    vk::CmdBindTileMemoryQCOM(m_command_buffer, &tile_mem_bind_info);
+    m_errorMonitor->VerifyFound();
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&tile_mem_bind_info);
+    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemoryBindInfoQCOM-memory-10726");
+    vk::BeginCommandBuffer(secondary, &cmdbuff_bi);
+    m_errorMonitor->VerifyFound();
+}
