@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,9 @@ class BufferAddressValidation {
     // There are times the caller will want to update state for each buffer object found
     UpdateCallback update_callback = [](const vvl::Buffer&) {};
 
-    [[nodiscard]] bool ValidateDeviceAddress(const CoreChecks& validator, const Location& device_address_loc,
+    // We use vvl::DeviceProxy instead of CoreChecks here as a current hack to allow GPU-AV to use this. We still need a better
+    // system to share CoreChecks with GPU-AV
+    [[nodiscard]] bool ValidateDeviceAddress(const vvl::DeviceProxy& validator, const Location& device_address_loc,
                                              const LogObjectList& objlist, VkDeviceAddress device_address,
                                              VkDeviceSize range_size = 0) noexcept {
         bool skip = false;
@@ -147,7 +149,7 @@ class BufferAddressValidation {
     [[nodiscard]] bool HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
-    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
+    [[nodiscard]] bool LogInvalidBuffers(const vvl::DeviceProxy& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                          const Location& device_address_loc, const LogObjectList& objlist,
                                          VkDeviceAddress device_address, VkDeviceSize range_size) const noexcept;
 
@@ -184,7 +186,8 @@ bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer*
 }
 
 template <size_t ChecksCount>
-bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
+bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DeviceProxy& validator,
+                                                             vvl::span<vvl::Buffer* const> buffer_list,
                                                              const Location& device_address_loc, const LogObjectList& objlist,
                                                              VkDeviceAddress device_address,
                                                              VkDeviceSize range_size) const noexcept {
