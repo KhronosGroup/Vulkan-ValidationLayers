@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+#include <sstream>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
@@ -2051,14 +2052,22 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
 
             const uint32_t max_fragment_location = get_max_fragment_location();
             if (max_fragment_location >= phys_dev_props.limits.maxFragmentDualSrcAttachments) {
+                std::ostringstream ss;
+                ss << "color attachment index " << color_index << " (" << attachment_info.Describe(cb_state, i)
+                   << ") is using Dual-Source Blending, but the largest output fragment Location (" << max_fragment_location
+                   << ") is not less than maxFragmentDualSrcAttachments (" << phys_dev_props.limits.maxFragmentDualSrcAttachments
+                   << ").\n";
+                if (max_fragment_location == 1 && phys_dev_props.limits.maxFragmentDualSrcAttachments == 1) {
+                    // maxFragmentDualSrcAttachments is basically 1 for everyone and common case of trying to use dual-blending
+                    // incorrectly
+                    ss << "When using dual blending you only have a single Location in your fragment shader, but each attachment "
+                          "is a separate index.\n\tFor GLSL you can use \"layout(location = 0, index = 1)\"\n\tFor HLSL/Slang you "
+                          "can use \"[[vk::location(0), vk::index(1)]]\"\n";
+                }
+                ss << last_bound_state.DescribeColorBlendEnabled(color_index) << "\n"
+                   << last_bound_state.DescribeBlendFactorEquation(color_index);
                 skip |= LogError(vuid.blend_dual_source_09239, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                                 "color attachment index %" PRIu32
-                                 " (%s) is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
-                                 ") is not less than maxFragmentDualSrcAttachments (%" PRIu32 ").\n%s\n%s",
-                                 color_index, attachment_info.Describe(cb_state, i).c_str(), max_fragment_location,
-                                 phys_dev_props.limits.maxFragmentDualSrcAttachments,
-                                 last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
-                                 last_bound_state.DescribeBlendFactorEquation(color_index).c_str());
+                                 "%s", ss.str().c_str());
                 break;
             }
         }
