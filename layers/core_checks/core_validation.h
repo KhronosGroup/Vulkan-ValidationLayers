@@ -481,7 +481,6 @@ class CoreChecks : public vvl::DeviceProxy {
                           uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location& loc) const;
     bool ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location& loc) const;
     bool ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM& create_info, const Location& loc) const;
-    bool ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& create_info, const Location& loc) const;
     bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
 
     bool ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location& barrier_loc,
@@ -2348,9 +2347,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
                                               const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
-                                                              VkTilePropertiesQCOM* pProperties,
-                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,

@@ -228,6 +228,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdResolveImage2',
             'vkGetCalibratedTimestampsEXT',
             'vkGetCalibratedTimestampsKHR',
+            'vkGetDynamicRenderingTilePropertiesQCOM',
         ]
 
         # Commands to ignore

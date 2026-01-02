@@ -2287,10 +2287,6 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_
     skip |= ValidateRenderpassAttachmentUsage(create_info, create_info_loc);
     skip |= ValidateRenderPassDAG(create_info, create_info_loc);
 
-    if (const auto tile_memory_size = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(create_info.pNext)) {
-        skip |= ValidateTileMemorySizeInfo(*tile_memory_size, create_info_loc);
-    }
-
     // Validate multiview correlation and view masks
     bool view_mask_zero = false;
     bool view_mask_non_zero = false;

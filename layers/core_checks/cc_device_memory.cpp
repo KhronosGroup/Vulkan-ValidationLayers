@@ -850,35 +850,6 @@ bool CoreChecks::ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM &tile
     return skip;
 }
 
-bool CoreChecks::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM &tile_memory_size_info, const Location &loc) const {
-    bool skip = false;
-    uint64_t largest_heap_size = 0;
-    for (uint32_t i = 0; i < phys_dev_mem_props.memoryHeapCount; i++) {
-        if (phys_dev_mem_props.memoryHeaps[i].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
-            largest_heap_size = std::max(largest_heap_size, phys_dev_mem_props.memoryHeaps[i].size);
-        }
-    }
-    if (tile_memory_size_info.size > largest_heap_size) {
-        skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
-                         " (%" PRIu64
-                         ") must be less than or equal to the largest size memory heap with the "
-                         "VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property (%" PRIu64 ").",
-                         tile_memory_size_info.size, largest_heap_size);
-    }
-
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo *pRenderingInfo,
-                                                                      VkTilePropertiesQCOM *pProperties,
-                                                                      const ErrorObject &error_obj) const {
-    bool skip = false;
-    if (const auto tile_memory_size = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(pRenderingInfo->pNext)) {
-        skip |= ValidateTileMemorySizeInfo(*tile_memory_size, error_obj.location);
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset, const void *pNext,
                                           const Location &loc) const {
     bool skip = false;

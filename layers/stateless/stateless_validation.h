@@ -1237,6 +1237,10 @@ class Device : public vvl::base::Device {
                                                           const VkCalibratedTimestampInfoKHR *pTimestampInfos,
                                                           uint64_t *pTimestamps, uint64_t *pMaxDeviation,
                                                           const Context &context) const;
+    bool manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                                     VkTilePropertiesQCOM* pProperties,
+                                                                     const Context &context) const;
+    bool ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& create_info, const Location& loc) const;
 
 #include "generated/stateless_device_methods.h"
 };

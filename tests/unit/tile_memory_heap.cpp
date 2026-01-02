@@ -383,13 +383,6 @@ TEST_F(NegativeTileMemoryHeap, TileProperties) {
     vk::GetDynamicRenderingTilePropertiesQCOM(device(), &begin_rendering_info, &tile_properties);
     m_errorMonitor->VerifyFound();
 
-    VkAttachmentDescriptionStencilLayout attachment_desc_stencil_layout = vku::InitStructHelper();
-    attachment_desc_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_desc_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReferenceStencilLayout attachment_ref_stencil_layout = vku::InitStructHelper();
-    attachment_ref_stencil_layout.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-
     RenderPass2SingleSubpass rp2(*this);
     rp2.AddAttachmentDescription(VK_FORMAT_R8_UINT);
     rp2.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
