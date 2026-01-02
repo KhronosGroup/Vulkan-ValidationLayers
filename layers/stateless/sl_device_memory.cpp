@@ -322,18 +322,21 @@ bool Device::manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevic
 bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM &tile_memory_size_info, const Location &loc) const {
     bool skip = false;
     uint64_t largest_heap_size = 0;
-    uint32_t i = 0;
-    for (; i < phys_dev_mem_props.memoryHeapCount; i++) {
+    uint32_t heap_index = 0;
+    for (uint32_t i = 0; i < phys_dev_mem_props.memoryHeapCount; i++) {
         if (phys_dev_mem_props.memoryHeaps[i].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
-            largest_heap_size = std::max(largest_heap_size, phys_dev_mem_props.memoryHeaps[i].size);
+            if (phys_dev_mem_props.memoryHeaps[i].size > largest_heap_size) {
+                largest_heap_size = phys_dev_mem_props.memoryHeaps[i].size;
+                heap_index = i;
+            }
         }
     }
     if (tile_memory_size_info.size > largest_heap_size) {
         skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
                          "(%" PRIu64
-                         ") must be less than or equal to the largest size memory heap with the "
-                         "VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property (%" PRIu64 ") at heap index (%" PRIu32 ").",
-                         tile_memory_size_info.size, largest_heap_size, i);
+                         ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32 "],"
+                         " the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
+                         tile_memory_size_info.size, largest_heap_size, heap_index);
     }
 
     return skip;
