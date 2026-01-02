@@ -838,6 +838,18 @@ bool CoreChecks::HasTileMemoryType(uint32_t memory_type_index) const {
     return (phys_dev_mem_props.memoryHeaps[memory_heap_index].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
 }
 
+bool CoreChecks::ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM &tile_memory_bind_info, const Location &loc) const {
+    bool skip = false;
+    auto dev_mem = Get<vvl::DeviceMemory>(tile_memory_bind_info.memory);
+    if (!HasTileMemoryType(dev_mem->allocate_info.memoryTypeIndex)) {
+        skip |= LogError("VUID-VkTileMemoryBindInfoQCOM-memory-10726", tile_memory_bind_info.memory,
+                         loc.dot(Field::pCreateInfo).dot(Field::memory),
+                         "was allocated from a VkMemoryHeap without the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property.");
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset, const void *pNext,
                                           const Location &loc) const {
     bool skip = false;
