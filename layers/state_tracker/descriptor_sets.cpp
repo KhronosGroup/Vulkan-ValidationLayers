@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1286,7 +1286,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const vvl::De
             break;
         case DescriptorClass::ImageSampler: {
             if (update.pImageInfo) {
-                const auto &image_info = update.pImageInfo[index];
+                const VkDescriptorImageInfo &image_info = update.pImageInfo[index];
                 if (!immutable_) {
                     ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler),
                                     is_bindless);
@@ -1299,7 +1299,8 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const vvl::De
         }
         case DescriptorClass::Image: {
             if (update.pImageInfo) {
-                const auto &image_info = update.pImageInfo[index];
+                // The VkSampler is ignored and may be garbage
+                const VkDescriptorImageInfo &image_info = update.pImageInfo[index];
                 image_layout_ = image_info.imageLayout;
                 ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
                                 is_bindless);
@@ -1308,7 +1309,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const vvl::De
         }
         case DescriptorClass::GeneralBuffer: {
             if (update.pBufferInfo) {
-                const auto &buffer_info = update.pBufferInfo[index];
+                const VkDescriptorBufferInfo &buffer_info = update.pBufferInfo[index];
                 offset_ = buffer_info.offset;
                 range_ = buffer_info.range;
                 // can be null if using nullDescriptors

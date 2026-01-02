@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1593,12 +1593,18 @@ void Device::UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                     local_pDescriptorWrites[index0].dstSet = Unwrap(pDescriptorWrites[index0].dstSet);
                 }
                 if (local_pDescriptorWrites[index0].pImageInfo) {
+                    // need for when updating VkDescriptorImageInfo
+                    bool has_sampler =
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER;
+                    bool has_image_view = local_pDescriptorWrites[index0].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER;
+
                     for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
-                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler && has_sampler) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
                         }
-                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView && has_image_view) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].imageView =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].imageView);
                         }
@@ -2931,12 +2937,18 @@ void Device::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindP
                     local_pDescriptorWrites[index0].dstSet = Unwrap(pDescriptorWrites[index0].dstSet);
                 }
                 if (local_pDescriptorWrites[index0].pImageInfo) {
+                    // need for when updating VkDescriptorImageInfo
+                    bool has_sampler =
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER;
+                    bool has_image_view = local_pDescriptorWrites[index0].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER;
+
                     for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
-                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler && has_sampler) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
                         }
-                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView && has_image_view) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].imageView =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].imageView);
                         }
@@ -3026,13 +3038,21 @@ void Device::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDe
                             Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet);
                     }
                     if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo) {
+                        // need for when updating VkDescriptorImageInfo
+                        bool has_sampler =
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType ==
+                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER;
+                        bool has_image_view =
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER;
+
                         for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
                              ++index2) {
-                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler && has_sampler) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler =
                                     Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler);
                             }
-                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView && has_image_view) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView =
                                     Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView);
                             }
@@ -3889,12 +3909,18 @@ void Device::CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
                     local_pDescriptorWrites[index0].dstSet = Unwrap(pDescriptorWrites[index0].dstSet);
                 }
                 if (local_pDescriptorWrites[index0].pImageInfo) {
+                    // need for when updating VkDescriptorImageInfo
+                    bool has_sampler =
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                        local_pDescriptorWrites[index0].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER;
+                    bool has_image_view = local_pDescriptorWrites[index0].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER;
+
                     for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
-                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler && has_sampler) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
                         }
-                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView && has_image_view) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].imageView =
                                 Unwrap(pDescriptorWrites[index0].pImageInfo[index1].imageView);
                         }
@@ -5126,13 +5152,21 @@ void Device::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                             Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet);
                     }
                     if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo) {
+                        // need for when updating VkDescriptorImageInfo
+                        bool has_sampler =
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType ==
+                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER;
+                        bool has_image_view =
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER;
+
                         for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
                              ++index2) {
-                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler && has_sampler) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler =
                                     Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler);
                             }
-                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView && has_image_view) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView =
                                     Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView);
                             }
