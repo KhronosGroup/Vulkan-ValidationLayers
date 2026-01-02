@@ -482,12 +482,16 @@ const Constant& TypeManager::AddConstant(std::unique_ptr<Instruction> new_inst, 
 
     if (inst->Opcode() == spv::OpConstant) {
         if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
-            int_32bit_constants_.push_back(new_constant);
-        } else if (type.inst_.Opcode() == spv::OpTypeFloat && type.inst_.Word(2) == 32) {
-            float_32bit_constants_.push_back(new_constant);
+            int_32bit_constants_.emplace_back(new_constant);
+        } else if (type.inst_.Opcode() == spv::OpTypeFloat) {
+            if (type.inst_.Word(2) == 16) {
+                float_16bit_constants_.emplace_back(new_constant);
+            } else if (type.inst_.Word(2) == 32) {
+                float_32bit_constants_.emplace_back(new_constant);
+            }
         }
     } else if (inst->Opcode() == spv::OpConstantNull) {
-        null_constants_.push_back(new_constant);
+        null_constants_.emplace_back(new_constant);
     }
 
     return *new_constant;
@@ -495,6 +499,15 @@ const Constant& TypeManager::AddConstant(std::unique_ptr<Instruction> new_inst, 
 
 const Constant* TypeManager::FindConstantInt32(uint32_t type_id, uint32_t value) const {
     for (const auto constant : int_32bit_constants_) {
+        if (constant->type_.Id() == type_id && value == constant->inst_.Word(3)) {
+            return constant;
+        }
+    }
+    return nullptr;
+}
+
+const Constant* TypeManager::FindConstantFloat16(uint32_t type_id, uint32_t value) const {
+    for (const auto constant : float_16bit_constants_) {
         if (constant->type_.Id() == type_id && value == constant->inst_.Word(3)) {
             return constant;
         }
@@ -559,6 +572,21 @@ const Constant& TypeManager::GetConstantOneUint32() {
         }
     }
     return *uint_32bit_one_constants_;
+}
+
+// It is common to use float16(0) as a default, so having it cached is helpful
+const Constant& TypeManager::GetConstantZeroFloat16() {
+    if (!float_16bit_zero_constants_) {
+        const Type& float_16_type = GetTypeFloat(16);
+        float_16bit_zero_constants_ = FindConstantFloat16(float_16_type.Id(), 0);
+        if (!float_16bit_zero_constants_) {
+            const uint32_t constant_id = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(4, spv::OpConstant);
+            new_inst->Fill({float_16_type.Id(), constant_id, 0});
+            float_16bit_zero_constants_ = &AddConstant(std::move(new_inst), float_16_type);
+        }
+    }
+    return *float_16bit_zero_constants_;
 }
 
 // It is common to use float(0) as a default, so having it cached is helpful

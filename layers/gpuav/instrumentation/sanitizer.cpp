@@ -79,6 +79,23 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                     strm << ", but it must be 0, 1, 2, or 3" << GetSpirvSpecLink(spv::OpImageGather);
                     out_vuid_msg = "SPIRV-Sanitizer-Image-Gather";
                 } break;
+                case kErrorSubCodeSanitizerPow: {
+                    // Pow is only valid with a scalar/vector of 16/32-bit float
+                    const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_0];
+                    // Casting produces artifacts in float value, need to memcpy
+                    float x_value = 0.0f;
+                    float y_value = 0.0f;
+                    memcpy(&x_value, &error_record[kInstLogErrorParameterOffset_1], sizeof(float));
+                    memcpy(&y_value, &error_record[kInstLogErrorParameterOffset_2], sizeof(float));
+                    strm << "Pow (from GLSL.std.450) has an undefined result because operand (x < 0) or (x == 0 && y <= 0)\n  ";
+                    if (vector_size > 0) {
+                        // Would need a new way to print more than 2 bytes out to get this to work
+                        strm << "Using a vector of size " << vector_size << " but currently only can print out scalar values";
+                    } else {
+                        strm << "X == " << x_value << ", Y == " << y_value;
+                    }
+                    out_vuid_msg = "SPIRV-Sanitizer-Pow";
+                } break;
                 default:
                     error_found = false;
                     break;
