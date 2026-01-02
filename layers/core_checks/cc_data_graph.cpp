@@ -106,50 +106,6 @@ bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDa
     return skip;
 }
 
-bool CoreChecks::ValidateDataGraphPipelineCreateInfoFlags(VkPipelineCreateFlags2 flags, Location flags_loc) const {
-    bool skip = false;
-
-    constexpr VkPipelineCreateFlags2 valid_flag_mask =
-        VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT |
-        VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT | VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT |
-        VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT;
-
-    if ((flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) && !enabled_features.dataGraphDescriptorBuffer) {
-        skip |= LogError(
-            "VUID-VkDataGraphPipelineCreateInfoARM-dataGraphDescriptorBuffer-09885", device, flags_loc,
-            "(%s) includes VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT but the dataGraphDescriptorBuffer feature is not enabled.",
-            string_VkPipelineCreateFlags2(flags).c_str());
-    }
-
-    if ((flags & ~(valid_flag_mask)) != 0) {
-        skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-flags-09764", device, flags_loc, "(%s) contains invalid values.",
-                         string_VkPipelineCreateFlags2(flags).c_str());
-    }
-    if (!enabled_features.pipelineProtectedAccess) {
-        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) != 0 ||
-            (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT) != 0) {
-            skip |= LogError(
-                "VUID-VkDataGraphPipelineCreateInfoARM-pipelineProtectedAccess-09772", device, flags_loc,
-                "(%s) must not contain VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT or "
-                "VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT because the pipelineProtectedAccess feature was not enabled.",
-                string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    } else {
-        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) != 0 &&
-            (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT) != 0) {
-            skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-flags-09773", device, flags_loc,
-                             "(%s) must not contain both VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT and "
-                             "VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-
-    skip |= ValidatePipelineCacheControlFlags(flags, flags_loc,
-                                              "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871");
-
-    return skip;
-}
-
 bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const VkDataGraphPipelineConstantARM& constant,
                                                           const Location& constant_loc, const vvl::Pipeline& pipeline) const {
     bool skip = false;
@@ -205,15 +161,6 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                             chassis::CreateDataGraphPipelinesARM& chassis_state) const {
     bool skip = ValidateDeviceQueueSupport(error_obj.location);
-
-    if (!enabled_features.dataGraph) {
-        skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-dataGraph-09760", device, error_obj.location,
-                         "dataGraph feature is not enabled");
-    }
-    if (VK_NULL_HANDLE != deferredOperation) {
-        skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-deferredOperation-09761", device, error_obj.location,
-                         "deferredOperation must be VK_NULL_HANDLE");
-    }
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const VkDataGraphPipelineCreateInfoARM& create_info = pCreateInfos[i];
@@ -296,7 +243,6 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
 
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
-        skip |= ValidateDataGraphPipelineCreateInfoFlags(create_info.flags, create_info_loc.dot(Field::flags));
     }
 
     return skip;

@@ -335,6 +335,7 @@ vvl_sources = [
   "layers/stateless/sl_buffer.cpp",
   "layers/stateless/sl_cmd_buffer.cpp",
   "layers/stateless/sl_cmd_buffer_dynamic.cpp",
+  "layers/stateless/sl_data_graph.cpp",
   "layers/stateless/sl_descriptor.cpp",
   "layers/stateless/sl_device_generated_commands.cpp",
   "layers/stateless/sl_device_memory.cpp",
