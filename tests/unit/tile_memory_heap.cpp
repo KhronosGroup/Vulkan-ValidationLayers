@@ -9,6 +9,7 @@
  */
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 class NegativeTileMemoryHeap : public TileMemoryHeapTest {};
 
@@ -335,5 +336,66 @@ TEST_F(NegativeTileMemoryHeap, BindNonTileMemoryCommandBuffer) {
 
     m_errorMonitor->SetDesiredError("VUID-VkTileMemoryBindInfoQCOM-memory-10726");
     vk::BeginCommandBuffer(secondary, &cmdbuff_bi);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileMemoryHeap, TileProperties) {
+    TEST_DESCRIPTION("Provide a Tile Memory size that is greater than the largest Tile Memory heap.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    AddRequiredFeature(vkt::Feature::tileProperties);
+
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
+    uint64_t max_tile_memory_heap_size = 0;
+
+    uint32_t i = 0;
+    for (; i < memory_info.memoryHeapCount; i++) {
+        if (memory_info.memoryHeaps[i].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+            max_tile_memory_heap_size = std::max(memory_info.memoryHeaps[i].size, max_tile_memory_heap_size);
+        }
+    }
+
+    if (max_tile_memory_heap_size == 0xFFFFFFFFFFFFFFFF) {
+        GTEST_SKIP() << "Tile Memory heap exposes max 64 bit value.";
+    }
+
+    VkTilePropertiesQCOM tile_properties = vku::InitStructHelper();
+    VkTileMemorySizeInfoQCOM tile_memory_size_info = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    tile_memory_size_info.size = max_tile_memory_heap_size + 1;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&tile_memory_size_info);
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
+    vk::GetDynamicRenderingTilePropertiesQCOM(device(), &begin_rendering_info, &tile_properties);
+    m_errorMonitor->VerifyFound();
+
+    RenderPass2SingleSubpass rp2(*this);
+    rp2.AddAttachmentDescription(VK_FORMAT_R8_UINT);
+    rp2.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
+    rp2.CreateRenderPass(&tile_memory_size_info);
+    m_errorMonitor->VerifyFound();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
+    rp.CreateRenderPass(&tile_memory_size_info);
     m_errorMonitor->VerifyFound();
 }

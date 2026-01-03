@@ -432,6 +432,10 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
                          "feature was not enabled.");
     }
 
+    if (const auto tile_memory_size = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(create_info.pNext)) {
+        skip |= ValidateTileMemorySizeInfo(*tile_memory_size, create_info_loc);
+    }
+
     return skip;
 }
 

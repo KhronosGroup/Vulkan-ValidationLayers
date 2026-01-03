@@ -25690,6 +25690,7 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
         skip |= context.ValidateStructPnext(pProperties_loc, pProperties->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkTilePropertiesQCOM-pNext-pNext", kVUIDUndefined, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, context);
     return skip;
 }
 
