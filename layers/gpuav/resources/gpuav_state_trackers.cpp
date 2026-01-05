@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,6 +166,7 @@ void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const Las
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources
 
+    on_instrumentation_error_logger_register_functions.clear();
     on_instrumentation_desc_set_update_functions.clear();
     on_instrumentation_desc_buffer_update_functions.clear();
     on_cb_completion_functions.clear();
