@@ -116,7 +116,8 @@ class DataGraphPipelineHelper {
 
   private:
     void CreateShaderModule(const char *spirv_source, const char *entrypoint = "main");
-    void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const std::vector<int64_t> &tensor_dims, bool is_protected);
+    void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const VkTensorDescriptionARM &tensor_desc,
+                    bool is_protected);
 
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     HelperParameters params_ = HelperParameters();

@@ -301,8 +301,7 @@ const std::vector<int64_t> add_dimensions{1, 4, 4, 2};
 
 void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) {
     if (params_.graph_variant == AddTensorArraySpirv || params_.graph_variant == AddRuntimeTensorArraySpirv) {
-
-        // tensors for GetSpirvTensorArrayDataGraph(): array of 2 input, 1 output
+        // tensors for GetSpirvTensorArrayDataGraph(): array of 2 inputs, 1 output
 
         VkTensorDescriptionARM desc = vku::InitStructHelper();
         desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
@@ -313,9 +312,12 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
         desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
 
         tensors_.resize(3);
-        tensors_[0] = std::make_shared<vkt::Tensor>(*device_, desc);
-        tensors_[1] = std::make_shared<vkt::Tensor>(*device_, desc);
-        tensors_[2] = std::make_shared<vkt::Tensor>(*device_, desc);
+        tensor_views_.resize(tensors_.size());
+        for (uint32_t i = 0; i < 3; i++) {
+            tensors_[i] = std::make_shared<vkt::Tensor>();
+            tensor_views_[i] = std::make_shared<vkt::TensorView>();
+            InitTensor(*tensors_[i], *tensor_views_[i], desc, params_.protected_tensors);
+        }
 
         resources_.resize(3);
         // last 3 numbers are: descriptor, binding, array index
@@ -338,10 +340,18 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
         descriptor_set_layout_bindings_.resize(tensors_.size());
         resources_.resize(tensors_.size());
         for (uint32_t i = 0; i < tensors_.size(); i++) {
+            const std::vector<int64_t>& dims = (i == 0) ? in_tensor_dims : out_tensor_dims;
+
+            VkTensorDescriptionARM desc = vku::InitStructHelper();
+            desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+            desc.format = VK_FORMAT_R8_SINT;
+            desc.dimensionCount = dims.size();
+            desc.pDimensions = dims.data();
+            desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+
             tensors_[i] = std::make_shared<vkt::Tensor>();
             tensor_views_[i] = std::make_shared<vkt::TensorView>();
-            const std::vector<int64_t>& dims = (i == 0) ? in_tensor_dims : out_tensor_dims;
-            InitTensor(*tensors_[i], *tensor_views_[i], dims, params_.protected_tensors);
+            InitTensor(*tensors_[i], *tensor_views_[i], desc, params_.protected_tensors);
 
             // last 3 numbers are: descriptor, binding, array index
             resources_[i] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[i]->Description(), 0, i, 0};
@@ -365,15 +375,8 @@ void DataGraphPipelineHelper::CreatePipelineLayout(const std::vector<VkPushConst
     pipeline_ci_.layout = pipeline_layout_;
 }
 
-void DataGraphPipelineHelper::InitTensor(vkt::Tensor& tensor, vkt::TensorView& tensor_view, const std::vector<int64_t>& tensor_dims,
-                                         bool is_protected) {
-    VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
-    tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    tensor_desc.format = VK_FORMAT_R8_SINT;
-    tensor_desc.dimensionCount = tensor_dims.size();
-    tensor_desc.pDimensions = tensor_dims.data();
-    tensor_desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
-
+void DataGraphPipelineHelper::InitTensor(vkt::Tensor& tensor, vkt::TensorView& tensor_view,
+                                         const VkTensorDescriptionARM& tensor_desc, bool is_protected) {
     VkTensorCreateInfoARM tensor_info = vku::InitStructHelper();
     tensor_info.pDescription = &tensor_desc;
     tensor_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

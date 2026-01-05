@@ -534,13 +534,12 @@ class TensorDescriptor : public Descriptor {
     uint32_t GetTensorViewCount() const { return tensor_view_count_; }
     const VkTensorViewARM *GetTensorViews() const { return tensor_views_; }
     const vvl::TensorView *GetTensorViewState() const { return tensor_view_state_.get(); }
-    const vvl::Tensor *GetTensorState() const { return tensor_state_.get(); }
+    const vvl::Tensor *GetTensorState() const;
 
   private:
     uint32_t tensor_view_count_{0};
     const VkTensorViewARM *tensor_views_{VK_NULL_HANDLE};
-    std::shared_ptr<vvl::Tensor> tensor_state_;
-    std::shared_ptr<vvl::TensorView> tensor_view_state_;
+    std::shared_ptr<vvl::TensorView> tensor_view_state_{nullptr};
 };
 
 class ImageSamplerDescriptor : public ImageDescriptor {
@@ -673,8 +672,8 @@ class MutableDescriptor : public Descriptor {
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
     VkDeviceSize GetEffectiveRange() const;
+    std::shared_ptr<vvl::Tensor> GetSharedTensor() const;
     std::shared_ptr<vvl::BufferView> GetSharedBufferViewState() const { return buffer_view_state_; }
-    std::shared_ptr<vvl::Tensor> GetSharedTensor() const { return tensor_state_; }
     std::shared_ptr<vvl::TensorView> GetSharedTensorView() const { return tensor_view_state_; }
     VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
     const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
@@ -729,7 +728,6 @@ class MutableDescriptor : public Descriptor {
     uint32_t tensor_view_count_{0};
     const VkTensorViewARM *tensor_views_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::TensorView> tensor_view_state_;
-    std::shared_ptr<vvl::Tensor> tensor_state_;
 };
 
 // We will want to build this map and list of layouts once in order to record in the state tracker at PostCallRecord time.

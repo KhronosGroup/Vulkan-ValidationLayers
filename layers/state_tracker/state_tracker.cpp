@@ -504,6 +504,11 @@ void DeviceState::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorC
     Add(std::move(tensor_state));
 }
 
+void DeviceState::PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks *pAllocator,
+                                                const RecordObject &record_obj) {
+    Destroy<Tensor>(tensor);
+}
+
 void DeviceState::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
                                                     const VkBindTensorMemoryInfoARM *pBindInfos, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
@@ -688,6 +693,11 @@ void DeviceState::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTen
     auto tensor_state = Get<vvl::Tensor>(pCreateInfo->tensor);
     ASSERT_AND_RETURN(tensor_state);
     Add(CreateTensorViewState(tensor_state, *pView, pCreateInfo));
+}
+
+void DeviceState::PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                    const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+    Destroy<TensorView>(tensorView);
 }
 
 void DeviceState::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
