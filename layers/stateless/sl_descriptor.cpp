@@ -1220,6 +1220,15 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
                                  "is VK_FORMAT_UNDEFINED.");
             }
         }
+
+        if (api_version < VK_API_VERSION_1_3 && !enabled_features.ycbcr2plane444Formats) {
+            if (IsValueIn(address_info->format,
+                          {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
+                           VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
+                skip |= LogError("VUID-VkDescriptorAddressInfoEXT-None-12271", device, address_loc.dot(Field::format), "is %s.",
+                                 string_VkFormat(address_info->format));
+            }
+        }
     }
 
     const auto *tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -359,6 +359,13 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         skip |= LogError("VUID-VkImageCreateInfo-format-04713", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the height (%" PRIu32 ") must be a multiple of 2.",
                          string_VkFormat(image_format), pCreateInfo->extent.height);
+    }
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.ycbcr2plane444Formats) {
+        if (IsValueIn(image_format, {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
+                                     VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
+            skip |= LogError("VUID-VkImageCreateInfo-None-12279", device, create_info_loc.dot(Field::format), "is %s.",
+                             string_VkFormat(image_format));
+        }
     }
 
     return skip;
@@ -943,6 +950,15 @@ bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_inf
     skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkImageViewCreateInfo-pNext-06787",
                                         create_info_loc, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", create_info.pNext);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.ycbcr2plane444Formats) {
+        if (IsValueIn(create_info.format,
+                      {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
+                       VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-None-12280", device, create_info_loc.dot(Field::format), "is %s.",
+                             string_VkFormat(create_info.format));
+        }
+    }
 
     return skip;
 }

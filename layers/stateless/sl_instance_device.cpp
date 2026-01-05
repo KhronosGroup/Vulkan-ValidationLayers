@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1047,4 +1047,43 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevi
     }
     return skip;
 }
+
+bool Instance::ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                          VkFormatProperties2 *pFormatProperties, const Context &context) const {
+    bool skip = false;
+
+    if (IsValueIn(format, {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
+                           VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
+        const auto &exposed_extensions = physical_device_extensions.at(physicalDevice);
+
+        if (api_version < VK_API_VERSION_1_3 && !exposed_extensions.vk_khr_maintenance5 &&
+            !exposed_extensions.vk_ext_ycbcr_2plane_444_formats) {
+            const char *vuid = context.error_obj.location.function == Func::vkGetPhysicalDeviceFormatProperties
+                                   ? "VUID-vkGetPhysicalDeviceFormatProperties-None-12272"
+                                   : "VUID-vkGetPhysicalDeviceFormatProperties2-None-12273";
+            skip |=
+                LogError(vuid, physicalDevice, context.error_obj.location.dot(Field::format), "is %s.", string_VkFormat(format));
+        }
+    }
+
+    return skip;
+}
+
+bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                       VkFormatProperties *pFormatProperties,
+                                                                       const Context &context) const {
+    if (!pFormatProperties) {
+        return false;
+    }
+    VkFormatProperties2 format_props_2 = vku::InitStructHelper();
+    format_props_2.formatProperties = *pFormatProperties;
+    return ValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, &format_props_2, context);
+}
+
+bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                        VkFormatProperties2 *pFormatProperties,
+                                                                        const Context &context) const {
+    return ValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, context);
+}
+
 }  // namespace stateless

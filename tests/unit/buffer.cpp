@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -198,6 +198,22 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.offset = minTexelBufferOffsetAlignment;
     buff_view_ci.range = buffer_size;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00931");
+}
+
+TEST_F(NegativeBuffer, BufferViewYcbCr2Plane) {
+    TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
+    buff_view_ci.buffer = buffer;
+    buff_view_ci.offset = 0;
+    buff_view_ci.format = VK_FORMAT_G16_B16R16_2PLANE_444_UNORM;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferViewCreateInfo-format-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-None-12278");
+    vkt::BufferView view(*m_device, buff_view_ci);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeBuffer, BufferViewCreateInfoFeatures) {

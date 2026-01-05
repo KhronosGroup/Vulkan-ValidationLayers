@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -346,6 +346,25 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
     image_create_info = reset_create_info;
+
+    {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-format-parameter");
+        m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-None-12279");
+        image_create_info.format = VK_FORMAT_G16_B16R16_2PLANE_444_UNORM;
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+        image_create_info = reset_create_info;
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+        VkImageViewCreateInfo image_view_ci = image.BasicViewCreatInfo();
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-format-parameter");
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-None-12280");
+        image_view_ci.format = VK_FORMAT_G16_B16R16_2PLANE_444_UNORM;
+        vkt::ImageView image_view(*m_device, image_view_ci);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeYcbcr, FormatsLimits) {

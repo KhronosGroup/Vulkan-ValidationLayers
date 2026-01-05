@@ -231,6 +231,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetCalibratedTimestampsKHR',
             'vkGetDynamicRenderingTilePropertiesQCOM',
             'vkGetSwapchainTimeDomainPropertiesEXT',
+            'vkGetPhysicalDeviceFormatProperties',
+            'vkGetPhysicalDeviceFormatProperties2',
         ]
 
         # Commands to ignore

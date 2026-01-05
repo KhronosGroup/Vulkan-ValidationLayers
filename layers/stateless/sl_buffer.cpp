@@ -17,6 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include "containers/container_utils.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
@@ -145,6 +146,16 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
                              ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
                              range, string_VkFormat(format), texel_block_size, texels_per_block, texels,
                              phys_dev_props.limits.maxTexelBufferElements);
+        }
+    }
+
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.ycbcr2plane444Formats) {
+        if (IsValueIn(pCreateInfo->format,
+                      {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
+                       VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
+            skip |= LogError("VUID-VkBufferViewCreateInfo-None-12278", device,
+                             context.error_obj.location.dot(Field::pCreateInfo).dot(Field::format), "is %s.",
+                             string_VkFormat(pCreateInfo->format));
         }
     }
 
