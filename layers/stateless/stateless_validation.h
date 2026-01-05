@@ -427,6 +427,15 @@ class Instance : public vvl::base::Instance {
                                                                    VkSurfaceFormat2KHR *pSurfaceFormats,
                                                                    const Context &context) const;
 
+    bool ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                    VkFormatProperties2 *pFormatProperties, const Context &context) const;
+    bool manual_PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                 VkFormatProperties *pFormatProperties,
+                                                                 const Context &context) const;
+    bool manual_PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                  VkFormatProperties2 *pFormatProperties,
+                                                                  const Context &context) const;
+
 #include "generated/stateless_instance_methods.h"
 };
 
