@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -790,7 +790,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -799,11 +799,12 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
         }
     )glsl";
 
-    const auto set_info = [&](CreateComputePipelineHelper& helper) {
-        helper.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-        helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
-    };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07990");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
@@ -862,6 +863,28 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
         helper.dsl_bindings_[0] = {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
     };
     CreatePipelineHelper::OneshotTest(*this, set_sampler, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
+}
+
+TEST_F(NegativePipelineLayout, DescriptorTypeMismatchBufferBlock) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11352");
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x=1) in;
+        layout(set=0, binding=0) buffer block { vec4 x; };
+        void main() {
+           x.x = 1.0f;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    // 1.0 uses BufferBlock still
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07990");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {

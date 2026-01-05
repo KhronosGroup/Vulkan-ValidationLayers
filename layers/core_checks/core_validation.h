@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (C) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2025 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2025 RasterGrid Kft.
@@ -955,9 +955,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const Location& create_info_loc) const;
     bool ValidateShaderInterfaceVariableDSL(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const ShaderStageState& stage_state, const spirv::ResourceInterfaceVariable& variable,
-                                            vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
-    bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
-                                         vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
+                                            const Location& loc) const;
+    bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                         const ShaderStageState& stage_state, const spirv::ResourceInterfaceVariable& variable,
+                                         const Location& loc) const;
     bool ValidateShaderYcbcrSampler(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                     const vvl::DescriptorSetLayout& descriptor_set_layout,
                                     const VkDescriptorSetLayoutBinding& binding, const spirv::ResourceInterfaceVariable& variable,
