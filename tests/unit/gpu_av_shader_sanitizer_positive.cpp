@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -249,6 +249,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
             vec4 b = textureGather(tex, vec2(0), 0);
             c = mod(4.0, c);
             float d = pow(c + 50.0f, 1.0f);
+            float e = atan(c, 1.0f);
         }
     )glsl";
 
@@ -319,6 +320,66 @@ TEST_F(PositiveGpuAVShaderSanitizer, PowVectorMix) {
             x += vec3(1.0f, 0.0f, 1.0f);
             y += vec3(0.0f, 1.0f, 0.0f);
             result = pow(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, Atan2) {
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+            vec3 resultVec;
+        };
+
+        void main() {
+            result = atan(x + 1.0f, y + 1.0f);
+
+            vec3 a = vec3(x) + vec3(1.0f);
+            vec3 b = vec3(y) + vec3(1.0f);
+            resultVec = atan(a, b);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, Atan2Constant) {
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+            vec3 resultVec;
+        };
+
+        void main() {
+            result = atan(0.0f, 1.0f);
+            resultVec = atan(vec3(1.0f), vec3(0.0f));
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, Atan2VectorMix) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec3 x;
+            vec3 y;
+            vec3 result;
+        };
+
+        void main() {
+            x += vec3(1.0f, 0.0f, 1.0f);
+            y += vec3(0.0f, 1.0f, 0.0f);
+            result = atan(x, y);
         }
     )glsl";
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ class SanitizerPass : public Pass {
 
     uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t PowCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    uint32_t Atan2Check(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(uint32_t sub_code);

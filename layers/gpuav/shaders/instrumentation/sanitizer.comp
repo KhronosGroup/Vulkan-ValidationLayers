@@ -1,6 +1,6 @@
-// Copyright (c) 2025 The Khronos Group Inc.
-// Copyright (c) 2025 Valve Corporation
-// Copyright (c) 2025 LunarG, Inc.
+// Copyright (c) 2025-2026 The Khronos Group Inc.
+// Copyright (c) 2025-2026 Valve Corporation
+// Copyright (c) 2025-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,20 @@ bool inst_sanitizer_pow(const bool is_invalid, const uint inst_offset, const uin
                         vector_size,
                         x,
                         y);
+        return false;
+    }
+    return true;
+}
+
+bool inst_sanitizer_atan2(const bool is_invalid, const uint inst_offset)
+{
+    if (is_invalid) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerAtan2 << kErrorSubCodeShift),
+                        0,
+                        0,
+                        0);
         return false;
     }
     return true;

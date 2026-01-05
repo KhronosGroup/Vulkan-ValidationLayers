@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,11 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                         strm << "X == " << x_value << ", Y == " << y_value;
                     }
                     out_vuid_msg = "SPIRV-Sanitizer-Pow";
+                } break;
+                case kErrorSubCodeSanitizerAtan2: {
+                    // Atan is only valid with a scalar/vector of 16/32-bit float
+                    strm << "Atan2 (from GLSL.std.450) has an undefined result because both values used are zero.";
+                    out_vuid_msg = "SPIRV-Sanitizer-Atan2";
                 } break;
                 default:
                     error_found = false;

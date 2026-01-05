@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -599,4 +599,74 @@ TEST_F(NegativeGpuAVShaderSanitizer, PowVectorNegative) {
     )glsl";
 
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Pow");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, Atan2Scalar) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+        };
+
+        void main() {
+            result = atan(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Atan2");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, Atan2ScalarConstant) {
+    const char* cs_source = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %var Binding 0
+               OpDecorate %var DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+    %float_0 = OpConstant %float 0
+       %SSBO = OpTypeStruct %float
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+        %var = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %16 = OpExtInst %float %2 Atan2 %float_0 %float_0
+         %24 = OpAccessChain %_ptr_StorageBuffer_float %var %int_0
+               OpStore %24 %16
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "SPIRV-Sanitizer-Atan2");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, Atan2Vector) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec3 x;
+            vec3 y;
+            vec3 result;
+        };
+
+        void main() {
+            x.x = 3.0f; // now vec3(3, 0, 0)
+            y.y = 1.0f; // now vec3(0, 1, 0)
+            result = atan(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Atan2");
 }

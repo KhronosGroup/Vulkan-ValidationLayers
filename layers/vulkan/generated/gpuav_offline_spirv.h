@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
+ * Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ extern const uint32_t instrumentation_sanitizer_comp[];
 extern const uint32_t instrumentation_sanitizer_comp_function_0_offset;
 extern const uint32_t instrumentation_sanitizer_comp_function_1_offset;
 extern const uint32_t instrumentation_sanitizer_comp_function_2_offset;
+extern const uint32_t instrumentation_sanitizer_comp_function_3_offset;
 
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_size;
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert[];
