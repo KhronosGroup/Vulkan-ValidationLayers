@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -939,14 +939,20 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                                                  info.scratchData.deviceAddress + scratch_size);
             const char *scratch_address_range_vuid =
                 info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
-                    ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671",
-                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03671")
-                    : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672",
-                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03672");
+                    ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12258",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12258")
+                    : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12259",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12259");
+
+            const char *scratch_buffer_has_storage_flag_vuid =
+                info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
+                    ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12260",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12260")
+                    : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12261",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12261");
 
             BufferAddressValidation<2> buffer_address_validator = {
-                {{{pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-                             "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
+                {{{scratch_buffer_has_storage_flag_vuid,
                    [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
                    []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
 

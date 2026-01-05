@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -23,6 +23,36 @@
 #include "core_validation.h"
 #include "chassis/chassis_modification_state.h"
 #include "state_tracker/pipeline_state.h"
+
+bool CoreChecks::GroupHasValidIndex(const vvl::Pipeline &pipeline, uint32_t group, uint32_t stage) const {
+    if (group == VK_SHADER_UNUSED_KHR) {
+        return true;
+    }
+
+    const auto num_stages = static_cast<uint32_t>(pipeline.shader_stages_ci.size());
+    if (group < num_stages) {
+        return (pipeline.shader_stages_ci[group].stage & stage) != 0;
+    }
+    group -= num_stages;
+
+    // Search libraries
+    if (pipeline.ray_tracing_library_ci) {
+        for (uint32_t i = 0; i < pipeline.ray_tracing_library_ci->libraryCount; ++i) {
+            auto library_pipeline = Get<vvl::Pipeline>(pipeline.ray_tracing_library_ci->pLibraries[i]);
+            if (!library_pipeline) {
+                continue;
+            }
+            const uint32_t stage_count = static_cast<uint32_t>(library_pipeline->shader_stages_ci.size());
+            if (group < stage_count) {
+                return (library_pipeline->shader_stages_ci[group].stage & stage) != 0;
+            }
+            group -= stage_count;
+        }
+    }
+
+    // group index too large
+    return false;
+}
 
 bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                                             const vku::safe_VkRayTracingPipelineCreateInfoCommon &create_info,

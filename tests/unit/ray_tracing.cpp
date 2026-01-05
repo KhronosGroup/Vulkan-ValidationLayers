@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -1847,7 +1847,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, scratch_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
         blas.SetScratchBuffer(std::move(bad_scratch));
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12260");
         blas.BuildCmdBuffer(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
@@ -3418,7 +3418,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpBuild) {
 
     m_command_buffer.Begin();
     blas.SetScratchBuffer(scratch_buffer);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12258");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3461,7 +3461,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpUpdate) {
     blas.SetScratchBuffer(scratch_buffer);
     blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     blas.SetSrcAS(blas.GetDstAS());
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12259");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3601,7 +3601,7 @@ TEST_F(NegativeRayTracing, HostAccelerationStructureBuildNullPointers) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
         blas.SetEnableScratchBuild(false);
         blas.SetHostScratchBuffer(nullptr);
-        m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725");
+        m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-12244");
         blas.BuildHost();
         m_errorMonitor->VerifyFound();
     }
@@ -3612,7 +3612,7 @@ TEST_F(NegativeRayTracing, HostAccelerationStructureBuildNullPointers) {
         blas.SetEnableScratchBuild(false);
         blas.SetHostScratchBuffer(nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-04630");  // Null src accel struct
-        m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03726");
+        m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-12245");
         blas.BuildHost();
         m_errorMonitor->VerifyFound();
     }

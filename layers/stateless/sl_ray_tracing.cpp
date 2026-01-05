@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1559,13 +1559,13 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
         if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Host, device, info, ppBuildRangeInfos[info_i]);
             if (scratch_size > 0 && !info.scratchData.hostAddress) {
-                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725", device,
+                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-12244", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
         } else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Host, device, info, ppBuildRangeInfos[info_i]);
             if (scratch_size > 0 && !info.scratchData.hostAddress) {
-                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03726", device,
+                skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-12245", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
 
