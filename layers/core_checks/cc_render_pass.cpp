@@ -1205,6 +1205,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         }
     }
 
+    skip |= ValidateFrameBufferTileMemory(framebuffer_state->create_info, begin_info_loc, *render_pass_state,
+                                          *render_pass_state->create_info.ptr());
+
     if (enabled_features.externalFormatResolve && !device_state->android_external_format_resolve_null_color_attachment_prop) {
         for (const auto [i, subpass] : vvl::enumerate(render_pass_create_info->pSubpasses, render_pass_create_info->subpassCount)) {
             if (!subpass.pResolveAttachments || !subpass.pColorAttachments) {
@@ -3074,6 +3077,17 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                          string_VkResolveModeFlagBits(attachment_info.resolveMode));
     }
 
+    if (resolve_view_state && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
+        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+        for (const auto &bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
+            if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
+                                 " is bound to a VkDeviceMemory object allocated from a VkMemoryHeap with the"
+                                 " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property.");
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -4842,6 +4856,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         skip |= ValidateFrameBufferSubpasses(*pCreateInfo, create_info_loc, *rpci);
         skip |= ValidateFrameBufferAttachments(*pCreateInfo, create_info_loc, *rp_state, *rpci);
+        skip |= ValidateFrameBufferTileMemory(*pCreateInfo, create_info_loc, *rp_state, *rpci);
     } else if (framebuffer_attachments_create_info) {
         skip |= ValidateFrameBufferAttachmentsImageless(*pCreateInfo, create_info_loc, *rpci, *framebuffer_attachments_create_info);
     }
@@ -5188,6 +5203,51 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &create_info, const Location &create_info_loc,
+                                               const vvl::RenderPass &rp_state, const VkRenderPassCreateInfo2 &rpci) const {
+    bool skip = false;
+
+    const VkImageView *image_views = create_info.pAttachments;
+    vvl::unordered_set<uint32_t> resolve_attachment_indexes;
+
+    for (const auto [i, subpass] : vvl::enumerate(rpci.pSubpasses, rpci.subpassCount)) {
+        if (!subpass.pResolveAttachments || !subpass.pColorAttachments) {
+            continue;
+        }
+
+        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+            if (subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) {
+                resolve_attachment_indexes.insert(subpass.pResolveAttachments[j].attachment);
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
+        const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
+        auto image_view_state = Get<vvl::ImageView>(image_views[i]);
+        LogObjectList objlist(create_info.renderPass, image_views[i]);
+        ASSERT_AND_CONTINUE(image_view_state);
+
+        if (resolve_attachment_indexes.find(i) != resolve_attachment_indexes.end()) {
+            auto image = image_view_state->image_state;
+            auto bound_memory_states = image->GetBoundMemoryStates();
+
+            for (const auto &bound_memory : bound_memory_states) {
+                if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                    const char *vuid = rp_state.use_render_pass_2 ? "VUID-VkSubpassDescription2-attachment-10755"
+                                                                  : "VUID-VkSubpassDescription-attachment-10755";
+                    skip |= LogError(vuid, objlist, attachment_loc,
+                                     "imageView of Resolve Attachment with index %" PRIu32
+                                     " was allocated from a VkMemoryHeap"
+                                     " with the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property",
+                                     i);
+                }
+            }
+        }
+    }
     return skip;
 }
 

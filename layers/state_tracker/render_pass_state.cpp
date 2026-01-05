@@ -280,9 +280,10 @@ static void InitRenderPassState(vvl::RenderPass &render_pass) {
 namespace vvl {
 
 // vkCreateRenderPass2
-RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const* pCreateInfo)
+RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(pCreateInfo),
+      use_render_pass_2(true),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(true),
@@ -297,9 +298,10 @@ static vku::safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCre
 }
 
 // vkCreateRenderPass
-RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const* pCreateInfo)
+RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(ConvertCreateInfo(*pCreateInfo)),
+      use_render_pass_2(false),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(true),
@@ -312,8 +314,9 @@ const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {
     VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, nullptr, 0, 0, nullptr, VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
 
 // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
-RenderPass::RenderPass(VkPipelineRenderingCreateInfo const* pPipelineRenderingCreateInfo, bool rasterization_enabled)
+RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+      use_render_pass_2(false),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(rasterization_enabled),
@@ -396,8 +399,9 @@ const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(uint
 }
 
 // vkCmdBeginRendering
-RenderPass::RenderPass(VkRenderingInfo const* pRenderingInfo, bool rasterization_enabled)
+RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+      use_render_pass_2(false),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(rasterization_enabled),
@@ -407,8 +411,9 @@ RenderPass::RenderPass(VkRenderingInfo const* pRenderingInfo, bool rasterization
           IsDynamicRenderingMultiviewEnabled((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr)) {}
 
 // vkBeginCommandBuffer (dynamic rendering in secondary command buffer)
-RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const* pInheritanceRenderingInfo)
+RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
+      use_render_pass_2(false),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(true),
       rasterization_enabled(true),
