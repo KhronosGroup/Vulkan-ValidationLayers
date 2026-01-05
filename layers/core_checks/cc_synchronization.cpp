@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -1245,14 +1245,14 @@ bool CoreChecks::ValidatePipelineStage(const LogObjectList &objlist, const Locat
 }
 
 bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location &access_mask_loc, const Location &stage_mask_loc,
-                                    VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask,
-                                    VkPipelineStageFlags2KHR stage_mask) const {
+                                    VkQueueFlags queue_flags, VkAccessFlags2 access_mask, VkPipelineStageFlags2 stage_mask) const {
     bool skip = false;
 
-    const auto expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
+    const VkPipelineStageFlags2 expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
 
     if (!enabled_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
-        const auto illegal_pipeline_stages = AllVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+        const VkPipelineStageFlags2 illegal_pipeline_stages =
+            AllVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
             const auto &vuid = vvl::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, extensions);
@@ -1263,20 +1263,31 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
 
     // or if only generic memory accesses are specified (or we got a 0 mask)
     access_mask &= ~(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT);
-    if (access_mask == 0) return skip;
+    if (access_mask == 0) {
+        return skip;
+    }
 
-    const auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_pipeline_stages);
-    const auto bad_accesses = (access_mask & ~valid_accesses);
+    const VkAccessFlags2 valid_accesses = sync_utils::CompatibleAccessMask(expanded_pipeline_stages);
+    const VkAccessFlags2 bad_accesses = (access_mask & ~valid_accesses);
     if (bad_accesses == 0) {
         return skip;
     }
 
     for (size_t i = 0; i < sizeof(bad_accesses) * 8; i++) {
-        VkAccessFlags2KHR bit = (1ULL << i);
+        VkAccessFlags2 bit = (1ULL << i);
         if (bad_accesses & bit) {
             const auto &vuid = vvl::GetBadAccessFlagsVUID(access_mask_loc, bit);
-            skip |= LogError(vuid, objlist, access_mask_loc, "(%s) is not supported by stage mask (%s).",
-                             sync_utils::StringAccessFlags(bit).c_str(), sync_utils::StringPipelineStageFlags(stage_mask).c_str());
+
+            std::ostringstream ss;
+            ss << "(" << sync_utils::StringAccessFlags(bit) << ") is not supported by stage mask ("
+               << sync_utils::StringPipelineStageFlags(stage_mask) << ").";
+            if (stage_mask == VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+                ss << " The expansion of " << sync_utils::StringPipelineStageFlags(stage_mask) << " for "
+                   << string_VkQueueFlags(queue_flags) << " does not include any stages that support "
+                   << sync_utils::StringAccessFlags(bit)
+                   << ".\n\nThe expanded stages are: " << string_VkPipelineStageFlags2(expanded_pipeline_stages);
+            }
+            skip |= LogError(vuid, objlist, access_mask_loc, "%s", ss.str().c_str());
         }
     }
 

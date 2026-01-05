@@ -378,7 +378,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const VkImageMemoryBarrier& image_barrier,
                                                             const Location& image_loc) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
-                            VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
+                            VkQueueFlags queue_flags, VkAccessFlags2 access_mask, VkPipelineStageFlags2 stage_mask) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
                                const SyncMemoryBarrier& barrier,
                                OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none,

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,15 +107,10 @@ VkAccessFlags2 DisabledAccesses(const DeviceExtensions &device_extensions) {
 // print the old strings. There are common code paths where we need
 // to print masks as strings and this makes the output less confusing
 // for people not using synchronization2.
-//
-// TODO 2025: It is also confusing for people using sync2 that some masks
-// printed as STAGE_and some as STAGE_2_ for the same app. The suggestion
-// to rework this so the function itself prefers a single style - sync2, so
-// it covers all cases, but maybe introduce overload or additional parameter
-// so the caller can specify which version to use (if we really need this).
-std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask) {
-    VkPipelineStageFlags sync1_mask = static_cast<VkPipelineStageFlags>(mask & AllVkPipelineStageFlagBits);
-    if (sync1_mask) {
+std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask, bool sync1) {
+    if (sync1) {
+        VkPipelineStageFlags sync1_mask = static_cast<VkPipelineStageFlags>(mask & AllVkPipelineStageFlagBits);
+        assert(sync1_mask == mask);
         return string_VkPipelineStageFlags(sync1_mask);
     }
     return string_VkPipelineStageFlags2(mask);
@@ -181,9 +176,10 @@ VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
     return result;
 }
 
-std::string StringAccessFlags(VkAccessFlags2 mask) {
-    VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);
-    if (sync1_mask) {
+std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1) {
+    if (sync1) {
+        VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);
+        assert(sync1_mask == mask);
         return string_VkAccessFlags(sync1_mask);
     }
     return string_VkAccessFlags2(mask);
