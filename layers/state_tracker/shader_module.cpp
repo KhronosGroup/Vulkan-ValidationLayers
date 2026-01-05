@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2021-2025 The Khronos Group Inc.
+﻿/* Copyright (c) 2021-2026 The Khronos Group Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1726,25 +1726,24 @@ bool Module::GetInt32IfConstant(const spirv::Instruction& insn, uint32_t* value)
 }
 
 // Returns the number of Location slots used for a given ID reference to a OpType*
-uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
-    const Instruction* insn = FindDef(type);
-
+// More info found at https://docs.vulkan.org/guide/latest/location_component_interface.html
+uint32_t Module::GetLocationsConsumedByType(const Instruction* insn) const {
     switch (insn->Opcode()) {
         case spv::OpTypePointer:
             // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
             // pointers around.
-            return GetLocationsConsumedByType(insn->Word(3));
+            return GetLocationsConsumedByType(FindDef(insn->Word(3)));
         case spv::OpTypeArray: {
             // Spec: "If an array of size n and each element takes m locations,
             // it will be assigned m × n consecutive locations starting with the location specified"
-            const uint32_t locations = GetLocationsConsumedByType(insn->Word(2));
+            const uint32_t locations = GetLocationsConsumedByType(FindDef(insn->Word(2)));
             const uint32_t array_size = GetConstantValueById(insn->Word(3));
             return locations * array_size;
         }
         case spv::OpTypeMatrix: {
             // Spec: "if n × m matrix, the number of locations assigned for each matrix will be the same as for an n-element array
             // of m-component vectors"
-            const uint32_t column_type = insn->Word(2);
+            const Instruction* column_type = FindDef(insn->Word(2));
             const uint32_t column_count = insn->Word(3);
             return column_count * GetLocationsConsumedByType(column_type);
         }
@@ -1761,7 +1760,7 @@ uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
             uint32_t sum = 0;
             // first 2 words of struct are not the elements to check
             for (uint32_t i = 2; i < insn->Length(); i++) {
-                sum += GetLocationsConsumedByType(insn->Word(i));
+                sum += GetLocationsConsumedByType(FindDef(insn->Word(i)));
             }
             return sum;
         }
@@ -1772,20 +1771,19 @@ uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
 }
 
 // Returns the number of Components slots used for a given ID reference to a OpType*
-uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
-    const Instruction* insn = FindDef(type);
-
+// More info found at https://docs.vulkan.org/guide/latest/location_component_interface.html
+uint32_t Module::GetComponentsConsumedByType(const Instruction* insn) const {
     switch (insn->Opcode()) {
         case spv::OpTypePointer:
             // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
             // pointers around.
-            return GetComponentsConsumedByType(insn->Word(3));
+            return GetComponentsConsumedByType(FindDef(insn->Word(3)));
         case spv::OpTypeArray:
             // Skip array as each array element is a whole new Location and we care only about the base type
             // ex. vec3[5] will only return 3
-            return GetComponentsConsumedByType(insn->Word(2));
+            return GetComponentsConsumedByType(FindDef(insn->Word(2)));
         case spv::OpTypeMatrix: {
-            const uint32_t column_type = insn->Word(2);
+            const Instruction* column_type = FindDef(insn->Word(2));
             const uint32_t column_count = insn->Word(3);
             return column_count * GetComponentsConsumedByType(column_type);
         }
@@ -1799,7 +1797,7 @@ uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
             uint32_t sum = 0;
             // first 2 words of struct are not the elements to check
             for (uint32_t i = 2; i < insn->Length(); i++) {
-                sum += GetComponentsConsumedByType(insn->Word(i));
+                sum += GetComponentsConsumedByType(FindDef(insn->Word(i)));
             }
             return sum;
         }
@@ -2045,17 +2043,30 @@ static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_
         }
 
         const uint32_t member_id = member.id;
-        const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
-        const uint32_t locations = module_state.GetLocationsConsumedByType(member_id);
+        const Instruction* member_type = module_state.FindDef(member_id);
+        const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
+        const uint32_t locations = module_state.GetLocationsConsumedByType(member_type);
+
+        // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
+        uint32_t vector_components = 0;
+        if (member_type->Opcode() == spv::OpTypeMatrix) {
+            const Instruction* column_type = module_state.FindDef(member_type->Word(2));
+            vector_components = module_state.GetComponentsConsumedByType(column_type);
+        }
 
         // Info needed to test type matching later
-        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
         const uint32_t numerical_type_opcode = numerical_type->Opcode();
         const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
         for (uint32_t j = 0; j < locations; j++) {
+            uint32_t matrix_offset = 0;
             for (uint32_t k = 0; k < components; k++) {
-                slots.emplace_back(starting_location + locations_added, k, numerical_type_opcode, numerical_type_width);
+                if (vector_components != 0 && j != 0 && j % vector_components == 0) {
+                    matrix_offset += (4 - vector_components);  // skip to next Location
+                }
+                slots.emplace_back(starting_location + locations_added, k + matrix_offset, numerical_type_opcode,
+                                   numerical_type_width);
             }
             locations_added++;
         }
@@ -2085,10 +2096,18 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
             uint32_t base_location = variable.decorations.location;
             for (const auto& members : variable.type_struct_info->members) {
                 const uint32_t member_id = members.id;
-                const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+                const Instruction* member_type = module_state.FindDef(member_id);
+                const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
+
+                // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
+                uint32_t vector_components = 0;
+                if (member_type->Opcode() == spv::OpTypeMatrix) {
+                    const Instruction* column_type = module_state.FindDef(member_type->Word(2));
+                    vector_components = module_state.GetComponentsConsumedByType(column_type);
+                }
 
                 // Info needed to test type matching later
-                const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
                 ASSERT_AND_CONTINUE(numerical_type);
 
                 const uint32_t numerical_type_opcode = numerical_type->Opcode();
@@ -2099,8 +2118,12 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                 }
                 const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
+                uint32_t matrix_offset = 0;
                 for (uint32_t j = 0; j < components; j++) {
-                    slots.emplace_back(base_location, j, numerical_type_opcode, numerical_type_width);
+                    if (vector_components != 0 && j != 0 && j % vector_components == 0) {
+                        matrix_offset += (4 - vector_components);  // skip to next Location
+                    }
+                    slots.emplace_back(base_location, j + matrix_offset, numerical_type_opcode, numerical_type_width);
                 }
                 base_location++;  // If using, each members starts a new Location
             }
@@ -2121,15 +2144,28 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                         location += GetStructInterfaceSlots(module_state, member.type_struct_info, slots, location);
                     }
                 } else {
-                    const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+                    const Instruction* member_type = module_state.FindDef(member_id);
+                    const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
+
+                    // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
+                    uint32_t vector_components = 0;
+                    if (member_type->Opcode() == spv::OpTypeMatrix) {
+                        const Instruction* column_type = module_state.FindDef(member_type->Word(2));
+                        vector_components = module_state.GetComponentsConsumedByType(column_type);
+                    }
 
                     // Info needed to test type matching later
-                    const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                    const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
                     const uint32_t numerical_type_opcode = numerical_type->Opcode();
                     const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
+                    uint32_t matrix_offset = 0;
                     for (uint32_t j = 0; j < components; j++) {
-                        slots.emplace_back(location, starting_component + j, numerical_type_opcode, numerical_type_width);
+                        if (vector_components != 0 && j != 0 && j % vector_components == 0) {
+                            matrix_offset += (4 - vector_components);  // skip to next Location
+                        }
+                        slots.emplace_back(location, starting_component + j + matrix_offset, numerical_type_opcode,
+                                           numerical_type_width);
                     }
                 }
             }
@@ -2138,22 +2174,36 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
         uint32_t locations = 0;
         // Will have array peeled off already
         const uint32_t type_id = variable.base_type.ResultId();
+        const Instruction* type_insn = module_state.FindDef(type_id);
 
-        locations = module_state.GetLocationsConsumedByType(type_id);
-        const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
+        locations = module_state.GetLocationsConsumedByType(type_insn);
+        const uint32_t components = module_state.GetComponentsConsumedByType(type_insn);
+
+        // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
+        uint32_t vector_components = 0;
+        if (type_insn->Opcode() == spv::OpTypeMatrix) {
+            const Instruction* column_type = module_state.FindDef(type_insn->Word(2));
+            vector_components = module_state.GetComponentsConsumedByType(column_type);
+        }
 
         // Info needed to test type matching later
-        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(type_id);
+        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(type_insn);
         const uint32_t numerical_type_opcode = numerical_type->Opcode();
         const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
         const uint32_t starting_location = variable.decorations.location;
         const uint32_t starting_component = variable.decorations.component;
         for (uint32_t array_index = 0; array_index < variable.array_size; array_index++) {
+            // Matrix don't consume the entire location
+            uint32_t matrix_offset = 0;
             // offet into array if there is one
             const uint32_t location = starting_location + (locations * array_index);
             for (uint32_t component = 0; component < components; component++) {
-                slots.emplace_back(location, component + starting_component, numerical_type_opcode, numerical_type_width);
+                if (vector_components != 0 && component != 0 && component % vector_components == 0) {
+                    matrix_offset += (4 - vector_components);  // skip to next Location
+                }
+                slots.emplace_back(location, component + starting_component + matrix_offset, numerical_type_opcode,
+                                   numerical_type_width);
             }
         }
     }
@@ -2185,11 +2235,13 @@ uint32_t StageInterfaceVariable::GetBuiltInComponents(const StageInterfaceVariab
     }
     if (variable.type_struct_info) {
         for (const auto& members : variable.type_struct_info->members) {
-            count += module_state.GetComponentsConsumedByType(members.id);
+            const Instruction* member_type = module_state.FindDef(members.id);
+            count += module_state.GetComponentsConsumedByType(member_type);
         }
     } else {
         const uint32_t base_type_id = variable.base_type.ResultId();
-        count += module_state.GetComponentsConsumedByType(base_type_id);
+        const Instruction* base_type = module_state.FindDef(base_type_id);
+        count += module_state.GetComponentsConsumedByType(base_type);
     }
     return count;
 }
@@ -2592,8 +2644,7 @@ uint32_t Module::GetBaseType(const Instruction* insn) const {
     return 0;
 }
 
-const Instruction* Module::GetBaseTypeInstruction(uint32_t type) const {
-    const Instruction* insn = FindDef(type);
+const Instruction* Module::GetBaseTypeInstruction(const Instruction* insn) const {
     const uint32_t base_insn_id = GetBaseType(insn);
     // Will return end() if an invalid/unknown base_insn_id is returned
     return FindDef(base_insn_id);

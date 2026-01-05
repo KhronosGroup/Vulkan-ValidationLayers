@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1400,4 +1400,66 @@ TEST_F(PositiveVertexInput, NoInputLocation) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 1);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveVertexInput, MatrixComponentNotConsumed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    m_errorMonitor->ExpectSuccess(kPerformanceWarningBit | kWarningBit | kErrorBit);
+
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    VkVertexInputAttributeDescription attributes[4] = {{0, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {1, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {2, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {3, 0, VK_FORMAT_R8G8B8_UNORM, 0}};
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location = 0) in mat4x3 a;
+        void main(){
+           gl_Position = vec4(a[0], 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveVertexInput, MatrixArrayComponentNotConsumed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11355");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    m_errorMonitor->ExpectSuccess(kPerformanceWarningBit | kWarningBit | kErrorBit);
+
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    VkVertexInputAttributeDescription attributes[4] = {{0, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {1, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {2, 0, VK_FORMAT_R8G8B8_UNORM, 0},
+                                                       {3, 0, VK_FORMAT_R8G8B8_UNORM, 0}};
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location = 0) in mat2x3 a[2];
+        void main(){
+           gl_Position = vec4(a[0][0], 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
 }
