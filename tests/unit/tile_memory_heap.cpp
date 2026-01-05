@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ TEST_F(NegativeTileMemoryHeap, AllocateMemory) {
         GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
     }
 
-    m_errorMonitor->SetDesiredError("VUID-VkTileMemoryBindInfoQCOM-memoryTypeIndex-10976");
+    m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-tileMemoryHeap-10976");
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 }
