@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2138,6 +2138,65 @@ TEST_F(NegativeSyncObject, BarrierAccessSync1) {
 
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync1AllCommands) {
+    TEST_DESCRIPTION("Test access flag is not supported by ALL_COMMANDS on the given queue");
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    transfer_cb.Begin();
+    // ALL_COMMANDS on transfer queue does not include operations on stages that allow SHADER_READ access
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02820");
+    vk::CmdPipelineBarrier(transfer_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &barrier);
+    m_errorMonitor->VerifyFound();
+    transfer_cb.End();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2AllCommands) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11358
+    TEST_DESCRIPTION("Test access flag is not supported by ALL_COMMANDS on the given queue");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool transfer_pool(*m_device, transfer_family.value());
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    transfer_cb.Begin();
+    // ALL_COMMANDS on transfer queue does not include operations on stages that allow SHADER_READ access
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dstAccessMask-07454");
+    transfer_cb.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+    transfer_cb.End();
 }
 
 TEST_F(NegativeSyncObject, BarrierAccessSync2RtxMaintenance1) {

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -271,7 +271,7 @@ namespace sync_utils {
 VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 VkAccessFlags2 DisabledAccesses(const DeviceExtensions& device_extensions);
 
-std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask);
+std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask, bool sync1 = false);
 
 // Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of ALL_COMMANDS_BIT
 // and ALL_GRAPHICS_BIT will be limited to what is supported.
@@ -280,7 +280,7 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
 
 VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask);
 
-std::string StringAccessFlags(VkAccessFlags2 mask);
+std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1 = false);
 
 ExecScopes GetExecScopes(const VkDependencyInfo& dep_info);
 }  // namespace sync_utils
