@@ -1282,8 +1282,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         skip |= dev_proxy.ValidateProtectedTensor(cb_state, *tensor_state, loc.Get(), vuids->unprotected_command_buffer_02707);
     }
 
-    // TODO: Waiting on spec clarification for vkCmdDispatchDataGraphARM:
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4505
+    // These VUs are only for tensors used in _shaders_. For use in _datagraphs_, VU 9923 applies.
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4482#note_564658
     if (loc.Get().function != Func::vkCmdDispatchDataGraphARM) {
         if ((tensor_state->create_info.pDescription->usage & VK_TENSOR_USAGE_SHADER_BIT_ARM) == 0) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());

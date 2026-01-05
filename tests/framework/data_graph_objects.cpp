@@ -267,7 +267,7 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
                    %i32_4 = OpConstant %i32 4
                %i32_arr_4 = OpTypeArray %i32 %i32_4
             %tensor_shape = OpConstantComposite %i32_arr_4 %i32_1 %i32_4 %i32_4 %i32_2
-                  %tensor = OpTypeTensorARM %i8 %i32_4 %tensor_shape
+                  %tensor = OpTypeTensorARM %i32 %i32_4 %tensor_shape
 )" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor" : "%tensor_array = OpTypeArray %tensor %i32_2") << R"(
         %ptr_tensor_array = OpTypePointer UniformConstant %tensor_array
               %ptr_tensor = OpTypePointer UniformConstant %tensor
@@ -325,7 +325,7 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
         resources_[0] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[0]->Description(), 0, 0, 0};
         resources_[1] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[1]->Description(), 0, 0, 1};
         // 1 output tensor
-        resources_[2] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[2]->Description(), 1, 0, 0};
+        resources_[2] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[2]->Description(), 0, 1, 0};
 
         // binding 0: 2 x inputs; binding 1: 1 x output
         descriptor_set_layout_bindings_.resize(2);

@@ -384,3 +384,11 @@
     }
     return "event was set with " + set.str() + " and is being waited on with " + wait.str();
 }
+
+[[maybe_unused]] static std::string string_VkDataGraphPipelineResourceInfoARM(VkDataGraphPipelineResourceInfoARM resource) {
+    std::ostringstream ss;
+    ss << "[descriptorSet " << resource.descriptorSet << ", ";
+    ss << "binding " << resource.binding << ", ";
+    ss << "arrayElement " << resource.arrayElement << "]";
+    return ss.str();
+}

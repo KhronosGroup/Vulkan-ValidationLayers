@@ -968,6 +968,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                          const ShaderStageState& stage_state, const spirv::ResourceInterfaceVariable& variable,
                                          const Location& loc) const;
+    bool ValidateDataGraphResourceVariables(const spirv::Module& module_spirv, const spirv::EntryPoint& entry_point, const ShaderStageState& stage_state, const VkDataGraphPipelineCreateInfoARM& create_info, const Location& create_info_loc, const Location& module_loc) const;
+    bool ValidateDataGraphConstants(const spirv::Module& module_spirv, const spirv::EntryPoint& entry_point, const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci, const Location& dg_shader_ci_loc, const Location& module_loc) const;
     bool ValidateShaderYcbcrSampler(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                     const vvl::DescriptorSetLayout& descriptor_set_layout,
                                     const VkDescriptorSetLayoutBinding& binding, const spirv::ResourceInterfaceVariable& variable,
