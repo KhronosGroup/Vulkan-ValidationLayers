@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -762,9 +762,9 @@ bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &
         }
 
         const VkDescriptorType descriptor_type = descriptor_writes.descriptorType;
-        if ((descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) || (descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
-            (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
-            (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+        if (IsValueIn(descriptor_type,
+                      {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
             if (descriptor_writes.pImageInfo != nullptr &&  descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
                 for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                     skip |= context.ValidateRangedEnum(writes_loc.dot(Field::pImageInfo, descriptor_index).dot(Field::imageLayout),
