@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 LunarG, Inc.
- * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -580,7 +580,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceTensorPropertiesARM-sType-sType",
     "VUID-VkPhysicalDeviceTileMemoryHeapPropertiesQCOM-sType-sType",
     "VUID-VkPhysicalDeviceTileShadingPropertiesQCOM-sType-sType",
-    "VUID-VkPhysicalDevicePresentationPropertiesOHOS-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
     "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"
