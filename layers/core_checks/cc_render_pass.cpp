@@ -1205,9 +1205,6 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         }
     }
 
-    skip |= ValidateFrameBufferTileMemory(framebuffer_state->create_info, begin_info_loc, *render_pass_state,
-                                          *render_pass_state->create_info.ptr());
-
     if (enabled_features.externalFormatResolve && !device_state->android_external_format_resolve_null_color_attachment_prop) {
         for (const auto [i, subpass] : vvl::enumerate(render_pass_create_info->pSubpasses, render_pass_create_info->subpassCount)) {
             if (!subpass.pResolveAttachments || !subpass.pColorAttachments) {
@@ -3078,12 +3075,14 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
     }
 
     if (resolve_view_state && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
-        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
         for (const auto &bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
             if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, bound_memory->VkHandle());
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
-                                 " is bound to a VkDeviceMemory object allocated from a VkMemoryHeap with the"
-                                 " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property.");
+                                 "was created with %s which is bound to %s created from a VkMemoryHeap with"
+                                 " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM",
+                                 FormatHandle(resolve_view_state->image_state->VkHandle()).c_str(),
+                                 FormatHandle(bound_memory->VkHandle()).c_str());
             }
         }
     }
@@ -5228,23 +5227,27 @@ bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &cr
     for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
         const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         auto image_view_state = Get<vvl::ImageView>(image_views[i]);
-        LogObjectList objlist(create_info.renderPass, image_views[i]);
         ASSERT_AND_CONTINUE(image_view_state);
 
-        if (resolve_attachment_indexes.find(i) != resolve_attachment_indexes.end()) {
-            auto image = image_view_state->image_state;
-            auto bound_memory_states = image->GetBoundMemoryStates();
+        if (resolve_attachment_indexes.find(i) == resolve_attachment_indexes.end()) {
+            continue;
+        }
 
-            for (const auto &bound_memory : bound_memory_states) {
-                if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
-                    const char *vuid = rp_state.use_render_pass_2 ? "VUID-VkSubpassDescription2-attachment-10755"
-                                                                  : "VUID-VkSubpassDescription-attachment-10755";
-                    skip |= LogError(vuid, objlist, attachment_loc,
-                                     "imageView of Resolve Attachment with index %" PRIu32
-                                     " was allocated from a VkMemoryHeap"
-                                     " with the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property",
-                                     i);
-                }
+        auto image = image_view_state->image_state;
+        auto bound_memory_states = image->GetBoundMemoryStates();
+
+        for (const auto &bound_memory : bound_memory_states) {
+            if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                // This VUID is being fixed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7950
+                const char *vuid = "VUID-VkSubpassDescription2-attachment-10755";
+                LogObjectList objlist(create_info.renderPass, image_views[i], bound_memory->VkHandle());
+                skip |=
+                    LogError(vuid, objlist, attachment_loc,
+                             "%s (corresponding to pResolveAttachment[%" PRIu32
+                             "]"
+                             " is bound to %s created from a VkMemoryHeap with"
+                             " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM.",
+                             FormatHandle(image_view_state->VkHandle()).c_str(), i, FormatHandle(bound_memory->VkHandle()).c_str());
             }
         }
     }

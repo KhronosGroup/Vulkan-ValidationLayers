@@ -283,7 +283,6 @@ namespace vvl {
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(pCreateInfo),
-      use_render_pass_2(true),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(true),
@@ -301,7 +300,6 @@ static vku::safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCre
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(ConvertCreateInfo(*pCreateInfo)),
-      use_render_pass_2(false),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(true),
@@ -316,7 +314,6 @@ const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {
 // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
 RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
-      use_render_pass_2(false),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(rasterization_enabled),
@@ -401,7 +398,6 @@ const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(uint
 // vkCmdBeginRendering
 RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
-      use_render_pass_2(false),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       rasterization_enabled(rasterization_enabled),
@@ -413,7 +409,6 @@ RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization
 // vkBeginCommandBuffer (dynamic rendering in secondary command buffer)
 RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
-      use_render_pass_2(false),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(true),
       rasterization_enabled(true),

@@ -77,7 +77,6 @@ class RenderPass : public StateObject {
     };
     const vku::safe_VkRenderPassCreateInfo2 create_info;
 
-    const bool use_render_pass_2;
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
     const bool rasterization_enabled;
