@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCodeSanitizerCount
     {"inst_sanitizer_divide_by_zero", instrumentation_sanitizer_comp_function_0_offset},
     {"inst_sanitizer_image_gather", instrumentation_sanitizer_comp_function_1_offset},
     {"inst_sanitizer_pow", instrumentation_sanitizer_comp_function_2_offset},
+    {"inst_sanitizer_atan2", instrumentation_sanitizer_comp_function_3_offset},
 };
 
 SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
@@ -120,6 +121,43 @@ uint32_t SanitizerPass::PowCheck(BasicBlock& block, InstructionIt* inst_it, cons
     return result_bool_id;
 }
 
+// Returns an ID of type OpTypeBool
+uint32_t SanitizerPass::Atan2Check(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+    const Type& bool_type = type_manager_.GetTypeBool();
+    const uint32_t vector_size = meta.result_type->VectorSize();
+
+    uint32_t bool_compare_type_id = 0;
+    uint32_t null_type_id = 0;
+    if (vector_size == 0) {
+        bool_compare_type_id = bool_type.Id();
+        null_type_id = type_manager_.GetConstantNull(*meta.result_type).Id();
+    } else {
+        bool_compare_type_id = type_manager_.GetTypeVector(bool_type, vector_size).Id();
+        null_type_id = type_manager_.GetConstantZeroVector(*meta.result_type).Id();
+    }
+
+    // Seems Atan flips the x/y order from other functions, doesn't really matter, but noting here
+    const uint32_t y_value_id = meta.target_instruction->Word(5);
+    const uint32_t x_value_id = meta.target_instruction->Word(6);
+
+    const uint32_t compare_y_id = module_.TakeNextId();
+    const uint32_t compare_x_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpFOrdEqual, {bool_compare_type_id, compare_y_id, y_value_id, null_type_id}, inst_it);
+    block.CreateInstruction(spv::OpFOrdEqual, {bool_compare_type_id, compare_x_id, x_value_id, null_type_id}, inst_it);
+    const uint32_t compare_and_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpLogicalAnd, {bool_compare_type_id, compare_and_id, compare_y_id, compare_x_id}, inst_it);
+
+    uint32_t result_bool_id = 0;
+    if (vector_size == 0) {
+        result_bool_id = compare_and_id;
+    } else {
+        result_bool_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpAny, {bool_type.Id(), result_bool_id, compare_and_id}, inst_it);
+    }
+
+    return result_bool_id;
+}
+
 uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId(meta.sub_code);
@@ -174,6 +212,11 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, is_invalid_id, inst_position_id, vector_size_id, x_value_id, y_value_id},
             inst_it);
+    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerAtan2) {
+        const uint32_t is_invalid_id = Atan2Check(block, inst_it, meta);
+        const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+        block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, is_invalid_id, inst_position_id},
+                                inst_it);
     } else {
         assert(false);
     }
@@ -248,6 +291,8 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
         uint32_t glsl_opcode = inst.Word(4);
         if (glsl_opcode == GLSLstd450Pow) {
             meta.sub_code = glsl::kErrorSubCodeSanitizerPow;
+        } else if (glsl_opcode == GLSLstd450Atan2) {
+            meta.sub_code = glsl::kErrorSubCodeSanitizerAtan2;
         } else {
             return false;
         }
