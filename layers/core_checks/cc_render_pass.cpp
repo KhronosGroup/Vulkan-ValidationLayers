@@ -5208,6 +5208,9 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
 bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &create_info, const Location &create_info_loc,
                                                const vvl::RenderPass &rp_state, const VkRenderPassCreateInfo2 &rpci) const {
     bool skip = false;
+    if (!enabled_features.tileMemoryHeap) {
+        return skip;
+    }
 
     const VkImageView *image_views = create_info.pAttachments;
     vvl::unordered_set<uint32_t> resolve_attachment_indexes;
@@ -5225,13 +5228,12 @@ bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &cr
     }
 
     for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
-        const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
-        auto image_view_state = Get<vvl::ImageView>(image_views[i]);
-        ASSERT_AND_CONTINUE(image_view_state);
-
         if (resolve_attachment_indexes.find(i) == resolve_attachment_indexes.end()) {
             continue;
         }
+        const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
+        auto image_view_state = Get<vvl::ImageView>(image_views[i]);
+        ASSERT_AND_CONTINUE(image_view_state);
 
         auto image = image_view_state->image_state;
         auto bound_memory_states = image->GetBoundMemoryStates();
