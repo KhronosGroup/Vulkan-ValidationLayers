@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2025 Valve Corporation
-# Copyright (c) 2014-2025 LunarG, Inc.
+# Copyright (c) 2014-2026 Valve Corporation
+# Copyright (c) 2014-2026 LunarG, Inc.
 # Copyright (c) 2023-2025 RasterGrid Kft.
 # Copyright (C) 2025 Arm Limited.
 #
@@ -38,6 +38,7 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_strings.h
     error_message/record_object.h
     error_message/log_message_type.h
+    error_message/unimplementable_validation.h
     external/xxhash.h
     external/inplace_function.h
     ${API_TYPE}/generated/error_location_helper.cpp

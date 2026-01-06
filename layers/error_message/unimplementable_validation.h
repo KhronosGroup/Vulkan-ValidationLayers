@@ -610,6 +610,10 @@ const char* unimplementable_validation[] = {
     // See issue in VK_EXT_memory_decompression where we discussed why this is not possible
     // without implementing the decompression algorithm
     "VUID-VkDecompressMemoryRegionEXT-decompressedSize-07689",
+
+    // Pointless Ray Tracing VUs
+    "VUID-VkRayTracingShaderGroupCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03603",
+    "VUID-VkRayTracingShaderGroupCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03604"
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
