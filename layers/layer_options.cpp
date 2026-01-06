@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -498,6 +498,15 @@ static bool ValidateLayerSettingsCreateInfo(const VkLayerSettingsCreateInfoEXT *
             if (!setting.pSettingName) {
                 ss << "[ VUID-VkLayerSettingEXT-pSettingName-parameter ] " << setting_loc.dot(vvl::Field::pSettingName).Message()
                    << " is NULL";
+                printf("Validation Layer Error: %s\n", ss.str().c_str());
+                valid = false;
+            }
+            // Can assume no new VkLayerSettingTypeEXT will be added
+            const uint32_t casted_type = (uint32_t)setting.type;
+            const uint32_t last_setting_type = (uint32_t)VK_LAYER_SETTING_TYPE_STRING_EXT;
+            if (casted_type > last_setting_type) {
+                ss << "[ VUID-VkLayerSettingEXT-type-parameter ] " << setting_loc.dot(vvl::Field::type).Message() << " is "
+                   << casted_type << " which is not a valid VkLayerSettingTypeEXT enum value";
                 printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
