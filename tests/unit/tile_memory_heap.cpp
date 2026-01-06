@@ -399,3 +399,123 @@ TEST_F(NegativeTileMemoryHeap, TileProperties) {
     rp.CreateRenderPass(&tile_memory_size_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
+    TEST_DESCRIPTION("Resolve to a Tile Memory Attachment.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image msaa_image(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView msaa_image_view = msaa_image.CreateView();
+
+    // Create a Tile Memory Image
+    auto tile_image_create_info = vkt::Image::ImageCreateInfo2D(
+        32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
+    vkt::Image tile_memory_image(*m_device, tile_image_create_info, vkt::no_mem);
+
+    // Query Tile Memory Image Requirements
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = tile_memory_image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible to be bound with Tile Memory.";
+    }
+
+    // Find a memory configuration for the Tile Memory Image, otherwise exit
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = tile_mem_reqs.size;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    vkt::DeviceMemory image_memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), tile_memory_image, image_memory, 0);
+
+    vkt::ImageView resolve_image_view = tile_memory_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = msaa_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = resolve_image_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728");
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    VkAttachmentReference2 msaa_attachment_ref = vku::InitStructHelper();
+    msaa_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    msaa_attachment_ref.attachment = 0;
+
+    VkAttachmentReference2 resolve_attachment_ref = vku::InitStructHelper();
+    resolve_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment_ref.attachment = 1;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &msaa_attachment_ref;
+    subpass.pResolveAttachments = &resolve_attachment_ref;
+
+    VkAttachmentDescription2 attach_desc[2] = {};
+    attach_desc[0] = vku::InitStructHelper();
+    attach_desc[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[1] = vku::InitStructHelper();
+    attach_desc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rp = vku::InitStructHelper();
+    rp.subpassCount = 1;
+    rp.pSubpasses = &subpass;
+    rp.attachmentCount = 2;
+    rp.pAttachments = &attach_desc[0];
+    vkt::RenderPass test_rp(*m_device, rp);
+
+    VkImageView views[2] = {};
+    views[0] = msaa_image_view;
+    views[1] = resolve_image_view;
+    auto frame_buffer_create_info =
+        vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp.handle(), 2u, &views[0], 32u, 32u, 1u);
+    VkFramebuffer fb;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-attachment-10755");
+    vk::CreateFramebuffer(device(), &frame_buffer_create_info, nullptr, &fb);
+    m_errorMonitor->VerifyFound();
+}

@@ -1983,6 +1983,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                            uint32_t query, const ErrorObject& error_obj) const override;
     bool ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
                                         const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
+    bool ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
+                                       const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
     bool ValidateFrameBufferAttachmentsImageless(
         const VkFramebufferCreateInfo& create_info, const Location& create_info_loc, const VkRenderPassCreateInfo2& rpci,
         const VkFramebufferAttachmentsCreateInfo& framebuffer_attachments_create_info) const;
