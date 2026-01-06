@@ -1195,6 +1195,11 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         return skip;
     }
 
+    if (!cb_state->unprotected) {
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-09547", commandBuffer, error_obj.location,
+                         "command can't be used in protected command buffers.");
+    }
+
     for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
 
