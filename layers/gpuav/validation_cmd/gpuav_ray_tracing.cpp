@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,8 +183,9 @@ struct BuildAccelerationStructuresValidationShader {
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const { return {}; }
 };
 
-struct AccelerationStructuresAddrToStateObjectMap {
-    vvl::concurrent_unordered_map<VkDeviceAddress, std::shared_ptr<vvl::AccelerationStructureKHR>> map;
+struct AccelerationStructuresWithAddressesArray {
+    std::shared_mutex map_mutex;
+    std::vector<vvl::AccelerationStructureKHR*> array;
 };
 
 void RecordGetAccelerationStructureDeviceAddress(Validator& gpuav, VkAccelerationStructureKHR as, VkDeviceAddress as_addr) {
@@ -195,11 +196,15 @@ void RecordGetAccelerationStructureDeviceAddress(Validator& gpuav, VkAcceleratio
     if (as_addr == 0) {
         return;
     }
-
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         as_state->acceleration_structure_address = as_addr;
-        auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.GetOrCreate<AccelerationStructuresAddrToStateObjectMap>();
-        as_addr_to_as_buffer.map.insert(as_addr, as_state);
+        AccelerationStructuresWithAddressesArray& as_with_addresses =
+            gpuav.shared_resources_cache.GetOrCreate<AccelerationStructuresWithAddressesArray>();
+        WriteLockGuard lock(as_with_addresses.map_mutex);
+        if (as_with_addresses.array.capacity() <= (as_with_addresses.array.size() + 1)) {
+            as_with_addresses.array.reserve(as_with_addresses.array.capacity() * 2);
+        }
+        as_with_addresses.array.emplace_back(as_state.get());
     }
 }
 
@@ -207,14 +212,20 @@ void RemoveAccelerationStrutureDeviceAddress(Validator& gpuav, VkAccelerationStr
     if (!gpuav.gpuav_settings.validate_acceleration_structures_builds) {
         return;
     }
-
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         if (as_state->acceleration_structure_address != 0) {
-            auto* as_addr_to_as_buffer = gpuav.shared_resources_cache.TryGet<AccelerationStructuresAddrToStateObjectMap>();
-            if (as_addr_to_as_buffer) {
-                as_addr_to_as_buffer->map.erase(as_state->acceleration_structure_address);
-                as_state->acceleration_structure_address = 0;
+            auto* as_with_addresses = gpuav.shared_resources_cache.TryGet<AccelerationStructuresWithAddressesArray>();
+            if (as_with_addresses) {
+                WriteLockGuard lock(as_with_addresses->map_mutex);
+                const auto as_found_it =
+                    std::find(as_with_addresses->array.begin(), as_with_addresses->array.end(), as_state.get());
+                if (as_found_it != as_with_addresses->array.end()) {
+                    const size_t i = std::distance(as_with_addresses->array.begin(), as_found_it);
+                    std::swap(as_with_addresses->array[i], as_with_addresses->array[as_with_addresses->array.size() - 1]);
+                    as_with_addresses->array.resize(as_with_addresses->array.size() - 1);
+                }
             }
+            as_state->acceleration_structure_address = 0;
         }
     }
 }
@@ -465,35 +476,36 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
     cb_state.on_pre_cb_submission_functions.emplace_back([as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb,
                                                                                 VkCommandBuffer per_submission_cb) {
         VVL_ZoneScopedN("validate_as_builds_pre_submit");
-        std::vector<std::pair<const VkDeviceAddress, std::shared_ptr<vvl::AccelerationStructureKHR>>> as_addr_to_as_buffer_snapshot;
-        auto* as_addr_to_as_buffer = gpuav.shared_resources_cache.TryGet<AccelerationStructuresAddrToStateObjectMap>();
-        if (as_addr_to_as_buffer) {
-            // #ARNO_TODO Definitely can see this become a big perf bottleneck
-            as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer->map.snapshot();
+
+        auto* as_with_addresses = gpuav.shared_resources_cache.TryGet<AccelerationStructuresWithAddressesArray>();
+        if (!as_with_addresses) {
+            return;
         }
+
+        ReadLockGuard lock(as_with_addresses->map_mutex);
 
         // valid AS addresses buffer
         vko::BufferRange as_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-            2 * sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(uint64_t));
+            2 * sizeof(uint32_t) + as_with_addresses->array.size() * sizeof(uint64_t));
         auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)as_addresses_buffer.offset_mapped_ptr;
 
-        *accel_struct_addresses_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
+        *accel_struct_addresses_buffer_u32_ptr = (uint32_t)as_with_addresses->array.size();
 
         auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
 
         // valid AS metadata buffer
         vko::BufferRange as_metadatas_buffer =
-            cb.gpu_resources_manager.GetHostCachedBufferRange(as_addr_to_as_buffer_snapshot.size() * sizeof(uint32_t));
+            cb.gpu_resources_manager.GetHostCachedBufferRange(as_with_addresses->array.size() * sizeof(uint32_t));
         auto as_metadatas_ptr = (uint32_t*)(as_metadatas_buffer.offset_mapped_ptr);
 
         // valid AS buffer address ranges buffer
         vko::BufferRange as_buffer_addr_ranges_buffer =
-            cb.gpu_resources_manager.GetHostCoherentBufferRange(as_addr_to_as_buffer_snapshot.size() * (2 * sizeof(uint64_t)));
+            cb.gpu_resources_manager.GetHostCoherentBufferRange(as_with_addresses->array.size() * (2 * sizeof(uint64_t)));
         auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
 
         uint32_t written_count = 0;
-        for (const auto& [device_addr, as] : as_addr_to_as_buffer_snapshot) {
-            as_addresses_ptr[written_count] = device_addr;
+        for (const vvl::AccelerationStructureKHR* as : as_with_addresses->array) {
+            as_addresses_ptr[written_count] = as->acceleration_structure_address;
             const uint32_t metadata = uint32_t(as->buffer_state && !as->buffer_state->Destroyed());
             as_metadatas_ptr[written_count] = metadata;
             const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetDeviceAddressRange();
@@ -645,15 +657,18 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
-                auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
-                auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
-                std::ostringstream ss_as;
-                std::ostringstream ss_buffer;
-                if (found_as != as_addr_to_as_buffer.map.end()) {
+                auto& as_with_addresses = gpuav.shared_resources_cache.Get<AccelerationStructuresWithAddressesArray>();
+                const auto as_found_it = std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
+                                                      [blas_in_tlas_addr](vvl::AccelerationStructureKHR* as) {
+                                                          return as->acceleration_structure_address == blas_in_tlas_addr;
+                                                      });
+                std::stringstream ss_as;
+                std::stringstream ss_buffer;
+                if (as_found_it != as_with_addresses.array.end()) {
                     ss_as << "Acceleration structure corresponding to reference: "
-                          << gpuav.FormatHandle(found_as->second->VkHandle());
-                    if (found_as->second->buffer_state) {
-                        ss_buffer << "(" << gpuav.FormatHandle(found_as->second->buffer_state->VkHandle()) << ") ";
+                          << gpuav.FormatHandle((*as_found_it)->VkHandle());
+                    if ((*as_found_it)->buffer_state) {
+                        ss_buffer << "(" << gpuav.FormatHandle((*as_found_it)->buffer_state->VkHandle()) << ") ";
                     }
                 } else {
                     ss_as << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
@@ -671,25 +686,28 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
             case kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap: {
                 const uint32_t blas_built_in_cmd_i = error_record[kValCmdErrorPayloadDword_4];
                 const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
-                auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
-                auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
-                std::ostringstream error_ss;
-                if (found_as != as_addr_to_as_buffer.map.end()) {
-                    const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = found_as->second->GetDeviceAddressRange();
+                auto& as_with_addresses = gpuav.shared_resources_cache.Get<AccelerationStructuresWithAddressesArray>();
+                const auto as_found_it = std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
+                                                      [blas_in_tlas_addr](vvl::AccelerationStructureKHR* as) {
+                                                          return as->acceleration_structure_address == blas_in_tlas_addr;
+                                                      });
+                std::stringstream error_ss;
+                if (as_found_it != as_with_addresses.array.end()) {
+                    const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = (*as_found_it)->GetDeviceAddressRange();
                     const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =
                         blas_built_in_cmd.blas->GetDeviceAddressRange();
                     const vvl::range<VkDeviceAddress> overlap =
                         blas_in_tlas_buffer_addr_range & blas_built_in_cmd_buffer_addr_range;
                     assert(overlap.non_empty());
                     const VkAccelerationStructureKHR blas_built_in_cmd_handle = blas_built_in_cmd.blas->VkHandle();
-                    const VkAccelerationStructureKHR blas_in_tlas_handle = found_as->second->VkHandle();
+                    const VkAccelerationStructureKHR blas_in_tlas_handle = (*as_found_it)->VkHandle();
                     if (blas_built_in_cmd_handle != blas_in_tlas_handle) {
                         error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
                                  << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle()) << "), backed by buffer ("
                                  << gpuav.FormatHandle(blas_built_in_cmd.blas->buffer_state->VkHandle())
                                  << "), overlaps on buffer address range " << vvl::string_range_hex(overlap) << " with buffer ("
-                                 << gpuav.FormatHandle(found_as->second->buffer_state->VkHandle()) << ") of BLAS ("
-                                 << gpuav.FormatHandle(found_as->second->VkHandle()) << "), referenced in " << invalid_blas_loc_str;
+                                 << gpuav.FormatHandle((*as_found_it)->buffer_state->VkHandle()) << ") of BLAS ("
+                                 << gpuav.FormatHandle((*as_found_it)->VkHandle()) << "), referenced in " << invalid_blas_loc_str;
                     } else {
                         error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
                                  << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle())
