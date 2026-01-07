@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -673,14 +673,14 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     // Create actual protected and unprotected buffers
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1 << 20;  // 1 MB
-    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buffer_create_info.usage =
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     vkt::Buffer buffer_protected(*m_device, buffer_create_info, vkt::no_mem);
 
     buffer_create_info.flags = 0;
+    buffer_create_info.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vkt::Buffer buffer_unprotected(*m_device, buffer_create_info, vkt::no_mem);
 
     // Create actual protected and unprotected images
@@ -924,14 +924,12 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                                   &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
-        vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer_protected.handle(), &offset);
-        vk::CmdBindIndexBuffer(m_command_buffer, buffer_protected, 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer_unprotected.handle(), &offset);
+        vk::CmdBindIndexBuffer(m_command_buffer, buffer_unprotected, 0, VK_INDEX_TYPE_UINT16);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // color attachment
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // buffer descriptorSet
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // image descriptorSet
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // vertex
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // index
 
         vk::CmdDrawIndexed(m_command_buffer, 1, 0, 0, 0, 0);
         m_errorMonitor->VerifyFound();
