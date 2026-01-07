@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
-# Copyright (c) 2018-2025 Valve Corporation
-# Copyright (c) 2018-2025 LunarG, Inc.
+# Copyright (c) 2018-2026 Valve Corporation
+# Copyright (c) 2018-2026 LunarG, Inc.
 # Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -501,7 +501,7 @@ class GoodRepo(object):
     def DownloadAndExtractArtifact(self):
         """Download and extract file located at given url."""
 
-        system = platform.system()
+        system = platform.system().lower()
         arch = self._args.arch
 
         if system in self.url_format_map:
@@ -511,12 +511,32 @@ class GoodRepo(object):
 
         formatted_url = self.url.format(release=self.release, system=system, arch=arch)
 
-        # use the last part of the url after the slash as filename to download into
         download_path = os.path.join(self.build_dir, formatted_url[formatted_url.rfind('/') + 1:])
+        download_file = formatted_url[formatted_url.rfind('/')+1:]
 
         make_or_exist_dirs(self.build_dir)
-        print(f"Downloading {self.name} from {formatted_url} to {download_path}")
 
+        if os.path.isfile(download_path):
+            print(f"Using existing file found in {download_path}")
+        else:
+            # These are known folder to look for the artifact on the internal server
+            # We could make this "more correct" and add to the known_good.json file, but at that
+            # point, let's just move over to using a "real" package manager like vcpkg
+            cache_dir = [
+                "/media/nas/smb_share/ci-build-resources/vvl_update_deps_cache",
+                "Z:\\ci-build-resources\\vvl_update_deps_cache",
+            ]
+            for dir in cache_dir:
+                if not os.path.isdir(dir):
+                    continue
+                cache_file = os.path.join(dir, download_file)
+                print(f"Searching for {self.name} at {cache_file}")
+                if os.path.isfile(cache_file):
+                    print(f"Copying {self.name} from {cache_file} to {download_path}")
+                    shutil.copy(cache_file, download_path)
+                    break
+
+        # final resort is always downloading
         if not os.path.isfile(download_path):
             if VERBOSE:
                 print(f"Downloading {self.name} from {formatted_url} to {download_path}")
