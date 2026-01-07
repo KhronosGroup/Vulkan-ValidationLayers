@@ -2735,7 +2735,7 @@ bool CoreChecks::ValidateBoundTileMemory(const vvl::ImageView &image_view, const
         (cb_state.bound_tile_memory != nullptr) ? cb_state.bound_tile_memory->VkHandle() : VK_NULL_HANDLE;
     for (const auto &bound_memory : bound_memory_states) {
         if (HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex) &&
-            (bound_memory->Handle().handle != reinterpret_cast<uint64_t>(bound_tile_memory_handle))) {
+            (bound_memory->VkHandle() != bound_tile_memory_handle)) {
             skip |= LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
                              "%s is bound to a %s from memoryTypes[%" PRIu32
                              "]"
