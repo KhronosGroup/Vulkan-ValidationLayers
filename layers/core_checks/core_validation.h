@@ -51,7 +51,6 @@ class Bindable;
 }  // namespace vvl
 
 namespace spirv {
-struct StageInterfaceVariable;
 struct StatelessData;
 struct LocalSize;
 }  // namespace spirv
@@ -210,12 +209,6 @@ class CoreChecks : public vvl::DeviceProxy {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    struct RenderPassAttachment {
-        const VkAttachmentReference2* reference = nullptr;
-        const VkAttachmentDescription2* attachment = nullptr;
-        const spirv::StageInterfaceVariable* output = nullptr;
-    };
-
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
     VkValidationCacheEXT core_validation_cache = VK_NULL_HANDLE;
@@ -299,7 +292,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const vvl::DrawDispatchVuid& vuid, const Location& loc) const;
     bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
-                                                const vvl::DrawDispatchVuid& vuid, const Location& loc) const;
+                                                const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -2841,9 +2834,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
                                                             const ErrorObject& error_obj) const override;
 
-    bool GetRenderPassAttachmentLocationMap(std::map<uint32_t, RenderPassAttachment>& location_map,
-                                            const spirv::EntryPoint& entrypoint, const vvl::RenderPass& rp_state,
-                                            uint32_t subpass_index) const;
     bool HasTileMemoryType(uint32_t memory_type_index) const;
     bool ValidateBoundTileMemory(const vvl::ImageView& image_view, const vvl::CommandBuffer& cb_state,
                                  const vvl::DrawDispatchVuid& vuid) const;

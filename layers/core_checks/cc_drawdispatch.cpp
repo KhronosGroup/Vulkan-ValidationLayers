@@ -1384,7 +1384,8 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
             skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, vuid);
         } else if (cb_state.active_render_pass) {
             if (enabled_features.tileMemoryHeap) {
-                skip |= ValidateDrawRenderingTileMemoryOutputs(last_bound_state, cb_state, vuid, loc);
+                // Because vkCmdBindTileMemoryQCOM sets the size, we check regardless if using dynamic rendering or not
+                skip |= ValidateDrawRenderingTileMemoryOutputs(last_bound_state, cb_state, vuid);
             }
         }
 
@@ -2730,17 +2731,18 @@ bool CoreChecks::ValidateBoundTileMemory(const vvl::ImageView &image_view, const
                                          const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     auto bound_memory_states = image_view.image_state->GetBoundMemoryStates();
-    auto bound_tile_memory_handle = (cb_state.bound_tile_memory != nullptr) ? cb_state.bound_tile_memory->Handle().handle : 0;
+    VkDeviceMemory bound_tile_memory_handle =
+        (cb_state.bound_tile_memory != nullptr) ? cb_state.bound_tile_memory->VkHandle() : VK_NULL_HANDLE;
     for (const auto &bound_memory : bound_memory_states) {
         if (HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex) &&
-            (bound_memory->Handle().handle != bound_tile_memory_handle)) {
+            (bound_memory->Handle().handle != reinterpret_cast<uint64_t>(bound_tile_memory_handle))) {
             skip |= LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
                              "%s is bound to a %s from memoryTypes[%" PRIu32
                              "]"
                              " that corresponds to Tile Memory but does not match the active bound"
-                             " Tile Memory VkMemory %" PRIu64 " in the CommandBuffer.",
+                             " Tile Memory %s in the CommandBuffer.",
                              FormatHandle(image_view.Handle()).c_str(), FormatHandle(bound_memory->Handle()).c_str(),
-                             bound_memory->allocate_info.memoryTypeIndex, bound_tile_memory_handle);
+                             bound_memory->allocate_info.memoryTypeIndex, FormatHandle(bound_tile_memory_handle).c_str());
         }
     }
     return skip;

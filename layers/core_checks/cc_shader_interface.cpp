@@ -491,11 +491,43 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         return skip;
     }
 
-    std::map<uint32_t, RenderPassAttachment> location_map;
-    const auto rp_state = pipeline.RenderPassState();
+    struct Attachment {
+        const VkAttachmentReference2 *reference = nullptr;
+        const VkAttachmentDescription2 *attachment = nullptr;
+        const spirv::StageInterfaceVariable *output = nullptr;
+    };
+    std::map<uint32_t, Attachment> location_map;
 
+    const auto &rp_state = pipeline.RenderPassState();
     ASSERT_AND_RETURN_SKIP(rp_state);
-    skip |= GetRenderPassAttachmentLocationMap(location_map, entrypoint, *rp_state, subpass_index);
+    const auto rpci = rp_state->create_info.ptr();
+    if (subpass_index >= rpci->subpassCount) return skip;
+
+    const auto subpass = rpci->pSubpasses[subpass_index];
+    for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+        auto const &reference = subpass.pColorAttachments[i];
+        location_map[i].reference = &reference;
+        if (reference.attachment != VK_ATTACHMENT_UNUSED &&
+            rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
+            location_map[i].attachment = &rpci->pAttachments[reference.attachment];
+        }
+    }
+
+    // TODO: dual source blend index (spv::DecIndex, zero if not provided)
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+            continue;  // not an output interface
+        }
+
+        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
+        // Need to redo logic to handle array of outputs
+        if (variable->array_size > 1) {
+            return false;
+        }
+        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+        // This means all Locations in slots will be the same
+        location_map[variable->interface_slots[0].Location()].output = variable;
+    }
 
     const auto *ms_state = pipeline.MultisampleState();
     const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
@@ -690,28 +722,18 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
 }
 
 bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bound_state, const vvl::CommandBuffer &cb_state,
-                                                        const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+                                                        const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    const spirv::EntryPoint *entrypoint = last_bound_state.GetFragmentEntryPoint();
-    if (!entrypoint) {
+    if (last_bound_state.IsRasterizationDisabled()) {
         return skip;
     }
-    std::map<uint32_t, RenderPassAttachment> location_map;
-    skip |= GetRenderPassAttachmentLocationMap(location_map, *last_bound_state.GetFragmentEntryPoint(),
-                                               *cb_state.active_render_pass, cb_state.GetActiveSubpass());
 
-    for (const auto &[location, attachment_info] : location_map) {
-        const auto reference = attachment_info.reference;
-        if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
-            continue;
-        }
-        const VkAttachmentDescription2 *attachment = attachment_info.attachment;
-        const spirv::StageInterfaceVariable *output = attachment_info.output;
-
-        if (attachment && output && reference) {
-            auto image_view = cb_state.active_attachments[reference->attachment].image_view;
-            skip |= ValidateBoundTileMemory(*image_view, cb_state, vuid);
+    for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+        const auto &attachment_info = cb_state.active_attachments[i];
+        const auto *attachment = attachment_info.image_view;
+        if (attachment) {
+            skip |= ValidateBoundTileMemory(*attachment, cb_state, vuid);
         }
     }
 
@@ -876,43 +898,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         tese_stage->entrypoint) {
         skip |= ValidatePipelineTessellationStages(*tesc_stage->spirv_state, *tesc_stage->entrypoint, *tese_stage->spirv_state,
                                                    *tese_stage->entrypoint, create_info_loc);
-    }
-
-    return skip;
-}
-
-bool CoreChecks::GetRenderPassAttachmentLocationMap(std::map<uint32_t, RenderPassAttachment> &location_map,
-                                                    const spirv::EntryPoint &entrypoint, const vvl::RenderPass &rp_state,
-                                                    uint32_t subpass_index) const {
-    bool skip = false;
-
-    const auto rpci = rp_state.create_info.ptr();
-    if (subpass_index >= rpci->subpassCount) return skip;
-
-    const auto subpass = rpci->pSubpasses[subpass_index];
-    for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-        auto const &reference = subpass.pColorAttachments[i];
-        location_map[i].reference = &reference;
-        if (reference.attachment != VK_ATTACHMENT_UNUSED &&
-            rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
-            location_map[i].attachment = &rpci->pAttachments[reference.attachment];
-        }
-    }
-
-    // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    for (const auto *variable : entrypoint.user_defined_interface_variables) {
-        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
-            continue;  // not an output interface
-        }
-
-        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
-        // Need to redo logic to handle array of outputs
-        if (variable->array_size > 1) {
-            return false;
-        }
-        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
-        // This means all Locations in slots will be the same
-        location_map[variable->interface_slots[0].Location()].output = variable;
     }
 
     return skip;

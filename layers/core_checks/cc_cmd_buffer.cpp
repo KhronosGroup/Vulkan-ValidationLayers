@@ -1550,9 +1550,9 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
 
     if (auto *tile_mem_bind_info = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(inheritance_info.pNext)) {
         auto active_tile_mem = cb_state.bound_tile_memory;
-        auto active_tile_mem_size = (active_tile_mem != nullptr) ? active_tile_mem->allocate_info.allocationSize : 0;
+        uint64_t active_tile_mem_size = (active_tile_mem != nullptr) ? active_tile_mem->allocate_info.allocationSize : 0;
         auto tile_mem_bind = Get<vvl::DeviceMemory>(tile_mem_bind_info->memory);
-        auto tile_mem_bind_size = tile_mem_bind->allocate_info.allocationSize;
+        VkDeviceSize tile_mem_bind_size = tile_mem_bind->allocate_info.allocationSize;
         if (active_tile_mem_size != tile_mem_bind_size) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), cb_state.bound_tile_memory->Handle(),
                                         tile_mem_bind->Handle());
