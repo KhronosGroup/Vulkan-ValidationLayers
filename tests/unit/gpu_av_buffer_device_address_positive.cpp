@@ -1381,6 +1381,51 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveGpuAVBufferDeviceAddress, AccessChainStartIsStructEndIsNonComposite) {
+    TEST_DESCRIPTION("Slang will produce a chain of access chains that start with a base of a composite and end on a result type of a non-composite");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+
+    const char *slang_shader = R"slang(
+        struct Data {
+            int32_t x;
+        }
+        uniform Data* bda;
+        [numthreads(1,1,1)]
+        void main() {
+           bda[0].x = 1;
+        }
+    )slang";
+
+    vkt::Buffer bda_buffer(*m_device, 4, 0, vkt::device_address);
+    vkt::Buffer ubo_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto ubo_buffer_ptr = static_cast<VkDeviceAddress *>(ubo_buffer.Memory().Map());
+    ubo_buffer_ptr[0] = bda_buffer.Address();
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    descriptor_set.WriteDescriptorBufferInfo(0, ubo_buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChainsDescriptorBuffer) {
     TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
 
