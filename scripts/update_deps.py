@@ -498,8 +498,8 @@ class GoodRepo(object):
             print(command_output(['git', 'status'], self.repo_dir))
 
 
-    def DownloadAndExtractArtifact(self):
-        """Download and extract file located at given url."""
+    def DownloadAndExtractArtifact(self, retries=10, retry_seconds=60):
+        """Download and extract file located at given url.  Retries if the download fails."""
 
         system = platform.system().lower()
         arch = self._args.arch
@@ -540,11 +540,25 @@ class GoodRepo(object):
         if not os.path.isfile(download_path):
             if VERBOSE:
                 print(f"Downloading {self.name} from {formatted_url} to {download_path}")
-            try:
-                urllib.request.urlretrieve(formatted_url, download_path)
-            except Exception as e:
-                print(f"Failed to download {self.name}: {e}")
-                return False
+
+            # We've seen sporadic errors (on Windows) like:
+            #   <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)>
+            # We'll retry downloads to attempt to recover.
+            for retry in range(retries):
+                try:
+                    urllib.request.urlretrieve(formatted_url, download_path)
+                    break
+                except OSError as e:
+                    print(f"Error downloading on iteration {retry + 1}/{retries}: {e}")
+                    if retry + 1 < retries:
+                        if retry_seconds > 0:
+                            print(f"Waiting {retry_seconds} seconds before trying again")
+                            time.sleep(retry_seconds)
+                        continue
+
+                    # If we get here, we've exhausted our retries.
+                    print(f"Failed to download {formatted_url} to {download_path} on all retries.")
+                    return False
 
         make_or_exist_dirs(self.install_dir)
 
