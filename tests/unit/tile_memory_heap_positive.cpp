@@ -13,7 +13,7 @@
 class PositiveTileMemoryHeap : public TileMemoryHeapTest {};
 
 TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
-    TEST_DESCRIPTION("Create tile memory storage buffer and use it within a draw.");
+    TEST_DESCRIPTION("Create tile memory storage buffer and use it within a dispatch.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
@@ -77,6 +77,44 @@ TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
                               &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindTileMemoryQCOM(m_command_buffer, &tile_mem_bind_info);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveTileMemoryHeap, NullTileMemoryBind) {
+    TEST_DESCRIPTION("Bind a NULL VkTileMemoryBindInfoQCOM to command buffer.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+
+    RETURN_IF_SKIP(Init());
+
+    // Create a Tile Memory Buffer
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT));
+
+    // Create Compute Shader to write to Tile Memory Buffer
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { float writeBuffer; };
+        void main() {
+           writeBuffer = 1.0f;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindTileMemoryQCOM(m_command_buffer, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
