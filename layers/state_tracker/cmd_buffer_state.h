@@ -37,6 +37,7 @@ namespace vvl {
 class Bindable;
 class Buffer;
 class CommandBufferSubState;
+class DeviceMemory;
 class DeviceState;
 class Pipeline;
 class Framebuffer;
@@ -539,6 +540,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
+
+    std::shared_ptr<vvl::DeviceMemory> bound_tile_memory;
 
     // VK_EXT_descriptor_buffer
     struct DescriptorBuffer {

@@ -1378,10 +1378,14 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawVertexBinding(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
-            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, loc);
+            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, vuid, loc);
             skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, vuid);
             const auto &cb_sub_state = core::SubState(cb_state);
             skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, vuid);
+        } else if (cb_state.active_render_pass) {
+            if (enabled_features.tileMemoryHeap) {
+                skip |= ValidateDrawRenderingTileMemoryOutputs(last_bound_state, cb_state, vuid, loc);
+            }
         }
 
         if (pipeline) {
@@ -2719,5 +2723,28 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateBoundTileMemory(const vvl::ImageView &image_view, const vvl::CommandBuffer &cb_state,
+                                         const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    auto bound_memory_states = image_view.image_state->GetBoundMemoryStates();
+    auto bound_tile_memory_handle = (cb_state.bound_tile_memory != nullptr) ? cb_state.bound_tile_memory->Handle().handle : 0;
+    for (const auto &bound_memory : bound_memory_states) {
+        if (HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex) &&
+            (bound_memory->Handle().handle != bound_tile_memory_handle)) {
+            const char *bound_tile_memory_string = (cb_state.bound_tile_memory != nullptr)
+                                                       ? FormatHandle(cb_state.bound_tile_memory->Handle()).c_str()
+                                                       : "VKDeviceMemory 0x00000000";
+            skip |= LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
+                             "%s is bound to a %s from memoryTypes[%" PRIu32
+                             "]"
+                             " that corresponds to Tile Memory but does not match the active bound"
+                             " Tile Memory %s in the CommandBuffer.",
+                             FormatHandle(image_view.Handle()).c_str(), FormatHandle(bound_memory->Handle()).c_str(),
+                             bound_memory->allocate_info.memoryTypeIndex, bound_tile_memory_string);
+        }
+    }
     return skip;
 }
