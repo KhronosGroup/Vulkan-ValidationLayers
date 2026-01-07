@@ -1548,23 +1548,21 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         }
     }
 
-    if (cb_state.active_render_pass) {
-        if (auto *tile_mem_bind_info = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(inheritance_info.pNext)) {
-            auto active_tile_mem = cb_state.bound_tile_memory;
-            auto active_tile_mem_size = (active_tile_mem != nullptr) ? active_tile_mem->allocate_info.allocationSize : 0;
-            auto tile_mem_bind = Get<vvl::DeviceMemory>(tile_mem_bind_info->memory);
-            auto tile_mem_bind_size = tile_mem_bind->allocate_info.allocationSize;
-            if (active_tile_mem_size != tile_mem_bind_size) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), cb_state.bound_tile_memory->Handle(),
-                                            tile_mem_bind->Handle());
-                skip |= LogError("VUID-vkCmdExecuteCommands-memory-10724", objlist, secondary_cb_loc,
-                                 "began recording with a VkTileMemoryBindInfoQCOM::memory of size (%" PRIu64
-                                 ") which"
-                                 " is not equal to (%" PRIu64
-                                 ") from the size of memory set in the primary command"
-                                 " last call to vkCmdBindTileMemoryQCOM",
-                                 tile_mem_bind_size, active_tile_mem_size);
-            }
+    if (auto *tile_mem_bind_info = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(inheritance_info.pNext)) {
+        auto active_tile_mem = cb_state.bound_tile_memory;
+        auto active_tile_mem_size = (active_tile_mem != nullptr) ? active_tile_mem->allocate_info.allocationSize : 0;
+        auto tile_mem_bind = Get<vvl::DeviceMemory>(tile_mem_bind_info->memory);
+        auto tile_mem_bind_size = tile_mem_bind->allocate_info.allocationSize;
+        if (active_tile_mem_size != tile_mem_bind_size) {
+            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), cb_state.bound_tile_memory->Handle(),
+                                        tile_mem_bind->Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-memory-10724", objlist, secondary_cb_loc,
+                             "began recording with a VkTileMemoryBindInfoQCOM::memory of size (%" PRIu64
+                             ") which"
+                             " is not equal to (%" PRIu64
+                             ") from the size of memory set in the primary command buffer's"
+                             " last call to vkCmdBindTileMemoryQCOM",
+                             tile_mem_bind_size, active_tile_mem_size);
         }
     }
 
