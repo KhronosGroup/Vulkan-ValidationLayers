@@ -1382,11 +1382,11 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
             skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, vuid);
             const auto &cb_sub_state = core::SubState(cb_state);
             skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, vuid);
-        } else if (cb_state.active_render_pass) {
-            if (enabled_features.tileMemoryHeap) {
-                // Because vkCmdBindTileMemoryQCOM sets the size, we check regardless if using dynamic rendering or not
-                skip |= ValidateDrawRenderingTileMemoryOutputs(last_bound_state, cb_state, vuid);
-            }
+        }
+
+        if (cb_state.active_render_pass && enabled_features.tileMemoryHeap) {
+            // Because vkCmdBindTileMemoryQCOM sets the size, we check regardless if using dynamic rendering or not
+            skip |= ValidateDrawRenderingTileMemoryOutputs(last_bound_state, cb_state, vuid);
         }
 
         if (pipeline) {

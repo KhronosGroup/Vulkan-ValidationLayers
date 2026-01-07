@@ -708,10 +708,6 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                     DescribeMappedLocation(location, mapped_loc).c_str(), spirv::string_NumericType(output_type), mapped_loc,
                     string_VkFormat(image_view_state->create_info.format), spirv::string_NumericType(attachment_type));
             }
-
-            if (enabled_features.tileMemoryHeap) {
-                skip |= ValidateBoundTileMemory(*image_view_state, cb_state, vuid);
-            }
         } else {  // !attachment && !output
             // Means empty fragment shader and no color attachments
             // going to hit other VUs like VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08912
@@ -732,7 +728,7 @@ bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bo
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
         const auto *attachment = attachment_info.image_view;
-        if (attachment) {
+        if (attachment && !attachment_info.IsResolve()) {
             skip |= ValidateBoundTileMemory(*attachment, cb_state, vuid);
         }
     }
