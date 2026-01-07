@@ -290,7 +290,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                    const core::CommandBufferSubState& cb_sub_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
-                                               const vvl::DrawDispatchVuid& vuid, const Location& loc) const;
+                                               const Location& loc) const;
     bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                 const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,

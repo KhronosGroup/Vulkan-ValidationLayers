@@ -1378,7 +1378,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawVertexBinding(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
-            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, vuid, loc);
+            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, loc);
             skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, vuid);
             const auto &cb_sub_state = core::SubState(cb_state);
             skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, vuid);

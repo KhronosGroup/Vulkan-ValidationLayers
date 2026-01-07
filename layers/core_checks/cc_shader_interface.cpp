@@ -589,7 +589,7 @@ static std::string DescribeMappedLocation(uint32_t shader, uint32_t rendering_in
 
 // This is validated at draw time unlike the VkRenderPass version
 bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bound_state, const vvl::CommandBuffer &cb_state,
-                                                       const vvl::DrawDispatchVuid &vuid, const Location &loc) const {
+                                                       const Location &loc) const {
     bool skip = false;
     // Some apps do 100k draws a frame and found this function is a bottleneck if an app is violating these warnings
     if (global_settings.only_report_errors) {
