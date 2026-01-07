@@ -2326,21 +2326,40 @@ bool Device::manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectN
                                        "VUID-VkClusterAccelerationStructureInputInfoNV-sType-sType");
 
     if (input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV) {
-        skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *input.opInput.pClustersBottomLevel,
-                                                                               op_input_loc.dot(Field::pClustersBottomLevel));
+        if (input.opInput.pClustersBottomLevel) {
+            skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *input.opInput.pClustersBottomLevel,
+                                                                                   op_input_loc.dot(Field::pClustersBottomLevel));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pClustersBottomLevel-parameter", device,
+                             op_input_loc.dot(Field::opType),
+                             "is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV, but "
+                             "opInput.pClustersBottomLevel is null");
+        }
     }
 
     if (IsValueIn(input.opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
-        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *input.opInput.pTriangleClusters,
-                                                                           op_input_loc.dot(Field::pTriangleClusters));
+        if (input.opInput.pTriangleClusters) {
+            skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *input.opInput.pTriangleClusters,
+                                                                               op_input_loc.dot(Field::pTriangleClusters));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pTriangleClusters-parameter", device,
+                             op_input_loc.dot(Field::opType), "is %s, but opInput.pTriangleClusters is null.",
+                             string_VkClusterAccelerationStructureOpTypeNV(input.opType));
+        }
     }
 
     if (input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
-        skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *input.opInput.pMoveObjects,
-                                                                       op_input_loc.dot(Field::pMoveObjects));
+        if (input.opInput.pMoveObjects) {
+            skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *input.opInput.pMoveObjects,
+                                                                           op_input_loc.dot(Field::pMoveObjects));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pMoveObjects-parameter", device,
+                             op_input_loc.dot(Field::opType),
+                             "is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV, but opInput.pMoveObjects is null");
+        }
     }
     return skip;
 }
@@ -2354,22 +2373,42 @@ bool Device::manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(
     const Location op_input_loc = input_loc.dot(Field::opInput);
 
     if (pInfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV) {
-        skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *pInfo->opInput.pClustersBottomLevel,
-                                                                               op_input_loc.dot(Field::pClustersBottomLevel));
+        if (pInfo->opInput.pClustersBottomLevel) {
+            skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *pInfo->opInput.pClustersBottomLevel,
+                                                                                   op_input_loc.dot(Field::pClustersBottomLevel));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pClustersBottomLevel-parameter", device,
+                             op_input_loc.dot(Field::opType),
+                             "is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV, but "
+                             "opInput.pClustersBottomLevel is null");
+        }
     }
 
     if (IsValueIn(pInfo->opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
                                   VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
                                   VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
                                   VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
-        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *pInfo->opInput.pTriangleClusters,
-                                                                           op_input_loc.dot(Field::pTriangleClusters));
+        if (pInfo->opInput.pTriangleClusters) {
+            skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *pInfo->opInput.pTriangleClusters,
+                                                                               op_input_loc.dot(Field::pTriangleClusters));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pTriangleClusters-parameter", device,
+                             op_input_loc.dot(Field::opType), "is %s, but opInput.pTriangleClusters is null.",
+                             string_VkClusterAccelerationStructureOpTypeNV(pInfo->opType));
+        }
     }
 
     if (pInfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
-        skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *pInfo->opInput.pMoveObjects,
-                                                                       op_input_loc.dot(Field::pMoveObjects));
+        if (pInfo->opInput.pMoveObjects) {
+            skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *pInfo->opInput.pMoveObjects,
+                                                                           op_input_loc.dot(Field::pMoveObjects));
+        } else {
+            skip |= LogError("VUID-VkClusterAccelerationStructureInputInfoNV-pMoveObjects-parameter", device,
+                             op_input_loc.dot(Field::opType),
+                             "is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV, but opInput.pMoveObjects is null");
+        }
     }
+
     return skip;
 }
 
