@@ -727,9 +727,10 @@ bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bo
 
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
-        const auto *attachment = attachment_info.image_view;
-        if (attachment && !attachment_info.IsResolve()) {
-            skip |= ValidateBoundTileMemory(*attachment, cb_state, vuid);
+        auto image_view_state = attachment_info.image_view;
+        // Resolve is banned with a separate VU and checked elsewhere
+        if (image_view_state && !attachment_info.IsResolve()) {
+            skip |= ValidateBoundTileMemory(*Get<vvl::Image>(attachment_info.image_view->create_info.image), cb_state, vuid);
         }
     }
 

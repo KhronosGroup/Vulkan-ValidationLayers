@@ -3502,10 +3502,8 @@ void DeviceState::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer co
 void DeviceState::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
                                                       const VkTileMemoryBindInfoQCOM *pTileMemoryBindInfo,
                                                       const RecordObject &record_obj) {
-    if (pTileMemoryBindInfo) {
-        auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-        cb_state->bound_tile_memory = Get<vvl::DeviceMemory>(pTileMemoryBindInfo->memory);
-    }
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->bound_tile_memory = pTileMemoryBindInfo ? cb_state->bound_tile_memory : VK_NULL_HANDLE;
 }
 
 void DeviceState::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
