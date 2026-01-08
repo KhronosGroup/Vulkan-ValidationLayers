@@ -616,6 +616,8 @@ foreach(layer_info, layers) {
       configs -= [ "//build/config:thread_safety_annotations" ]
       ldflags += [ "-static-libstdc++" ]
       configs += [ "//build/config:rtti" ]
+      # Disable LTO to reduce build overhead.
+      configs += [ "//build/config/lto:no-lto" ]
     } else {
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
