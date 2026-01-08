@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,11 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
     ss << "returned VK_ERROR_FEATURE_NOT_PRESENT because the following features were not supported on this physical device:\n";
 
     // First do 1.0 VkPhysicalDeviceFeatures
-    {
-        const auto *features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
-        const VkPhysicalDeviceFeatures &enabling =
-            create_info.pEnabledFeatures ? *create_info.pEnabledFeatures : features2->features;
+    const auto* features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
+    // There is a chance the user passed in only other feature structs
+    if (create_info.pEnabledFeatures || features2_in) {
+        const VkPhysicalDeviceFeatures& enabling =
+            create_info.pEnabledFeatures ? *create_info.pEnabledFeatures : features2_in->features;
 
         VkPhysicalDeviceFeatures supported = {};
         DispatchGetPhysicalDeviceFeatures(gpu, &supported);
