@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2870,6 +2870,8 @@ TEST_F(PositiveWsi, PresentTimings) {
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
     SetPresentImageLayout(images[image_index]);
+
+    vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1u);
 
     uint64_t present_id_value = 1u;
     VkPresentId2KHR present_id = vku::InitStructHelper();
