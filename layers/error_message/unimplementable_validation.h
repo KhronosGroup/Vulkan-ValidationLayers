@@ -128,6 +128,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkDescriptorUpdateTemplateEntry-dstBinding-00354",
     "VUID-VkDescriptorUpdateTemplateEntry-dstArrayElement-00355",
 
+    // This is just VUID-vkCmdBeginRendering-renderpass
+    // The logic in CoreChecks::InsideRenderPass() already gives a good error message
+    "VUID-vkCmdBeginRendering-commandBuffer-10914",
+
     // If VkDeviceAddress can be zero, we will validate it in cc_buffer_address.h
     // We cover these in VUID-VkDeviceAddress-size-11364
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517#note_546958
