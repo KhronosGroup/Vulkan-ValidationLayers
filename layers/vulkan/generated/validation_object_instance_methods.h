@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -188,6 +188,9 @@ virtual void PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(
 virtual void PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkSampleCountFlagBits samples, VkImageUsageFlags usage,
     VkImageTiling tiling, uint32_t* pPropertyCount, VkSparseImageFormatProperties* pProperties, const RecordObject& record_obj) {}
+virtual bool PreCallValidateEnumerateInstanceVersion(uint32_t* pApiVersion, const ErrorObject& error_obj) const { return false; }
+virtual void PreCallRecordEnumerateInstanceVersion(uint32_t* pApiVersion, const RecordObject& record_obj) {}
+virtual void PostCallRecordEnumerateInstanceVersion(uint32_t* pApiVersion, const RecordObject& record_obj) {}
 virtual bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                           VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                           const ErrorObject& error_obj) const {
