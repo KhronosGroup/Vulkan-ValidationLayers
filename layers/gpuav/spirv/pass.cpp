@@ -682,7 +682,15 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
                 current_type_id = current_type->inst_.Operand(constant_value);  // Get element type for next step
             } break;
             default: {
-                module_.InternalError(Name(), "FindOffsetInStruct has unexpected non-composite type");
+                // A non-composite implies that this must be the end of the access-chain chain
+                auto next_access_chain_iter = (access_chain_iter)+1;
+                if (next_access_chain_iter != access_chain_insts.rend())
+                {
+                    module_.InternalError(Name(), "FindOffsetInStruct has unexpected non-composite type");
+                    break;
+                }
+                const uint32_t type_size = FindTypeByteSize(current_type_id);
+                current_offset = constant_value * type_size;
             } break;
         }
 
