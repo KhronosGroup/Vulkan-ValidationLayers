@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -958,8 +958,8 @@ void PresentedImage::SetImage(uint32_t at_index) {
 
 void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context,
                                         SyncFlags flags) const {
-    // Intentional copy. The range_gen argument is not copied by the Update... call below
-    access_context.UpdateAccessState(range_gen, usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag}, flags);
+    ImageRangeGen mutable_range_gen = range_gen;
+    access_context.UpdateAccessState(mutable_range_gen, usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag}, flags);
 }
 
 }  // namespace syncval
