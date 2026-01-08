@@ -32,7 +32,6 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
 
     // First do 1.0 VkPhysicalDeviceFeatures
     const auto* features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
-    // There is a chance the user passed in only other feature structs
     if (create_info.pEnabledFeatures || features2_in) {
         const VkPhysicalDeviceFeatures& enabling =
             create_info.pEnabledFeatures ? *create_info.pEnabledFeatures : features2_in->features;
