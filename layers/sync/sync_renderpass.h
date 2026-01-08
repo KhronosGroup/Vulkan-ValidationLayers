@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,8 @@ struct BeginRenderingCmdState {
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
                                                      const AccessContext &external_context);
 
+using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
+
 class RenderPassAccessContext {
   public:
     static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D &render_area,
@@ -134,9 +136,9 @@ class RenderPassAccessContext {
   private:
     const vvl::RenderPass *rp_state_;
     const VkRect2D render_area_;
+    const AttachmentViewGenVector attachment_views_;
+    const std::unique_ptr<AccessContext[]> subpass_contexts_;
     uint32_t current_subpass_;
-    std::unique_ptr<AccessContext[]> subpass_contexts_;
-    AttachmentViewGenVector attachment_views_;
 };
 
 }  // namespace syncval

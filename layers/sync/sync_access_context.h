@@ -218,21 +218,22 @@ struct SubpassBarrierTrackback {
 
 class AttachmentViewGen {
   public:
-    enum Gen { kViewSubresource = 0, kRenderArea = 1, kDepthOnlyRenderArea = 2, kStencilOnlyRenderArea = 3, kGenSize = 4 };
+    enum Gen {
+        kViewSubresource = 0,        // Always available
+        kRenderArea = 1,             // Always available
+        kDepthOnlyRenderArea = 2,    // Only for formats with both depth and stencil to select depth
+        kStencilOnlyRenderArea = 3,  // Only for formats with both depth and stencil to select stencil
+        kGenSize = 4
+    };
     AttachmentViewGen(const vvl::ImageView *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
-    AttachmentViewGen(const AttachmentViewGen &other) = default;
-    AttachmentViewGen(AttachmentViewGen &&other) = default;
     const vvl::ImageView *GetViewState() const { return view_; }
     const std::optional<ImageRangeGen> &GetRangeGen(Gen type) const;
-    bool IsValid() const { return gen_store_[Gen::kViewSubresource].has_value(); }
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:
     const vvl::ImageView *view_ = nullptr;
     std::array<std::optional<ImageRangeGen>, Gen::kGenSize> gen_store_;
 };
-
-using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 // Provides ordering among all first accesses in the AccessContext.
 // This accelerates the search of the first accesses that intersect a given tag range.
@@ -341,24 +342,6 @@ class AccessContext {
                            const AccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-
-    // TODO: all of the following UpdateAccessState can be external helpers that use two primary UpdateAccessState
-    // implementations listed above
-    void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
-    void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
-                           ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
-                           SyncOrdering ordering_rule, ResourceUsageTag tag, SyncFlags flags = 0);
-    void UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                           SyncAccessIndex current_usage, ResourceUsageTag tag);
 
     void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 

@@ -1181,7 +1181,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // by predicating on whether subpass 0 uses the attachment if it is too expensive to create the full list redundantly here.
     // More broadly we could look at thread specific state shared between Validate and Record as is done for other heavyweight
     // operations (though it's currently a messy approach)
-    AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
+    const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
     skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, rp_state, render_area, subpass, view_gens,
                                                                command_);
 

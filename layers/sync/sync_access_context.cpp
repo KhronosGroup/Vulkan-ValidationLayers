@@ -661,62 +661,6 @@ void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex 
     }
 }
 
-void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
-    // range_gen is non-temporary to avoid an additional copy
-    const auto &sub_state = SubState(image);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
-}
-void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
-    // range_gen is non-temporary to avoid an additional copy
-    const auto &sub_state = SubState(image);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
-}
-
-void AccessContext::UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const VkOffset3D &offset, const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
-}
-
-void AccessContext::UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTagEx tag_ex) {
-    auto range_gen = MakeImageRangeGen(image_view);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
-}
-
-void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                      SyncAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag,
-                                      SyncFlags flags) {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (attachment_gen) {
-        // Value of const optional is const, and will be copied in callee
-        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag}, flags);
-    }
-}
-
-void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                                      SyncAccessIndex current_usage, ResourceUsageTag tag) {
-    const auto image = static_cast<const vvl::Image *>(resource.image_state.get());
-    const auto offset = resource.GetEffectiveImageOffset(vs_state);
-    const auto extent = resource.GetEffectiveImageExtent(vs_state);
-    const auto &sub_state = SubState(*image);
-    ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
-    UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag});
-}
-
-void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
-    // range_gen is non-temporary to avoid infinite call recursion
-    ImageRangeGen mutable_range_gen(range_gen);
-    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag_ex, flags);
-}
-
 void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
     assert(!finalized_);
 
@@ -734,8 +678,6 @@ void AccessContext::ImportAsyncContexts(const AccessContext &from) {
 // Suitable only for *subpass* access contexts
 HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
                                                           const AttachmentViewGen &attach_view) const {
-    if (!attach_view.IsValid()) return HazardResult();
-
     // We should never ask for a transition from a context we don't have
     assert(track_back.source_subpass);
 
@@ -1128,7 +1070,6 @@ const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentVie
 }
 
 AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {
-    assert(IsValid());
     assert(vkuFormatIsDepthOrStencil(view_->create_info.format));
     if (depth_op) {
         assert(vkuFormatHasDepth(view_->create_info.format));
