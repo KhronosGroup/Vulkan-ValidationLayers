@@ -230,6 +230,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetCalibratedTimestampsEXT',
             'vkGetCalibratedTimestampsKHR',
             'vkGetDynamicRenderingTilePropertiesQCOM',
+            'vkGetSwapchainTimeDomainPropertiesEXT',
         ]
 
         # Commands to ignore
@@ -867,7 +868,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         else:
                             vuidName = self.GetVuid(callerName, f"{lengthMember.name}-arraylength")
                             # This VUID is considered special, as it is the only one whose names ends in "-arraylength" but has special conditions allowing bindingCount to be 0.
-                            arrayVuidExceptions = ['"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength"']
+                            arrayVuidExceptions = [
+                                '"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength"',
+                                '"VUID-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-arraylength"' # Todo: https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7966
+                            ]
                             if vuidName in arrayVuidExceptions:
                                 continue
                             if lengthMember.optional:

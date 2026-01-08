@@ -21270,21 +21270,10 @@ bool Device::PreCallValidateGetSwapchainTimeDomainPropertiesEXT(VkDevice device,
         skip |= context.ValidateStructPnext(pSwapchainTimeDomainProperties_loc, pSwapchainTimeDomainProperties->pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkSwapchainTimeDomainPropertiesEXT-pNext-pNext",
                                             kVUIDUndefined, false);
-
-        skip |=
-            context.ValidateArray(pSwapchainTimeDomainProperties_loc.dot(Field::timeDomainCount),
-                                  pSwapchainTimeDomainProperties_loc.dot(Field::pTimeDomains),
-                                  pSwapchainTimeDomainProperties->timeDomainCount, &pSwapchainTimeDomainProperties->pTimeDomains,
-                                  true, false, "VUID-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-arraylength",
-                                  "VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-parameter");
-
-        skip |=
-            context.ValidateArray(pSwapchainTimeDomainProperties_loc.dot(Field::timeDomainCount),
-                                  pSwapchainTimeDomainProperties_loc.dot(Field::pTimeDomainIds),
-                                  pSwapchainTimeDomainProperties->timeDomainCount, &pSwapchainTimeDomainProperties->pTimeDomainIds,
-                                  true, false, "VUID-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-arraylength",
-                                  "VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomainIds-parameter");
     }
+    if (!skip)
+        skip |= manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                          pTimeDomainsCounter, context);
     return skip;
 }
 

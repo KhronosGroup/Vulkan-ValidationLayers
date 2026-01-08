@@ -2176,6 +2176,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
                                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                     const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                     VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                             VkFence fence, uint32_t* pImageIndex, const ErrorObject& error_obj) const override;
     bool PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,

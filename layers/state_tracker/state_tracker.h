@@ -1213,6 +1213,10 @@ class DeviceState : public vvl::base::Device {
                                                  const RecordObject& record_obj) override;
     void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                  const RecordObject& record_obj) override;
+    void PostCallRecordGetPastPresentationTimingEXT(VkDevice device,
+                                                    const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                    VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                    const RecordObject& record_obj) override;
     void CheckDebugCapture() const;
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                   const RecordObject& record_obj) override;

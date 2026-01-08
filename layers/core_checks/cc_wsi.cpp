@@ -1104,16 +1104,47 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                      PrintPNextChain(Struct::VkPresentInfoKHR, pPresentInfo->pNext).c_str());
                 }
 
-                if (present_timings_info->pTimingInfos[i].targetTime != 0 &&
-                    !IsValueIn(
-                        swapchain_state->create_info.presentMode,
-                        {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
-                    skip |= LogError(
-                        "VUID-VkPresentTimingsInfoEXT-pSwapchains-12235", pPresentInfo->pSwapchains[i],
-                        present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
-                        "is %" PRIu64 ", but the swapchain was created with present mode %s.",
-                        present_timings_info->pTimingInfos[i].targetTime,
-                        string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
+                const VkPresentTimingInfoEXT &timing_info = present_timings_info->pTimingInfos[i];
+                if (timing_info.targetTime != 0) {
+                    if (!IsValueIn(
+                            swapchain_state->create_info.presentMode,
+                            {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
+                        skip |= LogError(
+                            "VUID-VkPresentTimingsInfoEXT-pSwapchains-12235", pPresentInfo->pSwapchains[i],
+                            present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                            "is %" PRIu64 ", but the swapchain was created with present mode %s.", timing_info.targetTime,
+                            string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
+                    }
+
+                    if (GetBitSetCount(timing_info.targetTimeDomainPresentStage) != 1) {
+                        // Todo, call this once on device creation and cache result
+                        VkSwapchainTimeDomainPropertiesEXT swapchain_time_domain_properties = vku::InitStructHelper();
+                        DispatchGetSwapchainTimeDomainPropertiesEXT(device, pPresentInfo->pSwapchains[i],
+                                                                    &swapchain_time_domain_properties, nullptr);
+                        std::vector<VkTimeDomainKHR> time_domains(swapchain_time_domain_properties.timeDomainCount);
+                        std::vector<uint64_t> time_domain_ids(swapchain_time_domain_properties.timeDomainCount);
+                        swapchain_time_domain_properties.pTimeDomains = time_domains.data();
+                        swapchain_time_domain_properties.pTimeDomainIds = time_domain_ids.data();
+                        DispatchGetSwapchainTimeDomainPropertiesEXT(device, pPresentInfo->pSwapchains[i],
+                                                                    &swapchain_time_domain_properties, nullptr);
+
+                        bool time_domain_present_stage_local = false;
+                        for (size_t j = 0; j < swapchain_time_domain_properties.timeDomainCount; ++j) {
+                            if (time_domains[j] == timing_info.timeDomainId) {
+                                time_domain_present_stage_local = time_domains[j] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+                                break;
+                            }
+                        }
+
+                        if (time_domain_present_stage_local) {
+                            skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12238", pPresentInfo->pSwapchains[i],
+                                             present_info_loc.dot(Field::pTimingInfos, i).dot(Field::targetTimeDomainPresentStage),
+                                             "is %s but timeDomainId includes VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT and "
+                                             "targetTime is %" PRIu64 ".",
+                                             string_VkPresentStageFlagsEXT(timing_info.targetTimeDomainPresentStage).c_str(),
+                                             timing_info.targetTime);
+                        }
+                    }
                 }
             }
         }
@@ -1186,6 +1217,55 @@ bool CoreChecks::PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice d
     if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) == 0) {
         skip |= LogError("VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-12229", swapchain, error_obj.location,
                          "was created with %s.", string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
+    VkDevice device, const VkPastPresentationTimingInfoEXT *pPastPresentationTimingInfo,
+    VkPastPresentationTimingPropertiesEXT *pPastPresentationTimingProperties, const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    auto swapchain_state = Get<vvl::Swapchain>(pPastPresentationTimingInfo->swapchain);
+    if (!swapchain_state->present_timing_stage_queries.empty()) {
+        if ((pPastPresentationTimingInfo->flags & VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT) != 0) {
+            uint32_t max = 0;
+            for (const auto &query : swapchain_state->present_timing_stage_queries) {
+                if (query.second > max) {
+                    max = query.second;
+                }
+            }
+            for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
+                if (pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount < max) {
+                    skip |= LogError("VUID-vkGetPastPresentationTimingEXT-flags-12230", pPastPresentationTimingInfo->swapchain,
+                                     error_obj.location.dot(Field::pPastPresentationTimingProperties)
+                                         .dot(Field::pPresentationTimings, i)
+                                         .dot(Field::presentStageCount),
+                                     "is %" PRIu32 ", but vkQueuePresentKHR was called with %" PRIu32
+                                     " bits set in VkPresentTimingInfoEXT::presentStageQueries",
+                                     pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount, max);
+                }
+            }
+        } else {
+            for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
+                uint32_t max = 0;
+                for (const auto &query : swapchain_state->present_timing_stage_queries) {
+                    if (query.first == pPastPresentationTimingProperties->pPresentationTimings[i].presentId && query.second > max) {
+                        max = query.second;
+                    }
+                }
+                if (pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount < max) {
+                    skip |= LogError("VUID-vkGetPastPresentationTimingEXT-flags-12231", pPastPresentationTimingInfo->swapchain,
+                                     error_obj.location.dot(Field::pPastPresentationTimingProperties)
+                                         .dot(Field::pPresentationTimings, i)
+                                         .dot(Field::presentStageCount),
+                                     "is %" PRIu32 ", but vkQueuePresentKHR was called with %" PRIu32
+                                     " bits set in VkPresentTimingInfoEXT::presentStageQueries",
+                                     pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount, max);
+                }
+            }
+        }
     }
 
     return skip;

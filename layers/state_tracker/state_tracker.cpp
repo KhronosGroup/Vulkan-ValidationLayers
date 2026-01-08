@@ -44,6 +44,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 #include "utils/spirv_tools_utils.h"
+#include "utils/math_utils.h"
 
 // Used for debugging
 #include "utils/keyboard.h"
@@ -4093,6 +4094,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     const auto *present_id_info_2 = vku::FindStructInPNextChain<VkPresentId2KHR>(pPresentInfo->pNext);
+    const auto *present_timings_info = vku::FindStructInPNextChain<VkPresentTimingsInfoEXT>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
         if (!swapchain_data) {
@@ -4103,15 +4105,6 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
 
-        // spec: "However, if the presentation request is rejected by the presentation engine with an error
-        // VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue
-        // operations are still considered to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will
-        // execute when the corresponding queue operation is complete."
-        if (!IsValueIn(local_result, {VK_SUCCESS, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR,
-                                      VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_SURFACE_LOST_KHR})) {
-            continue;
-        }
-
         // Mark the image as having been released to the WSI
         uint64_t present_id = 0;
         // TODO - need to know what happens if both are included
@@ -4121,6 +4114,21 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         } else if (present_id_info && i < present_id_info->swapchainCount) {
             present_id = present_id_info->pPresentIds[i];
         }
+
+        if (present_timings_info) {
+            const uint32_t present_timing_stage_queries = GetBitSetCount(present_timings_info->pTimingInfos->presentStageQueries);
+            swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_stage_queries});
+        }
+
+        // spec: "However, if the presentation request is rejected by the presentation engine with an error
+        // VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue
+        // operations are still considered to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will
+        // execute when the corresponding queue operation is complete."
+        if (!IsValueIn(local_result, {VK_SUCCESS, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR,
+                                      VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_SURFACE_LOST_KHR})) {
+            continue;
+        }
+
         swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref, present_wait_semaphores);
     }
 
@@ -4142,6 +4150,19 @@ void DeviceState::PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const
 void DeviceState::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
                                                           const RecordObject &record_obj) {
     PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
+}
+
+void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
+    VkDevice device, const VkPastPresentationTimingInfoEXT *pPastPresentationTimingInfo,
+    VkPastPresentationTimingPropertiesEXT *pPastPresentationTimingProperties, const RecordObject &record_obj) {
+    if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
+        auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
+        for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
+            for (uint32_t j = 0; j < pPastPresentationTimingProperties->pPresentationTimings->reportComplete; ++j) {
+                swapchain->present_timing_stage_queries.pop_front();
+            }
+        }
+    }
 }
 
 void DeviceState::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
