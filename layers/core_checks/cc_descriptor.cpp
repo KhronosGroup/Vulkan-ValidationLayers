@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <ostream>
 #include <sstream>
 #include <valarray>
 
@@ -5074,7 +5075,9 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
     // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command
     // stageFlags argument, *and* that the command stageFlags argument has bits set for the stageFlags in each overlapping range.
     auto layout_state = Get<vvl::PipelineLayout>(layout);
-    if (!layout_state) return skip;  // dynamicPipelineLayout feature
+    if (!layout_state) {
+        return skip;  // dynamicPipelineLayout feature
+    }
 
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
     const auto &ranges = *layout_state->push_constant_ranges_layout;
@@ -5084,12 +5087,13 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
             VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
             if (matching_stages != range.stageFlags) {
                 const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01796" : "VUID-vkCmdPushConstants-offset-01796";
-                skip |= LogError(vuid, commandBuffer, loc,
-                                 "is called with\nstageFlags (%s), offset (%" PRIu32 "), size (%" PRIu32
-                                 ")\nwhich is missing stageFlags from the overlapping VkPushConstantRange in %s\nstageFlags (%s), "
-                                 "offset (%" PRIu32 "), size (%" PRIu32 ")",
-                                 string_VkShaderStageFlags(stageFlags).c_str(), offset, size, FormatHandle(layout).c_str(),
-                                 string_VkShaderStageFlags(range.stageFlags).c_str(), range.offset, range.size);
+                skip |=
+                    LogError(vuid, commandBuffer, loc,
+                             "is called with\n  stageFlags (%s), offset (%" PRIu32 "), size (%" PRIu32
+                             ")\nwhich is missing stageFlags from the overlapping VkPushConstantRange in %s\n  stageFlags (%s), "
+                             "offset (%" PRIu32 "), size (%" PRIu32 ")",
+                             string_VkShaderStageFlags(stageFlags).c_str(), offset, size, FormatHandle(layout).c_str(),
+                             string_VkShaderStageFlags(range.stageFlags).c_str(), range.offset, range.size);
             }
 
             // Accumulate all stages we've found
@@ -5097,13 +5101,27 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
         }
     }
     if (found_stages != stageFlags) {
+        std::ostringstream ss;
+        ss << "is called with\n  stageFlags (" << string_VkShaderStageFlags(stageFlags) << "), offset (" << offset << "), size ("
+           << size << ")\nbut " << FormatHandle(layout) << " doesn't have any valid VkPushConstantRange";
         const uint32_t missing_stages = ~found_stages & stageFlags;
+        if (missing_stages != stageFlags) {
+            ss << " for " << string_VkShaderStageFlags(missing_stages);
+        }
+        ss << ":";
+        for (const auto& range : ranges) {
+            ss << "\n  stageFlags (" << string_VkShaderStageFlags(range.stageFlags) << "), offset (" << range.offset << "), size ("
+               << range.size << ")";
+            if ((stageFlags & range.stageFlags) == 0) {
+                ss << " [invalid because stageFlags is not matching]";  // print before bad range
+            } else if (offset < range.offset || (offset + size > range.offset + range.size)) {
+                ss << " [invalid because outside the range]";
+            }
+            // may have case where trying to set Vertex|Fragment and only one stage is valid
+        }
+        ss << "\n";
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01795" : "VUID-vkCmdPushConstants-offset-01795";
-        skip |= LogError(vuid, commandBuffer, loc,
-                         "is called with\nstageFlags (%s), offset (%" PRIu32 "), size (%" PRIu32
-                         ")\nbut the %s doesn't have a VkPushConstantRange with %s",
-                         string_VkShaderStageFlags(stageFlags).c_str(), offset, size, FormatHandle(layout).c_str(),
-                         string_VkShaderStageFlags(missing_stages).c_str());
+        skip |= LogError(vuid, commandBuffer, loc, "%s", ss.str().c_str());
     }
     return skip;
 }

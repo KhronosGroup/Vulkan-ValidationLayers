@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -434,6 +434,22 @@ TEST_F(NegativeCommand, PushConstants) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCommand, PushConstantsCompute) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11404");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 4};
+    vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    const uint32_t data[4] = {};
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-01795");
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 8, &data);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
