@@ -25,6 +25,7 @@ const char* unimplementable_validation[] = {
     // sparseAddressSpaceSize can't be tracked in a layer
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/2403
     "VUID-vkCreateBuffer-flags-00911",
+    "VUID-vkCreateImage-flags-00939",
 
     // Some of the early extensions were not created with a feature bit. This means if the extension is used, we considered it
     // "enabled". This becomes a problem as some coniditional VUIDs depend on the Extension to be enabled, this means we are left
@@ -37,10 +38,12 @@ const char* unimplementable_validation[] = {
     "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912",
 
     // These VUIDs cannot be validated beyond making sure the pointer is not null
-    "VUID-VkMemoryToImageCopy-pHostPointer-09061", "VUID-VkImageToMemoryCopy-pHostPointer-09066"
+    "VUID-VkMemoryToImageCopy-pHostPointer-09061",
+    "VUID-VkImageToMemoryCopy-pHostPointer-09066"
 
     // these are already taken care in spirv-val for 08737
-    "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
+    "VUID-VkShaderModuleCreateInfo-pCode-08736",
+    "VUID-VkShaderCreateInfoEXT-pCode-08736",
 
     // is same as VUID-VkShaderModuleCreateInfo-pCode-08738
     "VUID-VkShaderModuleCreateInfo-pCode-07912",
@@ -56,16 +59,6 @@ const char* unimplementable_validation[] = {
     // These are checked already in VUID-vkGetPrivateData-objectType-04018 and VUID-vkSetPrivateData-objectHandle-04016
     "VUID-vkGetPrivateData-device-parameter",
     "VUID-vkSetPrivateData-device-parameter",
-
-    // These were added for "completeness" (by us!) and serve no real purpose.
-    // 1. VK_EXT_validation_features/VK_EXT_validation_flags are implemented by us and we don't even care
-    //    if the extension name is enabled or not
-    // 2. It would crazy for a layer to suddenly not have VK_EXT_layer_settings work if the extension name is not provided
-    //
-    // Until there is a real world usecase where these are needed, we are just going to defer validating them.
-    "VUID-VkInstanceCreateInfo-pNext-10242",
-    "VUID-VkInstanceCreateInfo-pNext-10243",
-    "VUID-VkInstanceCreateInfo-pNext-10244",
 
     // These ask if pData is a certain size, but no way to validate a pointer to memory is a certain size.
     // There is already another implicit VU checking if pData is not null.
@@ -102,6 +95,15 @@ const char* unimplementable_validation[] = {
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerSize-07340",
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-07341",
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-parameter",
+
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7958
+    // These are useless VUs and nothing to do
+    "VUID-VkComputePipelineCreateInfo-stage-00702",
+    "VUID-VkGraphicsPipelineCreateInfo-pStages-00742",
+    "VUID-VkGraphicsPipelineCreateInfo-None-04889",
+    "VUID-VkRayTracingPipelineCreateInfoKHR-pStages-03426",
+    "VUID-VkRayTracingPipelineCreateInfoNV-pStages-03426",
+    "VUID-VkExecutionGraphPipelineCreateInfoAMDX-pStages-09129",
 
     // Extension has redundant implicit VUs
     "VUID-VkBufferConstraintsInfoFUCHSIA-createInfo-parameter",
@@ -373,6 +375,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pSpecializationInfo-parameter",
     "VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-pBindPointRequirements-parameter",
     "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM-pQueueFamilyDataGraphProperties-parameter",
+    "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04058",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
     "VUID-VkInstanceCreateInfo-pApplicationInfo-parameter",
@@ -681,6 +684,21 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter",
     "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcData-parameter",
     "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstData-parameter",
+};
+
+// These are things that "could be done" but require a crazy amount of work, for no real usecase
+//
+// Anything here should be here because it was carefully thought over why we don't want it
+const char* not_going_to_do[] = {
+    // These were added for "completeness" (by us!) and serve no real purpose.
+    // 1. VK_EXT_validation_features/VK_EXT_validation_flags are implemented by us and we don't even care
+    //    if the extension name is enabled or not
+    // 2. It would crazy for a layer to suddenly not have VK_EXT_layer_settings work if the extension name is not provided
+    //
+    // Until there is a real world usecase where these are needed, we are just going to defer validating them.
+    "VUID-VkInstanceCreateInfo-pNext-10242",
+    "VUID-VkInstanceCreateInfo-pNext-10243",
+    "VUID-VkInstanceCreateInfo-pNext-10244",
 
     // See issue in VK_EXT_memory_decompression where we discussed why this is not possible
     // without implementing the decompression algorithm
@@ -688,7 +706,27 @@ const char* unimplementable_validation[] = {
 
     // Pointless Ray Tracing VUs
     "VUID-VkRayTracingShaderGroupCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03603",
-    "VUID-VkRayTracingShaderGroupCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03604"
+    "VUID-VkRayTracingShaderGroupCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03604",
+
+    // Where added "for completeness", but doesn't seem to be possible with any configuration
+    "VUID-vkBindImageMemory-apiVersion-07921",
+    "VUID-VkBindImageMemoryInfo-apiVersion-07921",
+
+    // We tried to add these a while ago, it had constant false positives
+    // The issue is we can't actually determine the size of the image as that is an opaque object
+    // Trying to do this is only going to lead to more bad false positives
+    "VUID-VkCopyBufferToImageInfo2-pRegions-04565",
+    "VUID-VkCopyBufferToImageInfo2KHR-pRegions-04554",
+    "VUID-VkCopyImageToBufferInfo2-pRegions-04566",
+    "VUID-VkCopyImageToBufferInfo2KHR-pRegions-04557",
+    "VUID-VkImageToMemoryCopy-pRegions-09067",
+    "VUID-VkMemoryToImageCopy-pRegions-09062",
+    "VUID-VkResolveImageInfo2-pRegions-00255",
+    "VUID-vkCmdResolveImage-pRegions-00255",
+
+    // Adding a bunch of generated code to check crazy edge cases for an extension that was only ever added to
+    // layer OpenGL ES on Vulkan is not worth it
+    "VUID-VkSamplerCreateInfo-borderColor-04442",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
