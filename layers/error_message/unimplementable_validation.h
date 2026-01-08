@@ -120,6 +120,14 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureGeometryKHR-instances-parameter",
     "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter",
 
+    // These are being covered by both
+    //   VUID-VkWriteDescriptorSet-dstBinding-00315
+    //   VUID-VkWriteDescriptorSet-dstArrayElement-00321
+    // We would need to really make things complex in order to report these 2 VUs correctly
+    // and on top of that, there are MANY missing similar VUs in VkWriteDescriptorSet the spec would need
+    "VUID-VkDescriptorUpdateTemplateEntry-dstBinding-00354",
+    "VUID-VkDescriptorUpdateTemplateEntry-dstArrayElement-00355",
+
     // If VkDeviceAddress can be zero, we will validate it in cc_buffer_address.h
     // We cover these in VUID-VkDeviceAddress-size-11364
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517#note_546958

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -4124,9 +4124,10 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
     // but retaining the assert as template support is new enough to want to investigate these in debug builds.
-    if (!template_state) return skip;
+    if (!template_state) {
+        return skip;
+    }
 
-    // TODO: Validate template push descriptor updates
     if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
         // decode the templatized data and leverage the non-template UpdateDescriptor helper functions.
         // Translate the templated update into a normal update for validation...
