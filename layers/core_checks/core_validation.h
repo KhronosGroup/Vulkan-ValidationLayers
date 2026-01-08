@@ -136,12 +136,6 @@ class Instance : public vvl::InstanceProxy {
         VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
         VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const ErrorObject& error_obj) const override;
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                 uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                                 const ErrorObject& error_obj) const override;
-#endif
     bool PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                               uint32_t* pRectCount, VkRect2D* pRects,
                                                               const ErrorObject& error_obj) const override;
@@ -170,20 +164,28 @@ class Instance : public vvl::InstanceProxy {
                                                                        struct wl_display* display,
                                                                        const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                 uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                                 const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
 #ifdef VK_USE_PLATFORM_XCB_KHR
     bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                    xcb_connection_t* connection, xcb_visualid_t visual_id,
                                                                    const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_XCB_KHR
+
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                     Display* dpy, VisualID visualID,
                                                                     const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                       struct _screen_window* window,
@@ -1406,9 +1408,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,
                                              const char* vuid) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& allocate_info, const Location& allocate_info_loc) const;
-    bool ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocate_info,
-                                     const VkMemoryDedicatedAllocateInfo* dedicated_allocation_info,
-                                     const Location& allocate_info_loc) const;
+
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const;
     bool ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkBuffer buffer,
                                              const Location& loc) const;
@@ -2111,14 +2111,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                        zx_handle_t* pZirconHandle, const RecordObject& record_obj) override;
 #endif
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
-                                                void** pHandle, const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
-                                                          const void* handle,
-                                                          VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
-                                                          const ErrorObject& error_obj) const override;
-#endif  // VK_USE_PLATFORM_METAL_EXT
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                 HANDLE* pHandle, const ErrorObject& error_obj) const override;
@@ -2132,6 +2125,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                HANDLE* pHandle, const ErrorObject& error_obj) const override;
+    bool PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR* pModes,
+                                                              const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool CanSemaphoreExportFromImported(VkExternalSemaphoreHandleTypeFlagBits export_type,
@@ -2610,18 +2610,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
                                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                          const ErrorObject& error_obj) const override;
-    bool PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                          const ErrorObject& error_obj) const override;
-#endif
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                              VkDeviceGroupPresentModeFlagsKHR* pModes,
-                                                              const ErrorObject& error_obj) const override;
-#endif
     bool PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                              VkDeviceGroupPresentModeFlagsKHR* pModes,
                                                              const ErrorObject& error_obj) const override;
@@ -2808,8 +2797,17 @@ class CoreChecks : public vvl::DeviceProxy {
                                                              VkDeviceSize build_acceleration_structure_size) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
+    bool ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocate_info,
+                                     const VkMemoryDedicatedAllocateInfo* dedicated_allocation_info,
+                                     const Location& allocate_info_loc) const;
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                void** pHandle, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                          const void* handle,
+                                                          VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                          const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

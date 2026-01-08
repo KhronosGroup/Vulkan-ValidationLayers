@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -565,14 +565,12 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
     }
     return skip;
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
 
 bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocate_info,
                                              const VkMemoryDedicatedAllocateInfo *dedicated_allocation_info,
                                              const Location &allocate_info_loc) const {
     bool skip = false;
 
-#if VK_USE_PLATFORM_METAL_EXT
     // When dealing with Metal external memory, we can have the following 3 scenarios:
     // 1. Allocation will be exported. Contains VkExportMemoryAllocateInfo
     // 2. Allocation is being imported. Contains VkImportMemoryMetalHandleInfoEXT
@@ -661,12 +659,10 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
                              "does not support importing image with format %s", string_VkFormat(image_format));
         }
     }
-#endif  // VK_USE_PLATFORM_METAL_EXT
 
     return skip;
 }
 
-#ifdef VK_USE_PLATFORM_METAL_EXT
 bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT *pGetMetalHandleInfo,
                                                         void **pHandle, const ErrorObject &error_obj) const {
     bool skip = false;

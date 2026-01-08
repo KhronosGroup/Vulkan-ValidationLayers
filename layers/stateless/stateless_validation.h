@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Copyright (C) 2025 Arm Limited.
  *
@@ -375,6 +375,11 @@ class Instance : public vvl::base::Instance {
     bool manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                      const Context &context) const;
+    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                        const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                        uint32_t* pPresentModeCount,
+                                                                        VkPresentModeKHR* pPresentModes,
+                                                                        const Context& context) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -421,14 +426,6 @@ class Instance : public vvl::base::Instance {
                                                                    uint32_t *pSurfaceFormatCount,
                                                                    VkSurfaceFormat2KHR *pSurfaceFormats,
                                                                    const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                        uint32_t *pPresentModeCount,
-                                                                        VkPresentModeKHR *pPresentModes,
-                                                                        const Context &context) const;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #include "generated/stateless_instance_methods.h"
 };
@@ -633,11 +630,6 @@ class Device : public vvl::base::Device {
                                             const Context &context) const;
     bool manual_PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                               const VkDependencyInfo *pDependencyInfos, const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
-                                     const char *sType, const void *pNext) const;
-#endif  // VK_USE_PLATFORM_METAL_EXT
 
     bool ValidateWriteDescriptorSet(const Context &context, const Location &loc, const uint32_t descriptorWriteCount,
                                     const VkWriteDescriptorSet *pDescriptorWrites) const;
@@ -881,6 +873,10 @@ class Device : public vvl::base::Device {
                                                                  const void *pHostPointer,
                                                                  VkMemoryHostPointerPropertiesEXT *pMemoryHostPointerProperties,
                                                                  const Context &context) const;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char* vuid, const Location& loc,
+                                     const char* sType, const void* pNext) const;
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
