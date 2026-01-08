@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -625,6 +625,24 @@ bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance
     return skip;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+bool Device::manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                            const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    if (pCreateInfo->dfb == nullptr) {
+        skip |= LogError("VUID-VkDirectFBSurfaceCreateInfoEXT-dfb-04117", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::dfb), "is NULL.");
+    }
+    if (pCreateInfo->surface == nullptr) {
+        skip |= LogError("VUID-VkDirectFBSurfaceCreateInfoEXT-surface-04118", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::surface), "is NULL.");
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
 bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                               const VkCalibratedTimestampInfoKHR *pTimestampInfos,

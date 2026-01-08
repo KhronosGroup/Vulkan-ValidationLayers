@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Copyright (C) 2025 Arm Limited.
  *
@@ -1228,6 +1228,12 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV *pBuildInfo,
         const Context &context) const;
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    bool manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                        const Context& context) const;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
     bool manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                           const VkCalibratedTimestampInfoKHR *pTimestampInfos,
