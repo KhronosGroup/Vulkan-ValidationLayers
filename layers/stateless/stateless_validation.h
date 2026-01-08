@@ -693,6 +693,9 @@ class Device : public vvl::base::Device {
                                                          const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
                                                          const Context &context) const;
     bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, const Context &context) const;
+    bool manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
+        VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT *pSwapchainTimeDomainProperties,
+        uint64_t *pTimeDomainsCounter, const Context &context) const;
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     const Context &context) const;

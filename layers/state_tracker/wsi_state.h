@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -24,6 +24,7 @@
 #include "containers/span.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <optional>
+#include <deque>
 
 namespace vvl {
 class DeviceState;
@@ -118,6 +119,9 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     // New swapchain state:
     // Present wait semaphores from the the old swapchain presentations.
     std::vector<std::shared_ptr<vvl::Semaphore>> old_swapchain_present_wait_semaphores;
+
+    // Number of bits set in VkPresentTimingInfoEXT::presentStageQueries for each present that hasn't been completed
+    std::deque<std::pair<uint64_t, uint32_t>> present_timing_stage_queries;
 
     Swapchain(DeviceState &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
