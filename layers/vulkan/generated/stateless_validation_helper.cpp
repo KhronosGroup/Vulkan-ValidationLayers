@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22857,6 +22857,7 @@ bool Instance::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, cons
     }
     skip |=
         context.ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateDirectFBSurfaceEXT-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, context);
     return skip;
 }
 
