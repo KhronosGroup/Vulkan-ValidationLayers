@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3006,13 +3006,37 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
         return skip;
     }
 
-    auto resolve_view_state = Get<vvl::ImageView>(attachment_info.resolveImageView);
-    if (resolve_view_state && resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
-        skip |=
-            LogError("VUID-VkRenderingAttachmentInfo-imageView-06864", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                     "%s but resolveImageView has a sample count of %s", string_VkResolveModeFlagBits(attachment_info.resolveMode),
-                     string_VkSampleCountFlagBits(resolve_view_state->samples));
+    if (auto resolve_view_state = Get<vvl::ImageView>(attachment_info.resolveImageView)) {
+        if (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
+            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+            skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06864", commandBuffer,
+                             attachment_loc.dot(Field::resolveMode), "%s but resolveImageView has a sample count of %s",
+                             string_VkResolveModeFlagBits(attachment_info.resolveMode),
+                             string_VkSampleCountFlagBits(resolve_view_state->samples));
+        }
+
+        if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT &&
+            (image_view_format != resolve_view_state->create_info.format)) {
+            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, image_view_state.Handle());
+            skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", objlist, attachment_loc.dot(Field::resolveImageView),
+                             "format (%s) and %s format (%s) are different (resolveMode is %s).",
+                             string_VkFormat(resolve_view_state->create_info.format),
+                             attachment_loc.dot(Field::imageView).Fields().c_str(), string_VkFormat(image_view_format),
+                             string_VkResolveModeFlagBits(attachment_info.resolveMode));
+        }
+
+        if (enabled_features.tileMemoryHeap && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
+            for (const auto &bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
+                if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
+                    const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, bound_memory->VkHandle());
+                    skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
+                                     "was created with %s which is bound to %s created from a VkMemoryHeap with"
+                                     " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM",
+                                     FormatHandle(resolve_view_state->image_state->VkHandle()).c_str(),
+                                     FormatHandle(bound_memory->VkHandle()).c_str());
+                }
+            }
+        }
     }
 
     if (attachment_info.resolveImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
@@ -3046,16 +3070,6 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                          string_VkResolveModeFlagBits(attachment_info.resolveMode));
     }
 
-    if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT && resolve_view_state &&
-        (image_view_format != resolve_view_state->create_info.format)) {
-        const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, image_view_state.Handle());
-        skip |=
-            LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", objlist, attachment_loc.dot(Field::resolveImageView),
-                     "format (%s) and %s format (%s) are different (resolveMode is %s).",
-                     string_VkFormat(resolve_view_state->create_info.format), attachment_loc.dot(Field::imageView).Fields().c_str(),
-                     string_VkFormat(image_view_format), string_VkResolveModeFlagBits(attachment_info.resolveMode));
-    }
-
     if (IsValueIn(attachment_info.resolveImageLayout,
                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -3072,19 +3086,6 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06137", objlist, attachment_loc.dot(Field::resolveImageLayout),
                          "is %s (resolveMode is %s).", string_VkImageLayout(attachment_info.resolveImageLayout),
                          string_VkResolveModeFlagBits(attachment_info.resolveMode));
-    }
-
-    if (resolve_view_state && !resolve_view_state->image_state->GetBoundMemoryStates().empty()) {
-        for (const auto &bound_memory : resolve_view_state->image_state->GetBoundMemoryStates()) {
-            if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
-                const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, bound_memory->VkHandle());
-                skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", objlist, attachment_loc,
-                                 "was created with %s which is bound to %s created from a VkMemoryHeap with"
-                                 " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM",
-                                 FormatHandle(resolve_view_state->image_state->VkHandle()).c_str(),
-                                 FormatHandle(bound_memory->VkHandle()).c_str());
-            }
-        }
     }
 
     return skip;
@@ -5235,9 +5236,7 @@ bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &cr
         auto image_view_state = Get<vvl::ImageView>(image_views[i]);
         ASSERT_AND_CONTINUE(image_view_state);
 
-        auto image = image_view_state->image_state;
-        auto bound_memory_states = image->GetBoundMemoryStates();
-
+        auto bound_memory_states = image_view_state->image_state->GetBoundMemoryStates();
         for (const auto &bound_memory : bound_memory_states) {
             if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
                 // This VUID is being fixed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7950
