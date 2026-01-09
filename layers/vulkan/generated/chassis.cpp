@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -57,6 +57,13 @@ static const VkLayerProperties global_layer = {
 };
 
 // These functions reference generated data so they cannot be part of chassis_main.cpp
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(uint32_t* pApiVersion) {
+    if (pApiVersion) {
+        *pApiVersion = VK_HEADER_VERSION_COMPLETE;
+    }
+    return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
     return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
 }
@@ -35352,6 +35359,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdBeginRenderPass", {kFuncTypeDev, (void*)CmdBeginRenderPass}},
         {"vkCmdNextSubpass", {kFuncTypeDev, (void*)CmdNextSubpass}},
         {"vkCmdEndRenderPass", {kFuncTypeDev, (void*)CmdEndRenderPass}},
+        {"vkEnumerateInstanceVersion", {kFuncTypeInst, (void*)EnumerateInstanceVersion}},
         {"vkBindBufferMemory2", {kFuncTypeDev, (void*)BindBufferMemory2}},
         {"vkBindImageMemory2", {kFuncTypeDev, (void*)BindImageMemory2}},
         {"vkGetDeviceGroupPeerMemoryFeatures", {kFuncTypeDev, (void*)GetDeviceGroupPeerMemoryFeatures}},

@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2025 Valve Corporation
-# Copyright (c) 2015-2025 LunarG, Inc.
-# Copyright (c) 2015-2025 Google Inc.
+# Copyright (c) 2015-2026 Valve Corporation
+# Copyright (c) 2015-2026 LunarG, Inc.
+# Copyright (c) 2015-2026 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 # Copyright (C) 2025 Arm Limited.
 #
@@ -66,7 +66,6 @@ class APISpecific:
 
 class LayerChassisOutputGenerator(BaseGenerator):
     ignore_functions = (
-        'vkEnumerateInstanceVersion',
     )
 
     manual_functions = (
@@ -77,6 +76,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkDestroyDevice',
         'vkCreateInstance',
         'vkDestroyInstance',
+        'vkEnumerateInstanceVersion',
         'vkEnumerateInstanceLayerProperties',
         'vkEnumerateInstanceExtensionProperties',
         'vkEnumerateDeviceLayerProperties',
@@ -131,9 +131,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2025 The Khronos Group Inc.
-            * Copyright (c) 2015-2025 Valve Corporation
-            * Copyright (c) 2015-2025 LunarG, Inc.
+            * Copyright (c) 2015-2026 The Khronos Group Inc.
+            * Copyright (c) 2015-2026 Valve Corporation
+            * Copyright (c) 2015-2026 LunarG, Inc.
             * Copyright (c) 2015-2024 Google Inc.
             * Copyright (c) 2023-2024 RasterGrid Kft.
             *
@@ -261,6 +261,13 @@ class LayerChassisOutputGenerator(BaseGenerator):
             };
 
             // These functions reference generated data so they cannot be part of chassis_main.cpp
+            VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(uint32_t* pApiVersion) {
+                if (pApiVersion) {
+                    *pApiVersion = VK_HEADER_VERSION_COMPLETE;
+                }
+                return VK_SUCCESS;
+            }
+
             VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
                 return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
             }
