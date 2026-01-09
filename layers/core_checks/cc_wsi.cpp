@@ -1414,6 +1414,17 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQN
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+bool core::Instance::PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
+                                                                                    uint32_t queueFamilyIndex, IDirectFB* dfb,
+                                                                                    const ErrorObject& error_obj) const {
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
+                                    "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-queueFamilyIndex-04119",
+                                    error_obj.location.dot(Field::queueFamilyIndex));
+}
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
+
 bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                        VkSurfaceKHR surface, VkBool32 *pSupported,
                                                                        const ErrorObject &error_obj) const {

@@ -191,6 +191,12 @@ class Instance : public vvl::InstanceProxy {
                                                                       struct _screen_window* window,
                                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                        IDirectFB* dfb,
+                                                                        const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 };
 
 template <typename StateObject>
