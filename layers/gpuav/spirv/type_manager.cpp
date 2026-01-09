@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
             break;
         case SpvType::kStruct:
             break;  // don't track structs currently
-        case SpvType::kCooperativeVectorNV:
+        case SpvType::kVectorIdEXT:
             break;  // don't track coopvec currently
         default:
             assert(false && "unsupported SpvType");
