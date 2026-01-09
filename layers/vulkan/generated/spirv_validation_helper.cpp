@@ -289,8 +289,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
         {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityLongVectorEXT, {0, &DeviceFeatures::longVector, nullptr, ""}},
+        {spv::CapabilityLongVectorEXT, {0, &DeviceFeatures::longVector, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -773,6 +772,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "RayTracingSpheresGeometryNV";
         case spv::CapabilityRayTracingLinearSweptSpheresGeometryNV:
             return "RayTracingLinearSweptSpheresGeometryNV";
+        case spv::CapabilityLongVectorEXT:
+            return "LongVectorEXT";
         case spv::CapabilityShader64BitIndexingEXT:
             return "Shader64BitIndexingEXT";
         case spv::CapabilityCooperativeMatrixReductionsNV:
@@ -1235,6 +1236,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityUntypedPointersKHR, "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers"},
     {spv::CapabilityFMAKHR, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat32 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat64"},
     {spv::CapabilityShader64BitIndexingEXT, "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing"},
+    {spv::CapabilityLongVectorEXT, "VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector"},
     };
 
     // VUs before catch unknown capabilities

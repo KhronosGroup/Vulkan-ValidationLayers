@@ -812,7 +812,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpHitObjectIsMissNV:
         case spv::OpTypeHitObjectNV:
         case spv::OpImageSampleFootprintNV:
-        case spv::OpTypeCooperativeVectorNV:
+        case spv::OpTypeVectorIdEXT:
         case spv::OpCooperativeVectorMatrixMulNV:
         case spv::OpCooperativeVectorMatrixMulAddNV:
         case spv::OpCooperativeMatrixConvertNV:
@@ -1331,7 +1331,7 @@ enum class SpvType {
     kCooperativeMatrixKHR,
     kRayQueryKHR,
     kHitObjectNV,
-    kCooperativeVectorNV,
+    kVectorIdEXT,
     kHitObjectEXT,
     kAccelerationStructureKHR,
     kCooperativeMatrixNV,
@@ -1383,8 +1383,8 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kRayQueryKHR;
         case spv::OpTypeHitObjectNV:
             return SpvType::kHitObjectNV;
-        case spv::OpTypeCooperativeVectorNV:
-            return SpvType::kCooperativeVectorNV;
+        case spv::OpTypeVectorIdEXT:
+            return SpvType::kVectorIdEXT;
         case spv::OpTypeHitObjectEXT:
             return SpvType::kHitObjectEXT;
         case spv::OpTypeAccelerationStructureKHR:

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -87,11 +87,12 @@ TEST_F(NegativeMesh, BasicUsage) {
        %void = OpTypeVoid
           %3 = OpTypeFunction %void
       %float = OpTypeFloat 32
-%_ptr_Output_float = OpTypePointer Output %float
-         %tf = OpVariable %_ptr_Output_float Output
        %uint = OpTypeInt 32 0
      %uint_2 = OpConstant %uint 2
      %uint_1 = OpConstant %uint 1
+    %array = OpTypeArray %float %uint_1
+%_ptr_Output_float = OpTypePointer Output %array
+         %tf = OpVariable %_ptr_Output_float Output
      %v3uint = OpTypeVector %uint 3
          %10 = OpConstantComposite %v3uint %uint_2 %uint_1 %uint_1
        %main = OpFunction %void None %3

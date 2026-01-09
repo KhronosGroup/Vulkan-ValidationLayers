@@ -823,8 +823,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeHitObjectNV";
         case spv::OpImageSampleFootprintNV:
             return "OpImageSampleFootprintNV";
-        case spv::OpTypeCooperativeVectorNV:
-            return "OpTypeCooperativeVectorNV";
+        case spv::OpTypeVectorIdEXT:
+            return "OpTypeVectorIdEXT";
         case spv::OpCooperativeVectorMatrixMulNV:
             return "OpCooperativeVectorMatrixMulNV";
         case spv::OpCooperativeVectorOuterProductAccumulateNV:
@@ -2536,7 +2536,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpReorderThreadWithHintNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeHitObjectNV, {{}}},
         {spv::OpImageSampleFootprintNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
-        {spv::OpTypeCooperativeVectorNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTypeVectorIdEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeVectorMatrixMulNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeVectorOuterProductAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeVectorReduceSumAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
