@@ -686,6 +686,13 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490"
 
+    // These are suppose to be for Buffer/Memory <--> Image
+    // These 3 checks are covered, Image-to-Image is different
+    // Likely needs to just be removed from the spec, but a lot of churn for little reward
+    "VUID-VkCopyImageToImageInfo-dstImage-00207",
+    "VUID-VkCopyImageToImageInfo-dstImage-00208",
+    "VUID-VkCopyImageToImageInfo-dstImage-00209",
+
     // Can't check for a valid VkDeviceOrHostAddressConstKHR union
     "VUID-VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX-compressedData-parameter",
     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter",
