@@ -1548,6 +1548,29 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         }
     }
 
+    if (auto *tile_mem_bind_info = vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(inheritance_info.pNext)) {
+        VulkanTypedHandle active_tile_memory_handle = {};
+        VkDeviceSize active_tile_mem_size = 0;
+        if (cb_state.bound_tile_memory) {
+            active_tile_memory_handle = cb_state.bound_tile_memory->Handle();
+            active_tile_mem_size = cb_state.bound_tile_memory->allocate_info.allocationSize;
+        }
+        const auto tile_mem_bind_mem = Get<vvl::DeviceMemory>(tile_mem_bind_info->memory);
+        const VkDeviceSize tile_mem_bind_size = tile_mem_bind_mem->allocate_info.allocationSize;
+
+        if (active_tile_mem_size != tile_mem_bind_size) {
+            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), active_tile_memory_handle,
+                                        tile_mem_bind_mem->Handle());
+            skip |= LogError("VUID-vkCmdExecuteCommands-memory-10724", objlist, secondary_cb_loc,
+                             "began recording with a VkTileMemoryBindInfoQCOM::memory of size (%" PRIu64
+                             ") which"
+                             " is not equal to (%" PRIu64
+                             ") from the size of memory set in the primary command buffer's"
+                             " last call to vkCmdBindTileMemoryQCOM",
+                             tile_mem_bind_size, active_tile_mem_size);
+        }
+    }
+
     return skip;
 }
 

@@ -191,6 +191,12 @@ class Instance : public vvl::InstanceProxy {
                                                                       struct _screen_window* window,
                                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                        IDirectFB* dfb,
+                                                                        const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 };
 
 template <typename StateObject>
@@ -292,6 +298,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const core::CommandBufferSubState& cb_sub_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
+    bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
+                                                const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -1768,6 +1776,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkAccelerationStructureKHR* pAccelerationStructure,
                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
+                                                              const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+                                                              const uint32_t* pMaxPrimitiveCounts,
+                                                              VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                           const ErrorObject& error_obj) const override;
@@ -2830,6 +2843,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const ErrorObject& error_obj) const override;
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
+    bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
+                                 const vvl::DrawDispatchVuid& vuid) const;
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;
