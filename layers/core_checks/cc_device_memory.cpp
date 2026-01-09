@@ -1839,31 +1839,33 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     skip |= ValidateMemoryTypes(*mem_info, memory_requirements.memoryRequirements.memoryTypeBits,
                                                 loc.dot(Field::image), vuid_mem_type);
 
-                    if (!bind_image_mem_2) {
-                        if (!IsIntegerMultipleOf(bind_info.memoryOffset, tile_mem_requirements.alignment)) {
-                            const char* vuid = "VUID-vkBindImageMemory-memory-10736";
-                            const LogObjectList objlist(bind_info.image, bind_info.memory);
-                            skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
-                                             "is %" PRIu64
-                                             " but must be an integer multiple of the "
-                                             "VkTileMemoryRequirementsQCOM::alignment value %" PRIu64
-                                             ", returned from a call to vkGetImageMemoryRequirements2 with image.",
-                                             bind_info.memoryOffset, tile_mem_requirements.alignment);
-                        }
+                    if (!IsIntegerMultipleOf(bind_info.memoryOffset, tile_mem_requirements.alignment)) {
+                        // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7940
+                        const char *vuid =
+                            bind_image_mem_2 ? "UNASSIGNED-vkBindImageMemory2-memory" : "VUID-vkBindImageMemory-memory-10736";
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
+                                         "is %" PRIu64
+                                         " but must be an integer multiple of the "
+                                         "VkTileMemoryRequirementsQCOM::alignment value %" PRIu64
+                                         ", returned from a call to vkGetImageMemoryRequirements2 with image.",
+                                         bind_info.memoryOffset, tile_mem_requirements.alignment);
+                    }
 
-                        if (!IgnoreAllocationSize(allocate_info) &&
-                            tile_mem_requirements.size > allocate_info.allocationSize - bind_info.memoryOffset) {
-                            const char* vuid = "VUID-vkBindImageMemory-memory-10738";
-                            const LogObjectList objlist(bind_info.image, bind_info.memory);
-                            skip |= LogError(vuid, objlist, loc,
-                                             "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
-                                             " memoryTypeindex (%" PRIu32
-                                             ") but must be at least as large as VkTileMemoryRequirementsQCOM::size value %" PRIu64
-                                             ", returned from a call to vkGetImageMemoryRequirements2 with image.",
-                                             allocate_info.allocationSize, bind_info.memoryOffset,
-                                             allocate_info.allocationSize - bind_info.memoryOffset,
-                                             mem_info->allocate_info.memoryTypeIndex, tile_mem_requirements.size);
-                        }
+                    if (!IgnoreAllocationSize(allocate_info) &&
+                        tile_mem_requirements.size > allocate_info.allocationSize - bind_info.memoryOffset) {
+                        // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7940
+                        const char *vuid =
+                            bind_image_mem_2 ? "UNASSIGNED-vkBindImageMemory2-memory" : "VUID-vkBindImageMemory-memory-10738";
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(vuid, objlist, loc,
+                                         "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                         " memoryTypeindex (%" PRIu32
+                                         ") but must be at least as large as VkTileMemoryRequirementsQCOM::size value %" PRIu64
+                                         ", returned from a call to vkGetImageMemoryRequirements2 with image.",
+                                         allocate_info.allocationSize, bind_info.memoryOffset,
+                                         allocate_info.allocationSize - bind_info.memoryOffset,
+                                         mem_info->allocate_info.memoryTypeIndex, tile_mem_requirements.size);
                     }
                 }
             }
