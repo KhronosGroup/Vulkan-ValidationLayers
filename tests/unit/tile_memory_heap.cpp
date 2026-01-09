@@ -340,6 +340,197 @@ TEST_F(NegativeTileMemoryHeap, BindNonTileMemoryCommandBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeTileMemoryHeap, TileMemoryMismatchResourceCommandBuffer) {
+    TEST_DESCRIPTION("Mismatch VkDeviceMemory between underlying Resource and Command Buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    // Create a Tile Memory Image
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(
+        32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    // Query Tile Memory Image Requirements
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible to be bound with Tile Memory.";
+    }
+
+    // Find a memory configuration for the Tile Memory Image, otherwise exit
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = tile_mem_reqs.size;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    vkt::DeviceMemory image_memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image, image_memory, 0);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkFormat color_formats = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = image_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
+
+    // Dynamic Rendering
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-10746");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+
+    VkSubpassDescription2 subpass[2] = {};
+    subpass[0] = vku::InitStructHelper();
+    subpass[0].colorAttachmentCount = 1;
+    subpass[0].pColorAttachments = &attachment_ref;
+    subpass[1] = vku::InitStructHelper();
+    subpass[1].colorAttachmentCount = 1;
+    subpass[1].pColorAttachments = &attachment_ref;
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rp = vku::InitStructHelper();
+    rp.subpassCount = 2;
+    rp.pSubpasses = &subpass[0];
+    rp.attachmentCount = 1;
+    rp.pAttachments = &attach_desc;
+    vkt::RenderPass test_rp(*m_device, rp);
+
+    VkImageView fb_image_view = image_view;
+    auto frame_buffer_create_info =
+        vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp.handle(), 1u, &fb_image_view, 32u, 32u, 1u);
+    vkt::Framebuffer fb(*m_device, frame_buffer_create_info);
+    CreatePipelineHelper render_pass_pipe(*this);
+    render_pass_pipe.gp_ci_.renderPass = test_rp;
+    render_pass_pipe.gp_ci_.subpass = 0;
+    render_pass_pipe.CreateGraphicsPipeline();
+
+    // Render Pass
+    m_command_buffer.BeginRenderPass(test_rp, fb, 32u, 32u, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, render_pass_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-10746");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileMemoryHeap, SecondaryCommandBufferTileMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    auto image_create_info =
+        vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_create_info);
+
+    VkCommandBufferAllocateInfo secondary_cmd_buffer_alloc_info = vku::InitStructHelper();
+    secondary_cmd_buffer_alloc_info.commandPool = m_command_pool;
+    secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    secondary_cmd_buffer_alloc_info.commandBufferCount = 1;
+
+    vkt::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
+    VkPhysicalDeviceMemoryProperties memory_info;
+    int mem_type_index = -1;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
+    for (uint32_t i = 0; i < memory_info.memoryTypeCount; i++) {
+        int heap_index = memory_info.memoryTypes[i].heapIndex;
+        if (memory_info.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+            mem_type_index = i;
+            break;
+        }
+    }
+
+    if (mem_type_index == -1) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    VkMemoryAllocateInfo tile_mem_alloc_info = vku::InitStructHelper();
+    tile_mem_alloc_info.memoryTypeIndex = mem_type_index;
+    tile_mem_alloc_info.allocationSize = 1024;
+    vkt::DeviceMemory tile_mem1(*m_device, tile_mem_alloc_info);
+    tile_mem_alloc_info.allocationSize = 512;
+    vkt::DeviceMemory tile_mem2(*m_device, tile_mem_alloc_info);
+    VkTileMemoryBindInfoQCOM bind_info = vku::InitStructHelper();
+    bind_info.memory = tile_mem1;
+
+    VkTileMemoryBindInfoQCOM tile_memory_bind_info = vku::InitStructHelper();
+    tile_memory_bind_info.memory = tile_mem2;
+
+    VkFormat color_formats = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper(&tile_memory_bind_info);
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    inheritance_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+
+    VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferBeginInfo secondary_cmd_buffer_begin_info = vku::InitStructHelper{};
+    secondary_cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary_cmd_buffer_begin_info.pInheritanceInfo = &cmd_buffer_inheritance_info;
+
+    secondary_cmd_buffer.Begin(&secondary_cmd_buffer_begin_info);
+    secondary_cmd_buffer.End();
+
+    vkt::ImageView image_view = image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = image_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
+
+    m_command_buffer.Begin();
+    vk::CmdBindTileMemoryQCOM(m_command_buffer, &bind_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-memory-10724");
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cmd_buffer.handle());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeTileMemoryHeap, TileProperties) {
     TEST_DESCRIPTION("Provide a Tile Memory size that is greater than the largest Tile Memory heap.");
     SetTargetApiVersion(VK_API_VERSION_1_1);

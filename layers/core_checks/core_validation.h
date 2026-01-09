@@ -298,6 +298,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const core::CommandBufferSubState& cb_sub_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
+    bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
+                                                const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -2841,6 +2843,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const ErrorObject& error_obj) const override;
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
+    bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
+                                 const vvl::DrawDispatchVuid& vuid) const;
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;

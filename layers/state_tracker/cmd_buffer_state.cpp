@@ -293,6 +293,7 @@ void CommandBuffer::ResetCBState() {
     current_vertex_buffer_binding_info.clear();
     primary_command_buffer = VK_NULL_HANDLE;
     linked_command_buffers.clear();
+    bound_tile_memory = nullptr;
 
     for (auto &item : lastBound) {
         item.Reset();

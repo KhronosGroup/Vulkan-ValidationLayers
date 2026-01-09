@@ -320,6 +320,7 @@ struct DrawDispatchVuid {
     const char* image_layout_09600 = kVUIDUndefined;
     const char* rendering_contents_10582 = kVUIDUndefined;
     const char* line_rasterization_10608 = kVUIDUndefined;
+    const char* tile_memory_heap_10746 = kVUIDUndefined;
     // Ray tracing
     const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
     // TensorARM
