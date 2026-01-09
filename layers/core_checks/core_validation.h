@@ -2844,7 +2844,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
     bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
-                                 const vvl::DrawDispatchVuid& vuid) const;
+                                 const vvl::DrawDispatchVuid& vuid) const override;
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;

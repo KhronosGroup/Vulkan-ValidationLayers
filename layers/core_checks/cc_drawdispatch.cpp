@@ -2706,19 +2706,22 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
 bool CoreChecks::ValidateBoundTileMemory(const vvl::Bindable &bindable, const vvl::CommandBuffer &cb_state,
                                          const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
-    auto bound_memory_states = bindable.GetBoundMemoryStates();
-    VkDeviceMemory bound_tile_memory_handle =
-        (cb_state.bound_tile_memory != VK_NULL_HANDLE) ? cb_state.bound_tile_memory->VkHandle() : VK_NULL_HANDLE;
-    for (const auto &bound_memory : bound_memory_states) {
-        if (HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex) &&
-            (bound_memory->VkHandle() != bound_tile_memory_handle)) {
-            skip |= LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
-                             "%s is bound to a %s from memoryTypes[%" PRIu32
-                             "]"
-                             " that corresponds to Tile Memory but does not match the active bound"
-                             " Tile Memory %s in the CommandBuffer.",
-                             FormatHandle(bindable.Handle()).c_str(), FormatHandle(bound_memory->Handle()).c_str(),
-                             bound_memory->allocate_info.memoryTypeIndex, FormatHandle(bound_tile_memory_handle).c_str());
+
+    if (enabled_features.tileMemoryHeap) {
+        auto bound_memory_states = bindable.GetBoundMemoryStates();
+        VkDeviceMemory bound_tile_memory_handle =
+            (cb_state.bound_tile_memory != VK_NULL_HANDLE) ? cb_state.bound_tile_memory->VkHandle() : VK_NULL_HANDLE;
+        for (const auto &bound_memory : bound_memory_states) {
+            if (HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex) &&
+                (bound_memory->VkHandle() != bound_tile_memory_handle)) {
+                skip |= LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
+                                 "%s is bound to a %s from memoryTypes[%" PRIu32
+                                 "]"
+                                 " that corresponds to Tile Memory but does not match the active bound"
+                                 " Tile Memory %s in the CommandBuffer.",
+                                 FormatHandle(bindable.Handle()).c_str(), FormatHandle(bound_memory->Handle()).c_str(),
+                                 bound_memory->allocate_info.memoryTypeIndex, FormatHandle(bound_tile_memory_handle).c_str());
+            }
         }
     }
     return skip;

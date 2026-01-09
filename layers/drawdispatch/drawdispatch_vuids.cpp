@@ -1752,6 +1752,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdDispatch-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdDispatch-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdDispatch-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdDispatch-commandBuffer-10746";
     }
 };
 
@@ -1805,6 +1806,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdDispatchIndirect-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdDispatchIndirect-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdDispatchIndirect-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdDispatchIndirect-commandBuffer-10746";
     }
 };
 
@@ -2420,6 +2422,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdTraceRaysNV-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdTraceRaysNV-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdTraceRaysNV-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdTraceRaysNV-commandBuffer-10746";
     }
 };
 
@@ -2470,6 +2473,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdTraceRaysKHR-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdTraceRaysKHR-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdTraceRaysKHR-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdTraceRaysKHR-commandBuffer-10746";
     }
 };
 
@@ -2520,6 +2524,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdTraceRaysIndirectKHR-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdTraceRaysIndirectKHR-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-10746";
     }
 };
 
@@ -2570,6 +2575,7 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdTraceRaysIndirect2KHR-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdTraceRaysIndirect2KHR-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-10746";
     }
 };
 
@@ -4459,6 +4465,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdDispatchBase-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdDispatchBase-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdDispatchBase-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdDispatchBase-commandBuffer-10746";
     }
 };
 
@@ -4687,6 +4694,7 @@ struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
         tensorARM_pDescription_09900             = "VUID-vkCmdExecuteGeneratedCommandsEXT-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdExecuteGeneratedCommandsEXT-dimensionCount-09905";
         spirv_OpTypeTensorARM_09906              = "VUID-vkCmdExecuteGeneratedCommandsEXT-OpTypeTensorARM-09906";
+        tile_memory_heap_10746                   = "VUID-vkCmdExecuteGeneratedCommandsEXT-commandBuffer-10746";
     }
 };
 

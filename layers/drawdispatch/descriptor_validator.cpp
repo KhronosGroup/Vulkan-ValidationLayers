@@ -316,6 +316,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
                              FormatHandle(binding->Handle()).c_str(), DescribeInstruction().c_str());
         }
+        if (resource_variable.IsAccessed()) {
+            skip |= dev_proxy.ValidateBoundTileMemory(*descriptor.GetBufferState(), cb_state, *vuids);
+        }
     }
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE) {
         skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_node, loc.Get(), vuids->unprotected_command_buffer_02707,
@@ -648,6 +651,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
 
             bool descriptor_written_to = false;
+            bool descriptor_accessed = false;
             const auto pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint) continue;
@@ -655,6 +659,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     if (interface_variable.decorations.set == set_index &&
                         interface_variable.decorations.binding == binding_index) {
                         descriptor_written_to |= interface_variable.IsWrittenTo();
+                        descriptor_accessed = interface_variable.IsAccessed();
                         break;  // only one set/binding will match
                     }
                 }
@@ -699,6 +704,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                      FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),
                                      FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
                 }
+            }
+
+            if (descriptor_accessed) {
+                skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, *vuids);
             }
         }
     }
@@ -1146,6 +1155,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format), format_component_count,
                              texel_component_count, DescribeInstruction().c_str());
         }
+    }
+
+    if (resource_variable.IsAccessed()) {
+        skip |= dev_proxy.ValidateBoundTileMemory(*buffer_view_state->buffer_state, cb_state, *vuids);
     }
 
     return skip;
