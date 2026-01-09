@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ void AccessContextStats::UpdateMax(const AccessContextStats& cur_stats) {
 
 void UpdateAccessMapStats(const AccessMap& access_map, AccessContextStats& stats) {
     stats.access_contexts += 1;
-    stats.access_states += (uint32_t)access_map.size();
+    stats.access_states += (uint32_t)access_map.Size();
     for (const auto& entry : access_map) {
         const AccessState& access_state = entry.second;
         access_state.UpdateStats(stats);
@@ -123,7 +123,7 @@ void AccessStats::Update(SyncValidator& validator) {
     subpass_access_stats = {};
 
     validator.device_state->ForEachShared<vvl::CommandBuffer>([this](std::shared_ptr<vvl::CommandBuffer> cb) {
-        const CommandBufferAccessContext* cb_access_context = AccessContext(*cb);
+        const CommandBufferAccessContext* cb_access_context = GetAccessContext(*cb);
         cb_access_context->UpdateStats(*this);
     });
     for (const auto& batch : validator.GetAllQueueBatchContexts()) {
@@ -137,6 +137,29 @@ void AccessStats::Update(SyncValidator& validator) {
 }
 
 void Stats::UpdateAccessStats(SyncValidator& validator) { access_stats.Update(validator); }
+
+void Stats::OnBarrierCommand(uint32_t memory_barrier_count, uint32_t buffer_barrier_count, uint32_t image_barrier_count,
+                             uint32_t execution_dependencies_count) {
+    if (memory_barrier_count) {
+        barrier_stats.memory_barriers.Add(memory_barrier_count);
+    }
+    if (buffer_barrier_count) {
+        barrier_stats.buffer_barriers.Add(buffer_barrier_count);
+    }
+    if (image_barrier_count) {
+        barrier_stats.image_barriers.Add(image_barrier_count);
+    }
+    if (execution_dependencies_count) {
+        barrier_stats.execution_dependencies.Add(execution_dependencies_count);
+    }
+
+    const uint32_t command_total_barrier_count = memory_barrier_count + buffer_barrier_count + image_barrier_count;
+    if (command_total_barrier_count == 1) {
+        barrier_stats.single_barrier_commands.Add(1);
+    } else if (command_total_barrier_count > 1) {
+        barrier_stats.multi_barrier_commands.Add(1);
+    }
+}
 
 void Stats::UpdateMemoryStats() {
 #if defined(USE_MIMALLOC_STATS)
@@ -219,6 +242,14 @@ std::string Stats::CreateReport() {
     print_access_state_stats("CB", access_stats.max_cb_access_stats);
     print_access_state_stats("Queue", access_stats.max_queue_access_stats);
     print_access_state_stats("Subpass", access_stats.max_subpass_access_stats);
+
+    ss << "\n";
+    ss << "Memory barriers          : " << barrier_stats.memory_barriers.u32 << "\n";
+    ss << "Buffer barriers          : " << barrier_stats.buffer_barriers.u32 << "\n";
+    ss << "Image barriers           : " << barrier_stats.image_barriers.u32 << "\n";
+    ss << "Execution dependencies   : " << barrier_stats.execution_dependencies.u32 << "\n";
+    ss << "Single barrier commands  : " << barrier_stats.single_barrier_commands.u32 << "\n";
+    ss << "Multi barrier commands   : " << barrier_stats.multi_barrier_commands.u32 << "\n";
 
     ss << "\n";
     ss << "Layout ordering barrier registry size: " << GetLayoutOrderingBarrierLookup().ObjectCount();

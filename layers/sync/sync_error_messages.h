@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class CommandExecutionContext;
 class HazardResult;
 class QueueBatchContext;
 class SyncValidator;
-struct SyncImageMemoryBarrier;
+struct SyncImageBarrier;
 
 class ErrorMessages {
   public:
@@ -129,7 +129,7 @@ class ErrorMessages {
                                                                      uint32_t store_resolve_subpass) const;
 
     std::string ImageBarrierError(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
-                                  const std::string& resource_description, const SyncImageMemoryBarrier& barrier) const;
+                                  const std::string& resource_description, const SyncImageBarrier& barrier) const;
 
     std::string FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                               const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const;

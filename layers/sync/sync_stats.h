@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,15 @@ struct AccessStats {
     std::mutex access_stats_mutex;
 };
 
+struct BarrierStats {
+    Value32 memory_barriers;
+    Value32 buffer_barriers;
+    Value32 image_barriers;
+    Value32 execution_dependencies;
+    Value32 single_barrier_commands;
+    Value32 multi_barrier_commands;
+};
+
 struct Stats {
     ~Stats();
     bool report_on_destruction = false;
@@ -144,6 +153,10 @@ struct Stats {
     AccessStats access_stats;
     void UpdateAccessStats(SyncValidator& validator);
 
+    BarrierStats barrier_stats;
+    void OnBarrierCommand(uint32_t memory_barrier_count, uint32_t buffer_barrier_count, uint32_t image_barrier_count,
+                          uint32_t execution_dependencies_count);
+
     void UpdateMemoryStats();
     void ReportOnDestruction();
     std::string CreateReport();
@@ -164,10 +177,12 @@ struct Stats {
 
     void UpdateAccessStats(SyncValidator& validator) {}
 
+    void OnBarrierCommand(uint32_t memory_barrier_count, uint32_t buffer_barrier_count, uint32_t image_barrier_count,
+                          uint32_t execution_dependencies_count) {}
+
     void UpdateMemoryStats() {}
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
-
-}  // namespace syncval
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0
+}  // namespace syncval

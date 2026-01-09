@@ -1433,7 +1433,7 @@ void CommandBufferAccessContext::UpdateStats(AccessStats &access_stats) const {
     UpdateAccessMapStats(cb_access_context_.GetAccessMap(), access_stats.cb_access_stats);
 
     for (const auto &render_pass_context : render_pass_contexts_) {
-        for (const AccessContext &subpass_access_context : render_pass_context->GetContexts()) {
+        for (const AccessContext &subpass_access_context : render_pass_context->GetSubpassContexts()) {
             UpdateAccessMapStats(subpass_access_context.GetAccessMap(), access_stats.subpass_access_stats);
         }
     }
