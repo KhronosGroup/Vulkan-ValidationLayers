@@ -124,7 +124,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
             } else if (static_cast<uint64_t>(dims[i]) > phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements) {
                 skip |=
                     LogError("VUID-VkTensorDescriptionARM-pDimensions-09883", device, description_loc.dot(Field::pDimensions, i),
-                             "(%" PRIi64 ") is greater than maxPerDimensionTensorElements.(%" PRIu64 ")", dims[i],
+                             "(%" PRIi64 ") is greater than maxPerDimensionTensorElements (%" PRIu64 ")", dims[i],
                              phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements);
             }
         }

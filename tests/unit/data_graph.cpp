@@ -1009,6 +1009,106 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorDeletedObject) {
     }
 }
 
+TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorBufferBit) {
+    TEST_DESCRIPTION("Try dispatching a datagraph with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT set, but using descriptor sets.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::dataGraphDescriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+                                &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09936");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, CmdDispatchMissingDescriptorBufferBit) {
+    TEST_DESCRIPTION("Try dispatching a datagraph with descriptor buffers but without the VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT.");
+    InitBasicDataGraph();
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::dataGraphDescriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // create a pipeline layout with the required flags
+    VkDescriptorSetLayoutCreateInfo dslci = vku::InitStructHelper();
+    dslci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    dslci.bindingCount = pipeline.descriptor_set_layout_bindings_.size();
+    dslci.pBindings = pipeline.descriptor_set_layout_bindings_.data();
+
+    vkt::DescriptorSetLayout dsl(*m_device, dslci);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    // set layout for descriptor buffer, but not the flags
+    // pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipeline.pipeline_ci_.layout = pipeline_layout;
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
+    dbbi.address = buffer.Address();
+    dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
+
+    uint32_t index = 0;
+    VkDeviceSize offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline_layout, 0, 1, &index, &offset);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09938");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09797");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDataGraph, ShaderModuleCreateInfoInvalidConstantID) {
     TEST_DESCRIPTION(
         "Try creating a datagraph pipeline where the VkDataGraphPipelineShaderModuleCreateInfoARM has a "
