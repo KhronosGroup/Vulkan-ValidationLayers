@@ -39,6 +39,7 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferProtectedMemoryFlag) {
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM;
     buffer_ci.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkBufferCreateInfo-flags-09641");
     CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-10763");
 }
 

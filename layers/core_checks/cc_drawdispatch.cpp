@@ -60,9 +60,6 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
         skip |= LogError(
             vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
             "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw. %s", extra);
-    } else if (index_buffer_state) {
-        skip |= ValidateProtectedBuffer(cb_state, *index_buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
-                                        " (Buffer is the index buffer)");
     }
 
     return skip;
@@ -1369,7 +1366,6 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         skip |= ValidateDrawDynamicState(last_bound_state, vuid);
         skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid);
-        skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
         skip |= ValidateDrawAttachmentColorBlend(last_bound_state, vuid);
         skip |= ValidateDrawAttachmentSampleLocation(last_bound_state, vuid);
@@ -1793,26 +1789,6 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
                                  ", but primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
                                  rasterization_state_stream_ci->rasterizationStream);
             }
-        }
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
-    bool skip = false;
-    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-
-    if (!enabled_features.protectedMemory) {
-        return skip;
-    }
-
-    // Verify vertex & index buffer for unprotected command buffer.
-    // Because vertex & index buffer is read only, it doesn't need to care protected command buffer case.
-    for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
-        if (const auto buffer_state = Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
-            skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
-                                            " (Buffer is the vertex buffer)");
         }
     }
 
