@@ -3503,7 +3503,8 @@ void DeviceState::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuf
                                                       const VkTileMemoryBindInfoQCOM *pTileMemoryBindInfo,
                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->bound_tile_memory = pTileMemoryBindInfo ? cb_state->bound_tile_memory : VK_NULL_HANDLE;
+    // The bound tile memory can be reset by the application
+    cb_state->bound_tile_memory = pTileMemoryBindInfo ? cb_state->bound_tile_memory : nullptr;
 }
 
 void DeviceState::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
