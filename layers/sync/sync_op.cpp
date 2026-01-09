@@ -480,14 +480,26 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
 
         access_context->UpdateMemoryAccessState(collect_barriers, range_gen);
     }
-    for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
-        const BarrierScope barrier_scope(barrier, queue_id);
-        CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier, false, vvl::kNoIndex32, pending_barriers);
-        access_context->UpdateMemoryAccessState(collect_barriers, kFullRange);
+
+    // TODO: add support to register batch of global barriers
+    if (barrier_set_.memory_barriers.size() > 1) {
+        for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
+            const BarrierScope barrier_scope(barrier, queue_id);
+            CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier, false, vvl::kNoIndex32,
+                                                    pending_barriers);
+            access_context->UpdateMemoryAccessState(collect_barriers, kFullRange);
+        }
     }
 
     // Update access states with collected barriers
     pending_barriers.Apply(exec_tag);
+
+    // Register global barriers
+    if (barrier_set_.memory_barriers.size() == 1) {
+        for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
+            access_context->RegisterGlobalBarrier(barrier, queue_id);
+        }
+    }
 }
 
 void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, const ResourceUsageTag exec_tag) const {
