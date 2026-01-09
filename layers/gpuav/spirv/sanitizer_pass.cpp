@@ -37,6 +37,7 @@ const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCodeSanitizerCount
     {"inst_sanitizer_image_gather", instrumentation_sanitizer_comp_function_1_offset},
     {"inst_sanitizer_pow", instrumentation_sanitizer_comp_function_2_offset},
     {"inst_sanitizer_atan2", instrumentation_sanitizer_comp_function_3_offset},
+    {"inst_sanitizer_fminmax", instrumentation_sanitizer_comp_function_4_offset},
 };
 
 SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
@@ -158,6 +159,36 @@ uint32_t SanitizerPass::Atan2Check(BasicBlock& block, InstructionIt* inst_it, co
     return result_bool_id;
 }
 
+// Returns an ID of type OpTypeBool for X and Y
+BoolResultXY SanitizerPass::FminmaxCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+    BoolResultXY result_bool_id;
+    const Type& bool_type = type_manager_.GetTypeBool();
+    const uint32_t vector_size = meta.result_type->VectorSize();
+
+    const uint32_t bool_result_type_id =
+        (vector_size == 0) ? bool_type.Id() : type_manager_.GetTypeVector(bool_type, vector_size).Id();
+
+    const uint32_t x_value_id = meta.target_instruction->Word(5);
+    const uint32_t y_value_id = meta.target_instruction->Word(6);
+
+    const uint32_t nan_x_id = module_.TakeNextId();
+    const uint32_t nan_y_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpIsNan, {bool_result_type_id, nan_x_id, x_value_id}, inst_it);
+    block.CreateInstruction(spv::OpIsNan, {bool_result_type_id, nan_y_id, y_value_id}, inst_it);
+
+    if (vector_size == 0) {
+        result_bool_id.x = nan_x_id;
+        result_bool_id.y = nan_y_id;
+    } else {
+        result_bool_id.x = module_.TakeNextId();
+        result_bool_id.y = module_.TakeNextId();
+        block.CreateInstruction(spv::OpAny, {bool_type.Id(), result_bool_id.x, nan_x_id}, inst_it);
+        block.CreateInstruction(spv::OpAny, {bool_type.Id(), result_bool_id.y, nan_y_id}, inst_it);
+    }
+
+    return result_bool_id;
+}
+
 uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId(meta.sub_code);
@@ -216,6 +247,16 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
         const uint32_t is_invalid_id = Atan2Check(block, inst_it, meta);
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
         block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, is_invalid_id, inst_position_id},
+                                inst_it);
+    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerFminmax) {
+        const BoolResultXY is_invalid_id = FminmaxCheck(block, inst_it, meta);
+        const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+        const uint32_t vector_size = meta.result_type->VectorSize();
+        const uint32_t vector_size_id = type_manager_.CreateConstantUInt32(vector_size).Id();
+        const uint32_t glsl_opcode_id = type_manager_.CreateConstantUInt32(meta.glsl_opcode).Id();
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, is_invalid_id.x, is_invalid_id.y, inst_position_id,
+                                 vector_size_id, glsl_opcode_id},
                                 inst_it);
     } else {
         assert(false);
@@ -293,6 +334,9 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
             meta.sub_code = glsl::kErrorSubCodeSanitizerPow;
         } else if (glsl_opcode == GLSLstd450Atan2) {
             meta.sub_code = glsl::kErrorSubCodeSanitizerAtan2;
+        } else if (glsl_opcode == GLSLstd450FMin || glsl_opcode == GLSLstd450FMax) {
+            meta.sub_code = glsl::kErrorSubCodeSanitizerFminmax;
+            meta.glsl_opcode = glsl_opcode;
         } else {
             return false;
         }

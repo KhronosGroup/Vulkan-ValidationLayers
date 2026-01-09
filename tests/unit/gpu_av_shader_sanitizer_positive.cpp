@@ -250,6 +250,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
             c = mod(4.0, c);
             float d = pow(c + 50.0f, 1.0f);
             float e = atan(c, 1.0f);
+            float f = min(d, e) + max(e, 1.0);
         }
     )glsl";
 
@@ -380,6 +381,23 @@ TEST_F(PositiveGpuAVShaderSanitizer, Atan2VectorMix) {
             x += vec3(1.0f, 0.0f, 1.0f);
             y += vec3(0.0f, 1.0f, 0.0f);
             result = atan(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, FMinMax) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec3 x;
+            vec3 y;
+            vec3 result;
+        };
+
+        void main() {
+            result = min(x, y) + max(y.y, 0.0);
         }
     )glsl";
 

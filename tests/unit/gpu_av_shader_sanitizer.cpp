@@ -670,3 +670,58 @@ TEST_F(NegativeGpuAVShaderSanitizer, Atan2Vector) {
 
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Atan2");
 }
+
+TEST_F(NegativeGpuAVShaderSanitizer, FMinNaNScalar) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            float x;
+            float y;
+            float result;
+        };
+
+        void main() {
+            y = uintBitsToFloat(0x7FC00000u); // set NaN
+            result = min(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Fminmax");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, FMinNaNVector) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec2 x;
+            vec2 y;
+            vec2 result;
+        };
+
+        void main() {
+            x.x = uintBitsToFloat(0x7FC00000u); // set NaN
+            y.y = uintBitsToFloat(0x7FC00000u); // set NaN
+            result = min(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Fminmax");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, FMaxNaNVector) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            vec4 x;
+            vec4 y;
+            vec4 result;
+        };
+
+        void main() {
+            x.z = uintBitsToFloat(0x7FC00000u); // set NaN
+            result = max(x, y);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Fminmax");
+}

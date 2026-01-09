@@ -78,3 +78,17 @@ bool inst_sanitizer_atan2(const bool is_invalid, const uint inst_offset)
     }
     return true;
 }
+
+bool inst_sanitizer_fminman(const bool is_x_invalid, const bool is_y_invalid, const uint inst_offset, const uint vector_size, const uint glsl_opcode)
+{
+    if (is_x_invalid || is_y_invalid) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerFminmax << kErrorSubCodeShift),
+                        uint(is_x_invalid) | (uint(is_y_invalid) << 1),
+                        vector_size,
+                        glsl_opcode);
+        return false;
+    }
+    return true;
+}

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <spirv/unified1/GLSL.std.450.h>
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -100,6 +101,27 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                     // Atan is only valid with a scalar/vector of 16/32-bit float
                     strm << "Atan2 (from GLSL.std.450) has an undefined result because both values used are zero.";
                     out_vuid_msg = "SPIRV-Sanitizer-Atan2";
+                } break;
+                case kErrorSubCodeSanitizerFminmax: {
+                    // simple encoding done in inst_sanitizer_fminman (sanitizer.comp)
+                    const uint32_t invalid_encode = error_record[kInstLogErrorParameterOffset_0];
+                    const bool x_is_invalid = (invalid_encode & 0x1) != 0;
+                    const bool y_is_invalid = (invalid_encode & 0x2) != 0;
+                    const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_1];
+                    const uint32_t glsl_opcode = error_record[kInstLogErrorParameterOffset_2];
+                    strm << (glsl_opcode == GLSLstd450FMin ? "FMin" : "FMax")
+                         << " (from GLSL.std.450) has an undefined result because ";
+                    if (x_is_invalid && y_is_invalid) {
+                        strm << "both the x and y operands are NaN\n";
+                    } else if (x_is_invalid) {
+                        strm << "the x operand is NaN\n";
+                    } else {
+                        strm << "the y operand is NaN\n";
+                    }
+                    if (vector_size > 0) {
+                        strm << "Using a vector of size " << vector_size << " but currently only can print out scalar values";
+                    }
+                    out_vuid_msg = "SPIRV-Sanitizer-Fminmax";
                 } break;
                 default:
                     error_found = false;
