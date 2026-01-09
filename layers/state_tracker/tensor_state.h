@@ -42,6 +42,8 @@ class Tensor : public Bindable, public SubStateManager<TensorSubState> {
     }
 
     const VkMemoryRequirements2 *MemReqs() const { return &mem_reqs_; }
+    // This function is only used for comparing Imported External Dedicated Memory
+    bool CompareCreateInfo(const Tensor &other) const;
 
   private:
     std::variant<std::monostate, BindableLinearMemoryTracker> tracker_;

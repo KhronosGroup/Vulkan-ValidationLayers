@@ -624,6 +624,19 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                     }
                 }
             }
+            if (dedicated_allocate_info_tensor) {
+                const VkTensorARM dedicated_tensor = dedicated_allocate_info_tensor->tensor;
+                const auto tensor_state = Get<vvl::Tensor>(dedicated_tensor);
+                auto payload_tensor_state = Get<vvl::Tensor>(payload_info->dedicated_tensor);
+                if (!tensor_state || !payload_tensor_state || !tensor_state->CompareCreateInfo(*payload_tensor_state)) {
+                    const LogObjectList objlist(payload_info->dedicated_tensor, dedicated_tensor);
+                    skip |=
+                        LogError("VUID-VkMemoryDedicatedAllocateInfoTensorARM-tensor-09859", objlist,
+                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::tensor),
+                                 "is %s but %s (%d) was created with a dedicated tensor", FormatHandle(dedicated_tensor).c_str(),
+                                 import_loc.Fields().c_str(), import_memory_fd_info->fd);
+                }
+            }
         }
 
         // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import

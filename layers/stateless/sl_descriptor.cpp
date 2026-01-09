@@ -773,6 +773,16 @@ bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &
                 }
             }
         }
+        const auto *tensor_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(descriptor_writes.pNext);
+        if (tensor_struct) {
+            for (uint32_t j = 0; j < tensor_struct->tensorViewCount; ++j) {
+                if (!enabled_features.nullDescriptor && tensor_struct->pTensorViews[j] == VK_NULL_HANDLE) {
+                    skip |= LogError("VUID-VkWriteDescriptorSetTensorARM-nullDescriptor-09898", device,
+                                     writes_loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::pTensorViews, j),
+                                     "cannot be VK_NULL_HANDLE.");
+                }
+            }
+        }
     }
     return skip;
 }

@@ -219,11 +219,12 @@ TEST_F(PositiveTensor, DescriptorBindingUpdateAfterBindTensor) {
     vkt::DescriptorSetLayout(*m_device, create_info);
 }
 
-TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViews) {
+TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViewsNullDescriptor) {
     TEST_DESCRIPTION("Test writing a tensor descriptor with null tensor views");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicTensor());
+
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
 
