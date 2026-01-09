@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -1377,17 +1377,6 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportK
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-bool core::Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                                 uint32_t queueFamilyIndex,
-                                                                                 const ErrorObject &error_obj) const {
-    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
-                                    "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
-                                    error_obj.location.dot(Field::queueFamilyIndex));
-}
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_XCB_KHR
 bool core::Instance::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t queueFamilyIndex,
@@ -1534,6 +1523,15 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+bool core::Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                 uint32_t queueFamilyIndex,
+                                                                                 const ErrorObject& error_obj) const {
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
+    return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
+                                    "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
+                                    error_obj.location.dot(Field::queueFamilyIndex));
+}
+
 bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1585,31 +1583,6 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
 
     return skip;
 }
-#endif
-
-bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
-                                                          const Location &loc) const {
-    bool skip = false;
-
-    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    auto surface_state = Get<vvl::Surface>(surface);
-    if (pd_state && surface_state) {
-        bool is_supported = false;
-        for (uint32_t i = 0; i < pd_state->queue_family_properties.size(); i++) {
-            if (surface_state->GetQueueSupport(physicalDevice, i)) {
-                is_supported = true;
-                break;
-            }
-        }
-        if (!is_supported) {
-            skip |= LogError(vuid, physicalDevice, loc, "surface is not supported by the physicalDevice.");
-        }
-    }
-
-    return skip;
-}
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                       const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
@@ -1646,8 +1619,29 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkP
 
     return skip;
 }
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
-#endif
+bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char* vuid,
+                                                          const Location& loc) const {
+    bool skip = false;
+
+    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
+    auto surface_state = Get<vvl::Surface>(surface);
+    if (pd_state && surface_state) {
+        bool is_supported = false;
+        for (uint32_t i = 0; i < pd_state->queue_family_properties.size(); i++) {
+            if (surface_state->GetQueueSupport(physicalDevice, i)) {
+                is_supported = true;
+                break;
+            }
+        }
+        if (!is_supported) {
+            skip |= LogError(vuid, physicalDevice, loc, "surface is not supported by the physicalDevice.");
+        }
+    }
+
+    return skip;
+}
 
 bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                                      VkDeviceGroupPresentModeFlagsKHR *pModes,

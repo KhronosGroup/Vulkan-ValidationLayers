@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -3711,6 +3711,35 @@ void DeviceState::RecordGetExternalSemaphoreState(Semaphore &semaphore_state, Vk
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                        const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    RecordVulkanSurface(pSurface);
+}
+
+void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                  const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    auto swapchain_state = Get<Swapchain>(swapchain);
+    ASSERT_AND_RETURN(swapchain_state);
+    swapchain_state->exclusive_full_screen_access = true;
+}
+
+void DeviceState::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                  const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    auto swapchain_state = Get<Swapchain>(swapchain);
+    ASSERT_AND_RETURN(swapchain_state);
+    swapchain_state->exclusive_full_screen_access = false;
+}
+
 void DeviceState::PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
@@ -3748,7 +3777,30 @@ void DeviceState::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const Vk
     }
     RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType, record_obj.location);
 }
-#endif
+
+void DeviceState::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                        HANDLE* pHandle, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    if (const auto memory_state = Get<DeviceMemory>(pGetWin32HandleInfo->memory)) {
+        // For validation purposes we need to keep allocation size and memory type index.
+        // There is no need to keep pNext chain.
+        ExternalOpaqueInfo external_info = {};
+        external_info.allocation_size = memory_state->allocate_info.allocationSize;
+        external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
+        external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
+        external_info.dedicated_image = memory_state->GetDedicatedImage();
+        external_info.device_memory = pGetWin32HandleInfo->memory;
+
+        WriteLockGuard guard(win32_handle_map_lock_);
+        // `insert_or_assign` ensures that information is updated when the system decides to re-use
+        // closed handle value for a new handle. The validation layer does not track handle close operation
+        // which is performed by 'CloseHandle' system call.
+        win32_handle_map_.insert_or_assign(*pHandle, external_info);
+    }
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 void DeviceState::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
@@ -3796,31 +3848,6 @@ void DeviceState::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTyp
         fence_node->Import(handle_type, flags);
     }
 }
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-void DeviceState::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                        HANDLE *pHandle, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    if (const auto memory_state = Get<DeviceMemory>(pGetWin32HandleInfo->memory)) {
-        // For validation purposes we need to keep allocation size and memory type index.
-        // There is no need to keep pNext chain.
-        ExternalOpaqueInfo external_info = {};
-        external_info.allocation_size = memory_state->allocate_info.allocationSize;
-        external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
-        external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
-        external_info.dedicated_image = memory_state->GetDedicatedImage();
-        external_info.device_memory = pGetWin32HandleInfo->memory;
-
-        WriteLockGuard guard(win32_handle_map_lock_);
-        // `insert_or_assign` ensures that information is updated when the system decides to re-use
-        // closed handle value for a new handle. The validation layer does not track handle close operation
-        // which is performed by 'CloseHandle' system call.
-        win32_handle_map_.insert_or_assign(*pHandle, external_info);
-    }
-}
-#endif
 
 void DeviceState::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                const RecordObject &record_obj) {
@@ -4352,17 +4379,6 @@ void InstanceState::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, c
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                        const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    RecordVulkanSurface(pSurface);
-}
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
 void InstanceState::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
@@ -5627,28 +5643,6 @@ void DeviceState::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandB
     cb_state->RecordStateCmd(CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     cb_state->dynamic_state_value.attachment_feedback_loop_enable = aspectMask;
 }
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                                  const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    auto swapchain_state = Get<Swapchain>(swapchain);
-    ASSERT_AND_RETURN(swapchain_state);
-    swapchain_state->exclusive_full_screen_access = true;
-}
-
-void DeviceState::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                                  const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    auto swapchain_state = Get<Swapchain>(swapchain);
-    ASSERT_AND_RETURN(swapchain_state);
-    swapchain_state->exclusive_full_screen_access = false;
-}
-#endif
 
 void DeviceState::PostCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
                                                                   VkTessellationDomainOrigin domainOrigin,
