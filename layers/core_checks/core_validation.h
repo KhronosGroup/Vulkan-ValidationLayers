@@ -1774,6 +1774,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkAccelerationStructureKHR* pAccelerationStructure,
                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
+                                                              const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+                                                              const uint32_t* pMaxPrimitiveCounts,
+                                                              VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                           const ErrorObject& error_obj) const override;

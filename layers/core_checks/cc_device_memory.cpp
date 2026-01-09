@@ -2757,8 +2757,10 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetBufferDeviceAddress-device-03325", objlist, error_obj.location,
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must be enabled.");
+                         "device was created with multiple physical devices (%" PRIu32
+                         "), but the "
+                         "bufferDeviceAddressMultiDevice feature was not enabled.",
+                         device_state->physical_device_count);
     }
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
@@ -2795,10 +2797,13 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
                          "The bufferDeviceAddress and bufferDeviceAddressCaptureReplay feature must be enabled.");
     }
 
-    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
+    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+        !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetBufferOpaqueCaptureAddress-device-03327", objlist, error_obj.location,
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must be enabled.");
+                         "device was created with multiple physical devices (%" PRIu32
+                         "), but the "
+                         "bufferDeviceAddressMultiDevice feature was not enabled.",
+                         device_state->physical_device_count);
     }
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
@@ -2831,10 +2836,13 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
                          "The bufferDeviceAddress and bufferDeviceAddressCaptureReplay feature must be enabled.");
     }
 
-    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
+    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+        !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-device-03335", objlst, error_obj.location,
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature was not enabled.");
+                         "device was created with multiple physical devices (%" PRIu32
+                         "), but the "
+                         "bufferDeviceAddressMultiDevice feature was not enabled.",
+                         device_state->physical_device_count);
     }
 
     if (auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory)) {
