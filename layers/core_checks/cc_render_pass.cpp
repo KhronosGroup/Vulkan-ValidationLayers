@@ -1233,6 +1233,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         }
     }
 
+    skip |= ValidateTileMemoryAttachments(render_pass_attachment_begin_info->pAttachments, begin_info_loc, *render_pass_state,
+                                          *render_pass_create_info->ptr(), true);
+
     return skip;
 }
 
@@ -4856,7 +4859,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         skip |= ValidateFrameBufferSubpasses(*pCreateInfo, create_info_loc, *rpci);
         skip |= ValidateFrameBufferAttachments(*pCreateInfo, create_info_loc, *rp_state, *rpci);
-        skip |= ValidateFrameBufferTileMemory(*pCreateInfo, create_info_loc, *rp_state, *rpci);
+        skip |= ValidateTileMemoryAttachments(pCreateInfo->pAttachments, create_info_loc, *rp_state, *rpci, false);
     } else if (framebuffer_attachments_create_info) {
         skip |= ValidateFrameBufferAttachmentsImageless(*pCreateInfo, create_info_loc, *rpci, *framebuffer_attachments_create_info);
     }
@@ -5206,14 +5209,14 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
     return skip;
 }
 
-bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &create_info, const Location &create_info_loc,
-                                               const vvl::RenderPass &rp_state, const VkRenderPassCreateInfo2 &rpci) const {
+bool CoreChecks::ValidateTileMemoryAttachments(const VkImageView *image_views, const Location &create_info_loc,
+                                               const vvl::RenderPass &rp_state, const VkRenderPassCreateInfo2 &rpci,
+                                               bool image_less) const {
     bool skip = false;
     if (!enabled_features.tileMemoryHeap) {
         return skip;
     }
 
-    const VkImageView *image_views = create_info.pAttachments;
     vvl::unordered_set<uint32_t> resolve_attachment_indexes;
 
     for (const auto [i, subpass] : vvl::enumerate(rpci.pSubpasses, rpci.subpassCount)) {
@@ -5228,7 +5231,7 @@ bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &cr
         }
     }
 
-    for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
+    for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; ++i) {
         if (resolve_attachment_indexes.find(i) == resolve_attachment_indexes.end()) {
             continue;
         }
@@ -5240,8 +5243,9 @@ bool CoreChecks::ValidateFrameBufferTileMemory(const VkFramebufferCreateInfo &cr
         for (const auto &bound_memory : bound_memory_states) {
             if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
                 // This VUID is being fixed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7950
-                const char *vuid = "VUID-VkSubpassDescription2-attachment-10755";
-                LogObjectList objlist(create_info.renderPass, image_views[i], bound_memory->VkHandle());
+                const char *vuid =
+                    image_less ? "UNASSIGNED-VkRenderPassBeginInfo-framebuffer" : "UNASSIGNED-VkFramebufferCreateInfo-attachment";
+                LogObjectList objlist(rp_state.VkHandle(), image_views[i], bound_memory->VkHandle());
                 skip |=
                     LogError(vuid, objlist, attachment_loc,
                              "%s (corresponding to pResolveAttachment[%" PRIu32
