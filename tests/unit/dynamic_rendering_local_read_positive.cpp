@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -529,4 +529,75 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdDrawColorIndexUnusedAttachment) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRenderingLocalRead, InputAttachmentIndexArray) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x[2];
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x[0]);
+        }
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    vkt::DescriptorSetLayout descriptor_set(*m_device,
+                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set});
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &rendering_info);
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveDynamicRenderingLocalRead, InputAttachmentIndexArray2) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    if (m_device->Physical().limits_.maxColorAttachments <= 5 ||
+        m_device->Physical().limits_.maxPerStageDescriptorInputAttachments <= 5 ||
+        m_device->Physical().limits_.maxDescriptorSetInputAttachments <= 5) {
+        GTEST_SKIP() << "Can't handle enough input attachments";
+    }
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x[2];
+        layout(input_attachment_index=2, set=0, binding=0) uniform subpassInput y;
+        layout(input_attachment_index=3, set=0, binding=0) uniform subpassInput z[2];
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(y) + subpassLoad(x[0]) + subpassLoad(x[1]) + subpassLoad(z[0]) + subpassLoad(z[1]);
+        }
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    vkt::DescriptorSetLayout descriptor_set(*m_device,
+                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 5, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set});
+
+    VkFormat color_formats[5] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM,
+                                 VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 5;
+    rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(5);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 5;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this, &rendering_info);
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
 }
