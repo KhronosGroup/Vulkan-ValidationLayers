@@ -600,6 +600,7 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
 
     RETURN_IF_SKIP(Init());
 
@@ -665,6 +666,7 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+    m_command_buffer.Reset();
 
     VkAttachmentReference2 msaa_attachment_ref = vku::InitStructHelper();
     msaa_attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -707,7 +709,49 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
         vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp.handle(), 2u, &views[0], 32u, 32u, 1u);
     VkFramebuffer fb;
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-attachment-10755");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkFramebufferCreateInfo-attachment");
     vk::CreateFramebuffer(device(), &frame_buffer_create_info, nullptr, &fb);
+    m_errorMonitor->VerifyFound();
+
+    // Imageless FBO
+    VkFormat framebuffer_attachment_formats = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info[2] = {};
+    framebuffer_attachment_image_info[0] = vku::InitStructHelper();
+    ;
+    framebuffer_attachment_image_info[0].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    framebuffer_attachment_image_info[0].width = 32;
+    framebuffer_attachment_image_info[0].height = 32;
+    framebuffer_attachment_image_info[0].layerCount = 1;
+    framebuffer_attachment_image_info[0].viewFormatCount = 1;
+    framebuffer_attachment_image_info[0].pViewFormats = &framebuffer_attachment_formats;
+    framebuffer_attachment_image_info[1] = vku::InitStructHelper();
+    ;
+    framebuffer_attachment_image_info[1].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM;
+    framebuffer_attachment_image_info[1].width = 32;
+    framebuffer_attachment_image_info[1].height = 32;
+    framebuffer_attachment_image_info[1].layerCount = 1;
+    framebuffer_attachment_image_info[1].viewFormatCount = 1;
+    framebuffer_attachment_image_info[1].pViewFormats = &framebuffer_attachment_formats;
+    VkFramebufferAttachmentsCreateInfo framebuffer_attachment_ci = vku::InitStructHelper();
+    framebuffer_attachment_ci.attachmentImageInfoCount = 2;
+    framebuffer_attachment_ci.pAttachmentImageInfos = &framebuffer_attachment_image_info[0];
+
+    auto imageless_fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp.handle(), 2u, nullptr, 32u, 32u, 1u);
+    imageless_fbci.pNext = &framebuffer_attachment_ci;
+    imageless_fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    vkt::Framebuffer imageless_fb(*m_device, imageless_fbci);
+
+    VkImageView image_views[2] = {msaa_image_view, resolve_image_view};
+    VkRenderPassAttachmentBeginInfo rp_attachment_begin_info = vku::InitStructHelper();
+    rp_attachment_begin_info.attachmentCount = 2;
+    rp_attachment_begin_info.pAttachments = &image_views[0];
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&rp_attachment_begin_info);
+    rp_begin_info.renderPass = test_rp.handle();
+    rp_begin_info.renderArea.extent = {32, 32};
+    rp_begin_info.framebuffer = imageless_fb;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassBeginInfo-framebuffer");
+    m_command_buffer.BeginRenderPass(rp_begin_info);
     m_errorMonitor->VerifyFound();
 }
