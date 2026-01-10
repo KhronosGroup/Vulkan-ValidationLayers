@@ -128,7 +128,7 @@ class BufferAddressValidation {
         vuid_and_validations[ChecksCount] = {
             "VUID-VkDeviceAddress-None-10894",
             [](const vvl::Buffer& buffer_state) { return !buffer_state.sparse && !buffer_state.IsMemoryBound(); },
-            []() { return "The following buffers are not bound to memory or it has been freed:"; },
+            []() { return "The following buffers are not bound to memory or it has been freed"; },
             [&validator](const vvl::Buffer& buffer_state) {
                 const auto memory_state = buffer_state.MemoryState();
                 if (memory_state && memory_state->Destroyed()) {
