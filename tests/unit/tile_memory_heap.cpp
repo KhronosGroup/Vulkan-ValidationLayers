@@ -17,7 +17,6 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferTest) {
     TEST_DESCRIPTION("Use VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM without enabling the tileMemoryHeap feature");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -32,7 +31,6 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferProtectedMemoryFlag) {
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
     AddRequiredFeature(vkt::Feature::protectedMemory);
-
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -48,7 +46,6 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferTestIndexUsageFlags) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -59,9 +56,7 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferTestIndexUsageFlags) {
 
 TEST_F(NegativeTileMemoryHeap, AllocateMemory) {
     TEST_DESCRIPTION("Allocate Tile Memory without the Tile Memory feature enabled.");
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -81,18 +76,15 @@ TEST_F(NegativeTileMemoryHeap, AllocateMemory) {
 TEST_F(NegativeTileMemoryHeap, BindBufferMemorySize) {
     TEST_DESCRIPTION("Bind Tile Memory to a Buffer with too small of size");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
 
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Buffer
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM | VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT),
                        vkt::no_mem);
 
-    // Query Tile Memory Buffer Requirements
     VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -134,13 +126,10 @@ TEST_F(NegativeTileMemoryHeap, BindBufferMemorySize) {
 TEST_F(NegativeTileMemoryHeap, BindBufferMemoryAlignment) {
     TEST_DESCRIPTION("Bind Tile Memory to a Buffer with an offset that is not a multiple of alignment");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Buffer
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM | VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT),
                        vkt::no_mem);
@@ -189,7 +178,6 @@ TEST_F(NegativeTileMemoryHeap, CreateImageTest) {
     TEST_DESCRIPTION("Use VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM in CreateImage without enabling the tileMemoryHeap feature");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     CreateImageTest(vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM),
@@ -199,18 +187,14 @@ TEST_F(NegativeTileMemoryHeap, CreateImageTest) {
 TEST_F(NegativeTileMemoryHeap, BindImageMemorySize) {
     TEST_DESCRIPTION("Bind Tile Memory to an Image with too small of size");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Image
     auto image_create_info = vkt::Image::ImageCreateInfo2D(
         32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    // Query Tile Memory Image Requirements
     VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -243,18 +227,14 @@ TEST_F(NegativeTileMemoryHeap, BindImageMemorySize) {
 TEST_F(NegativeTileMemoryHeap, BindImageMemoryAlignment) {
     TEST_DESCRIPTION("Bind Tile Memory to an Image with an offset that is not a multiple of alignment");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Image
     auto image_create_info = vkt::Image::ImageCreateInfo2D(
         32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    // Query Tile Memory Image Requirements
     VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -288,10 +268,8 @@ TEST_F(NegativeTileMemoryHeap, BindImageMemoryAlignment) {
 TEST_F(NegativeTileMemoryHeap, BindNonTileMemoryCommandBuffer) {
     TEST_DESCRIPTION("Bind non Tile Memory with vkCmdBindTileMemoryQCOM in Primary/Secondary Command Buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
@@ -349,12 +327,10 @@ TEST_F(NegativeTileMemoryHeap, TileMemoryMismatchResourceCommandBuffer) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Image
     auto image_create_info = vkt::Image::ImageCreateInfo2D(
         32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    // Query Tile Memory Image Requirements
     VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -398,7 +374,6 @@ TEST_F(NegativeTileMemoryHeap, TileMemoryMismatchResourceCommandBuffer) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
 
-    // Dynamic Rendering
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -442,7 +417,6 @@ TEST_F(NegativeTileMemoryHeap, TileMemoryMismatchResourceCommandBuffer) {
     render_pass_pipe.gp_ci_.subpass = 0;
     render_pass_pipe.CreateGraphicsPipeline();
 
-    // Render Pass
     m_command_buffer.BeginRenderPass(test_rp, fb, 32u, 32u, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, render_pass_pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-10746");
@@ -534,13 +508,11 @@ TEST_F(NegativeTileMemoryHeap, SecondaryCommandBufferTileMemory) {
 TEST_F(NegativeTileMemoryHeap, TileProperties) {
     TEST_DESCRIPTION("Provide a Tile Memory size that is greater than the largest Tile Memory heap.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
     AddRequiredFeature(vkt::Feature::tileProperties);
-
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMemoryProperties memory_info;
@@ -595,13 +567,11 @@ TEST_F(NegativeTileMemoryHeap, TileProperties) {
 TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     TEST_DESCRIPTION("Resolve to a Tile Memory Attachment.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
-
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -616,12 +586,10 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     vkt::Image msaa_image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView msaa_image_view = msaa_image.CreateView();
 
-    // Create a Tile Memory Image
     auto tile_image_create_info = vkt::Image::ImageCreateInfo2D(
         32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
     vkt::Image tile_memory_image(*m_device, tile_image_create_info, vkt::no_mem);
 
-    // Query Tile Memory Image Requirements
     VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -709,7 +677,7 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
         vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp.handle(), 2u, &views[0], 32u, 32u, 1u);
     VkFramebuffer fb;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkFramebufferCreateInfo-attachment");
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-12327");
     vk::CreateFramebuffer(device(), &frame_buffer_create_info, nullptr, &fb);
     m_errorMonitor->VerifyFound();
 
@@ -717,7 +685,6 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     VkFormat framebuffer_attachment_formats = VK_FORMAT_R8G8B8A8_UNORM;
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info[2] = {};
     framebuffer_attachment_image_info[0] = vku::InitStructHelper();
-    ;
     framebuffer_attachment_image_info[0].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebuffer_attachment_image_info[0].width = 32;
     framebuffer_attachment_image_info[0].height = 32;
@@ -725,7 +692,6 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     framebuffer_attachment_image_info[0].viewFormatCount = 1;
     framebuffer_attachment_image_info[0].pViewFormats = &framebuffer_attachment_formats;
     framebuffer_attachment_image_info[1] = vku::InitStructHelper();
-    ;
     framebuffer_attachment_image_info[1].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM;
     framebuffer_attachment_image_info[1].width = 32;
     framebuffer_attachment_image_info[1].height = 32;
@@ -751,7 +717,7 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     rp_begin_info.framebuffer = imageless_fb;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderPassBeginInfo-framebuffer");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-12328");
     m_command_buffer.BeginRenderPass(rp_begin_info);
     m_errorMonitor->VerifyFound();
 }

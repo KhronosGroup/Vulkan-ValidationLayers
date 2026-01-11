@@ -1840,9 +1840,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                                 loc.dot(Field::image), vuid_mem_type);
 
                     if (!IsIntegerMultipleOf(bind_info.memoryOffset, tile_mem_requirements.alignment)) {
-                        // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7940
                         const char *vuid =
-                            bind_image_mem_2 ? "UNASSIGNED-vkBindImageMemory2-memory" : "VUID-vkBindImageMemory-memory-10736";
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-12329" : "VUID-vkBindImageMemory-memory-10736";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
                                          "is %" PRIu64
@@ -1854,9 +1853,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     if (!IgnoreAllocationSize(allocate_info) &&
                         tile_mem_requirements.size > allocate_info.allocationSize - bind_info.memoryOffset) {
-                        // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7940
                         const char *vuid =
-                            bind_image_mem_2 ? "UNASSIGNED-vkBindImageMemory2-memory" : "VUID-vkBindImageMemory-memory-10738";
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-12330" : "VUID-vkBindImageMemory-memory-10738";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(vuid, objlist, loc,
                                          "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
