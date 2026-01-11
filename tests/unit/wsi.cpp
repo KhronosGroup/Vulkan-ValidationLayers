@@ -5130,6 +5130,16 @@ TEST_F(NegativeWsi, PresentTimingsInvalidPresentMode) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface;
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    if (present_timing_surface_capabilities.presentAtAbsoluteTimeSupported == VK_FALSE) {
+        GTEST_SKIP() << "presentAtAbsoluteTime not supported for the surface";
+    }
+
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
 
     uint32_t present_mode_count = 0;
@@ -5487,6 +5497,14 @@ TEST_F(NegativeWsi, PresentTimingsOutOfOrder) {
         GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
     }
 
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    if (present_timing_surface_capabilities.presentAtRelativeTimeSupported == VK_FALSE) {
+        GTEST_SKIP() << "presentAtRelativeTimeSupported not supported for the surface";
+    }
+
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
     uint32_t present_mode_count = 0;
@@ -5579,7 +5597,7 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
     AddRequiredFeature(vkt::Feature::presentId2);
     AddRequiredFeature(vkt::Feature::presentWait2);
     AddRequiredFeature(vkt::Feature::presentTiming);
-    AddRequiredFeature(vkt::Feature::presentAtAbsoluteTime);
+    AddRequiredFeature(vkt::Feature::presentAtRelativeTime);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
@@ -5593,6 +5611,14 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
 
     if (!present_id_2_capabilities.presentId2Supported || !present_wait_2_capabilities.presentWait2Supported) {
         GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
+    }
+
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    if (present_timing_surface_capabilities.presentAtRelativeTimeSupported == VK_FALSE) {
+        GTEST_SKIP() << "presentAtRelativeTimeSupported not supported for the surface";
     }
 
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
@@ -5645,6 +5671,7 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
     present_id.pPresentIds = &present_id_value;
 
     VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
     present_timing_info.targetTime = 1u;
     present_timing_info.presentStageQueries =
         VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT | VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_VISIBLE_BIT_EXT;
@@ -5686,7 +5713,7 @@ TEST_F(NegativeWsi, TimeDomain) {
     AddRequiredFeature(vkt::Feature::presentId2);
     AddRequiredFeature(vkt::Feature::presentWait2);
     AddRequiredFeature(vkt::Feature::presentTiming);
-    AddRequiredFeature(vkt::Feature::presentAtAbsoluteTime);
+    AddRequiredFeature(vkt::Feature::presentAtRelativeTime);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
@@ -5700,6 +5727,14 @@ TEST_F(NegativeWsi, TimeDomain) {
 
     if (!present_id_2_capabilities.presentId2Supported || !present_wait_2_capabilities.presentWait2Supported) {
         GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
+    }
+
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    if (present_timing_surface_capabilities.presentAtRelativeTimeSupported == VK_FALSE) {
+        GTEST_SKIP() << "presentAtRelativeTimeSupported not supported for the surface";
     }
 
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
@@ -5772,6 +5807,7 @@ TEST_F(NegativeWsi, TimeDomain) {
     present_id.pPresentIds = &present_id_value;
 
     VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
     present_timing_info.targetTime = 1u;
     present_timing_info.timeDomainId = time_domain_id;
     present_timing_info.presentStageQueries =

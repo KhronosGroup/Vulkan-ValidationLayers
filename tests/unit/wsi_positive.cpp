@@ -2829,6 +2829,14 @@ TEST_F(PositiveWsi, PresentTimings) {
         GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
     }
 
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    if (present_timing_surface_capabilities.presentAtRelativeTimeSupported == VK_FALSE) {
+        GTEST_SKIP() << "presentAtRelativeTimeSupported not supported for the surface";
+    }
+
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
     uint32_t present_mode_count = 0;
@@ -2908,12 +2916,15 @@ TEST_F(PositiveWsi, PresentTimings) {
     past_presentation_timing_properties.pPresentationTimings = &past_presentation_timing;
     vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
 
-    std::vector<VkPastPresentationTimingEXT> past_presentation_timings(past_presentation_timing_properties.presentationTimingCount);
-    for (uint32_t i = 0; i < past_presentation_timing_properties.presentationTimingCount; ++i) {
-        past_presentation_timings[i] = vku::InitStructHelper();
-        past_presentation_timings[i].presentStageCount = 1u;
-        past_presentation_timings[i].pPresentStages = &present_stage_time;
+    if (past_presentation_timing_properties.presentationTimingCount > 0) {
+        std::vector<VkPastPresentationTimingEXT> past_presentation_timings(
+            past_presentation_timing_properties.presentationTimingCount);
+        for (uint32_t i = 0; i < past_presentation_timing_properties.presentationTimingCount; ++i) {
+            past_presentation_timings[i] = vku::InitStructHelper();
+            past_presentation_timings[i].presentStageCount = 1u;
+            past_presentation_timings[i].pPresentStages = &present_stage_time;
+        }
+        past_presentation_timing_properties.pPresentationTimings = past_presentation_timings.data();
+        vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
     }
-    past_presentation_timing_properties.pPresentationTimings = past_presentation_timings.data();
-    vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
 }
