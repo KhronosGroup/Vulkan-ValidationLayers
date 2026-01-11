@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -108,6 +108,25 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
     // Initialize with visible values for debugging purposes.
     // This helps to show used slots during the first few frames.
     acquire_history.fill(vvl::kNoIndex32);
+
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) {
+        VkSwapchainTimeDomainPropertiesEXT swapchain_time_domain_properties = vku::InitStructHelper();
+        DispatchGetSwapchainTimeDomainPropertiesEXT(dev_data_.VkHandle(), handle, &swapchain_time_domain_properties, nullptr);
+        time_domains.resize(swapchain_time_domain_properties.timeDomainCount);
+        time_domain_ids.resize(swapchain_time_domain_properties.timeDomainCount);
+        swapchain_time_domain_properties.pTimeDomains = time_domains.data();
+        swapchain_time_domain_properties.pTimeDomainIds = time_domain_ids.data();
+        DispatchGetSwapchainTimeDomainPropertiesEXT(dev_data_.VkHandle(), handle, &swapchain_time_domain_properties, nullptr);
+
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+        surface_info.surface = pCreateInfo->surface;
+        VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(dev_data_.physical_device, &surface_info, &surface_capabilities);
+
+        present_at_absolute_time_supported = present_timing_surface_capabilities.presentAtAbsoluteTimeSupported;
+        present_at_relative_time_supported = present_timing_surface_capabilities.presentAtRelativeTimeSupported;
+    }
 }
 
 void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,

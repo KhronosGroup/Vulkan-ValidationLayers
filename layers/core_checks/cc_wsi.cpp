@@ -1105,45 +1105,69 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
 
                 const VkPresentTimingInfoEXT &timing_info = present_timings_info->pTimingInfos[i];
-                if (timing_info.targetTime != 0) {
-                    if (!IsValueIn(
-                            swapchain_state->create_info.presentMode,
-                            {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
-                        skip |= LogError(
-                            "VUID-VkPresentTimingsInfoEXT-pSwapchains-12235", pPresentInfo->pSwapchains[i],
-                            present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
-                            "is %" PRIu64 ", but the swapchain was created with present mode %s.", timing_info.targetTime,
-                            string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
+                if (timing_info.targetTime == 0) {
+                    continue;
+                }
+                if (!IsValueIn(
+                        swapchain_state->create_info.presentMode,
+                        {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
+                    skip |= LogError(
+                        "VUID-VkPresentTimingsInfoEXT-pSwapchains-12235", pPresentInfo->pSwapchains[i],
+                        present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                        "is %" PRIu64 ", but the swapchain was created with present mode %s.", timing_info.targetTime,
+                        string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
+                }
+
+                if (GetBitSetCount(timing_info.targetTimeDomainPresentStage) != 1) {
+                    bool time_domain_present_stage_local = false;
+                    for (size_t j = 0; j < swapchain_state->time_domains.size(); ++j) {
+                        if (swapchain_state->time_domain_ids[j] == timing_info.timeDomainId) {
+                            time_domain_present_stage_local =
+                                swapchain_state->time_domains[j] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+                            break;
+                        }
                     }
 
-                    if (GetBitSetCount(timing_info.targetTimeDomainPresentStage) != 1) {
-                        // Todo, call this once on device creation and cache result
-                        VkSwapchainTimeDomainPropertiesEXT swapchain_time_domain_properties = vku::InitStructHelper();
-                        DispatchGetSwapchainTimeDomainPropertiesEXT(device, pPresentInfo->pSwapchains[i],
-                                                                    &swapchain_time_domain_properties, nullptr);
-                        std::vector<VkTimeDomainKHR> time_domains(swapchain_time_domain_properties.timeDomainCount);
-                        std::vector<uint64_t> time_domain_ids(swapchain_time_domain_properties.timeDomainCount);
-                        swapchain_time_domain_properties.pTimeDomains = time_domains.data();
-                        swapchain_time_domain_properties.pTimeDomainIds = time_domain_ids.data();
-                        DispatchGetSwapchainTimeDomainPropertiesEXT(device, pPresentInfo->pSwapchains[i],
-                                                                    &swapchain_time_domain_properties, nullptr);
-
-                        bool time_domain_present_stage_local = false;
-                        for (size_t j = 0; j < swapchain_time_domain_properties.timeDomainCount; ++j) {
-                            if (time_domains[j] == timing_info.timeDomainId) {
-                                time_domain_present_stage_local = time_domains[j] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
-                                break;
-                            }
+                    if (time_domain_present_stage_local) {
+                        skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12238", pPresentInfo->pSwapchains[i],
+                                         present_info_loc.dot(Field::pTimingInfos, i).dot(Field::targetTimeDomainPresentStage),
+                                         "is %s but timeDomainId includes VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT and "
+                                         "targetTime is %" PRIu64 ".",
+                                         string_VkPresentStageFlagsEXT(timing_info.targetTimeDomainPresentStage).c_str(),
+                                         timing_info.targetTime);
+                    }
+                }
+                const bool relative_time_flag = (timing_info.flags & VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT) != 0;
+                if (!relative_time_flag) {
+                    if (!enabled_features.presentAtAbsoluteTime || !swapchain_state->present_at_absolute_time_supported) {
+                        std::string msg;
+                        if (!enabled_features.presentAtAbsoluteTime) {
+                            msg = "presentAtAbsoluteTime feature is not enabled";
+                        } else {
+                            msg = "presentAtAbsoluteTimeSupported is VK_FALSE for swapchain " +
+                                  FormatHandle(pPresentInfo->pSwapchains[i]);
                         }
-
-                        if (time_domain_present_stage_local) {
-                            skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12238", pPresentInfo->pSwapchains[i],
-                                             present_info_loc.dot(Field::pTimingInfos, i).dot(Field::targetTimeDomainPresentStage),
-                                             "is %s but timeDomainId includes VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT and "
-                                             "targetTime is %" PRIu64 ".",
-                                             string_VkPresentStageFlagsEXT(timing_info.targetTimeDomainPresentStage).c_str(),
-                                             timing_info.targetTime);
+                        skip |= LogError(
+                            "VUID-VkPresentTimingInfoEXT-targetTime-12236", device,
+                            present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                            "is %" PRIu64
+                            " and flags (%s) do not contain VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT, but %s",
+                            timing_info.targetTime, string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str(), msg.c_str());
+                    }
+                } else {
+                    if (!enabled_features.presentAtRelativeTime || !swapchain_state->present_at_relative_time_supported) {
+                        std::string msg;
+                        if (!enabled_features.presentAtRelativeTime) {
+                            msg = "presentAtRelativeTime feature is not enabled";
+                        } else {
+                            msg = "presentAtRelativeTimeSupported is VK_FALSE for swapchain " +
+                                  FormatHandle(pPresentInfo->pSwapchains[i]);
                         }
+                        skip |= LogError(
+                            "VUID-VkPresentTimingInfoEXT-targetTime-12237", device,
+                            present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                            "is %" PRIu64 " and flags (%s) contain VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT, but %s",
+                            timing_info.targetTime, string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str(), msg.c_str());
                     }
                 }
             }
