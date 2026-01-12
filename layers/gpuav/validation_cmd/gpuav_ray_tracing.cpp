@@ -506,7 +506,9 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         uint32_t written_count = 0;
         for (const vvl::AccelerationStructureKHR* as : as_with_addresses->array) {
             as_addresses_ptr[written_count] = as->acceleration_structure_address;
-            const uint32_t metadata = uint32_t(as->buffer_state && !as->buffer_state->Destroyed());
+            uint32_t metadata = 0;
+            metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(as->buffer_state && !as->buffer_state->Destroyed());
+            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->create_info.type);
             as_metadatas_ptr[written_count] = metadata;
             const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetDeviceAddressRange();
             as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
@@ -641,6 +643,28 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         const uint32_t as_instance_i = error_record[kValCmdErrorPayloadDword_2];
         const uint32_t blas_array_i = error_record[kValCmdErrorPayloadDword_3];
 
+        // Gather error info
+        // ---
+        const char* vvl_bug_msg =
+            "this is most likely a validation layer bug. Please file an issue at "
+            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues ";
+        auto& as_with_addresses = gpuav.shared_resources_cache.Get<AccelerationStructuresWithAddressesArray>();
+        const auto as_found_it = std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
+                                              [blas_in_tlas_addr](vvl::AccelerationStructureKHR* as) {
+                                                  return as->acceleration_structure_address == blas_in_tlas_addr;
+                                              });
+        std::stringstream ss_as;
+        std::stringstream ss_as_buffer;
+        if (as_found_it != as_with_addresses.array.end()) {
+            ss_as << "Acceleration structure corresponding to reference: " << gpuav.FormatHandle((*as_found_it)->VkHandle());
+            if ((*as_found_it)->buffer_state) {
+                ss_as_buffer << "(" << gpuav.FormatHandle((*as_found_it)->buffer_state->VkHandle()) << ") ";
+            }
+        } else {
+            ss_as << "Could not map acceleration structure reference to its corresponding handle, " << vvl_bug_msg;
+        }
+        const std::string ss_as_str = ss_as.str();
+        const std::string ss_buffer_str = ss_as_buffer.str();
         const BlasArray blas_array = blas_arrays[blas_array_i];
         std::ostringstream invalid_blas_loc;
         invalid_blas_loc << "pInfos[" << blas_array.info_i << "].pGeometries[" << blas_array.geom_i
@@ -649,48 +673,37 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                          << "accelerationStructureReference (0x" << std::hex << blas_in_tlas_addr << ")";
         const std::string invalid_blas_loc_str = invalid_blas_loc.str();
 
+        // Log error
+        // ---
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidAS: {
-                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
                                        "%s is an invalid acceleration structure reference.", invalid_blas_loc_str.c_str());
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
-                auto& as_with_addresses = gpuav.shared_resources_cache.Get<AccelerationStructuresWithAddressesArray>();
-                const auto as_found_it = std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
-                                                      [blas_in_tlas_addr](vvl::AccelerationStructureKHR* as) {
-                                                          return as->acceleration_structure_address == blas_in_tlas_addr;
-                                                      });
-                std::stringstream ss_as;
-                std::stringstream ss_buffer;
-                if (as_found_it != as_with_addresses.array.end()) {
-                    ss_as << "Acceleration structure corresponding to reference: "
-                          << gpuav.FormatHandle((*as_found_it)->VkHandle());
-                    if ((*as_found_it)->buffer_state) {
-                        ss_buffer << "(" << gpuav.FormatHandle((*as_found_it)->buffer_state->VkHandle()) << ") ";
-                    }
-                } else {
-                    ss_as << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
-                             "validation layer bug";
-                }
-
-                const std::string ss_as_str = ss_as.str();
-                const std::string ss_buffer_str = ss_buffer.str();
                 skip |= gpuav.LogError(
-                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
+                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
                     "%s is an invalid acceleration structure reference - underlying buffer %shas been destroyed. %s.",
                     invalid_blas_loc_str.c_str(), ss_buffer_str.c_str(), ss_as_str.c_str());
+                break;
+            }
+            case kErrorSubCode_PreBuildAccelerationStructures_InvalidASType: {
+                std::stringstream ss_as_type;
+                if (as_found_it != as_with_addresses.array.end()) {
+                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->create_info.type)
+                               << ". ";
+                }
+                const std::string ss_as_type_str = ss_as_type.str();
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
+                                       "%s is not a bottom level acceleration structure%s%s.", invalid_blas_loc_str.c_str(),
+                                       ss_as_type_str.c_str(), ss_as_str.c_str());
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap: {
                 const uint32_t blas_built_in_cmd_i = error_record[kValCmdErrorPayloadDword_4];
                 const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
-                auto& as_with_addresses = gpuav.shared_resources_cache.Get<AccelerationStructuresWithAddressesArray>();
-                const auto as_found_it = std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
-                                                      [blas_in_tlas_addr](vvl::AccelerationStructureKHR* as) {
-                                                          return as->acceleration_structure_address == blas_in_tlas_addr;
-                                                      });
                 std::stringstream error_ss;
                 if (as_found_it != as_with_addresses.array.end()) {
                     const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = (*as_found_it)->GetDeviceAddressRange();
@@ -714,7 +727,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                                  << ") is also referenced in a TLAS built in the same command, through " << invalid_blas_loc_str;
                     }
                 } else {
-                    error_ss << "Could not retrieve error information, this is most likely a validation layer bug";
+                    error_ss << "Could not retrieve error information, " << vvl_bug_msg;
                 }
                 const std::string error_str = error_ss.str();
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03706", objlist,

@@ -1,6 +1,6 @@
-// Copyright (c) 2022-2025 The Khronos Group Inc.
-// Copyright (c) 2022-2025 Valve Corporation
-// Copyright (c) 2022-2025 LunarG, Inc.
+// Copyright (c) 2022-2026 The Khronos Group Inc.
+// Copyright (c) 2022-2026 Valve Corporation
+// Copyright (c) 2022-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,12 +63,19 @@ void main() {
             uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
 
             if (valid_as_addr == blas_addr) {
-                uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_i];
-                if (as_metadata == 1u) {
-                    error_subcode = 0;
-                } else {
+                const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_i];
+
+                // found AS, first assume it is valid
+                error_subcode = 0;
+
+                if (GET_BUILD_AS_METADATA_BUFFER_STATUS(as_metadata) != BUILD_AS_METADATA_VALID_BUFFER) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
                 }
+
+                if (GET_BUILD_AS_METADATA_AS_TYPE(as_metadata) != BUILD_AS_METADATA_AS_TYPE_BLAS) {
+                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidASType;
+                }
+
                 break;
             }
         }

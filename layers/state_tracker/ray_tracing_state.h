@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -163,7 +163,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         return {buffer_device_address + create_info.offset, buffer_device_address + create_info.offset + create_info.size};
     }
 
-    // At time of writing, havin a safe_VkAccelerationStructureCreateInfoKHR is not strictly necessary,
+    // At time of writing, having a safe_VkAccelerationStructureCreateInfoKHR is not strictly necessary,
     // and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9669
     // showed that the underlying used to store host side acceleration structure
     // data seems to have hard to reproduce issues

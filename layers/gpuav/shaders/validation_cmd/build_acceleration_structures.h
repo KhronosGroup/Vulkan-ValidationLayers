@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,14 @@
 // NOTE: This header is included by the instrumentation shaders and glslang doesn't support #pragma once
 #ifndef BUILD_ACCELERATION_STRUCTURES_H
 #define BUILD_ACCELERATION_STRUCTURES_H
+
+#define BUILD_AS_METADATA_VALID_BUFFER 1u
+#define GET_BUILD_AS_METADATA_BUFFER_STATUS(metadata) ((metadata & (0x1 << 0u)) >> 0u)
+#define SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed) ((uint32_t(is_buffer_destroyed) & 0x1) << 0u)
+
+#define BUILD_AS_METADATA_AS_TYPE_BLAS 1u
+#define GET_BUILD_AS_METADATA_AS_TYPE(metadata) ((metadata & (0x3 << 1u)) >> 1u)
+#define SET_BUILD_AS_METADATA_AS_TYPE(as_type) ((uint32_t(as_type) & 0x3) << 1u)
 
 #ifdef __cplusplus
 
