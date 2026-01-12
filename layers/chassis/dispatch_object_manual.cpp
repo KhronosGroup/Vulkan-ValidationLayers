@@ -679,6 +679,8 @@ Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new 
     api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
                                       VK_API_VERSION_MINOR(specified_version), 0);
 
+    const std::string api_version_str = StringAPIVersion(specified_version);
+    printf("Instance::PreCallValidateCreateInstance, api_version_str: %s\n", api_version_str.c_str());
     InstanceExtensions instance_extensions(specified_version, pCreateInfo);
     extensions = DeviceExtensions(instance_extensions, api_version);
 

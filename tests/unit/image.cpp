@@ -4786,6 +4786,8 @@ TEST_F(NegativeImage, Ycbcr2plane444Formats) {
     if (m5_features.maintenance5 || ycbcr_2_plane_features.ycbcr2plane444Formats) {
         GTEST_SKIP() << "Requirements not met, skipping test.";
     }
+    printf("m5_features.maintenance5: %d\n", m5_features.maintenance5);
+    printf("ycbcr_2_plane_features.ycbcr2plane444Formats: %d\n", ycbcr_2_plane_features.ycbcr2plane444Formats);
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetPhysicalDeviceFormatProperties-format-parameter");
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceFormatProperties-None-12272");

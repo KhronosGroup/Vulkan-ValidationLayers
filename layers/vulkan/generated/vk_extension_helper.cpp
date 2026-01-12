@@ -626,6 +626,10 @@ InstanceExtensions::InstanceExtensions(APIVersion requested_api_version, const V
         if (api_version >= version_it.first) {
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (const auto& extension : version_it.second.second) {
+                if (extension == vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats) {
+                    printf("Found _VK_EXT_ycbcr_2plane_444_formats in GetInstancePromotionInfoMap, and api_version is %u.%u.%u\n",
+                           api_version.Major(), api_version.Minor(), api_version.Patch());
+                }
                 info = GetInfo(extension);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -656,6 +660,11 @@ DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVe
         if (api_version >= version_it.first) {
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (const auto& extension : version_it.second.second) {
+                if (extension == vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats) {
+                    printf("Found _VK_EXT_ycbcr_2plane_444_formats in GetInstancePromotionInfoMap, and api_version is %u.%u.%u\n",
+                           api_version.Major(), api_version.Minor(), api_version.Patch());
+                }
+
                 info = GetInfo(extension);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -710,6 +719,13 @@ DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVe
         if (api_version >= version_it.first) {
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (const auto& extension : version_it.second.second) {
+                if (extension == vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats) {
+                    printf(
+                        "Found _VK_EXT_ycbcr_2plane_444_formats in GetInstancePromotionInfoMap, it will be tagged as "
+                        "kEnabledByApiLevel,  requested_api_version is %u.%u.%u and api_version is %u.%u.%u\n",
+                        requested_api_version.Major(), requested_api_version.Minor(), requested_api_version.Patch(),
+                        api_version.Major(), api_version.Minor(), api_version.Patch());
+                }
                 info = GetInfo(extension);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;

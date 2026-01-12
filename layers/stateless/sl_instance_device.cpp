@@ -121,7 +121,10 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
     //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
     uint32_t local_api_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     // Create and use a local instance extension object, as an actual instance has not been created yet
+    const std::string api_version_str = StringAPIVersion(local_api_version);
+    printf("Instance::PreCallValidateCreateInstance, api_version_str: %s\n", api_version_str.c_str());
     InstanceExtensions instance_extensions(local_api_version, pCreateInfo);
+    printf("Creating DeviceExtensions from Instance::PreCallValidateCreateInstance (sl_instance_device.cpp)\n");
     DeviceExtensions device_extensions(instance_extensions, local_api_version);
     Context context(*this, error_obj, device_extensions);
 
@@ -295,6 +298,8 @@ void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevic
             ext_props.resize(ext_count);
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
 
+            printf(
+                "Creating DeviceExtensions from Instance::CommonPostCallRecordEnumeratePhysicalDevice (sl_instance_device.cpp)\n");
             DeviceExtensions phys_dev_exts(extensions, phys_dev_props->apiVersion, ext_props);
             physical_device_extensions[phys_device] = std::move(phys_dev_exts);
         }
@@ -1055,7 +1060,8 @@ bool Instance::ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physi
     if (IsValueIn(format, {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
                            VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
         const auto &exposed_extensions = physical_device_extensions.at(physicalDevice);
-
+        printf("exposed_extensions.vk_khr_maintenance5: %d\n", (int)exposed_extensions.vk_khr_maintenance5);
+        printf("exposed_extensions.vk_ext_ycbcr_2plane_444_formats: %d\n", (int)exposed_extensions.vk_ext_ycbcr_2plane_444_formats);
         if (api_version < VK_API_VERSION_1_3 && !exposed_extensions.vk_khr_maintenance5 &&
             !exposed_extensions.vk_ext_ycbcr_2plane_444_formats) {
             const char *vuid = context.error_obj.location.function == Func::vkGetPhysicalDeviceFormatProperties
