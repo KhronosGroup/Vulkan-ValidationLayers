@@ -2706,6 +2706,7 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
 bool CoreChecks::ValidateBoundTileMemory(const vvl::Bindable &bindable, const vvl::CommandBuffer &cb_state,
                                          const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
+
     auto bound_memory_states = bindable.GetBoundMemoryStates();
     VkDeviceMemory bound_tile_memory_handle =
         (cb_state.bound_tile_memory != VK_NULL_HANDLE) ? cb_state.bound_tile_memory->VkHandle() : VK_NULL_HANDLE;

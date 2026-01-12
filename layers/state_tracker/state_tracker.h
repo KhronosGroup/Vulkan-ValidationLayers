@@ -50,6 +50,7 @@ class DescriptorSetLayout;
 class DescriptorUpdateTemplate;
 class Queue;
 class Semaphore;
+class Bindable;
 class Buffer;
 class BufferView;
 class Sampler;
@@ -2262,6 +2263,10 @@ class DeviceProxy : public vvl::base::Device {
     }
     virtual bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
                                            const Location& tensor_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
+                                         const vvl::DrawDispatchVuid& vuid) const {
         return false;
     }
 

@@ -316,6 +316,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
                              FormatHandle(binding->Handle()).c_str(), DescribeInstruction().c_str());
         }
+        if (dev_proxy.enabled_features.tileMemoryHeap && resource_variable.IsAccessed()) {
+            skip |= dev_proxy.ValidateBoundTileMemory(*descriptor.GetBufferState(), cb_state, *vuids);
+        }
     }
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE) {
         skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_node, loc.Get(), vuids->unprotected_command_buffer_02707,
@@ -710,6 +713,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             skip |= dev_proxy.ValidateUnprotectedImage(cb_state, *image_state, loc.Get(), vuids->protected_command_buffer_02712,
                                                        " (Image is in a descriptorSet)");
         }
+    }
+
+    if (dev_proxy.enabled_features.tileMemoryHeap) {
+        skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, *vuids);
     }
 
     // If the Image View is invalid, the combined sampler mayb have the same issue
@@ -1146,6 +1153,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format), format_component_count,
                              texel_component_count, DescribeInstruction().c_str());
         }
+    }
+
+    if (dev_proxy.enabled_features.tileMemoryHeap) {
+        skip |= dev_proxy.ValidateBoundTileMemory(*buffer_view_state->buffer_state, cb_state, *vuids);
     }
 
     return skip;
