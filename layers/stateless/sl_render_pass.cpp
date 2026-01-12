@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,7 +369,7 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
     for (uint32_t i = 0; i < create_info.subpassCount; ++i) {
         const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[i];
         if (subpass_desc.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
-            vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
+            vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-00845"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
             skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::colorAttachmentCount),
                              "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").", subpass_desc.colorAttachmentCount,

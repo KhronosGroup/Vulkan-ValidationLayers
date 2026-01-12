@@ -1897,7 +1897,8 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet &u
         skip |= ValidateWriteUpdateBufferInfo(update, write_loc);
     } else if (IsValueIn(descriptor_type,
                          {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                          VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
+                          VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                          VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM})) {
         if (update.pImageInfo == nullptr) {
             const char *vuid =
                 (write_loc.function == Func::vkCmdPushDescriptorSet || write_loc.function == Func::vkCmdPushDescriptorSetKHR)

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -529,10 +529,9 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
             if (const auto *tensor_info = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                    // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7933
                     skip |= ValidateObject(tensor_info->pTensorViews[i], kVulkanObjectTypeTensorViewARM, true,
                                            "VUID-VkWriteDescriptorSetTensorARM-pTensorViews-parameter",
-                                           "UNASSIGNED-vkUpdateDescriptorSets-pDescriptorWrites-pTensorViews",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-12324",
                                            loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::pTensorViews, i));
                 }
             }

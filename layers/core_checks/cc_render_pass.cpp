@@ -1522,7 +1522,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     }
                     if (!used_as_depth && !used_as_color && attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                         const char *vuid =
-                            use_rp2 ? "VUID-VkSubpassDescription2-loadOp-03064" : "VUID-VkSubpassDescription-loadOp-00846";
+                            use_rp2 ? "VUID-VkSubpassDescription2-loadOp-00846" : "VUID-VkSubpassDescription-loadOp-00846";
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::loadOp), "is VK_ATTACHMENT_LOAD_OP_CLEAR.");
                     }
                 }

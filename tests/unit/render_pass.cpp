@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -591,7 +591,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         test_rpci.pSubpasses = &test_subpass;
 
         CreateRenderPassTest(test_rpci, rp2Supported, "VUID-VkSubpassDescription-colorAttachmentCount-00845",
-                             "VUID-VkSubpassDescription2-colorAttachmentCount-03063");
+                             "VUID-VkSubpassDescription2-colorAttachmentCount-00845");
     }
 
     // Test sample count mismatch between color buffers
@@ -677,7 +677,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
                                                                       size32(subpasses), subpasses.data(), 0u, nullptr);
 
         CreateRenderPassTest(rpci_multipass, rp2Supported, "VUID-VkSubpassDescription-loadOp-00846",
-                             "VUID-VkSubpassDescription2-loadOp-03064");
+                             "VUID-VkSubpassDescription2-loadOp-00846");
 
         attachments[input[0].attachment].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     }
