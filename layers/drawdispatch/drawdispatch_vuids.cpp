@@ -4697,6 +4697,8 @@ struct DispatchVuidsCmdDispatchDataGraphARM : DrawDispatchVuid {
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800";
         protected_command_buffer_02712           = "VUID-vkCmdDispatchDataGraphARM-commandBuffer-09801";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchDataGraphARM-None-09935";
+        descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDispatchDataGraphARM-None-09936";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatchDataGraphARM-None-09938";
     }
 };
 
