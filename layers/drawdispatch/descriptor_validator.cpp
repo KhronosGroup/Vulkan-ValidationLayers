@@ -651,7 +651,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
 
             bool descriptor_written_to = false;
-            bool descriptor_accessed = false;
             const auto pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint) continue;
@@ -659,7 +658,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     if (interface_variable.decorations.set == set_index &&
                         interface_variable.decorations.binding == binding_index) {
                         descriptor_written_to |= interface_variable.IsWrittenTo();
-                        descriptor_accessed = interface_variable.IsAccessed();
                         break;  // only one set/binding will match
                     }
                 }
