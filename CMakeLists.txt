@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2025 Valve Corporation
-# Copyright (c) 2014-2025 LunarG, Inc.
+# Copyright (c) 2014-2026 Valve Corporation
+# Copyright (c) 2014-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.22.1)
 # The VERSION field is generated with the "--generated-version" flag in the generate_source.py script
 #
 # If working with unreleased extensions, make sure the header and validation version are all on the same header version
-project(VVL VERSION 1.4.337 LANGUAGES CXX)
+project(VVL VERSION 1.4.338 LANGUAGES CXX)
 
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)
