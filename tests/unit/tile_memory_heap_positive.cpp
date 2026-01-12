@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,14 @@ class PositiveTileMemoryHeap : public TileMemoryHeapTest {};
 TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
     TEST_DESCRIPTION("Create tile memory storage buffer and use it within a dispatch.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Buffer
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM | VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT),
                        vkt::no_mem);
 
-    // Query Tile Memory Buffer Requirements
     VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -48,7 +44,6 @@ TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
         GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
     }
 
-    // Bind Tile Memory to Buffer
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
 
@@ -84,13 +79,10 @@ TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
 TEST_F(PositiveTileMemoryHeap, NullTileMemoryBind) {
     TEST_DESCRIPTION("Bind a NULL VkTileMemoryBindInfoQCOM to command buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tileMemoryHeap);
-
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Buffer
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT));
 
     // Create Compute Shader to write to Tile Memory Buffer

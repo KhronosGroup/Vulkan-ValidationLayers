@@ -5242,9 +5242,8 @@ bool CoreChecks::ValidateTileMemoryAttachments(const VkImageView *image_views, c
         for (const auto &bound_memory : bound_memory_states) {
             if (bound_memory && HasTileMemoryType(bound_memory->allocate_info.memoryTypeIndex)) {
                 const bool is_imageless = loc.function != Func::vkCreateFramebuffer;
-                // This VUID is being fixed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7950
-                const char *vuid =
-                    is_imageless ? "UNASSIGNED-VkRenderPassBeginInfo-framebuffer" : "UNASSIGNED-VkFramebufferCreateInfo-attachment";
+                const char *vuid = is_imageless ? "VUID-VkRenderPassBeginInfo-framebuffer-12328"
+                                                : "VUID-VkFramebufferCreateInfo-pAttachments-12327";
                 LogObjectList objlist(rp_state.VkHandle(), image_views[i], bound_memory->VkHandle());
                 skip |=
                     LogError(vuid, objlist, attachment_loc,
