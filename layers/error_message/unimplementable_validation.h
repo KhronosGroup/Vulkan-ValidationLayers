@@ -15,8 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
+
 // clang-format off
+
+// We need to include this file in CMake so Visual Studio can open it easier
+// Wrap between #if 0 ... #endif so that the compiler doesn't actually try to parse anything
+#if 0
 
 // This file list all VUID that are not possible to validate.
 // This file should never be included, but here for searchability and statistics
@@ -703,6 +707,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter",
     "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcData-parameter",
     "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstData-parameter",
+
+    // RT pipeline stack size is dynamic, allocated at runtime
+    // how rays behaves in the scene
+    "VUID-vkCmdSetRayTracingPipelineStackSizeKHR-pipelineStackSize-03610",
 };
 
 // These are things that "could be done" but require a crazy amount of work, for no real usecase
@@ -787,3 +795,4 @@ const char* deprecated_validation[] = {
 };
 
 // clang-format on
+#endif

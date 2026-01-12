@@ -1,8 +1,8 @@
 # ~~~
-# Copyright (c) 2014-2025 Valve Corporation
-# Copyright (c) 2014-2025 LunarG, Inc.
-# Copyright (c) 2023-2025 RasterGrid Kft.
-# Copyright (C) 2025 Arm Limited.
+# Copyright (c) 2014-2026 Valve Corporation
+# Copyright (c) 2014-2026 LunarG, Inc.
+# Copyright (c) 2023-2026 RasterGrid Kft.
+# Copyright (C) 2026 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -255,6 +255,7 @@ target_sources(vvl PRIVATE
     drawdispatch/drawdispatch_vuids.h
     error_message/spirv_logging.h
     error_message/spirv_logging.cpp
+    error_message/unimplementable_validation.h
     external/vma/vma.h
     external/vma/vma.cpp
     ${API_TYPE}/generated/best_practices.cpp
