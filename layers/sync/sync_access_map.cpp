@@ -48,6 +48,7 @@ void AccessMap::Erase(iterator first, iterator last) {
 }
 
 AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state) {
+    assert(range.non_empty());
     bool hint_open;
     const_iterator impl_next = hint;
     if (impl_map_.empty()) {
@@ -75,9 +76,8 @@ AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &ra
 }
 
 std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange &range, const AccessState &access_state) {
-    if (!range.non_empty()) {
-        return std::make_pair(end(), false);
-    }
+    assert(range.non_empty());
+
     // Look for range conflicts (and an insertion point, which makes the lower_bound *not* wasted work)
     // we don't have to check upper if just check that lower doesn't intersect (which it would if lower != upper)
     auto lower = LowerBound(range.begin);

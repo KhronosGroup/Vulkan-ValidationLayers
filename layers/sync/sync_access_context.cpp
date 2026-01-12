@@ -199,6 +199,59 @@ void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
     }
 }
 
+ApplySingleBufferBarrierFunctor::ApplySingleBufferBarrierFunctor(const AccessContext &access_context,
+                                                                 const BarrierScope &barrier_scope, const SyncBarrier &barrier)
+    : access_context(access_context), barrier_scope(barrier_scope), barrier(barrier) {}
+
+AccessMap::iterator ApplySingleBufferBarrierFunctor::Infill(AccessMap *accesses, const Iterator &pos_hint,
+                                                            const AccessRange &range) const {
+    // The buffer barrier does not need to fill the gaps because barrier
+    // application to a range without accesses is a no-op.
+    // Return the pos iterator unchanged to indicate that no entry was created.
+    return pos_hint;
+}
+
+void ApplySingleBufferBarrierFunctor::operator()(const Iterator &pos) const {
+    AccessState &access_state = pos->second;
+    access_context.ApplyGlobalBarriers(access_state);
+    access_state.ApplyBarrier(barrier_scope, barrier);
+}
+
+ApplySingleImageBarrierFunctor::ApplySingleImageBarrierFunctor(const AccessContext &access_context,
+                                                               const BarrierScope &barrier_scope, const SyncBarrier &barrier,
+                                                               bool layout_transition, uint32_t layout_transition_handle_index,
+                                                               ResourceUsageTag exec_tag)
+    : access_context(access_context),
+      barrier_scope(barrier_scope),
+      barrier(barrier),
+      exec_tag(exec_tag),
+      layout_transition(layout_transition),
+      layout_transition_handle_index(layout_transition_handle_index) {
+    // Suppress layout transition during submit time application.
+    // It adds write access but this is necessary only during recording.
+    if (barrier_scope.scope_queue != kQueueIdInvalid) {
+        this->layout_transition = false;
+        this->layout_transition_handle_index = vvl::kNoIndex32;
+    }
+}
+
+AccessMap::iterator ApplySingleImageBarrierFunctor::Infill(AccessMap *accesses, const Iterator &pos_hint,
+                                                           const AccessRange &range) const {
+    if (!layout_transition) {
+        // Do not create a new range if this is not a layout transition
+        return pos_hint;
+    }
+    // Create a new range for layout transition write access
+    auto inserted = accesses->Insert(pos_hint, range, AccessState::DefaultAccessState());
+    return inserted;
+}
+
+void ApplySingleImageBarrierFunctor::operator()(const Iterator &pos) const {
+    AccessState &access_state = pos->second;
+    access_context.ApplyGlobalBarriers(access_state);
+    access_state.ApplyBarrier(barrier_scope, barrier, layout_transition, layout_transition_handle_index, exec_tag);
+}
+
 void CollectBarriersFunctor::operator()(const Iterator &pos) const {
     AccessState &access_state = pos->second;
     access_context.ApplyGlobalBarriers(access_state);

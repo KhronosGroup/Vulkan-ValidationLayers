@@ -36,6 +36,7 @@ class VideoSession;
 
 namespace syncval {
 
+class AccessContext;
 class SyncValidator;
 
 bool SimpleBinding(const vvl::Bindable &bindable);
@@ -100,6 +101,42 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
     return false;
 }
 
+// A single buffer barrier can be applied immediately to a memory range.
+// Note that multiple barriers (of the same or different types) need to use
+// the pending barriers functionality to ensure independent barrier application
+struct ApplySingleBufferBarrierFunctor {
+    ApplySingleBufferBarrierFunctor(const AccessContext &access_context, const BarrierScope &barrier_scope,
+                                    const SyncBarrier &barrier);
+
+    using Iterator = AccessMap::iterator;
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const;
+    void operator()(const Iterator &pos) const;
+
+    const AccessContext &access_context;
+    const BarrierScope &barrier_scope;
+    const SyncBarrier &barrier;
+};
+
+// A single image barrier can be applied immediately to a memory range.
+// Note that multiple barriers (of the same or different types) need to use
+// the pending barriers functionality to ensure independent barrier application
+struct ApplySingleImageBarrierFunctor {
+    ApplySingleImageBarrierFunctor(const AccessContext &access_context, const BarrierScope &barrier_scope,
+                                   const SyncBarrier &barrier, bool layout_transition, uint32_t layout_transition_handle_index,
+                                   ResourceUsageTag exec_tag);
+
+    using Iterator = AccessMap::iterator;
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const;
+    void operator()(const Iterator &pos) const;
+
+    const AccessContext &access_context;
+    const BarrierScope &barrier_scope;
+    const SyncBarrier &barrier;
+    const ResourceUsageTag exec_tag;
+    bool layout_transition;
+    uint32_t layout_transition_handle_index;
+};
+
 // This functor changes layout of access map as part of infill_update_range traversal:
 //    * infills gaps within a specified input range (only for layout transition use case)
 //    * if existing ranges intersect begin/end of the input range then existing ranges are split
@@ -125,8 +162,6 @@ struct ApplyMarkupFunctor {
     void operator()(const Iterator &pos) const {}
     const bool layout_transition;
 };
-
-class AccessContext;
 
 // This functor populates PendingBarriers with the results of independent barrier appication (pending barriers).
 // After this functor finished its work then PendingBarriers::Apply() can be used to update the access states.
@@ -507,17 +542,17 @@ class AccessContext {
     SortedFirstAccesses sorted_first_accesses_;
 };
 
-// The semantics of the InfillUpdateOps of infill_update_range are slightly different than for the UpdateMemoryAccessState Action
-// operations, as this simplifies the generic traversal.  So we wrap them in a semantics Adapter to get the same effect.
+// The semantics of the InfillUpdateOps of InfillUpdateRange are slightly different than for the
+// UpdateMemoryAccessState Action operations, as this simplifies the generic traversal. So we wrap
+// them in a semantics Adapter to get the same effect.
 template <typename Action>
 struct ActionToOpsAdapter {
     void infill(AccessMap &accesses, const AccessMap::iterator &pos, const AccessRange &infill_range) const {
-        // Combine Infill and update operations to make the generic implementation simpler
         AccessMap::iterator infill = action.Infill(&accesses, pos, infill_range);
-        if (infill == accesses.end()) return;  // Allow action to 'pass' on filling in the blanks
 
-        // Need to apply the action to the Infill.  'infill_update_range' expect ops.infill to be completely done with
-        // the infill_range, where as Action::Infill assumes the caller will apply the action() logic to the infill_range
+        // Need to apply the action to the Infill.
+        // InfillUpdateRange expects ops.infill to be completely done with the infill_range,
+        // where as Action::Infill assumes the caller will apply the action() logic to the infill_range
         for (; infill != pos; ++infill) {
             assert(infill != accesses.end());
             action(infill);
