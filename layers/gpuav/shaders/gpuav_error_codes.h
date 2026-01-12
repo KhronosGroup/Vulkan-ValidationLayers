@@ -114,7 +114,8 @@ const int kErrorSubCodeSanitizerDivideZero = 1;
 const int kErrorSubCodeSanitizerImageGather = 2;
 const int kErrorSubCodeSanitizerPow = 3;
 const int kErrorSubCodeSanitizerAtan2 = 4;
-const int kErrorSubCodeSanitizerCount = 5;  // update when adding new item
+const int kErrorSubCodeSanitizerFminmax = 5;
+const int kErrorSubCodeSanitizerCount = 6;  // update when adding new item
 
 // Pre Draw
 //

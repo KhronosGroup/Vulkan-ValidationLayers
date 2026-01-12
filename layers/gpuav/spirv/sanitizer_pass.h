@@ -23,6 +23,12 @@ namespace spirv {
 
 struct Constant;
 
+// Holds OpTypeResult for |x| and |y| operand
+struct BoolResultXY {
+    uint32_t x = 0;
+    uint32_t y = 0;
+};
+
 // This pass catches things that are not a dedicated VU, things such as, but not limited to
 // - dividing by zero (for an int)
 // - overflows
@@ -43,6 +49,7 @@ class SanitizerPass : public Pass {
         const Instruction* target_instruction = nullptr;
 
         uint32_t sub_code = glsl::kErrorSubCodeSanitizerEmpty;
+        uint32_t glsl_opcode = 0;
 
         // There are cases where it is easier to just adjust the bad code than if/else wrap it
         bool skip_safe_mode = false;
@@ -56,6 +63,7 @@ class SanitizerPass : public Pass {
     uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t PowCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t Atan2Check(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    BoolResultXY FminmaxCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(uint32_t sub_code);
