@@ -6263,26 +6263,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkQueueFamilyCheckpointProperties2NV structure members  -- Covers
         // VUID-VkQueueFamilyCheckpointProperties2NV-sType-sType
 
-        // Validation code for VkPresentTimingSurfaceCapabilitiesEXT structure members
-        case VK_STRUCTURE_TYPE_PRESENT_TIMING_SURFACE_CAPABILITIES_EXT: {  // Covers
-                                                                           // VUID-VkPresentTimingSurfaceCapabilitiesEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPresentTimingSurfaceCapabilitiesEXT);
-                VkPresentTimingSurfaceCapabilitiesEXT* structure = (VkPresentTimingSurfaceCapabilitiesEXT*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::presentTimingSupported), structure->presentTimingSupported);
-
-                skip |=
-                    ValidateBool32(pNext_loc.dot(Field::presentAtAbsoluteTimeSupported), structure->presentAtAbsoluteTimeSupported);
-
-                skip |=
-                    ValidateBool32(pNext_loc.dot(Field::presentAtRelativeTimeSupported), structure->presentAtRelativeTimeSupported);
-
-                skip |= ValidateFlags(pNext_loc.dot(Field::presentStageQueries), vvl::FlagBitmask::VkPresentStageFlagBitsEXT,
-                                      AllVkPresentStageFlagBitsEXT, structure->presentStageQueries, kRequiredFlags,
-                                      "VUID-VkPresentTimingSurfaceCapabilitiesEXT-presentStageQueries-parameter",
-                                      "VUID-VkPresentTimingSurfaceCapabilitiesEXT-presentStageQueries-requiredbitmask", false);
-            }
-        } break;
+        // No Validation code for VkPresentTimingSurfaceCapabilitiesEXT structure members  -- Covers
+        // VUID-VkPresentTimingSurfaceCapabilitiesEXT-sType-sType
 
         // Validation code for VkSwapchainCalibratedTimestampInfoEXT structure members
         case VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT: {  // Covers
@@ -7592,11 +7574,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                          ++processingEngineIndex) {
                         [[maybe_unused]] const Location pProcessingEngines_loc =
                             pNext_loc.dot(Field::pProcessingEngines, processingEngineIndex);
-                        skip |= ValidateRangedEnum(pProcessingEngines_loc.dot(Field::type),
-                                                   vvl::Enum::VkPhysicalDeviceDataGraphProcessingEngineTypeARM,
-                                                   structure->pProcessingEngines[processingEngineIndex].type,
-                                                   "VUID-VkPhysicalDeviceDataGraphProcessingEngineARM-type-parameter");
-
                         skip |= ValidateBool32(pProcessingEngines_loc.dot(Field::isForeign),
                                                structure->pProcessingEngines[processingEngineIndex].isForeign);
                     }
@@ -7853,14 +7830,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 VkDataGraphPipelineBuiltinModelCreateInfoQCOM* structure = (VkDataGraphPipelineBuiltinModelCreateInfoQCOM*)header;
                 skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pOperation), structure->pOperation,
                                                 "VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-parameter");
-
-                if (structure->pOperation != nullptr) {
-                    [[maybe_unused]] const Location pOperation_loc = pNext_loc.dot(Field::pOperation);
-                    skip |= ValidateRangedEnum(pOperation_loc.dot(Field::operationType),
-                                               vvl::Enum::VkPhysicalDeviceDataGraphOperationTypeARM,
-                                               structure->pOperation->operationType,
-                                               "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-operationType-parameter");
-                }
             }
         } break;
 
@@ -21313,60 +21282,6 @@ bool Device::PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
         skip |= context.ValidateStructPnext(pPastPresentationTimingProperties_loc, pPastPresentationTimingProperties->pNext, 0,
                                             nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkPastPresentationTimingPropertiesEXT-pNext-pNext", kVUIDUndefined, false);
-
-        skip |= context.ValidateStructTypeArray(
-            pPastPresentationTimingProperties_loc.dot(Field::presentationTimingCount),
-            pPastPresentationTimingProperties_loc.dot(Field::pPresentationTimings),
-            pPastPresentationTimingProperties->presentationTimingCount, pPastPresentationTimingProperties->pPresentationTimings,
-            VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_EXT, true, true, "VUID-VkPastPresentationTimingEXT-sType-sType",
-            "VUID-VkPastPresentationTimingPropertiesEXT-pPresentationTimings-parameter",
-            "VUID-VkPastPresentationTimingPropertiesEXT-presentationTimingCount-arraylength");
-
-        if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
-            for (uint32_t presentationTimingIndex = 0;
-                 presentationTimingIndex < pPastPresentationTimingProperties->presentationTimingCount; ++presentationTimingIndex) {
-                [[maybe_unused]] const Location pPresentationTimings_loc =
-                    pPastPresentationTimingProperties_loc.dot(Field::pPresentationTimings, presentationTimingIndex);
-                skip |= context.ValidateStructPnext(
-                    pPresentationTimings_loc,
-                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].pNext, 0, nullptr,
-                    GeneratedVulkanHeaderVersion, "VUID-VkPastPresentationTimingEXT-pNext-pNext", kVUIDUndefined, false);
-
-                skip |= context.ValidateArray(
-                    pPresentationTimings_loc.dot(Field::presentStageCount), pPresentationTimings_loc.dot(Field::pPresentStages),
-                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].presentStageCount,
-                    &pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].pPresentStages, true, true,
-                    "VUID-VkPastPresentationTimingEXT-presentStageCount-arraylength",
-                    "VUID-VkPastPresentationTimingEXT-pPresentStages-parameter");
-
-                if (pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].pPresentStages != nullptr) {
-                    for (uint32_t presentStageIndex = 0;
-                         presentStageIndex <
-                         pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].presentStageCount;
-                         ++presentStageIndex) {
-                        [[maybe_unused]] const Location pPresentStages_loc =
-                            pPresentationTimings_loc.dot(Field::pPresentStages, presentStageIndex);
-                        skip |=
-                            context.ValidateFlags(pPresentStages_loc.dot(Field::stage), vvl::FlagBitmask::VkPresentStageFlagBitsEXT,
-                                                  AllVkPresentStageFlagBitsEXT,
-                                                  pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex]
-                                                      .pPresentStages[presentStageIndex]
-                                                      .stage,
-                                                  kRequiredFlags, "VUID-VkPresentStageTimeEXT-stage-parameter",
-                                                  "VUID-VkPresentStageTimeEXT-stage-requiredbitmask", false);
-                    }
-                }
-
-                skip |= context.ValidateRangedEnum(
-                    pPresentationTimings_loc.dot(Field::timeDomain), vvl::Enum::VkTimeDomainKHR,
-                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].timeDomain,
-                    "VUID-VkPastPresentationTimingEXT-timeDomain-parameter");
-
-                skip |= context.ValidateBool32(
-                    pPresentationTimings_loc.dot(Field::reportComplete),
-                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].reportComplete);
-            }
-        }
     }
     return skip;
 }
@@ -26050,16 +25965,6 @@ bool Device::PreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM(
                 pBindPointRequirements_loc, pBindPointRequirements[pBindPointRequirementIndex].pNext, 0, nullptr,
                 GeneratedVulkanHeaderVersion, "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-pNext-pNext", kVUIDUndefined,
                 false);
-
-            skip |= context.ValidateRangedEnum(pBindPointRequirements_loc.dot(Field::bindPoint),
-                                               vvl::Enum::VkDataGraphPipelineSessionBindPointARM,
-                                               pBindPointRequirements[pBindPointRequirementIndex].bindPoint,
-                                               "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-bindPoint-parameter");
-
-            skip |= context.ValidateRangedEnum(pBindPointRequirements_loc.dot(Field::bindPointType),
-                                               vvl::Enum::VkDataGraphPipelineSessionBindPointTypeARM,
-                                               pBindPointRequirements[pBindPointRequirementIndex].bindPointType,
-                                               "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-bindPointType-parameter");
         }
     }
     return skip;
@@ -26262,19 +26167,6 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM
                                                 pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].pNext, 0,
                                                 nullptr, GeneratedVulkanHeaderVersion,
                                                 "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext", kVUIDUndefined, false);
-
-            skip |= context.ValidateRangedEnum(pQueueFamilyDataGraphProperties_loc.dot(Field::type),
-                                               vvl::Enum::VkPhysicalDeviceDataGraphProcessingEngineTypeARM,
-                                               pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].engine.type,
-                                               "VUID-VkPhysicalDeviceDataGraphProcessingEngineARM-type-parameter");
-
-            skip |= context.ValidateBool32(pQueueFamilyDataGraphProperties_loc.dot(Field::isForeign),
-                                           pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].engine.isForeign);
-
-            skip |= context.ValidateRangedEnum(
-                pQueueFamilyDataGraphProperties_loc.dot(Field::operationType), vvl::Enum::VkPhysicalDeviceDataGraphOperationTypeARM,
-                pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].operation.operationType,
-                "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-operationType-parameter");
         }
     }
     return skip;
@@ -26322,20 +26214,6 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphProcessingEng
             pQueueFamilyDataGraphProcessingEngineProperties_loc, pQueueFamilyDataGraphProcessingEngineProperties->pNext, 0, nullptr,
             GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-pNext-pNext", kVUIDUndefined,
             false);
-
-        skip |= context.ValidateFlags(
-            pQueueFamilyDataGraphProcessingEngineProperties_loc.dot(Field::foreignSemaphoreHandleTypes),
-            vvl::FlagBitmask::VkExternalSemaphoreHandleTypeFlagBits, AllVkExternalSemaphoreHandleTypeFlagBits,
-            pQueueFamilyDataGraphProcessingEngineProperties->foreignSemaphoreHandleTypes, kRequiredFlags,
-            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignSemaphoreHandleTypes-parameter",
-            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignSemaphoreHandleTypes-requiredbitmask", false);
-
-        skip |= context.ValidateFlags(
-            pQueueFamilyDataGraphProcessingEngineProperties_loc.dot(Field::foreignMemoryHandleTypes),
-            vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits, AllVkExternalMemoryHandleTypeFlagBits,
-            pQueueFamilyDataGraphProcessingEngineProperties->foreignMemoryHandleTypes, kRequiredFlags,
-            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignMemoryHandleTypes-parameter",
-            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignMemoryHandleTypes-requiredbitmask", false);
     }
     return skip;
 }

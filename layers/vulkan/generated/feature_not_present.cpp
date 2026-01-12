@@ -31,9 +31,9 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
     ss << "returned VK_ERROR_FEATURE_NOT_PRESENT because the following features were not supported on this physical device:\n";
 
     // First do 1.0 VkPhysicalDeviceFeatures
-    const auto* features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
+    const auto *features2_in = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(create_info.pNext);
     if (create_info.pEnabledFeatures || features2_in) {
-        const VkPhysicalDeviceFeatures& enabling =
+        const VkPhysicalDeviceFeatures &enabling =
             create_info.pEnabledFeatures ? *create_info.pEnabledFeatures : features2_in->features;
 
         VkPhysicalDeviceFeatures supported = {};
