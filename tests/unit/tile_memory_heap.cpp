@@ -10,6 +10,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "utils/math_utils.h"
 
 class NegativeTileMemoryHeap : public TileMemoryHeapTest {};
 
@@ -756,7 +757,7 @@ TEST_F(NegativeTileMemoryHeap, ResolveAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeTileMemoryHeap, BufferMismatchTileMemBound) {
+TEST_F(NegativeTileMemoryHeap, BufferDescriptorMismatchTileMemory) {
     TEST_DESCRIPTION("Create tile memory storage buffer and use it within a dispatch.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -765,12 +766,19 @@ TEST_F(NegativeTileMemoryHeap, BufferMismatchTileMemBound) {
 
     RETURN_IF_SKIP(Init());
 
-    // Create a Tile Memory Buffer
+    // Tile Memory Buffer
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM | VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT),
                        vkt::no_mem);
+    // Tile Memory Texel Buffer
+    vkt::Buffer texel_buffer(
+        *m_device,
+        vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT),
+        vkt::no_mem);
 
     // Query Tile Memory Buffer Requirements
+    VkDeviceSize buffer_size = 0;
+    VkDeviceSize texel_buffer_size = 0;
     VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
     VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper(&tile_mem_reqs);
@@ -781,10 +789,22 @@ TEST_F(NegativeTileMemoryHeap, BufferMismatchTileMemBound) {
         GTEST_SKIP() << "Buffer not eligible to be bound with Tile Memory.";
     }
 
-    // Find a memory configuration for the Tile Memory Buffer, otherwise exit
+    buffer_size = tile_mem_reqs.size;
+
+    buffer_info.buffer = texel_buffer;
+    vk::GetBufferMemoryRequirements2(device(), &buffer_info, &buffer_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Texel Buffer not eligible to be bound with Tile Memory.";
+    }
+
+    buffer_size = AlignToMultiple(buffer_size, tile_mem_reqs.alignment);
+    texel_buffer_size = tile_mem_reqs.size;
+
+    // Find a memory configuration for the Tile Memory Resources, otherwise exit
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.memoryTypeIndex = 0;
-    alloc_info.allocationSize = tile_mem_reqs.size;
+    alloc_info.allocationSize = buffer_size + texel_buffer_size;
     bool pass = m_device->Physical().SetMemoryType(buffer_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
 
@@ -796,28 +816,112 @@ TEST_F(NegativeTileMemoryHeap, BufferMismatchTileMemBound) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
 
+    // Bind Tile Memory to Texel Buffer with offset
+    vk::BindBufferMemory(device(), texel_buffer, buffer_memory, buffer_size);
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT;
+
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper(&buffer_usage_flags);
+    bvci.buffer = texel_buffer;
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    vkt::BufferView texel_buffer_view(*m_device, bvci);
+
     // Create Compute Shader to write to Tile Memory Buffer
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo { float tileMemBuffer; };
+        layout(set = 0, binding = 1, r32f) uniform imageBuffer s_buffer;
         void main() {
            tileMemBuffer = 1.0f;
+           imageStore(s_buffer, 0, vec4(0.5f));
         }
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     pipe.CreateComputePipeline();
+
     pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.WriteDescriptorBufferView(1, texel_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-commandBuffer-10746");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-commandBuffer-10746", 2);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileMemoryHeap, ImageDescriptorMismatchTileMemory) {
+    TEST_DESCRIPTION("Create tile memory storage buffer and use it within a dispatch.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+    RETURN_IF_SKIP(Init());
+
+    // Create a Tile Memory Image
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM,
+                                                           VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    // Query Tile Memory Image Requirements
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible to be bound with Tile Memory.";
+    }
+
+    // Find a memory configuration for the Tile Memory Image, otherwise exit
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = tile_mem_reqs.size;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    vkt::DeviceMemory image_memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image, image_memory, 0);
+    vkt::ImageView image_view = image.CreateView();
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform readonly image2D storage_image;
+        void main(){
+            vec4 data = imageLoad(storage_image, ivec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-commandBuffer-10746");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }

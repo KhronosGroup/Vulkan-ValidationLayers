@@ -316,7 +316,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
                              FormatHandle(binding->Handle()).c_str(), DescribeInstruction().c_str());
         }
-        if (resource_variable.IsAccessed()) {
+        if (dev_proxy.enabled_features.tileMemoryHeap && resource_variable.IsAccessed()) {
             skip |= dev_proxy.ValidateBoundTileMemory(*descriptor.GetBufferState(), cb_state, *vuids);
         }
     }
@@ -705,10 +705,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                      FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
                 }
             }
-
-            if (descriptor_accessed) {
-                skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, *vuids);
-            }
         }
     }
 
@@ -719,6 +715,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             skip |= dev_proxy.ValidateUnprotectedImage(cb_state, *image_state, loc.Get(), vuids->protected_command_buffer_02712,
                                                        " (Image is in a descriptorSet)");
         }
+    }
+
+    if (dev_proxy.enabled_features.tileMemoryHeap) {
+        skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, *vuids);
     }
 
     // If the Image View is invalid, the combined sampler mayb have the same issue
@@ -1157,7 +1157,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
 
-    if (resource_variable.IsAccessed()) {
+    if (dev_proxy.enabled_features.tileMemoryHeap) {
         skip |= dev_proxy.ValidateBoundTileMemory(*buffer_view_state->buffer_state, cb_state, *vuids);
     }
 
