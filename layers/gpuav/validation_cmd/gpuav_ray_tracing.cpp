@@ -217,12 +217,12 @@ void RemoveAccelerationStrutureDeviceAddress(Validator& gpuav, VkAccelerationStr
             auto* as_with_addresses = gpuav.shared_resources_cache.TryGet<AccelerationStructuresWithAddressesArray>();
             if (as_with_addresses) {
                 WriteLockGuard lock(as_with_addresses->map_mutex);
-                const auto as_found_it =
-                    std::find(as_with_addresses->array.begin(), as_with_addresses->array.end(), as_state.get());
-                if (as_found_it != as_with_addresses->array.end()) {
+                auto as_found_it = std::find(as_with_addresses->array.begin(), as_with_addresses->array.end(), as_state.get());
+                while (as_found_it != as_with_addresses->array.end()) {
                     const size_t i = std::distance(as_with_addresses->array.begin(), as_found_it);
                     std::swap(as_with_addresses->array[i], as_with_addresses->array[as_with_addresses->array.size() - 1]);
                     as_with_addresses->array.resize(as_with_addresses->array.size() - 1);
+                    as_found_it = as_with_addresses->array.begin() + i;
                 }
             }
             as_state->acceleration_structure_address = 0;
