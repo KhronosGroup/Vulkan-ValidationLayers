@@ -3572,3 +3572,77 @@ TEST_F(PositiveSyncVal, ChainGlobalBarrierWithBufferBarrier) {
     m_command_buffer.Copy(buffer_c, buffer_a);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, ChainGlobalBarrierWithBufferBarrier2) {
+    TEST_DESCRIPTION("Test that global barrier chains with buffer barrier's source scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_c(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // If global barriers tracking is broken this barrier won't chain with buffer barrier and will case RAW hazard
+    VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
+    global_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    global_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    global_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    global_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+
+    VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    buffer_barrier.buffer = buffer_a;
+    buffer_barrier.size = 1024;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_b, buffer_a);
+    m_command_buffer.Barrier(global_barrier);
+    m_command_buffer.Barrier(buffer_barrier);
+    m_command_buffer.Copy(buffer_a, buffer_c);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, ChainGlobalBarrierWithImageBarrier) {
+    TEST_DESCRIPTION("Test that global barrier chains with buffer barrier's source scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {32, 32, 1};
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    vkt::Buffer buffer_a(*m_device, 1024 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // If global barriers tracking is broken this barrier won't chain with image barrier and will case RAW hazard
+    VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
+    global_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    global_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    global_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    global_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_a, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.Barrier(global_barrier);
+    m_command_buffer.Barrier(image_barrier);
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_b, 1, &region);
+    m_command_buffer.End();
+}

@@ -408,26 +408,49 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
     return tag;
 }
 
-// TODO: support more uses cases of a single barrier: if single barrier is an image/buffer
-// barrier then we need consider three ranges - range of the resource where to apply
-// full fledged barrier and also two ranges before and after the resource where it is
-// enough to apply execution dependency.
-void SyncOpPipelineBarrier::ApplySingleBarrier(CommandExecutionContext &exec_context) const {
+void SyncOpPipelineBarrier::ApplySingleBufferBarrier(CommandExecutionContext &exec_context, const SyncBufferBarrier &buffer_barrier,
+                                                     const SyncBarrier &exec_dep_barrier) const {
     AccessContext *access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
-    // TODO: current function is for a single memory barrier, but we would like to handle
-    // multiple barriers too. We can't just loop over barriers and apply one by one (causes
-    // dependencies). Instead, we need to register entire group of global, so during appliation
-    // time we'll be able to use pending barrier helper.
-    assert(barrier_set_.memory_barriers.size() == 1);
+    if (SimpleBinding(*buffer_barrier.buffer)) {
+        const BarrierScope barrier_scope(buffer_barrier.barrier, queue_id);
+        ApplySingleBufferBarrierFunctor apply_barrier(*access_context, barrier_scope, buffer_barrier.barrier);
 
-    for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
-        access_context->RegisterGlobalBarrier(barrier, queue_id);
+        const VkDeviceSize base_address = ResourceBaseAddress(*buffer_barrier.buffer);
+        const AccessRange range = buffer_barrier.range + base_address;
+
+        access_context->UpdateMemoryAccessState(apply_barrier, range);
     }
+    access_context->RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_context, const ResourceUsageTag exec_tag) const {
+void SyncOpPipelineBarrier::ApplySingleImageBarrier(CommandExecutionContext &exec_context, const SyncImageBarrier &image_barrier,
+                                                    const SyncBarrier &exec_dep_barrier, const ResourceUsageTag exec_tag) const {
+    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    const QueueId queue_id = exec_context.GetQueueId();
+
+    const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
+    ApplySingleImageBarrierFunctor apply_barrier(*access_context, barrier_scope, image_barrier.barrier,
+                                                 image_barrier.layout_transition, image_barrier.handle_index, exec_tag);
+
+    const auto &sub_state = SubState(*image_barrier.image);
+    const bool can_transition_depth_slices =
+        CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+    auto range_gen = sub_state.MakeImageRangeGen(image_barrier.subresource_range, can_transition_depth_slices);
+
+    access_context->UpdateMemoryAccessState(apply_barrier, range_gen);
+    access_context->RegisterGlobalBarrier(exec_dep_barrier, queue_id);
+}
+
+void SyncOpPipelineBarrier::ApplySingleMemoryBarrier(CommandExecutionContext &exec_context,
+                                                     const SyncBarrier &memory_barrier) const {
+    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    const QueueId queue_id = exec_context.GetQueueId();
+    access_context->RegisterGlobalBarrier(memory_barrier, queue_id);
+}
+
+void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
     AccessContext *access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
@@ -458,7 +481,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
         access_context->UpdateMemoryAccessState(markup_action, range_gen);
     }
 
-    // Apply barriers independently and store the result in the pending object.
+    // Use PendingBarriers to collect barriers that must be applied independently
     PendingBarriers pending_barriers;
     for (const SyncBufferBarrier &barrier : barrier_set_.buffer_barriers) {
         if (SimpleBinding(*barrier.buffer)) {
@@ -485,7 +508,8 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
         access_context->UpdateMemoryAccessState(collect_barriers, range_gen);
     }
 
-    // TODO: add support to register batch of global barriers
+    // Do kFullRange update only when there is multiple memory barriers.
+    // For a single barrier we can use global barrier functionality.
     if (barrier_set_.memory_barriers.size() > 1) {
         for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
             const BarrierScope barrier_scope(barrier, queue_id);
@@ -495,14 +519,12 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
         }
     }
 
-    // Update access states with collected barriers
+    // Apply collected barriers to access states
     pending_barriers.Apply(exec_tag);
 
-    // Register global barriers
+    // Register global barriers if we have the only memory barrier (likely execution dependency)
     if (barrier_set_.memory_barriers.size() == 1) {
-        for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
-            access_context->RegisterGlobalBarrier(barrier, queue_id);
-        }
+        access_context->RegisterGlobalBarrier(barrier_set_.memory_barriers[0], queue_id);
     }
 }
 
@@ -511,8 +533,25 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, 
         return;
     }
 
-    if (barrier_set_.memory_barriers.size() == 1 && barrier_set_.buffer_barriers.empty() && barrier_set_.image_barriers.empty()) {
-        ApplySingleBarrier(exec_context);
+    const bool has_buffer_barriers = !barrier_set_.buffer_barriers.empty();
+    const bool has_image_barriers = !barrier_set_.image_barriers.empty();
+
+    const bool single_buffer_barrier = barrier_set_.buffer_barriers.size() == 1 &&
+                                       barrier_set_.memory_barriers.size() == 1 &&  // buffer barrier exec dependency
+                                       !has_image_barriers;
+
+    const bool single_image_barrier = barrier_set_.image_barriers.size() == 1 &&
+                                      barrier_set_.memory_barriers.size() == 1 &&  // image barrier exec dependency
+                                      !has_buffer_barriers;
+
+    const bool single_memory_barrier = barrier_set_.memory_barriers.size() == 1 && !has_buffer_barriers && !has_image_barriers;
+
+    if (single_buffer_barrier) {
+        ApplySingleBufferBarrier(exec_context, barrier_set_.buffer_barriers[0], barrier_set_.memory_barriers[0]);
+    } else if (single_image_barrier) {
+        ApplySingleImageBarrier(exec_context, barrier_set_.image_barriers[0], barrier_set_.memory_barriers[0], exec_tag);
+    } else if (single_memory_barrier) {
+        ApplySingleMemoryBarrier(exec_context, barrier_set_.memory_barriers[0]);
     } else {
         ApplyMultipleBarriers(exec_context, exec_tag);
     }
