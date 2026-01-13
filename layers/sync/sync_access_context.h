@@ -41,64 +41,6 @@ class SyncValidator;
 bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
-// Execute Action for each map entry in the generated ranges until it returns true
-//
-// Action is const w.r.t. map
-// Action is allowed (assumed) to modify pos
-// Action must not advance pos for ranges strictly < pos->first
-// Action must handle range strictly less than pos->first correctly
-// Action must handle pos == end correctly
-// Action is assumed to only require invocation once per map entry
-// Note: If Action invocations are heavyweight and inter-entry (gap) calls are not needed
-//       add a template or function parameter to skip them. TBD.
-template <typename Action>
-bool ForEachEntryInRangesUntil(const AccessMap &map, ImageRangeGen &range_gen, Action &action) {
-    using RangeType = ImageRangeGen::RangeType;
-    using IndexType = RangeType::index_type;
-    auto pos = map.LowerBound((*range_gen).begin);
-    const auto end = map.end();
-    IndexType skip_limit = 0;
-    for (; range_gen->non_empty() && pos != end; ++range_gen) {
-        RangeType range = *range_gen;
-        // See if a prev pos has covered this range
-        if (range.end <= skip_limit) {
-            // Since the map is const, we needn't call action on the same pos again
-            continue;
-        }
-
-        //  If the current range was *partially* covered be a previous pos, trim, such that Action is only
-        //  called once for a given range (and pos)
-        if (range.begin < skip_limit) {
-            range.begin = skip_limit;
-        }
-
-        // Now advance pos as needed to match range
-        if (pos->first.strictly_less(range)) {
-            ++pos;
-            if (pos == end) break;
-            if (pos->first.strictly_less(range)) {
-                pos = map.LowerBound(range.begin);
-                if (pos == end) break;
-            }
-            assert(pos == map.LowerBound(range.begin));
-        }
-
-        // If the range intersects pos->first, consider Action performed for that map entry, and
-        // make sure not to call Action for this pos for any subsequent ranges
-        skip_limit = range.end > pos->first.begin ? pos->first.end : 0U;
-
-        // Action is allowed to alter pos but shouldn't do so if range is strictly < pos->first
-        if (action(range, end, pos)) return true;
-    }
-
-    // Action needs to handle the "at end " condition (and can be useful for recursive actions)
-    for (; range_gen->non_empty(); ++range_gen) {
-        if (action(*range_gen, end, pos)) return true;
-    }
-
-    return false;
-}
-
 // A single buffer barrier can be applied immediately to a memory range.
 // Note that multiple barriers (of the same or different types) need to use
 // the pending barriers functionality to ensure independent barrier application
@@ -465,25 +407,14 @@ class AccessContext {
     AccessMap::iterator DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range, SyncAccessIndex access_index,
                                             SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags);
 
+    // A recursive range walkers for hazard detection, first for the current context
+    // and then walks the DAG of the contexts for subpasses
     template <typename Detector>
     HazardResult DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                              DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
-                              const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
-                              DetectOptions options) const;
-    template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
-                              bool is_depth_sliced, DetectOptions options) const;
 
-    template <typename Detector>
-    HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
-                                      const AccessMap::const_iterator &the_end, const AccessRange &range) const;
-
+    // A non recursive range walker for the asynchronous contexts (those we have no barriers with)
     template <typename Detector>
     HazardResult DetectAsyncHazard(const Detector &detector, const AccessRange &range, ResourceUsageTag async_tag,
                                    QueueId async_queue_id) const;
@@ -491,6 +422,9 @@ class AccessContext {
     HazardResult DetectAsyncHazard(const Detector &detector, ImageRangeGen &range_gen, ResourceUsageTag async_tag,
                                    QueueId async_queue_id) const;
 
+    template <typename Detector>
+    HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
+                                      const AccessMap::const_iterator &the_end, const AccessRange &range) const;
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const AccessRange &range) const;
 
@@ -571,152 +505,6 @@ void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &rang
     for (; range_gen->non_empty(); ++range_gen) {
         pos = InfillUpdateRange(access_state_map_, pos, *range_gen, ops);
     }
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const AccessRange &range, ResourceUsageTag async_tag,
-                                              QueueId async_queue_id) const {
-    HazardResult hazard;
-    if (range.non_empty()) {
-        auto pos = access_state_map_.LowerBound(range.begin);
-        if (pos != access_state_map_.end() && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
-        }
-    }
-    return hazard;
-}
-
-// A non recursive range walker for the asynchronous contexts (those we have no barriers with)
-template <typename Detector>
-HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, ImageRangeGen &range_gen, ResourceUsageTag async_tag,
-                                              QueueId async_queue_id) const {
-    using ConstIterator = AccessMap::const_iterator;
-
-    HazardResult hazard;
-
-    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const ImageRangeGen::RangeType &range,
-                                                                                 const ConstIterator &end, ConstIterator &pos) {
-        while (pos != end && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
-            if (hazard.IsHazard()) return true;
-            ++pos;
-        }
-        return false;
-    };
-
-    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_async_hazard_check);
-
-    return hazard;
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
-                                                 const AccessMap::const_iterator &the_end, const AccessRange &range) const {
-    HazardResult hazard;
-    AccessRange gap = {range.begin, range.begin};
-
-    while (pos != the_end && pos->first.begin < range.end) {
-        // Cover any leading gap, or gap between entries
-        if (detect_prev) {
-            // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
-            // Cover any leading gap, or gap between entries
-            gap.end = pos->first.begin;  // We know this begin is < range.end
-            if (gap.non_empty()) {
-                // Recur on all gaps
-                hazard = DetectPreviousHazard(detector, gap);
-                if (hazard.IsHazard()) return hazard;
-            }
-            // Set up for the next gap.  If pos..end is >= range.end, loop will exit, and trailing gap will be empty
-            gap.begin = pos->first.end;
-        }
-
-        hazard = detector.Detect(pos);
-        if (hazard.IsHazard()) return hazard;
-        ++pos;
-    }
-
-    if (detect_prev) {
-        // Detect in the trailing empty as needed
-        gap.end = range.end;
-        if (gap.non_empty()) {
-            hazard = DetectPreviousHazard(detector, gap);
-        }
-    }
-
-    return hazard;
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const {
-    HazardResult hazard;
-
-    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
-        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
-        // so we'll check these first
-        for (const auto &async_ref : async_) {
-            hazard = async_ref.Context().DetectAsyncHazard(detector, range, async_ref.StartTag(), async_ref.GetQueueId());
-            if (hazard.IsHazard()) return hazard;
-        }
-    }
-
-    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
-
-    if (range.non_empty()) {
-        auto pos = access_state_map_.LowerBound(range.begin);
-        hazard = DetectHazardOneRange(detector, detect_prev, pos, access_state_map_.end(), range);
-    }
-    return hazard;
-}
-
-// A recursive range walker for hazard detection, first for the current context and the (DetectHazardRecur) to walk
-// the DAG of the contexts (for example subpasses)
-template <typename Detector>
-HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const {
-    HazardResult hazard;
-
-    // Do this before range_gen is incremented s.t. the copies used will be correct
-    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
-        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
-        // so we'll check these first
-        for (const auto &async_ref : async_) {
-            ImageRangeGen range_gen_copy(range_gen);  // original range gen is needed later
-            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen_copy, async_ref.StartTag(), async_ref.GetQueueId());
-            if (hazard.IsHazard()) return hazard;
-        }
-    }
-
-    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
-
-    using ConstIterator = AccessMap::const_iterator;
-    auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const ImageRangeGen::RangeType &range,
-                                                                          const ConstIterator &end, ConstIterator &pos) {
-        hazard = DetectHazardOneRange(detector, detect_prev, pos, end, range);
-        return hazard.IsHazard();
-    };
-
-    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_detect_hazard_range);
-
-    return hazard;
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const AccessRange &range) const {
-    if (prev_.empty()) {
-        return {};
-    }
-    AccessContext descent_context;
-    for (const auto &prev_dep : prev_) {
-        const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
-        prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, false);
-    }
-    AccessMap &descent_map = descent_context.access_state_map_;
-    for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
-        HazardResult hazard = detector.Detect(prev);
-        if (hazard.IsHazard()) {
-            return hazard;
-        }
-    }
-    return {};
 }
 
 template <typename Predicate>
