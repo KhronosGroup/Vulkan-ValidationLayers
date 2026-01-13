@@ -861,9 +861,8 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
     // dynamic rendering) (Same thing currently with multiView mask)
     if (!rp_state.UsesDynamicRendering()) {
         const VkRenderPassCreateInfo2 *rpci = rp_state.create_info.ptr();
-        const VkImageView *image_views = cb_state.active_framebuffer.get()->create_info.pAttachments;
         for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-            const auto view_state = Get<vvl::ImageView>(image_views[i]);
+            const auto view_state = cb_state.active_attachments[i].image_view;
             ASSERT_AND_CONTINUE(view_state && view_state->image_state);
             const bool has_offset_flag =
                 (view_state->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) != 0;
