@@ -168,6 +168,64 @@ class BarrierHazardDetector {
     SyncAccessFlags src_access_scope_;
 };
 
+// Execute Action for each map entry in the generated ranges until it returns true
+//
+// Action is const w.r.t. map
+// Action is allowed (assumed) to modify pos
+// Action must not advance pos for ranges strictly < pos->first
+// Action must handle range strictly less than pos->first correctly
+// Action must handle pos == end correctly
+// Action is assumed to only require invocation once per map entry
+// Note: If Action invocations are heavyweight and inter-entry (gap) calls are not needed
+//       add a template or function parameter to skip them. TBD.
+template <typename Action>
+bool ForEachEntryInRangesUntil(const AccessMap &map, ImageRangeGen &range_gen, Action &action) {
+    using RangeType = ImageRangeGen::RangeType;
+    using IndexType = RangeType::index_type;
+    auto pos = map.LowerBound((*range_gen).begin);
+    const auto end = map.end();
+    IndexType skip_limit = 0;
+    for (; range_gen->non_empty() && pos != end; ++range_gen) {
+        RangeType range = *range_gen;
+        // See if a prev pos has covered this range
+        if (range.end <= skip_limit) {
+            // Since the map is const, we needn't call action on the same pos again
+            continue;
+        }
+
+        //  If the current range was *partially* covered be a previous pos, trim, such that Action is only
+        //  called once for a given range (and pos)
+        if (range.begin < skip_limit) {
+            range.begin = skip_limit;
+        }
+
+        // Now advance pos as needed to match range
+        if (pos->first.strictly_less(range)) {
+            ++pos;
+            if (pos == end) break;
+            if (pos->first.strictly_less(range)) {
+                pos = map.LowerBound(range.begin);
+                if (pos == end) break;
+            }
+            assert(pos == map.LowerBound(range.begin));
+        }
+
+        // If the range intersects pos->first, consider Action performed for that map entry, and
+        // make sure not to call Action for this pos for any subsequent ranges
+        skip_limit = range.end > pos->first.begin ? pos->first.end : 0U;
+
+        // Action is allowed to alter pos but shouldn't do so if range is strictly < pos->first
+        if (action(range, end, pos)) return true;
+    }
+
+    // Action needs to handle the "at end " condition (and can be useful for recursive actions)
+    for (; range_gen->non_empty(); ++range_gen) {
+        if (action(*range_gen, end, pos)) return true;
+    }
+
+    return false;
+}
+
 void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies, const AccessContext *contexts,
                              const AccessContext *external_context) {
@@ -754,50 +812,22 @@ void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageT
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const {
-    if (!SimpleBinding(buffer)) return HazardResult();
+    if (!SimpleBinding(buffer)) {
+        return {};
+    }
     const auto base_address = ResourceBaseAddress(buffer);
     HazardDetector detector(access_index, *this);
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                         DetectOptions options) const {
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (!attachment_gen) return HazardResult();
-
-    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const vvl::Image &image,
-                                         const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                         const VkExtent3D &extent, bool is_depth_sliced, DetectOptions options) const {
-    // range_gen is non-temporary to avoid additional copy
-    const auto &sub_state = SubState(image);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
-template <typename Detector>
-HazardResult AccessContext::DetectHazard(Detector &detector, const vvl::Image &image,
-                                         const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
-                                         DetectOptions options) const {
-    // range_gen is non-temporary to avoid additional copy
-    const auto &sub_state = SubState(image);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, is_depth_sliced);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
-}
-
 HazardResult AccessContext::DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
                                          const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const {
     HazardDetector detector(current_usage, *this);
-    return DetectHazard(detector, image, subresource_range, is_depth_sliced, DetectOptions::kDetectAll);
+    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
+    return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const {
-    // Get is const, but callee will copy
     HazardDetector detector(current_usage, *this);
     auto range_gen = MakeImageRangeGen(image_view);
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
@@ -809,20 +839,19 @@ HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, Syn
         HazardDetector detector(current_usage, *this);
         ImageRangeGen range_gen(ref_range_gen);
         return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
+    } else {
+        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
+                                            validator->syncval_settings.load_op_after_store_op_validation);
+        ImageRangeGen range_gen(ref_range_gen);
+        return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
     }
-
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
-                                        validator->syncval_settings.load_op_after_store_op_validation);
-    ImageRangeGen range_gen(ref_range_gen);
-    return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0,
                                         validator->syncval_settings.load_op_after_store_op_validation);
+    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
@@ -830,7 +859,12 @@ HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, Atta
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule, SyncFlags flags) const {
     HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
                                         validator->syncval_settings.load_op_after_store_op_validation);
-    return DetectHazard(detector, view_gen, gen_type, DetectOptions::kDetectAll);
+    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
+    if (!attachment_gen) {
+        return {};
+    }
+    ImageRangeGen range_gen(*attachment_gen);
+    return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
@@ -847,13 +881,16 @@ HazardResult AccessContext::DetectHazard(const vvl::VideoSession &vs_state, cons
 HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                          const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
+    const auto &sub_state = SubState(image);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
     if (ordering_rule == SyncOrdering::kOrderingNone) {
         HazardDetector detector(current_usage, *this);
-        return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
+        return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
+    } else {
+        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0,
+                                            validator->syncval_settings.load_op_after_store_op_validation);
+        return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
     }
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0,
-                                        validator->syncval_settings.load_op_after_store_op_validation);
-    return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
 }
 
 class EventBarrierHazardDetector {
@@ -946,14 +983,17 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, co
                                                      AccessContext::DetectOptions options) const {
     EventBarrierHazardDetector detector(SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope, scope_map,
                                         queue_id, scope_tag);
-    return DetectHazard(detector, image, subresource_range, false, options);
+    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, false);
+    return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen &view_gen, const SyncBarrier &barrier,
                                                      DetectOptions options) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, barrier.src_exec_scope.exec_scope,
                                    barrier.src_access_scope);
-    return DetectHazard(detector, view_gen, AttachmentViewGen::Gen::kViewSubresource, options);
+    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
+    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
+    return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
@@ -961,7 +1001,8 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, Vk
                                                      const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
                                                      const DetectOptions options) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
-    return DetectHazard(detector, image, subresource_range, is_depth_sliced, options);
+    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
+    return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
 
 // This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which
@@ -1027,6 +1068,149 @@ HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const 
     const VkDeviceSize base_address = ResourceBaseAddress(buffer);
     HazardDetectorMarker detector(*this);
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const {
+    HazardResult hazard;
+
+    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
+        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
+        // so we'll check these first
+        for (const auto &async_ref : async_) {
+            hazard = async_ref.Context().DetectAsyncHazard(detector, range, async_ref.StartTag(), async_ref.GetQueueId());
+            if (hazard.IsHazard()) return hazard;
+        }
+    }
+
+    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
+
+    if (range.non_empty()) {
+        auto pos = access_state_map_.LowerBound(range.begin);
+        hazard = DetectHazardOneRange(detector, detect_prev, pos, access_state_map_.end(), range);
+    }
+    return hazard;
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const {
+    HazardResult hazard;
+
+    // Do this before range_gen is incremented s.t. the copies used will be correct
+    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
+        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
+        // so we'll check these first
+        for (const auto &async_ref : async_) {
+            ImageRangeGen range_gen_copy(range_gen);  // original range gen is needed later
+            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen_copy, async_ref.StartTag(), async_ref.GetQueueId());
+            if (hazard.IsHazard()) return hazard;
+        }
+    }
+
+    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
+
+    using ConstIterator = AccessMap::const_iterator;
+    auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const ImageRangeGen::RangeType &range,
+                                                                          const ConstIterator &end, ConstIterator &pos) {
+        hazard = DetectHazardOneRange(detector, detect_prev, pos, end, range);
+        return hazard.IsHazard();
+    };
+
+    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_detect_hazard_range);
+
+    return hazard;
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
+                                                 const AccessMap::const_iterator &the_end, const AccessRange &range) const {
+    HazardResult hazard;
+    AccessRange gap = {range.begin, range.begin};
+
+    while (pos != the_end && pos->first.begin < range.end) {
+        // Cover any leading gap, or gap between entries
+        if (detect_prev) {
+            // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
+            // Cover any leading gap, or gap between entries
+            gap.end = pos->first.begin;  // We know this begin is < range.end
+            if (gap.non_empty()) {
+                // Recur on all gaps
+                hazard = DetectPreviousHazard(detector, gap);
+                if (hazard.IsHazard()) return hazard;
+            }
+            // Set up for the next gap.  If pos..end is >= range.end, loop will exit, and trailing gap will be empty
+            gap.begin = pos->first.end;
+        }
+
+        hazard = detector.Detect(pos);
+        if (hazard.IsHazard()) return hazard;
+        ++pos;
+    }
+
+    if (detect_prev) {
+        // Detect in the trailing empty as needed
+        gap.end = range.end;
+        if (gap.non_empty()) {
+            hazard = DetectPreviousHazard(detector, gap);
+        }
+    }
+
+    return hazard;
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const AccessRange &range, ResourceUsageTag async_tag,
+                                              QueueId async_queue_id) const {
+    HazardResult hazard;
+    if (range.non_empty()) {
+        auto pos = access_state_map_.LowerBound(range.begin);
+        if (pos != access_state_map_.end() && pos->first.begin < range.end) {
+            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
+        }
+    }
+    return hazard;
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, ImageRangeGen &range_gen, ResourceUsageTag async_tag,
+                                              QueueId async_queue_id) const {
+    using ConstIterator = AccessMap::const_iterator;
+
+    HazardResult hazard;
+
+    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const ImageRangeGen::RangeType &range,
+                                                                                 const ConstIterator &end, ConstIterator &pos) {
+        while (pos != end && pos->first.begin < range.end) {
+            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
+            if (hazard.IsHazard()) return true;
+            ++pos;
+        }
+        return false;
+    };
+
+    ForEachEntryInRangesUntil(access_state_map_, range_gen, do_async_hazard_check);
+
+    return hazard;
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const AccessRange &range) const {
+    if (prev_.empty()) {
+        return {};
+    }
+    AccessContext descent_context;
+    for (const auto &prev_dep : prev_) {
+        const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
+        prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, false);
+    }
+    AccessMap &descent_map = descent_context.access_state_map_;
+    for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
+        HazardResult hazard = detector.Detect(prev);
+        if (hazard.IsHazard()) {
+            return hazard;
+        }
+    }
+    return {};
 }
 
 void SortedFirstAccesses::Init(const AccessMap &finalized_access_map) {
