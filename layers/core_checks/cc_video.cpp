@@ -52,8 +52,15 @@ bool CoreChecks::OutsideVideoCodingScope(const vvl::CommandBuffer &cb_state, con
 
 std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                              const VkVideoProfileListInfoKHR *profile_list) const {
+    // NOTE: We have to mask out any usage that is not video related
+    const VkImageUsageFlags video_usage_mask = VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                                               VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                                               VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR |
+                                               VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR |
+                                               VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+
     VkPhysicalDeviceVideoFormatInfoKHR format_info = vku::InitStructHelper();
-    format_info.imageUsage = image_usage;
+    format_info.imageUsage = image_usage & video_usage_mask;
     format_info.pNext = profile_list;
 
     uint32_t format_count = 0;
