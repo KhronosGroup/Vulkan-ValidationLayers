@@ -23,6 +23,7 @@
 struct DeviceExtensions;
 
 namespace vvl {
+class Event;
 class ImageView;
 class RenderPass;
 }  // namespace vvl
