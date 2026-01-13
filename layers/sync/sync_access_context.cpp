@@ -807,12 +807,14 @@ HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, Syn
                                          const SyncOrdering ordering_rule, SyncFlags flags) const {
     if (ordering_rule == SyncOrdering::kOrderingNone) {
         HazardDetector detector(current_usage, *this);
-        return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
+        ImageRangeGen range_gen(ref_range_gen);
+        return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
     }
 
     HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
                                         validator->syncval_settings.load_op_after_store_op_validation);
-    return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
+    ImageRangeGen range_gen(ref_range_gen);
+    return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,

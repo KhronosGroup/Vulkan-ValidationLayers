@@ -27,7 +27,6 @@ struct SubpassDependencyGraphNode;
 namespace vvl {
 class Bindable;
 class Buffer;
-class Event;
 class Image;
 class ImageView;
 class VideoPictureResource;
@@ -42,7 +41,7 @@ class SyncValidator;
 bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
-// ForEachEntryInRangesUntil -- Execute Action for each map entry in the generated ranges until it returns true
+// Execute Action for each map entry in the generated ranges until it returns true
 //
 // Action is const w.r.t. map
 // Action is allowed (assumed) to modify pos
@@ -50,13 +49,12 @@ VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 // Action must handle range strictly less than pos->first correctly
 // Action must handle pos == end correctly
 // Action is assumed to only require invocation once per map entry
-// RangeGen must be strictly monotonic
 // Note: If Action invocations are heavyweight and inter-entry (gap) calls are not needed
 //       add a template or function parameter to skip them. TBD.
-template <typename RangeMap, typename RangeGen, typename Action>
-bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action &action) {
-    using RangeType = typename RangeGen::RangeType;
-    using IndexType = typename RangeType::index_type;
+template <typename Action>
+bool ForEachEntryInRangesUntil(const AccessMap &map, ImageRangeGen &range_gen, Action &action) {
+    using RangeType = ImageRangeGen::RangeType;
+    using IndexType = RangeType::index_type;
     auto pos = map.LowerBound((*range_gen).begin);
     const auto end = map.end();
     IndexType skip_limit = 0;
@@ -233,8 +231,6 @@ struct ApplySubpassTransitionBarriersAction {
     const std::vector<SyncBarrier> &barriers;
     const ResourceUsageTag layout_transition_tag;
 };
-
-class AccessContext;
 
 struct SubpassBarrierTrackback {
     std::vector<SyncBarrier> barriers;
@@ -471,13 +467,8 @@ class AccessContext {
 
     template <typename Detector>
     HazardResult DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const;
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const;
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectHazardGeneratedRanges(Detector &detector, const RangeGen &range_gen, DetectOptions options) const {
-        RangeGen mutable_gen(range_gen);
-        return DetectHazardGeneratedRanges<Detector, RangeGen>(detector, mutable_gen, options);
-    }
+    template <typename Detector>
+    HazardResult DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               DetectOptions options) const;
@@ -493,8 +484,11 @@ class AccessContext {
     HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
                                       const AccessMap::const_iterator &the_end, const AccessRange &range) const;
 
-    template <typename Detector, typename RangeGen>
-    HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
+    template <typename Detector>
+    HazardResult DetectAsyncHazard(const Detector &detector, const AccessRange &range, ResourceUsageTag async_tag,
+                                   QueueId async_queue_id) const;
+    template <typename Detector>
+    HazardResult DetectAsyncHazard(const Detector &detector, ImageRangeGen &range_gen, ResourceUsageTag async_tag,
                                    QueueId async_queue_id) const;
 
     template <typename Detector>
@@ -579,18 +573,29 @@ void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &rang
     }
 }
 
-// A non recursive range walker for the asynchronous contexts (those we have no barriers with)
-template <typename Detector, typename RangeGen>
-HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
+template <typename Detector>
+HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const AccessRange &range, ResourceUsageTag async_tag,
                                               QueueId async_queue_id) const {
-    using RangeType = typename RangeGen::RangeType;
+    HazardResult hazard;
+    if (range.non_empty()) {
+        auto pos = access_state_map_.LowerBound(range.begin);
+        if (pos != access_state_map_.end() && pos->first.begin < range.end) {
+            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
+        }
+    }
+    return hazard;
+}
+
+// A non recursive range walker for the asynchronous contexts (those we have no barriers with)
+template <typename Detector>
+HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, ImageRangeGen &range_gen, ResourceUsageTag async_tag,
+                                              QueueId async_queue_id) const {
     using ConstIterator = AccessMap::const_iterator;
-    RangeGen range_gen(const_range_gen);
 
     HazardResult hazard;
 
-    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const RangeType &range, const ConstIterator &end,
-                                                                                 ConstIterator &pos) {
+    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const ImageRangeGen::RangeType &range,
+                                                                                 const ConstIterator &end, ConstIterator &pos) {
         while (pos != end && pos->first.begin < range.end) {
             hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
             if (hazard.IsHazard()) return true;
@@ -641,34 +646,32 @@ HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect
     return hazard;
 }
 
-// A wrapper for a single range with the same semantics as other non-trivial range generators
-template <typename KeyType>
-class SingleRangeGenerator {
-  public:
-    using RangeType = KeyType;
-    SingleRangeGenerator(const KeyType &range) : current_(range) {}
-    const KeyType &operator*() const { return current_; }
-    const KeyType *operator->() const { return &current_; }
-    SingleRangeGenerator &operator++() {
-        current_ = KeyType();  // just one real range
-        return *this;
-    }
-
-  private:
-    SingleRangeGenerator() = default;
-    KeyType current_;
-};
-
 template <typename Detector>
 HazardResult AccessContext::DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const {
-    SingleRangeGenerator range_gen(range);
-    return DetectHazardGeneratedRanges(detector, range_gen, options);
+    HazardResult hazard;
+
+    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
+        // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
+        // so we'll check these first
+        for (const auto &async_ref : async_) {
+            hazard = async_ref.Context().DetectAsyncHazard(detector, range, async_ref.StartTag(), async_ref.GetQueueId());
+            if (hazard.IsHazard()) return hazard;
+        }
+    }
+
+    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
+
+    if (range.non_empty()) {
+        auto pos = access_state_map_.LowerBound(range.begin);
+        hazard = DetectHazardOneRange(detector, detect_prev, pos, access_state_map_.end(), range);
+    }
+    return hazard;
 }
 
 // A recursive range walker for hazard detection, first for the current context and the (DetectHazardRecur) to walk
 // the DAG of the contexts (for example subpasses)
-template <typename Detector, typename RangeGen>
-HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const {
+template <typename Detector>
+HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const {
     HazardResult hazard;
 
     // Do this before range_gen is incremented s.t. the copies used will be correct
@@ -676,17 +679,17 @@ HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, Rang
         // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
         // so we'll check these first
         for (const auto &async_ref : async_) {
-            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen, async_ref.StartTag(), async_ref.GetQueueId());
+            ImageRangeGen range_gen_copy(range_gen);  // original range gen is needed later
+            hazard = async_ref.Context().DetectAsyncHazard(detector, range_gen_copy, async_ref.StartTag(), async_ref.GetQueueId());
             if (hazard.IsHazard()) return hazard;
         }
     }
 
     const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
 
-    using RangeType = typename RangeGen::RangeType;
     using ConstIterator = AccessMap::const_iterator;
-    auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const RangeType &range, const ConstIterator &end,
-                                                                          ConstIterator &pos) {
+    auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const ImageRangeGen::RangeType &range,
+                                                                          const ConstIterator &end, ConstIterator &pos) {
         hazard = DetectHazardOneRange(detector, detect_prev, pos, end, range);
         return hazard.IsHazard();
     };
