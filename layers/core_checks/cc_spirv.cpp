@@ -58,46 +58,66 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
     assert(variable.is_input_attachment);
 
     const auto &rp_state = pipeline.RenderPassState();
-    // Dynamic Rendering guards this with VUID 06061
-    if (!rp_state || rp_state->UsesDynamicRendering()) {
+    if (!rp_state) {
         return skip;
     }
 
-    const auto rpci = rp_state->create_info.ptr();
-    const uint32_t subpass = pipeline.Subpass();
-    const auto subpass_description = rpci->pSubpasses[subpass];
-    const auto input_attachments = subpass_description.pInputAttachments;
-
     auto print_index = [variable](uint32_t i) {
         std::ostringstream ss;
-        ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
-           << variable.decorations.input_attachment_index_start;
         if (variable.IsArray()) {
-            ss << ", plus " << (i - variable.decorations.input_attachment_index_start) << " from indexing into the array,";
+            ss << variable.DescribeDescriptor() << " has an effective InputAttachmentIndex of " << i;
+            ss << " (started at InputAttachmentIndex " << variable.decorations.input_attachment_index_start << " plus index "
+               << (i - variable.decorations.input_attachment_index_start) << " into the array)";
+        } else {
+            ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
+               << variable.decorations.input_attachment_index_start;
         }
         return ss.str();
     };
 
-    for (const auto i : variable.input_attachment_index_read) {
-        // offsets by the InputAttachmentIndex decoration
-        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+    // VUID 06061 requires dynamicRenderingLocalRead and if they have, we can just check the colorAttachmentCount
+    if (rp_state->UsesDynamicRendering()) {
+        const uint32_t color_count = rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
+        for (const auto i : variable.input_attachment_index_read) {
+            // offsets by the InputAttachmentIndex decoration
+            const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+            if (input_attachment_index >= color_count) {
+                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
+                                 "%s which is not less than VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
+                                 ")\nIf VkRenderingInputAttachmentIndexInfo is provided, the index can be set, but without it, it "
+                                 "uses the default index values.",
+                                 print_index(input_attachment_index).c_str(), color_count);
+            }
+        }
+    } else {
+        const auto rpci = rp_state->create_info.ptr();
+        const uint32_t subpass = pipeline.Subpass();
+        const auto subpass_description = rpci->pSubpasses[subpass];
+        const auto input_attachments = subpass_description.pInputAttachments;
 
-        // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
-        if (!input_attachments) {
-            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
-                             print_index(input_attachment_index).c_str(), subpass);
-        } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
-            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
-                             print_index(input_attachment_index).c_str(), subpass, subpass_description.inputAttachmentCount);
-        } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
-            const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+        for (const auto i : variable.input_attachment_index_read) {
+            // offsets by the InputAttachmentIndex decoration
+            const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+
+            // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+            if (!input_attachments) {
+                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                                 "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
+                                 print_index(input_attachment_index).c_str(), subpass);
+            } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
+                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
+                                 "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
+                                 print_index(input_attachment_index).c_str(), subpass, subpass_description.inputAttachmentCount);
+            } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
+                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
                              "%s but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
                              print_index(input_attachment_index).c_str(), subpass, input_attachment_index);
+            }
         }
     }
 
