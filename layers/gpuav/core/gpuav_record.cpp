@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -363,7 +363,7 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
 
     const LastBound &last_bound = cb_state->GetLastBoundGraphics();
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, count,
-                                                 VK_NULL_HANDLE, 0, "VUID-VkDrawIndirectCommand-firstInstance-00501");
+                                                 VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -381,7 +381,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
                                            VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
 
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, count,
-                                                        VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
+                                                        VK_NULL_HANDLE, 0);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -412,7 +412,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
                         vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset,
                         "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, maxDrawCount,
-                                                 countBuffer, countBufferOffset, "VUID-VkDrawIndirectCommand-firstInstance-00501");
+                                                 countBuffer, countBufferOffset);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -452,8 +452,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
                         vvl::Struct::VkDrawIndexedIndirectCommand, stride, countBuffer, countBufferOffset,
                         "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
-                                                        maxDrawCount, countBuffer, countBufferOffset,
-                                                        "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
+                                                        maxDrawCount, countBuffer, countBufferOffset);
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride, maxDrawCount,
                                            countBuffer, countBufferOffset,
