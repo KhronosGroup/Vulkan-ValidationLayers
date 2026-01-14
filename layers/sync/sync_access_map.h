@@ -78,6 +78,7 @@ class AccessMap {
     void Erase(iterator first, iterator last);
     iterator Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state);
     iterator InfillGap(const_iterator range_lower_bound, const AccessRange &range, const AccessState &access_state);
+    void InfillGaps(const AccessRange &range, const AccessState &access_state);
     iterator Split(const iterator split_it, const index_type &index);
 
     AccessMap() : impl_map_(AccessMapCompare()) {}
@@ -169,8 +170,6 @@ class ParallelIterator {
 
 // Split a range into pieces bound by the intersection of the iterator's range and the supplied range
 AccessMap::iterator Split(AccessMap::iterator in, AccessMap &map, const AccessRange &range);
-
-void UpdateRangeValue(AccessMap &map, const AccessRange &range, const AccessState &access_state);
 
 // Combines directly adjacent ranges with equal AccessState
 void Consolidate(AccessMap &map);

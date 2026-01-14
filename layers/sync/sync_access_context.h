@@ -391,19 +391,28 @@ class AccessContext {
   private:
     void ResetGlobalBarriers();
 
-    // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for
-    // subpass layout transition, as the pending state handling is more complex (TODO: check if previous statement is
-    // still true after pending barriers rework).
-    // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
-    // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(const AccessRange &range, AccessContext &descent_context, bool infill,
-                               const AccessStateFunction &previous_barrier_action) const;
+    // Resolve resolve_context from the current context.
+    // Do not infill gaps that are also empty in the current context
     void ResolveAccessRange(const AccessRange &range, const AccessStateFunction &barrier_action,
                             AccessContext &resolve_context) const;
+
+    // Resolve resolve_context from the current context.
+    // Gaps in resolve_context are resolved by importing from previous contexts or by
+    // applying an optional infill operation if previous contexts cannot resolve them
     void ResolveAccessRangeRecursePrev(const AccessRange &range, const AccessStateFunction &barrier_action,
                                        AccessContext &resolve_context, bool infill) const;
 
-    AccessMap::iterator InfillGapRecursePrev(const AccessRange &range, AccessMap::iterator pos_hint);
+    // Resolve the empty entries over the given range by importing previous contexts.
+    // An optional infill operation is applied if the previous contexts do not have requested ranges.
+    // Not intended for subpass layout transition, as the pending state handling is more complex
+    // TODO: check the meaning of layout transition comment and if it still true after pending barriers rework
+    void ResolveGapsRecursePrev(const AccessRange &range, AccessContext &descent_context, bool infill,
+                                const AccessStateFunction &previous_barrier_action) const;
+
+    // Similar to ResolveGapsRecursePrev, but applied to a single empty range and always
+    // infills if the previous contexts cannot resolve the entry
+    AccessMap::iterator ResolveGapRecursePrev(const AccessRange &gap_range, AccessMap::iterator pos_hint);
+
     AccessMap::iterator DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range, SyncAccessIndex access_index,
                                             SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags);
 
