@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -791,8 +791,8 @@ struct Module {
     bool GetBoolIfConstant(const spirv::Instruction &insn, bool *value) const;
     bool GetInt32IfConstant(const spirv::Instruction &insn, uint32_t *value) const;
 
-    uint32_t GetLocationsConsumedByType(uint32_t type) const;
-    uint32_t GetComponentsConsumedByType(uint32_t type) const;
+    uint32_t GetLocationsConsumedByType(const Instruction* insn) const;
+    uint32_t GetComponentsConsumedByType(const Instruction* insn) const;
     NumericType GetNumericType(uint32_t type) const;
 
     bool HasRuntimeArray(uint32_t type_id) const;
@@ -802,7 +802,7 @@ struct Module {
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
     uint32_t GetBaseType(const Instruction *insn) const;
-    const Instruction *GetBaseTypeInstruction(uint32_t type) const;
+    const Instruction* GetBaseTypeInstruction(const Instruction* insn) const;
     const Instruction *GetVariablePointerType(const spirv::Instruction &var_insn) const;
     const Instruction *GetVariableDataType(const spirv::Instruction &var_insn) const;
     uint32_t GetTypeId(uint32_t id) const;

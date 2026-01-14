@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,7 @@
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/shader_module.h"
@@ -92,7 +93,8 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             for (uint32_t i = 0; i < variable.type_struct_info->members.size(); i++) {
                 const auto &member = variable.type_struct_info->members[i];
                 // can be 64-bit formats in the struct
-                const uint32_t num_locations = module_state.GetLocationsConsumedByType(member.id);
+                const spirv::Instruction* member_type = module_state.FindDef(member.id);
+                const uint32_t num_locations = module_state.GetLocationsConsumedByType(member_type);
                 for (uint32_t j = 0; j < num_locations; ++j) {
                     location_map[location + j].shader_input = member.insn;
                 }
@@ -126,10 +128,11 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             const VkFormat attribute_format = *attribute_input;
             const uint32_t attribute_type = spirv::GetFormatType(attribute_format);
             const uint32_t var_base_type_id = shader_input->ResultId();
+            const spirv::Instruction* var_base_type = module_state.FindDef(var_base_type_id);
             const uint32_t var_numeric_type = module_state.GetNumericType(var_base_type_id);
 
             const bool attribute64 = vkuFormatIs64bit(attribute_format);
-            const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
+            const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
 
             // Type checking
             if ((attribute_type & var_numeric_type) == 0) {

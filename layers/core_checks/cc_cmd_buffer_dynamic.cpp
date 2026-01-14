@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -914,9 +914,10 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 const uint32_t var_base_type_id = variable_ptr->base_type.ResultId();
                 const uint32_t attribute_type = spirv::GetFormatType(attrib->desc.format);
                 const uint32_t var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
+                const spirv::Instruction* var_base_type = vert_spirv_state->FindDef(var_base_type_id);
 
                 const bool attribute64 = vkuFormatIs64bit(attrib->desc.format);
-                const bool shader64 = vert_spirv_state->GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
+                const bool shader64 = vert_spirv_state->GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
 
                 // first type check before doing 64-bit matching
                 if ((attribute_type & var_numeric_type) == 0) {
