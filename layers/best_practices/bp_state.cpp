@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -783,10 +783,10 @@ void CommandBufferSubState::RecordSetDepthTestEnable(VkBool32 depth_test_enable)
 }
 
 void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
-    // AMD best practice
-    validator.PipelineUsedInFrame(pipeline.VkHandle());
-
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        // AMD best practice
+        validator.PipelineUsedInFrame(pipeline.VkHandle());
+
         render_pass_state.nextDrawTouchesAttachments = GetAttachmentAccess(pipeline);
         render_pass_state.drawTouchAttachments = true;
 
