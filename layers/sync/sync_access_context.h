@@ -260,38 +260,6 @@ class AccessContext {
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
 
-    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const;
-    HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    HazardResult DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const;
-    HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone, SyncFlags flags = 0) const;
-    HazardResult DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
-    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule, SyncFlags flags = 0) const;
-    HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                              SyncAccessIndex current_usage) const;
-    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                              const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
-
-    HazardResult DetectImageBarrierHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
-                                          VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
-                                          QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
-                                          DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
-                                          DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
-                                          const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
-                                          bool is_depth_sliced, DetectOptions options) const;
-    HazardResult DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
-                                               const AttachmentViewGen &attach_view) const;
-
-    HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
-                                      const AccessContext &access_context) const;
-    HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const AccessRange &range) const;
-
     const SubpassBarrierTrackback &GetDstExternalTrackBack() const { return dst_external_; }
 
     void ResolveFromContext(const AccessContext &from);
@@ -388,6 +356,45 @@ class AccessContext {
     // references to individual accesses (until context is destroyed).
     void Finalize();
 
+    //
+    // Hazard detection
+    //
+    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const;
+
+    HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
+                              const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                              const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
+                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
+
+    HazardResult DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const;
+    HazardResult DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
+                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
+
+    HazardResult DetectHazard(const ImageRangeGen &const_range_gen, SyncAccessIndex current_usage,
+                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone, SyncFlags flags = 0) const;
+    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
+                              SyncOrdering ordering_rule, SyncFlags flags = 0) const;
+    HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
+                              SyncAccessIndex current_usage) const;
+
+    HazardResult DetectImageBarrierHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                                          VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
+                                          QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
+                                          DetectOptions options) const;
+    HazardResult DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
+                                          const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
+                                          bool is_depth_sliced, DetectOptions options) const;
+    HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
+                                          DetectOptions options) const;
+
+    HazardResult DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
+                                               const AttachmentViewGen &attach_view) const;
+
+    HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
+                                      const AccessContext &access_context) const;
+    HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const AccessRange &range) const;
+
   private:
     void ResetGlobalBarriers();
 
@@ -421,7 +428,7 @@ class AccessContext {
     template <typename Detector>
     HazardResult DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const;
     template <typename Detector>
-    HazardResult DetectHazardGeneratedRanges(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const;
+    HazardResult DetectHazardGeneratedRangeGen(Detector &detector, ImageRangeGen &range_gen, DetectOptions options) const;
 
     // A non recursive range walker for the asynchronous contexts (those we have no barriers with)
     template <typename Detector>
