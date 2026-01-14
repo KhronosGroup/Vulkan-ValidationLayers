@@ -494,32 +494,6 @@ void AccessContext::ResolveFromSubpassContext(const ApplySubpassTransitionBarrie
     }
 }
 
-void AccessContext::ResolvePreviousAccess(const AccessRange &range, AccessContext &descent_context, bool infill,
-                                          const AccessStateFunction &previous_barrier_action) const {
-    assert(range.non_empty());
-    AccessMap &descent_map = descent_context.access_state_map_;
-    if (prev_.empty()) {
-        if (infill) {
-            AccessState access_state = AccessState::DefaultAccessState();
-
-            // The following is not needed for correctness but is rather an optimization. We are going to fill
-            // the gaps and the application of the global barriers to an empty state is noop (nothing is in the
-            // barrier's source scope). Update the index to skip application of the registered global barriers.
-            access_state.next_global_barrier_index = descent_context.GetGlobalBarrierCount();
-
-            previous_barrier_action(&access_state);
-
-            // Fill the empty ranges of descent_map
-            UpdateRangeValue(descent_map, range, access_state);
-        }
-    } else {
-        for (const auto &prev_dep : prev_) {
-            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, &previous_barrier_action);
-            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, infill);
-        }
-    }
-}
-
 void AccessContext::ResolveAccessRange(const AccessRange &range, const AccessStateFunction &barrier_action,
                                        AccessContext &resolve_context) const {
     if (!range.non_empty()) {
@@ -595,17 +569,20 @@ void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange &range, cons
             }
         } else {  // Descend to fill this gap
             AccessRange recurrence_range = current_range;
-            // The current context is empty for the current range, so recur to fill the gap.
-            // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
-            // is not valid, to minimize that recurrence
+            // The current context is empty for the current_range, so recur to fill the gap.
+            // Since we will be recurring back up the DAG, expand the gap descent to cover the
+            // full range for which B is not valid, to minimize that recurrence
             if (current.pos_B.lower_bound == access_state_map_.end()) {
-                // Do the remainder here....
                 recurrence_range.end = range.end;
             } else {
-                // Recur only over the range until B becomes valid (within the limits of range).
                 recurrence_range.end = std::min(range.end, current.pos_B.lower_bound->first.begin);
             }
-            ResolvePreviousAccess(recurrence_range, resolve_context, infill, barrier_action);
+
+            // Note that resolve_context over the recurrence_range may contain both empty and
+            // non-empty entries; only the current context has a continuous empty entry over
+            // this range. Therefore, the next call must iterate over potentially multiple
+            // ranges in resolve_context that cross the recurrence_range and fill the empty ones.
+            ResolveGapsRecursePrev(recurrence_range, resolve_context, infill, barrier_action);
 
             // recurrence_range is already processed and it can be larger than the current_range.
             // The NextRange might move to the range that is still inside recurrence_range, but we
@@ -621,15 +598,39 @@ void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange &range, cons
         }
     }
 
-    // Infill if range goes passed both the current and resolve map prior contents
+    // Infill the remainder, which is empty for both the current and resolve contexts
     if (current.range.end < range.end) {
         AccessRange trailing_fill_range = {current.range.end, range.end};
-        ResolvePreviousAccess(trailing_fill_range, resolve_context, infill, barrier_action);
+        ResolveGapsRecursePrev(trailing_fill_range, resolve_context, infill, barrier_action);
     }
 }
 
-AccessMap::iterator AccessContext::InfillGapRecursePrev(const AccessRange &range, AccessMap::iterator pos_hint) {
+void AccessContext::ResolveGapsRecursePrev(const AccessRange &range, AccessContext &descent_context, bool infill,
+                                           const AccessStateFunction &previous_barrier_action) const {
     assert(range.non_empty());
+    AccessMap &descent_map = descent_context.access_state_map_;
+    if (prev_.empty()) {
+        if (infill) {
+            AccessState access_state = AccessState::DefaultAccessState();
+
+            // The following is not needed for correctness but is rather an optimization. We are going to fill
+            // the gaps and the application of the global barriers to an empty state is noop (nothing is in the
+            // barrier's source scope). Update the index to skip application of the registered global barriers.
+            access_state.next_global_barrier_index = descent_context.GetGlobalBarrierCount();
+
+            previous_barrier_action(&access_state);
+            descent_map.InfillGaps(range, access_state);
+        }
+    } else {
+        for (const auto &prev_dep : prev_) {
+            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, &previous_barrier_action);
+            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, infill);
+        }
+    }
+}
+
+AccessMap::iterator AccessContext::ResolveGapRecursePrev(const AccessRange &gap_range, AccessMap::iterator pos_hint) {
+    assert(gap_range.non_empty());
     if (prev_.empty()) {
         AccessState access_state = AccessState::DefaultAccessState();
 
@@ -638,13 +639,13 @@ AccessMap::iterator AccessContext::InfillGapRecursePrev(const AccessRange &range
         // barrier's source scope). Update the index to skip application of the registered global barriers.
         access_state.next_global_barrier_index = GetGlobalBarrierCount();
 
-        return access_state_map_.InfillGap(pos_hint, range, access_state);
+        return access_state_map_.InfillGap(pos_hint, gap_range, access_state);
     } else {
         for (const auto &prev_dep : prev_) {
             const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
-            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, *this, true);
+            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(gap_range, barrier_action, *this, true);
         }
-        return access_state_map_.LowerBound(range.begin);
+        return access_state_map_.LowerBound(gap_range.begin);
     }
 }
 
@@ -686,7 +687,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             // Infill the gap with an empty access state or, if the previous contexts
             // exists (subpass case), derive the infill state from them
             const AccessRange gap_range(current_begin, std::min(range.end, pos->first.begin));
-            AccessMap::iterator infilled_it = InfillGapRecursePrev(gap_range, pos);
+            AccessMap::iterator infilled_it = ResolveGapRecursePrev(gap_range, pos);
 
             // Update
             AccessState &new_access_state = infilled_it->second;
@@ -719,7 +720,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
     // Fill to the end if needed
     if (current_begin < range.end) {
         const AccessRange gap_range(current_begin, range.end);
-        AccessMap::iterator infilled_it = InfillGapRecursePrev(gap_range, pos);
+        AccessMap::iterator infilled_it = ResolveGapRecursePrev(gap_range, pos);
 
         // Update
         AccessState &new_access_state = infilled_it->second;
