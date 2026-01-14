@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2025 Valve Corporation
-# Copyright (c) 2020-2025 LunarG, Inc.
+# Copyright (c) 2020-2026 Valve Corporation
+# Copyright (c) 2020-2026 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -186,9 +186,9 @@ def VerifyCommitMessageFormat(commit):
                 CPrint('CONTENT', f"     '{msg_prev_line}'\n")
                 retval = 1
         else:
-            # Lines in a commit message body must be less than 72 characters in length (but give some slack)
-            if line_length > 76:
-                CPrint('ERR_MSG', "The following commit message body line exceeds the 72 character limit.")
+            # Lines in a commit message body must be less than 80 characters in length
+            if line_length > 80:
+                CPrint('ERR_MSG', "The following commit message body line exceeds the 80 character limit.")
                 CPrint('CONTENT', f"     '{msg_line_text}'\n")
                 retval = 1
         msg_prev_line = msg_line_text
@@ -199,7 +199,7 @@ def VerifyCommitMessageFormat(commit):
         CPrint('HELP_MSG', "o  Subject lines must start with a module keyword which is lower-case and followed by a colon and a space")
         CPrint('HELP_MSG', "o  The first word following the colon must be capitalized and the subject line must not end in a '.'")
         CPrint('HELP_MSG', "o  The subject line must be followed by a blank line")
-        CPrint('HELP_MSG', "o  The commit description must be <= 72 characters in width\n")
+        CPrint('HELP_MSG', "o  The commit description must be <= 80 characters in width\n")
         CPrint('HELP_MSG', "Examples:")
         CPrint('HELP_MSG', "---------")
         CPrint('HELP_MSG', "     build: Fix Vulkan header/registry detection for SDK")
