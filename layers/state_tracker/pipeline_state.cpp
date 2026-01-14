@@ -189,35 +189,46 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
         stage_states.emplace_back(stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv, pipeline_layout);
     }
 
-    if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType()) {
-        auto create_info = pipe_state.DataGraphCreateInfo();
+    return stage_states;
+}
 
-        // The ShaderModule for a datagraph can be defined in 2 ways (but not both, see VU 9873):
-        // - as the 'module' member of the VkDataGraphPipelineShaderModuleCreateInfoARM structure
-        auto *dg_shader_ci = vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
-        // - or with a VkShaderModuleCreateInfo
-        auto *shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext);
+std::vector<ShaderStageState> Pipeline::GetDataGraphStageStates(const DeviceState &state_data, Pipeline &pipe_state, VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data) {
 
-        std::shared_ptr<const vvl::ShaderModule> module_state = nullptr;
-        if (dg_shader_ci && dg_shader_ci->module != VK_NULL_HANDLE) {
-            module_state = state_data.Get<vvl::ShaderModule>(dg_shader_ci->module);
-        } else if (shader_ci && shader_ci->pCode && shader_ci->codeSize > 0) {
-            auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
-            module_state = std::make_shared<const vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
-        }
+    assert(VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType());
 
-        if (module_state) {
-            for (auto &entry_point : module_state->spirv->static_data_.entry_points) {
-                if (entry_point->is_data_graph) {
-                    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
-                    stage_ci.module = module_state->VkHandle();
-                    stage_ci.pName = entry_point->name.c_str();
-                    stage_ci.stage = entry_point->stage;
-                    vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
-                    stage_states.emplace_back(&safe_stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv, pipeline_layout);
-                }
-            }
-        }
+    std::vector<ShaderStageState> stage_states;
+
+    auto create_info = pipe_state.DataGraphCreateInfo();
+
+    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
+        descriptor_set_layouts = &pipeline_layout_state->set_layouts;
+    }
+
+    // The ShaderModule for a datagraph can be defined in 2 ways (but not both, see VU 9873):
+    // - as the 'module' member of the VkDataGraphPipelineShaderModuleCreateInfoARM structure
+    auto *dg_shader_ci = vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
+    // - or with a VkShaderModuleCreateInfo
+    auto *shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext);
+
+    std::shared_ptr<const vvl::ShaderModule> module_state = nullptr;
+    if (dg_shader_ci && dg_shader_ci->module != VK_NULL_HANDLE) {
+        module_state = state_data.Get<vvl::ShaderModule>(dg_shader_ci->module);
+    } else if (shader_ci && shader_ci->pCode && shader_ci->codeSize > 0) {
+        auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
+        module_state = std::make_shared<const vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
+    }
+
+    if (module_state) {
+        // The existence of dg_shader_ci is guaranteed if we have a module. Having dg_shader_ci == NULL is a very contrived situation,
+        // see test NegativeDataGraph.DataGraphWrongCreateInfoStructs
+        assert(dg_shader_ci);
+        pipe_state.data_graph_shader_stage_ci = vku::InitStructHelper();
+        pipe_state.data_graph_shader_stage_ci.module = module_state->VkHandle();
+        pipe_state.data_graph_shader_stage_ci.pName = dg_shader_ci->pName;
+        pipe_state.data_graph_shader_stage_ci.stage = VK_SHADER_STAGE_ALL;
+        vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci(&pipe_state.data_graph_shader_stage_ci);
+        stage_states.emplace_back(&safe_stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv, pipeline_layout);
     }
 
     return stage_states;
@@ -999,7 +1010,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreat
       pipeline_type(VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM),
       create_flags(GetPipelineCreateFlags(DataGraphCreateInfo().pNext, DataGraphCreateInfo().flags)),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, DataGraphCreateInfo().layout, stateless_data)),
+      stage_states(GetDataGraphStageStates(state_data, *this, DataGraphCreateInfo().layout, stateless_data)),
       create_info_shaders(VK_SHADER_STAGE_COMPUTE_BIT),
       active_shaders(create_info_shaders),  // TODO: graph may have linking shaders
       active_slots(GetActiveSlots(stage_states)),

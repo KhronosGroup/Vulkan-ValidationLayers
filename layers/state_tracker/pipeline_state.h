@@ -92,6 +92,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     VkPipelineBindPoint pipeline_type;
     VkPipelineCreateFlags2 create_flags;
     vvl::span<const vku::safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
+    VkPipelineShaderStageCreateInfo data_graph_shader_stage_ci;
     const vku::safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
     // If using a shader module identifier, the module itself is not validated, but the shader stage is still known
     const bool uses_shader_module_id;
@@ -454,6 +455,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     static std::vector<ShaderStageState> GetRayTracingStageStates(
         const DeviceState &state_data, const Pipeline &pipe_state, VkPipelineLayout pipeline_layout,
         std::vector<spirv::StatelessData> *inout_per_shader_stateless_data);
+    static std::vector<ShaderStageState> GetDataGraphStageStates(const DeviceState &state_data, Pipeline &pipe_state, VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const CBDynamicState state) const { return dynamic_state[state]; }
