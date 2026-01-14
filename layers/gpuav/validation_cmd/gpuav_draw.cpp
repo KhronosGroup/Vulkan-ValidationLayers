@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,17 +112,16 @@ struct FirstInstanceValidationShader {
     }
 };
 
-// Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
-// "api" helps to distinguish it is input from the user at the API level
 void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, const LastBound &last_bound,
                    VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_stride, vvl::Struct api_struct_name,
                    uint32_t first_instance_member_pos, uint32_t api_draw_count, VkBuffer api_count_buffer,
-                   VkDeviceSize api_count_buffer_offset, const char *vuid) {
+                   VkDeviceSize api_count_buffer_offset, const FirstInstanceValidationVuidSelector &vuid_selector) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
 
-    if (gpuav.enabled_features.drawIndirectFirstInstance) {
+    const char *vuid = vuid_selector(gpuav, cb_state, last_bound);
+    if (!vuid) {
         return;
     }
 
@@ -250,11 +249,10 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         const uint32_t index = error_record[kValCmdErrorPayloadDword_0];
         const uint32_t invalid_first_instance = error_record[kValCmdErrorPayloadDword_1];
 
-        skip |= gpuav.LogError(
-            vuid, objlist, loc_with_debug_region,
-            "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
-            "index %" PRIu32 " is %" PRIu32 ".",
-            vvl::String(api_struct_name), index, invalid_first_instance);
+        skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
+                               "The firstInstance member of the %s structure at "
+                               "index %" PRIu32 " is %" PRIu32 ".",
+                               vvl::String(api_struct_name), index, invalid_first_instance);
 
         return skip;
     };
@@ -262,21 +260,76 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
     cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
+struct FirstInstanceVUIDs {
+    const char *vuid_09461{};
+    const char *vuid_09462{};
+    const char *vuid_00501_00554{};
+};
+
+static FirstInstanceValidationVuidSelector GetFirstInstanceValidationVuidSelector(const FirstInstanceVUIDs &first_instance_vuids) {
+    FirstInstanceValidationVuidSelector vuid_selector = [first_instance_vuids](Validator &gpuav, CommandBufferSubState &cb_state,
+                                                                               const LastBound &last_bound) {
+        if (!gpuav.phys_dev_props_core14.supportsNonZeroFirstInstance) {
+            if (last_bound.pipeline_state) {
+                const vku::safe_VkGraphicsPipelineCreateInfo &graphics_ci = last_bound.pipeline_state->GraphicsCreateInfo();
+                if (graphics_ci.pVertexInputState) {
+                    if (auto divisor_state_ci = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
+                            graphics_ci.pVertexInputState->pNext)) {
+                        for (const VkVertexInputBindingDivisorDescription &divisor : vvl::make_span(
+                                 divisor_state_ci->pVertexBindingDivisors, divisor_state_ci->vertexBindingDivisorCount)) {
+                            if (divisor.divisor != 1u) {
+                                return first_instance_vuids.vuid_09461;
+                            }
+                        }
+                    }
+                }
+            }
+            if (last_bound.HasShaderObjects() ||
+                (last_bound.pipeline_state && last_bound.pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT))) {
+                for (const auto &[binding, binding_state] : cb_state.base.dynamic_state_value.vertex_bindings) {
+                    if (binding_state.desc.divisor != 1) {
+                        return first_instance_vuids.vuid_09462;
+                    }
+                }
+            }
+        }
+
+        if (!gpuav.enabled_features.drawIndirectFirstInstance) {
+            return first_instance_vuids.vuid_00501_00554;
+        }
+
+        return (const char *)nullptr;
+    };
+
+    return vuid_selector;
+}
+
 template <>
 void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
                                           const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count,
-                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid) {
+                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset) {
+    FirstInstanceVUIDs vuids;
+    vuids.vuid_09461 = "VUID-VkDrawIndirectCommand-pNext-09461";
+    vuids.vuid_09462 = "VUID-VkDrawIndirectCommand-None-09462";
+    vuids.vuid_00501_00554 = "VUID-VkDrawIndirectCommand-firstInstance-00501";
+
+    FirstInstanceValidationVuidSelector vuid_selector = GetFirstInstanceValidationVuidSelector(vuids);
     FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
-                  vvl::Struct::VkDrawIndirectCommand, 3, draw_count, count_buffer, count_buffer_offset, vuid);
+                  vvl::Struct::VkDrawIndirectCommand, 3, draw_count, count_buffer, count_buffer_offset, vuid_selector);
 }
 
 template <>
 void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
                                                  const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
-                                                 const char *vuid) {
+                                                 uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset) {
+    FirstInstanceVUIDs vuids;
+    vuids.vuid_09461 = "VUID-VkDrawIndexedIndirectCommand-pNext-09461";
+    vuids.vuid_09462 = "VUID-VkDrawIndexedIndirectCommand-None-09462";
+    vuids.vuid_00501_00554 = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
+
+    FirstInstanceValidationVuidSelector vuid_selector = GetFirstInstanceValidationVuidSelector(vuids);
     FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
-                  vvl::Struct::VkDrawIndexedIndirectCommand, 4, draw_count, count_buffer, count_buffer_offset, vuid);
+                  vvl::Struct::VkDrawIndexedIndirectCommand, 4, draw_count, count_buffer, count_buffer_offset, vuid_selector);
 }
 
 struct CountBufferValidationShader {
