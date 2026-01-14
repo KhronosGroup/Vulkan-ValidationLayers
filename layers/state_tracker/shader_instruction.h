@@ -75,6 +75,7 @@ class Instruction {
     spv::BuiltIn GetBuiltIn() const;
     uint32_t GetPositionOffset() const { return position_offset_; }
     bool IsArray() const;
+    bool IsVector() const;
     bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
     // Helpers for OpTypeImage

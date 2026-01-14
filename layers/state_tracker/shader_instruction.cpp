@@ -184,6 +184,8 @@ spv::BuiltIn Instruction::GetBuiltIn() const {
 
 bool Instruction::IsArray() const { return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray); }
 
+bool Instruction::IsVector() const { return (Opcode() == spv::OpTypeVector || Opcode() == spv::OpTypeVectorIdEXT); }
+
 bool Instruction::IsNonPtrAccessChain() const {
     const uint32_t opcode = Opcode();
     return opcode == spv::OpAccessChain || opcode == spv::OpInBoundsAccessChain;

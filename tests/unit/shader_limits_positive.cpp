@@ -340,3 +340,50 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderLimits, MaxLongVectorComponentCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        vector<float, 1024> v;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit);
+}
+
+TEST_F(PositiveShaderLimits, MaxLongVectorIdComponentCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        layout(constant_id = 0) const uint Count = 1024;
+        vector<float, Count> v;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit);
+}

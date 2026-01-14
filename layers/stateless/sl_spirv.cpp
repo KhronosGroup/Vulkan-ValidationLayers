@@ -992,7 +992,7 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module &mod
         if (!enabled_features.shaderSubgroupExtendedTypes) {
             const spirv::Instruction *type = module_state.FindDef(insn.Word(1));
 
-            if (type->Opcode() == spv::OpTypeVector) {
+            if (type->IsVector()) {
                 // Get the element type
                 type = module_state.FindDef(type->Word(2));
             }
