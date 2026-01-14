@@ -33,7 +33,7 @@
         },
         {
             "name": "SPIRV-Tools",
-            "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+            "url": "https://github.com/jeffbolznv/SPIRV-Tools.git",
             "sub_dir": "SPIRV-Tools",
             "build_dir": "SPIRV-Tools/build",
             "install_dir": "SPIRV-Tools/build/install",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "31a9403f7a96336545467fc7949fe4a67678179f"
+            "commit": "fdea3d4400f64043db529410bd4fd676735a3a06"
         },
         {
             "name": "mimalloc",

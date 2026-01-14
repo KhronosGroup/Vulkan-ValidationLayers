@@ -371,16 +371,30 @@ TEST_F(PositiveShaderLimits, MaxLongVectorIdComponentCount) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    // the spec constant is initialized to an invalid value but overridden to a supported value
     const char *fsSource = R"glsl(
         #version 450
         #extension GL_EXT_long_vector : enable
-        layout(constant_id = 0) const uint Count = 1024;
+        layout(constant_id = 0) const uint Count = 999999999;
         vector<float, Count> v;
         void main(){
         }
     )glsl";
 
-    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint32_t)  // size
+    };
+    uint32_t const data = 4;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint32_t),
+        &data,
+    };
+
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specialization_info);
 
     const auto outputPipeline = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
