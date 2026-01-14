@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -465,25 +465,27 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
                                                    VkPipeline pipeline, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (IsPipelineUsedInFrame(pipeline)) {
-            skip |= LogPerformanceWarning(
-                "BestPractices-Pipeline-SortAndBind", commandBuffer, error_obj.location,
-                "%s %s Pipeline %s was bound twice in the frame. "
-                "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
-                VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(pipeline).c_str());
+    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+            if (IsPipelineUsedInFrame(pipeline)) {
+                skip |= LogPerformanceWarning(
+                    "BestPractices-Pipeline-SortAndBind", commandBuffer, error_obj.location,
+                    "%s %s Pipeline %s was bound twice in the frame. "
+                    "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
+                    VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(pipeline).c_str());
+            }
         }
-    }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-        auto& sub_state = bp_state::SubState(*cb_state);
-        const auto& tgm = sub_state.nv.tess_geometry_mesh;
-        if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
-            LogPerformanceWarning("BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh", commandBuffer, error_obj.location,
-                                  "%s Avoid switching between pipelines with and without tessellation, geometry, task, "
-                                  "and/or mesh shaders. Group draw calls using these shader stages together.",
-                                  VendorSpecificTag(kBPVendorNVIDIA));
-            // Do not set 'skip' so the number of switches gets properly counted after the message.
+        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+            auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+            auto& sub_state = bp_state::SubState(*cb_state);
+            const auto& tgm = sub_state.nv.tess_geometry_mesh;
+            if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
+                LogPerformanceWarning("BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh", commandBuffer, error_obj.location,
+                                      "%s Avoid switching between pipelines with and without tessellation, geometry, task, "
+                                      "and/or mesh shaders. Group draw calls using these shader stages together.",
+                                      VendorSpecificTag(kBPVendorNVIDIA));
+                // Do not set 'skip' so the number of switches gets properly counted after the message.
+            }
         }
     }
 
