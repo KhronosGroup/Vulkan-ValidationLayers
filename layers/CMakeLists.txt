@@ -456,6 +456,7 @@ target_sources(vvl PRIVATE
     sync/sync_common.h
     sync/sync_error_messages.cpp
     sync/sync_error_messages.h
+    sync/sync_hazard_detection.cpp
     sync/sync_image.cpp
     sync/sync_image.h
     sync/sync_op.cpp

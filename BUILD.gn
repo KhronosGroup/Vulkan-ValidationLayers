@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2021 The ANGLE Project Authors.
-# Copyright (C) 2019-2025 LunarG, Inc.
+# Copyright (C) 2019-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -371,6 +371,7 @@ vvl_sources = [
   "layers/sync/sync_common.h",
   "layers/sync/sync_error_messages.cpp",
   "layers/sync/sync_error_messages.h",
+  "layers/sync/sync_hazard_detection.cpp",
   "layers/sync/sync_image.cpp",
   "layers/sync/sync_image.h",
   "layers/sync/sync_op.cpp",
