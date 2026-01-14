@@ -648,10 +648,10 @@ AccessMap::iterator AccessContext::InfillGapRecursePrev(const AccessRange &range
     }
 }
 
-// Update memory state over the given range. Inserts new accesses for empty regions and
-// updates existing accesses. The passed pos must either LowerBound (which may be the end
-// iterator) or be strictly less than range. Trims to range boundaries. The iterators
-// used for update is already trimmed to fit within the range.
+// Update memory access state over the given range.
+// This inserts new accesses for empty regions and updates existing accesses.
+// The passed pos must either be a lower bound (can be the end iterator) or be strictly less than the range.
+// Map entries that intersect range.begin or range.end are split at the intersection point.
 AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range,
                                                        SyncAccessIndex access_index, SyncOrdering ordering_rule,
                                                        ResourceUsageTagEx tag_ex, SyncFlags flags) {
@@ -660,79 +660,72 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
 
     const auto end = access_state_map_.end();
     assert(pos == access_state_map_.LowerBound(range.begin) || pos->first.strictly_less(range));
+
     if (pos != end && pos->first.strictly_less(range)) {
-        // pos isn't lower_bound for range (it's less than range), however, if range is monotonically increasing
-        // it's likely the next entry in the map will be the lower bound.
+        // pos is not a lower bound for the range (pos < range), but if the range is
+        // monotonically increasing, the next map entry may be the lower bound
         ++pos;
 
-        // If the new (pos + 1) *isn't* stricly_less and pos is, (pos + 1) must be the lower_bound,
-        // otherwise we have to run the full search.
+        // If the new pos is not a lower bound, run the full search
         if (pos != end && pos->first.strictly_less(range)) {
             pos = access_state_map_.LowerBound(range.begin);
         }
     }
     assert(pos == access_state_map_.LowerBound(range.begin));
 
-    if ((pos != end) && (range.begin > pos->first.begin)) {
-        // lower bound starts before the range, trim and advance
+    if (pos != end && range.begin > pos->first.begin) {
+        // Lower bound starts before the range.
+        // Split the entry so that a new entry starts exactly at the range.begin
         pos = access_state_map_.Split(pos, range.begin);
         ++pos;
     }
 
     AccessMap::index_type current_begin = range.begin;
     while (pos != end && current_begin < range.end) {
-        if (current_begin < pos->first.begin) {
-            // The current_begin is pointing to the beginning of a gap to infill (we supply pos for "insert in front of" calls)
+        if (current_begin < pos->first.begin) {  // infill the gap
+            // Infill the gap with an empty access state or, if the previous contexts
+            // exists (subpass case), derive the infill state from them
             const AccessRange gap_range(current_begin, std::min(range.end, pos->first.begin));
-
-            // The range corresponds to a gap that will be infilled with specific access state.
-            // If there are previous contexts (subpass case) the infill state will be derived
-            // from them, otherwise the gap will be filled with an empty access state.
-            AccessMap::iterator it_gap_range = InfillGapRecursePrev(gap_range, pos);
+            AccessMap::iterator infilled_it = InfillGapRecursePrev(gap_range, pos);
 
             // Update
-            AccessState &new_access_state = it_gap_range->second;
+            AccessState &new_access_state = infilled_it->second;
             ApplyGlobalBarriers(new_access_state);
             new_access_state.Update(access_info, ordering_rule, tag_ex, flags);
 
-            // Advance current begin, but *not* pos as it's the next valid value. (infill shall not invalidate pos)
+            // Advance current location.
+            // Do not advance pos, as it's the next map entry to visit
             current_begin = pos->first.begin;
-        } else {
-            // The current_begin is pointing to the next existing value to update
+        } else {  // update existing entry
             assert(current_begin == pos->first.begin);
 
-            // We need to run the update operation on the valid portion of the current value.
-            // If this entry overlaps end-of-range we need to trim it to the range
+            // Split the current map entry if it goes beyond range.end.
+            // This ensures the update is restricted to the given range.
             if (pos->first.end > range.end) {
                 pos = access_state_map_.Split(pos, range.end);
             }
 
-            // We have a valid fully contained range, apply update op
+            // Update
             AccessState &access_state = pos->second;
             ApplyGlobalBarriers(access_state);
             access_state.Update(access_info, ordering_rule, tag_ex, flags);
 
-            // Advance the current location and map entry
+            // Advance both current location and map entry
             current_begin = pos->first.end;
             ++pos;
         }
     }
 
-    // Fill to the end as needed
+    // Fill to the end if needed
     if (current_begin < range.end) {
         const AccessRange gap_range(current_begin, range.end);
-
-        // The range corresponds to a gap that will be infilled with specific access state.
-        // If there are previous contexts (subpass case) the infill state will be derived
-        // from them, otherwise the gap will be filled with an empty access state.
-        AccessMap::iterator it_gap_range = InfillGapRecursePrev(gap_range, pos);
+        AccessMap::iterator infilled_it = InfillGapRecursePrev(gap_range, pos);
 
         // Update
-        AccessState &new_access_state = it_gap_range->second;
+        AccessState &new_access_state = infilled_it->second;
         ApplyGlobalBarriers(new_access_state);
         new_access_state.Update(access_info, ordering_rule, tag_ex, flags);
     }
-
     return pos;
 }
 

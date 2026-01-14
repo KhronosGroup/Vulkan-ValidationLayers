@@ -492,14 +492,22 @@ struct ActionToOpsAdapter {
 
 template <typename Action>
 void AccessContext::UpdateMemoryAccessState(Action &action, const AccessRange &range) {
+    assert(range.valid());
     assert(!finalized_);
+
+    if (range.empty()) {
+        return;
+    }
+
     ActionToOpsAdapter<Action> ops{action};
-    InfillUpdateRange(access_state_map_, range, ops);
+    auto pos = access_state_map_.LowerBound(range.begin);
+    InfillUpdateRange(access_state_map_, pos, range, ops);
 }
 
 template <typename Action, typename RangeGen>
 void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &range_gen) {
     assert(!finalized_);
+
     ActionToOpsAdapter<Action> ops{action};
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
