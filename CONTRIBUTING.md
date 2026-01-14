@@ -42,7 +42,7 @@ Some basic rules (enforced by CI)
 - Begin subject line with a one-word component description followed by a colon
     - ex: `build:`, `docs:`, `layers:`, `tests:`
 - Separate subject from body with a blank line
-- Wrap the body at 72 characters
+- Wrap the body at 80 characters
 - Capitalize the subject line
 
 ## Writing good error messages
