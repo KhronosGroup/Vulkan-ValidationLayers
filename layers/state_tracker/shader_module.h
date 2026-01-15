@@ -684,6 +684,7 @@ struct Module {
         std::vector<const Instruction *> cooperative_vector_inst;
         std::vector<const Instruction *> emit_mesh_tasks_inst;
         std::vector<const Instruction *> array_length_inst;
+        std::vector<const Instruction *> vector_type_inst;
 
         // For descriptor indexing there are 3 situations
         //  1. OpConstant is used, we will find later

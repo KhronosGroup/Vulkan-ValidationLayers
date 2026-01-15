@@ -355,11 +355,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 // }
 
                 // If using maintenance4 need to check Vectors incase different sizes
-                if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() == spv::OpTypeVector) &&
-                    (input_var->base_type.Opcode() == spv::OpTypeVector)) {
+                if (!enabled_features.maintenance4 && output_var->base_type.IsVector() && input_var->base_type.IsVector()) {
                     // Note the "Component Count" in the VU refers to OpTypeVector's operand and NOT the "Component slot"
-                    const uint32_t output_vec_size = output_var->base_type.Word(3);
-                    const uint32_t input_vec_size = input_var->base_type.Word(3);
+                    const uint32_t output_vec_size =
+                        producer.GetNumComponentsInBaseType(producer.FindDef(output_var->base_type.ResultId()));
+                    const uint32_t input_vec_size =
+                        consumer.GetNumComponentsInBaseType(consumer.FindDef(input_var->base_type.ResultId()));
                     if (output_vec_size > input_vec_size) {
                         const LogObjectList objlist(producer.handle(), consumer.handle());
                         skip |= LogError("VUID-RuntimeSpirv-maintenance4-06817", objlist, create_info_loc,
@@ -397,7 +398,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 // Missing input slot
                 // It is not an error if a stage does not consume all outputs from the previous stage
                 // Don't give any warning if maintenance4 with vectors
-                if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
+                if (!enabled_features.maintenance4 && !output_var->base_type.IsVector()) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
                     skip |= LogPerformanceWarning(
                         "WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,

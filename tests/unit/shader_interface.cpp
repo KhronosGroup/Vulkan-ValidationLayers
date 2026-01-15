@@ -525,6 +525,55 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maintenance4-06817");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchLongVectorSize) {
+    TEST_DESCRIPTION("OpTypeVector has larger output than input");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
+    // fs declares a vec3 input
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpCapability LongVectorEXT
+               OpExtension "SPV_EXT_long_vector"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %v
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %v Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+         %u3 = OpConstant %uint 3
+    %vfloat  = OpTypeVectorIdEXT %float %u3
+     %ptr_in = OpTypePointer Input %vfloat
+          %v = OpVariable %ptr_in Input
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maintenance4-06817");
+}
+
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
     TEST_DESCRIPTION("Have a struct inside a block between shaders");
 

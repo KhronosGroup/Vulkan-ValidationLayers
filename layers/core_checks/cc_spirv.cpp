@@ -1295,6 +1295,28 @@ bool CoreChecks::ValidateShader64BitIndexing(const spirv::Module &module_state, 
     return skip;
 }
 
+bool CoreChecks::ValidateVectorTypes(const spirv::Module &module_state, const Location &loc) const {
+    bool skip = false;
+
+    const bool valid_long_vector = enabled_features.longVector == VK_TRUE;
+
+    if (valid_long_vector) {
+        const uint32_t maxVectorComponents = phys_dev_ext_props.shader_long_vector_props.maxVectorComponents;
+
+        for (const spirv::Instruction *vec_type_inst : module_state.static_data_.vector_type_inst) {
+            const spirv::Instruction &insn = *vec_type_inst;
+
+            uint32_t components = module_state.GetNumComponentsInBaseType(&insn);
+            if (components > maxVectorComponents) {
+                skip |= LogError("VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
+                                 "SPIR-V vector type component count (%d) exceeds maxVectorComponents (%d).\n%s\n", components,
+                                 maxVectorComponents, module_state.DescribeInstruction(insn).c_str());
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateSubpassCustomeResolve(const spirv::Module &module_state, VkShaderStageFlagBits stage,
                                                const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
@@ -2138,6 +2160,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         skip |= ValidateCooperativeVector(module_state, entrypoint, loc);
     }
     skip |= ValidateShader64BitIndexing(module_state, entrypoint, stage_state, pipeline, loc);
+    skip |= ValidateVectorTypes(module_state, loc);
 
     if (pipeline) {
         if (enabled_features.transformFeedback) {

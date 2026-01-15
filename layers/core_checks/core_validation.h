@@ -974,6 +974,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                     const LogObjectList& objlist, const Location& loc) const;
     bool ValidateShader64BitIndexing(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                      const ShaderStageState& stage_state, const vvl::Pipeline* pipeline, const Location& loc) const;
+    bool ValidateVectorTypes(const spirv::Module& module_state, const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;
     virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,

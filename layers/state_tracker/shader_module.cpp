@@ -1193,7 +1193,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
             }
 
-            case spv::OpTypeCooperativeVectorNV:
+            case spv::OpTypeCooperativeVectorNV:  // aka OpTypeVectorIdEXT
             case spv::OpCooperativeVectorLoadNV:
             case spv::OpCooperativeVectorStoreNV:
             case spv::OpCooperativeVectorMatrixMulNV:
@@ -1201,8 +1201,15 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpCooperativeVectorReduceSumAccumulateNV:
             case spv::OpCooperativeVectorOuterProductAccumulateNV: {
                 cooperative_vector_inst.push_back(&insn);
+                if (opcode == spv::OpTypeVectorIdEXT) {
+                    vector_type_inst.push_back(&insn);
+                }
                 break;
             }
+            case spv::OpTypeVector:
+                vector_type_inst.push_back(&insn);
+                break;
+
             case spv::OpEmitMeshTasksEXT: {
                 emit_mesh_tasks_inst.push_back(&insn);
                 break;
@@ -1467,6 +1474,10 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
             break;
         case spv::OpTypeVector:
             ss << "vec" << insn->Word(3) << " of ";
+            DescribeTypeInner(ss, insn->Word(2), indent);
+            break;
+        case spv::OpTypeVectorIdEXT:
+            ss << "vec" << GetConstantValueById(insn->Word(3)) << " of ";
             DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypeMatrix:
@@ -1747,10 +1758,11 @@ uint32_t Module::GetLocationsConsumedByType(const Instruction* insn) const {
             const uint32_t column_count = insn->Word(3);
             return column_count * GetLocationsConsumedByType(column_type);
         }
-        case spv::OpTypeVector: {
+        case spv::OpTypeVector:
+        case spv::OpTypeVectorIdEXT: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
             const uint32_t width = scalar_type->GetByteWidth();
-            const uint32_t vector_length = insn->Word(3);
+            const uint32_t vector_length = GetNumComponentsInBaseType(insn);
             const uint32_t components = width * vector_length;
             // Locations are 128-bit wide (4 components)
             // 3- and 4-component vectors of 64 bit types require two.
@@ -1787,10 +1799,11 @@ uint32_t Module::GetComponentsConsumedByType(const Instruction* insn) const {
             const uint32_t column_count = insn->Word(3);
             return column_count * GetComponentsConsumedByType(column_type);
         }
-        case spv::OpTypeVector: {
+        case spv::OpTypeVector:
+        case spv::OpTypeVectorIdEXT: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
             const uint32_t width = scalar_type->GetByteWidth();
-            const uint32_t vector_length = insn->Word(3);
+            const uint32_t vector_length = GetNumComponentsInBaseType(insn);
             return width * vector_length;  // One component is 32-bit
         }
         case spv::OpTypeStruct: {
@@ -1820,6 +1833,7 @@ NumericType Module::GetNumericType(uint32_t type) const {
         case spv::OpTypeFloat:
             return NumericTypeFloat;
         case spv::OpTypeVector:
+        case spv::OpTypeVectorIdEXT:
         case spv::OpTypeMatrix:
         case spv::OpTypeArray:
         case spv::OpTypeRuntimeArray:
@@ -2518,6 +2532,8 @@ uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
         component_count = 1;
     } else if (opcode == spv::OpTypeVector) {
         component_count = insn->Word(3);
+    } else if (opcode == spv::OpTypeVectorIdEXT) {
+        component_count = GetConstantValueById(insn->Word(3));
     } else if (opcode == spv::OpTypeMatrix) {
         const Instruction* column_type = FindDef(insn->Word(2));
         // Because we are calculating components for a single location we do not care about column count
@@ -2540,10 +2556,10 @@ uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
 uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
     uint32_t bit_size = 0;
-    if (opcode == spv::OpTypeVector) {
+    if (insn->IsVector()) {
         const Instruction* component_type = FindDef(insn->Word(2));
         uint32_t scalar_width = GetTypeBitsSize(component_type);
-        uint32_t component_count = insn->Word(3);
+        uint32_t component_count = GetNumComponentsInBaseType(insn);
         bit_size = scalar_width * component_count;
     } else if (opcode == spv::OpTypeMatrix) {
         const Instruction* column_type = FindDef(insn->Word(2));
@@ -2616,7 +2632,7 @@ uint32_t Module::GetBaseType(const Instruction* insn) const {
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeBool || opcode == spv::OpTypeStruct) {
         // point to itself as its the base type (or a struct that needs to be traversed still)
         return insn->Word(1);
-    } else if (opcode == spv::OpTypeVector) {
+    } else if (insn->IsVector()) {
         const Instruction* component_type = FindDef(insn->Word(2));
         return GetBaseType(component_type);
     } else if (opcode == spv::OpTypeMatrix) {
@@ -2679,7 +2695,7 @@ uint32_t Module::GetTexelComponentCount(const Instruction& insn) const {
         case spv::OpImageWrite: {
             const Instruction* texel_def = FindDef(insn.Word(3));
             const Instruction* texel_type = FindDef(texel_def->Word(1));
-            texel_component_count = (texel_type->Opcode() == spv::OpTypeVector) ? texel_type->Word(3) : 1;
+            texel_component_count = GetNumComponentsInBaseType(texel_type);
             break;
         }
         default:
@@ -2725,8 +2741,8 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
         data_type = FindDef(pointer->Word(3));
     }
 
-    if (data_type->Opcode() == spv::OpTypeVector) {
-        info.vector_size = data_type->Word(3);
+    if (data_type->IsVector()) {
+        info.vector_size = GetNumComponentsInBaseType(data_type);
         data_type = FindDef(data_type->Word(2));
     }
 

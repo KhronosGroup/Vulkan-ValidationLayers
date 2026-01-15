@@ -116,6 +116,7 @@ struct DeviceExtensionProperties {
 #endif
     VkPhysicalDeviceMemoryDecompressionPropertiesEXT memory_decompression_props;
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM renderpass_counter_by_region_props;
+    VkPhysicalDeviceShaderLongVectorPropertiesEXT shader_long_vector_props;
 };
 
 // This object holds all static state for the device (device properties, enabled extensions/features, etc.)

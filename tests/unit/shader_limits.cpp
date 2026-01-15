@@ -529,3 +529,74 @@ TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
     VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderLimits, MaxLongVectorComponentCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceShaderLongVectorPropertiesEXT long_vector_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(long_vector_properties);
+
+    std::ostringstream fsSource;
+    fsSource << R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        vector<float, )glsl"
+             << long_vector_properties.maxVectorComponents + 1 << R"glsl(> v;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj fs(*m_device, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit, "VUID-RuntimeSpirv-longVector-12296");
+}
+
+TEST_F(NegativeShaderLimits, MaxLongVectorIdComponentCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceShaderLongVectorPropertiesEXT long_vector_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(long_vector_properties);
+
+    // the spec constant is initialized to a valid value but overridden to an unsupported value
+    std::ostringstream fsSource;
+    fsSource << R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        layout(constant_id = 0) const uint Count = 1024;
+        vector<float, Count> v;
+        void main(){
+        }
+    )glsl";
+
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint32_t)  // size
+    };
+    uint32_t const data = long_vector_properties.maxVectorComponents + 1;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint32_t),
+        &data,
+    };
+
+    VkShaderObj fs(*m_device, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
+                   &specialization_info);
+
+    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit, "VUID-RuntimeSpirv-longVector-12296");
+}
