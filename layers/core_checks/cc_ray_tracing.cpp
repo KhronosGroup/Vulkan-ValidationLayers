@@ -1788,6 +1788,15 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
                          "was created with %s which is different from the type queryPool was created with (%s).",
                          string_VkQueryType(queryType), string_VkQueryType(query_pool_ci.queryType));
     }
+    if (firstQuery + accelerationStructureCount > query_pool_state->create_info.queryCount) {
+        skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-query-04880", commandBuffer,
+                         error_obj.location.dot(Field::firstQuery),
+                         "(%" PRIu32 ") + accelerationStructureCount (%" PRIu32 "), or %" PRIu32
+                         ", is superior to the number of queries in queryPool (%" PRIu32 ").",
+                         firstQuery, accelerationStructureCount, firstQuery + accelerationStructureCount,
+                         query_pool_state->create_info.queryCount);
+    }
+
     for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
         const Location as_loc = error_obj.location.dot(Field::pAccelerationStructures, i);
         auto as_state = Get<vvl::AccelerationStructureKHR>(pAccelerationStructures[i]);
