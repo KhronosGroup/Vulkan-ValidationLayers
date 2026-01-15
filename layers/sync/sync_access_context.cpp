@@ -163,7 +163,6 @@ void AccessContext::Finalize() {
 
 void AccessContext::RegisterGlobalBarrier(const SyncBarrier &barrier, QueueId queue_id) {
     assert(global_barriers_.empty() || global_barriers_queue_ == queue_id);
-    global_barriers_queue_ = queue_id;
 
     // Search for existing def
     uint32_t def_index = 0;
@@ -201,6 +200,7 @@ void AccessContext::RegisterGlobalBarrier(const SyncBarrier &barrier, QueueId qu
     }
     // A global barrier is just a reference to its def
     global_barriers_.push_back(def_index);
+    global_barriers_queue_ = queue_id;
 }
 
 void AccessContext::ApplyGlobalBarriers(AccessState &access_state) const {
