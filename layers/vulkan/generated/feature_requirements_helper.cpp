@@ -2938,7 +2938,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
         case Feature::deviceFault: {
-            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR *>(
+            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
                 vk_struct = new VkPhysicalDeviceFaultFeaturesKHR;
@@ -2949,22 +2949,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     *inout_pnext_chain = vk_struct;
                 }
             }
-            return {&vk_struct->deviceFault, "VkPhysicalDeviceFaultFeaturesEXT::deviceFault"};
-        }
-
-        case Feature::deviceFaultVendorBinary: {
-            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesEXT>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceFaultFeaturesEXT;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
-                }
-            }
-            return {&vk_struct->deviceFaultVendorBinary, "VkPhysicalDeviceFaultFeaturesEXT::deviceFaultVendorBinary"};
+            return {&vk_struct->deviceFault, "VkPhysicalDeviceFaultFeaturesKHR::deviceFault"};
         }
 
         case Feature::deviceFaultDeviceLostOnMasked: {
@@ -2998,7 +2983,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
         }
 
         case Feature::deviceFaultVendorBinary: {
-            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR *>(
+            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
                 vk_struct = new VkPhysicalDeviceFaultFeaturesKHR;

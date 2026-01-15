@@ -833,7 +833,7 @@ bool CoreChecks::PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDe
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     if (!is_device_lost) {
-        skip |= LogError("UNASSIGNED-VUID-GetDeviceFaultDebugInfoKHR-device-", device, error_obj.location,
+        skip |= LogError("VUID-vkGetDeviceFaultDebugInfoKHR-device-12383", device, error_obj.location,
                          "device has not been found to be in a lost state.");
     }
     return skip;
