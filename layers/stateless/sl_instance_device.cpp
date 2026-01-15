@@ -295,7 +295,7 @@ void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevic
             ext_props.resize(ext_count);
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
 
-            DeviceExtensions phys_dev_exts(extensions, phys_dev_props->apiVersion, ext_props);
+            DeviceExtensions phys_dev_exts(extensions, api_version, ext_props);
             physical_device_extensions[phys_device] = std::move(phys_dev_exts);
         }
     }
