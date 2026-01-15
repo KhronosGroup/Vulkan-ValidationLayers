@@ -3475,6 +3475,11 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-02003" : "VUID-vkCmdResolveImage-dstImage-02003";
             skip |= ValidateImageFormatFeatureFlags(commandBuffer, *dst_image_state, VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT,
                                                     dst_image_loc, vuid);
+        } else {
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-maintenance10-11799" : "VUID-vkCmdResolveImage-maintenance10-11799";
+            skip |= ValidateImageFormatFeatureFlags(
+                commandBuffer, *dst_image_state,
+                VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT, dst_image_loc, vuid);
         }
         vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
         skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
@@ -3508,16 +3513,6 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00259" : "VUID-vkCmdResolveImage-dstImage-00259";
             skip |= LogError(vuid, dst_objlist, dst_image_loc, "was created with %s (not VK_SAMPLE_COUNT_1_BIT).",
                              string_VkSampleCountFlagBits(dst_image_state->create_info.samples));
-        }
-
-        if (enabled_features.maintenance10) {
-            if (!(dst_image_state->format_features &
-                  (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
-                skip |= LogError("VUID-vkCmdResolveImage-maintenance10-11799", dst_objlist, dst_image_loc,
-                                 "was created with %s which only has the following format features:\n%s\n",
-                                 string_VkFormat(dst_image_state->create_info.format),
-                                 string_VkFormatFeatureFlags2(dst_image_state->format_features).c_str());
-            }
         }
     }
 
