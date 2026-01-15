@@ -300,7 +300,7 @@ void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevic
 
             printf(
                 "Creating DeviceExtensions from Instance::CommonPostCallRecordEnumeratePhysicalDevice (sl_instance_device.cpp)\n");
-            DeviceExtensions phys_dev_exts(extensions, phys_dev_props->apiVersion, ext_props);
+            DeviceExtensions phys_dev_exts(extensions, this->api_version, ext_props);
             physical_device_extensions[phys_device] = std::move(phys_dev_exts);
         }
     }
