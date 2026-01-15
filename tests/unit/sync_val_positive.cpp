@@ -3646,3 +3646,52 @@ TEST_F(PositiveSyncVal, ChainGlobalBarrierWithImageBarrier) {
     vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_b, 1, &region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, ApplyManyGlobalBarriers) {
+    TEST_DESCRIPTION("Register many global barriers to trigger the global barrier registry flush");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    // The N entries will generate N*(N-1) unique ordered pairs.
+    // For N = 9 we get 72 unique VkMemoryBarrier2.
+    std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlagBits2>> accesses = {
+        {VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_NONE},
+        {VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT},
+        {VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_WRITE_BIT},
+        {VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_NONE},
+        {VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT},
+        {VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT},
+        {VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_NONE},
+        {VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT},
+        {VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_MEMORY_READ_BIT},
+    };
+
+    m_command_buffer.Begin();
+    for (size_t i = 0; i < accesses.size() - 1; i++) {
+        const auto &access_a = accesses[i];
+        for (size_t k = i + 1; k < accesses.size(); k++) {
+            const auto &access_b = accesses[k];
+
+            VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
+            global_barrier.srcStageMask = access_a.first;
+            global_barrier.srcAccessMask = access_a.second;
+            global_barrier.dstStageMask = access_b.first;
+            global_barrier.dstAccessMask = access_b.second;
+            m_command_buffer.Barrier(global_barrier);
+
+            global_barrier.srcStageMask = access_b.first;
+            global_barrier.srcAccessMask = access_b.second;
+            global_barrier.dstStageMask = access_a.first;
+            global_barrier.dstAccessMask = access_a.second;
+            m_command_buffer.Barrier(global_barrier);
+        }
+    }
+    m_command_buffer.End();
+
+    // The original bug was that when flushing global barriers registry, the global
+    // queue id was not reinitialized after being reset to invalid queue constant.
+    // The next global barrier registration asserted due to mismatch between the
+    // provided valid queue id (from submit time validation) and the cached queue id.
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
