@@ -829,6 +829,16 @@ bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceF
     return skip;
 }
 
+bool CoreChecks::PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    if (!is_device_lost) {
+        skip |= LogError("UNASSIGNED-VUID-GetDeviceFaultDebugInfoKHR-device-", device, error_obj.location,
+                         "device has not been found to be in a lost state.");
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkPipelineBinaryHandlesInfoKHR* pBinaries,

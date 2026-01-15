@@ -31,6 +31,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         # VkPhysicalDeviceBufferDeviceAddressFeaturesKHR features, but are
         # semantically different.  They are given a suffix to be distinguished.
         self.identical_but_different_features = {
+            "VkPhysicalDeviceFaultFeaturesEXT",
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
             'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV',
         }
