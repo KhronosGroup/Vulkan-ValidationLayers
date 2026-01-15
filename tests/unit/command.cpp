@@ -4201,6 +4201,57 @@ TEST_F(NegativeCommand, ResolveImageFormat) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeCommand, ResolveImage2Format) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Too hard to find unsupported format that works on real driver.";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UINT;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.flags = 0;
+
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageResolve2KHR resolve_region = vku::InitStructHelper();
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
+    resolve_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolve_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkResolveImageInfo2KHR resolve_info = vku::InitStructHelper();
+    resolve_info.srcImage = src_image;
+    resolve_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.dstImage = dst_image;
+    resolve_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.regionCount = 1;
+    resolve_info.pRegions = &resolve_region;
+
+    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+    vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
+
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCommand, ResolveImageAspectMask) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
@@ -4377,6 +4428,17 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeNone) {
 
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10985");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10983");
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
+    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -4431,7 +4493,17 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-11800");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-11801");
-
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
+    }
     resolve_info.srcImage = src_depth_image;
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4608,6 +4680,17 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
     }
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
+    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -4674,6 +4757,17 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10989");
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
+    }
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4746,6 +4840,17 @@ TEST_F(NegativeCommand, ResolveImage2StencilImageResolveMode) {
 
     if (!depth_stencil_resolve_props.independentResolve) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10991");
+    }
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4824,6 +4929,17 @@ TEST_F(NegativeCommand, ResolveImage2DepthStencilImageResolveMode) {
     }
     if (!depth_stencil_resolve_props.independentResolveNone) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10992");
+    }
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -5056,6 +5172,17 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeSampleZero) {
     resolve_info.pRegions = &resolve_region;
 
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
+    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -5139,6 +5266,17 @@ TEST_F(NegativeCommand, ResolveImage2StencilResolveMode) {
 
     resolve_info.srcImage = src_depth_image;
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10988");
+    {
+        const VkFormatFeatureFlags features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
+        VkFormatFeatureFlags gpu_features =
+            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
+        if (features != (gpu_features & features)) {
+            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
+        }
+    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
