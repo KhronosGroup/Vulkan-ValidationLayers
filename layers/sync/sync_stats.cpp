@@ -159,6 +159,14 @@ void Stats::OnBarrierCommand(uint32_t memory_barrier_count, uint32_t buffer_barr
     } else if (command_total_barrier_count > 1) {
         barrier_stats.multi_barrier_commands.Add(1);
     }
+
+    if (memory_barrier_count > 1 && buffer_barrier_count == 0 && image_barrier_count == 0) {
+        barrier_stats.multi_barrier_commands_only_memory.Add(1);
+    } else if (buffer_barrier_count > 1 && memory_barrier_count == 0 && image_barrier_count == 0) {
+        barrier_stats.multi_barrier_commands_only_buffer.Add(1);
+    } else if (image_barrier_count > 1 && memory_barrier_count == 0 && buffer_barrier_count == 0) {
+        barrier_stats.multi_barrier_commands_only_image.Add(1);
+    }
 }
 
 void Stats::UpdateMemoryStats() {
@@ -247,9 +255,12 @@ std::string Stats::CreateReport() {
     ss << "Memory barriers          : " << barrier_stats.memory_barriers.u32 << "\n";
     ss << "Buffer barriers          : " << barrier_stats.buffer_barriers.u32 << "\n";
     ss << "Image barriers           : " << barrier_stats.image_barriers.u32 << "\n";
-    ss << "Execution dependencies   : " << barrier_stats.execution_dependencies.u32 << "\n";
-    ss << "Single barrier commands  : " << barrier_stats.single_barrier_commands.u32 << "\n";
-    ss << "Multi barrier commands   : " << barrier_stats.multi_barrier_commands.u32 << "\n";
+    ss << "Execution dependencies   : " << barrier_stats.execution_dependencies.u32 << "\n\n";
+    ss << "Single barrier commands              : " << barrier_stats.single_barrier_commands.u32 << "\n";
+    ss << "Multi barrier commands               : " << barrier_stats.multi_barrier_commands.u32 << "\n";
+    ss << "Multi barrier commands only memory   : " << barrier_stats.multi_barrier_commands_only_memory.u32 << "\n";
+    ss << "Multi barrier commands only buffer   : " << barrier_stats.multi_barrier_commands_only_buffer.u32 << "\n";
+    ss << "Multi barrier commands only image    : " << barrier_stats.multi_barrier_commands_only_image.u32 << "\n";
 
     ss << "\n";
     ss << "Layout ordering barrier registry size: " << GetLayoutOrderingBarrierLookup().ObjectCount();

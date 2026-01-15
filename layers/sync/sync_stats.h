@@ -117,8 +117,12 @@ struct BarrierStats {
     Value32 buffer_barriers;
     Value32 image_barriers;
     Value32 execution_dependencies;
+
     Value32 single_barrier_commands;
     Value32 multi_barrier_commands;
+    Value32 multi_barrier_commands_only_memory;
+    Value32 multi_barrier_commands_only_buffer;
+    Value32 multi_barrier_commands_only_image;
 };
 
 struct Stats {
