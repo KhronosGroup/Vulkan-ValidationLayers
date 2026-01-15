@@ -60,7 +60,7 @@ TEST_F(PositiveShader64BitIndexing, PipelineEnableLength64) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveShader64BitIndexing, ShaderEnableLength64) {
+TEST_F(PositiveShader64BitIndexing, ShaderObjectEnableLength64) {
     TEST_DESCRIPTION("Validate length64 supported when enabled by shader create flag");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
@@ -89,6 +89,56 @@ TEST_F(PositiveShader64BitIndexing, ShaderEnableLength64) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     create_info.flags = VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT;
     const vkt::Shader shader(*m_device, create_info);
+}
+
+TEST_F(PositiveShader64BitIndexing, UntypedPointerLength64) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shader64BitIndexing);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(Init());
+
+    const char *cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability Int64
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %b
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %B Block
+               OpMemberDecorate %B 0 NonWritable
+               OpMemberDecorate %B 0 Offset 0
+               OpDecorate %b NonWritable
+               OpDecorate %b Binding 0
+               OpDecorate %b DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_runtimearr_float = OpTypeRuntimeArray %float
+          %B = OpTypeStruct %_runtimearr_float
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+          %b = OpUntypedVariableKHR %ptr StorageBuffer %B
+      %ulong = OpTypeInt 64 0
+       %long = OpTypeInt 64 1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %13 = OpUntypedArrayLengthKHR %ulong %B %b 0
+         %15 = OpBitcast %long %13
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveShader64BitIndexing, CoopVecMul) {
