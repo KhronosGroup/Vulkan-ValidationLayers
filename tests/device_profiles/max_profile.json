@@ -93,9 +93,6 @@
                 "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT": {
                     "shaderUniformBufferUnsizedArray": true
                 },
-                "VkPhysicalDeviceShaderLongVectorPropertiesEXT": {
-                    "maxVectorComponents": 4096
-                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
                     "deviceGeneratedCompute": true,
                     "deviceGeneratedComputePipelines": true,
@@ -1624,6 +1621,9 @@
                 },
                 "VkPhysicalDeviceShaderCoreProperties2AMD": {
                     "activeComputeUnitCount": 4294967000
+                },
+                "VkPhysicalDeviceShaderLongVectorPropertiesEXT": {
+                    "maxVectorComponents": 4096
                 },
                 "VkPhysicalDeviceDescriptorIndexingProperties": {
                     "maxUpdateAfterBindDescriptorsInAllPools": 4294967000,

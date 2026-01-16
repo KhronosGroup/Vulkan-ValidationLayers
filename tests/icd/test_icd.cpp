@@ -1253,12 +1253,6 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         protected_memory_props->protectedNoFault = VK_FALSE;
     }
 
-    // Hack for https://github.com/KhronosGroup/Vulkan-Profiles/issues/839
-    auto* long_vector_props = vku::FindStructInPNextChain<VkPhysicalDeviceShaderLongVectorPropertiesEXT>(pProperties->pNext);
-    if (long_vector_props) {
-        long_vector_props->maxVectorComponents = 4096;
-    }
-
     auto* float_controls_props = vku::FindStructInPNextChain<VkPhysicalDeviceFloatControlsProperties>(pProperties->pNext);
     if (float_controls_props) {
         float_controls_props->denormBehaviorIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL;
