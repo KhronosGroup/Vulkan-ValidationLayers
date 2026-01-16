@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -911,4 +911,36 @@ TEST_F(PositiveCommand, ResolveImage2StencilResolveMode) {
 
     resolve_info.srcImage = src_depth_image;
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
+}
+
+TEST_F(PositiveCommand, ResolveImageFormat) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.flags = 0;
+
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+    VkImageResolve resolve_region;
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
+    vk::CmdResolveImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+                        &resolve_region);
+    m_command_buffer.End();
 }

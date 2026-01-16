@@ -4428,17 +4428,6 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeNone) {
 
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10985");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10983");
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
-    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -4493,17 +4482,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-11800");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-11801");
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
-    }
     resolve_info.srcImage = src_depth_image;
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4680,17 +4658,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
     }
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
-    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -4757,17 +4724,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10989");
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
-    }
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4840,17 +4796,6 @@ TEST_F(NegativeCommand, ResolveImage2StencilImageResolveMode) {
 
     if (!depth_stencil_resolve_props.independentResolve) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10991");
-    }
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -4929,17 +4874,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthStencilImageResolveMode) {
     }
     if (!depth_stencil_resolve_props.independentResolveNone) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10992");
-    }
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
     }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
@@ -5172,17 +5106,6 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeSampleZero) {
     resolve_info.pRegions = &resolve_region;
 
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
-    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
@@ -5266,17 +5189,6 @@ TEST_F(NegativeCommand, ResolveImage2StencilResolveMode) {
 
     resolve_info.srcImage = src_depth_image;
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10988");
-    {
-        const VkFormatFeatureFlags features =
-            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(Gpu(), image_ci.format, &format_props);
-        VkFormatFeatureFlags gpu_features =
-            (VK_IMAGE_TILING_OPTIMAL == image_ci.tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-        if (features != (gpu_features & features)) {
-            m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-maintenance10-11799");
-        }
-    }
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
 }
