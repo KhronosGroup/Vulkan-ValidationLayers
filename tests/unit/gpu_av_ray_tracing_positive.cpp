@@ -185,7 +185,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDescriptorBuffer) {
 
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
 
-    pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT);
     pipeline.SetPipelineSetLayouts(1u, &ds_layout.handle());
     pipeline.Build();
 
