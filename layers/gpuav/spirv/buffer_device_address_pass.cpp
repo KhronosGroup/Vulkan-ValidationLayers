@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,8 +231,16 @@ bool BufferDeviceAddressPass::Instrument() {
                         load_type_pointer->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
                         const Type* struct_type = type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
                         if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
-                            const uint32_t struct_offset =
-                                FindOffsetInStruct(struct_type->Id(), nullptr, false, access_chain_insts);
+                            uint32_t root_struct_id = struct_type->Id();
+
+                            // GLSL/HLSL will only ever a struct, but for Slang, we might have the first access be the pointer and
+                            // we actually need that outer struct, which "looks" an OpTypePointer with an ArrayStride attached to it
+                            const Instruction* last_access = access_chain_insts.back();
+                            if (!last_access->IsNonPtrAccessChain() && last_access->TypeId() == load_type_pointer->Id()) {
+                                root_struct_id = load_type_pointer->Id();
+                            }
+
+                            const uint32_t struct_offset = FindOffsetInStruct(root_struct_id, nullptr, false, access_chain_insts);
                             if (struct_offset == 0) {
                                 continue;
                             }
