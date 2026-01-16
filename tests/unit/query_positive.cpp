@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -657,4 +657,53 @@ TEST_F(PositiveQuery, QueryPoolResultsStride) {
     uint32_t data_space[2];
     vk::GetQueryPoolResults(*m_device, query_pool, 0u, 1u, sizeof(uint32_t) * 2, data_space, 0u,
                             VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+}
+
+TEST_F(PositiveQuery, SubpassQueries) {
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDescription subpasses[2] = {};
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.subpassCount = 2u;
+    render_pass_ci.pSubpasses = subpasses;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 0u, nullptr);
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2u);
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.gp_ci_.renderPass = render_pass;
+    pipe1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.gp_ci_.renderPass = render_pass;
+    pipe2.gp_ci_.subpass = 1;
+    pipe2.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass;
+    render_pass_bi.framebuffer = framebuffer;
+    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.BeginRenderPass(render_pass_bi);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+
+    vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
