@@ -366,6 +366,10 @@ bool Device::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlag
         skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-04948", device, flags_loc, "is %s",
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
+    if (flags & (VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT)) {
+        skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-12341", device, flags_loc, "is %s.",
+                         string_VkPipelineCreateFlags2(flags).c_str());
+    }
     return skip;
 }
 
@@ -407,15 +411,6 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, 
             skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
         skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
-
-        if (!enabled_features.pipelineCreationCacheControl) {
-            if (flags &
-                (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905", device, flags_loc,
-                                 "is %s but the pipelineCreationCacheControl feature is not enabled.",
-                                 string_VkPipelineCreateFlags2(flags).c_str());
-            }
-        }
 
         if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             if (create_info.basePipelineIndex != -1) {
@@ -488,6 +483,11 @@ bool Device::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFla
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
 
+    if (flags & (VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT)) {
+        skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-12341", device, flags_loc, "is %s.",
+                         string_VkPipelineCreateFlags2(flags).c_str());
+    }
+
     return skip;
 }
 
@@ -539,15 +539,6 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
                 create_info_loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pipelineStageCreationFeedbackCount),
                 "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", feedback_struct->pipelineStageCreationFeedbackCount,
                 create_info_loc.Fields().c_str(), create_info.stageCount);
-        }
-
-        if (!enabled_features.pipelineCreationCacheControl) {
-            if (flags &
-                (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905", device, flags_loc,
-                                 "is %s but the pipelineCreationCacheControl feature is not enabled.",
-                                 string_VkPipelineCreateFlags2(flags).c_str());
-            }
         }
 
         for (uint32_t group_index = 0; group_index < create_info.groupCount; ++group_index) {

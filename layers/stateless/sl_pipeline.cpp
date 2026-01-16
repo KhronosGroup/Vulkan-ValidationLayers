@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,19 +369,6 @@ bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 f
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
 
-    if ((flags & (VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) != 0) {
-        if (!enabled_features.pipelineProtectedAccess) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368", device, flags_loc,
-                             "is %s, but pipelineProtectedAccess feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, flags_loc,
-                             "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-
     return skip;
 }
 
@@ -413,6 +400,20 @@ bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, co
         if (!enabled_features.shader64BitIndexing) {
             skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::Shader64BitIndexing_11798), device,
                              flags_loc, "is %s but shader64BitIndexing feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+
+    if ((flags & (VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) != 0) {
+        if (!enabled_features.pipelineProtectedAccess) {
+            skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::ProtectedAccess_07368), device,
+                             flags_loc, "is %s, but pipelineProtectedAccess feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
+            skip |= LogError(GetPipelineCreateFlagVUID(flags_loc, vvl::PipelineCreateFlagError::ProtectedAccess_07369), device,
+                             flags_loc,
+                             "contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT, but can only be one\nflags: %s",
                              string_VkPipelineCreateFlags2(flags).c_str());
         }
     }

@@ -252,10 +252,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-parameter",
     // VkExternalMemoryProperties
     "VUID-VkExternalTensorPropertiesARM-externalMemoryProperties-parameter",
-    // VkPhysicalDeviceDataGraphProcessingEngineARM
-    "VUID-VkQueueFamilyDataGraphPropertiesARM-operation-parameter",
-    // VkPhysicalDeviceDataGraphOperationSupportARM
-    "VUID-VkQueueFamilyDataGraphPropertiesARM-engine-parameter",
     // Video
     "VUID-VkVideoEncodeAV1RateControlLayerInfoKHR-maxFrameSize-parameter",
     "VUID-VkVideoEncodeAV1RateControlLayerInfoKHR-maxQIndex-parameter",
@@ -649,7 +645,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceClusterAccelerationStructurePropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceCooperativeVectorPropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR-sType-sType",
-    "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-name-parameter",
     "VUID-VkPhysicalDeviceDescriptorBufferTensorPropertiesARM-sType-sType",
     "VUID-VkPhysicalDeviceExternalComputeQueuePropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE-sType-sType",
@@ -662,7 +657,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceTensorPropertiesARM-sType-sType",
     "VUID-VkPhysicalDeviceTileMemoryHeapPropertiesQCOM-sType-sType",
     "VUID-VkPhysicalDeviceTileShadingPropertiesQCOM-sType-sType",
-    "VUID-VkPhysicalDevicePresentationPropertiesOHOS-sType-sType",
     "VUID-VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceShaderLongVectorPropertiesEXT-sType-sType",
 
