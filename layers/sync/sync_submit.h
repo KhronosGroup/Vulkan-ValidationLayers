@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,8 +137,16 @@ struct SignalsUpdate {
 
 struct FenceHostSyncPoint {
     QueueId queue_id = kQueueIdInvalid;
+
     ResourceUsageTag tag = 0;
-    AcquiredImage acquired;  // Iff queue == invalid and acquired.image valid.
+
+    // The state of queue_id synchronization with other queues at the
+    // moment this fence was specified in the submit command.
+    // Check also QueueBatchContext::queue_sync_tag_ documentation.
+    std::vector<ResourceUsageTag> queue_sync_tags;
+
+    // Used when queue is not specified (invalid queue id value)
+    AcquiredImage acquired;
 };
 
 struct TimelineHostSyncPoint {
@@ -321,6 +329,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     const QueueSyncState *GetQueueSyncState() { return queue_state_; }
     QueueId GetQueueId() const override;
     ResourceUsageRange GetTagRange() const { return tag_range_; }
+    const std::vector<ResourceUsageTag> &GetQueueSyncTags() const { return queue_sync_tag_; }
 
     ResourceUsageTag SetupBatchTags(uint32_t tag_count);
     void ResetEventsContext() { events_context_.Clear(); }
@@ -380,6 +389,10 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     AccessContext *current_access_context_;
     SyncEventsContext events_context_;
     BatchAccessLog batch_log_;
+
+    // Indexed by queue id. Each element stores the tag location of the last synchronization
+    // (via semaphores) between this batch's queue and the corresponding queue. Stores zero
+    // if there was no synchronization with that queue.
     std::vector<ResourceUsageTag> queue_sync_tag_;
 };
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,8 @@ class SyncValidator : public vvl::DeviceProxy {
     bool ProcessUnresolvedBatch(UnresolvedBatch &unresolved_batch, SignalsUpdate &signals_update, BatchContextPtr &last_batch,
                                 bool &skip, const ErrorObject &error_obj) const;
 
-    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present);
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present,
+                         const std::vector<ResourceUsageTag> &queue_sync_tags);
     void ApplyAcquireWait(const AcquiredImage &acquired);
 
     std::vector<QueueBatchContext::Ptr> GetAllQueueBatchContexts();

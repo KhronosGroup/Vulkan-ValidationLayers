@@ -176,9 +176,33 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
 }
 
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
-                                    const LastSynchronizedPresent &last_synchronized_present) {
-    for (const auto &batch : GetAllQueueBatchContexts()) {
-        batch->ApplyTaggedWait(queue_id, tag, last_synchronized_present);
+                                    const LastSynchronizedPresent &last_synchronized_present,
+                                    const std::vector<ResourceUsageTag> &queue_sync_tags) {
+    assert(queue_id < queue_id_limit_);
+    assert(queue_sync_tags.empty() || queue_sync_tags.size() == queue_id_limit_);
+    assert(queue_sync_tags.empty() || queue_sync_tags[queue_id] == tag);
+
+    // Create a list of queues that have to be synchronized up to some point.
+    // Note that, in general, not only the queue_id queue has to be synchronized.
+    // If queue_id was synchronized with other queues through a semaphore wait,
+    // then waiting for queue_id also means waiting for those other queues
+    std::vector<std::pair<QueueId, ResourceUsageTag>> sync_points;
+    if (queue_sync_tags.empty()) {
+        sync_points.emplace_back(queue_id, tag);
+    } else {
+        sync_points.reserve(queue_id_limit_);
+        for (const auto [sync_queue, sync_tag] : vvl::enumerate(queue_sync_tags)) {
+            if (sync_tag > 0) {
+                sync_points.emplace_back((QueueId)sync_queue, sync_tag);
+            }
+        }
+    }
+
+    const auto all_batches = GetAllQueueBatchContexts();
+    for (const auto &batch : all_batches) {
+        for (const auto &[sync_queue, sync_tag] : sync_points) {
+            batch->ApplyTaggedWait(sync_queue, sync_tag, last_synchronized_present);
+        }
         batch->Trim();
 
         // If there is a *pending* last batch then apply tagged wait for its accesses too.
@@ -188,7 +212,9 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
         auto batch_queue_state = batch->GetQueueSyncState();
         auto pending_batch = batch_queue_state ? batch_queue_state->PendingLastBatch() : nullptr;
         if (pending_batch) {
-            pending_batch->ApplyTaggedWait(queue_id, tag, last_synchronized_present);
+            for (const auto &[sync_queue, sync_tag] : sync_points) {
+                pending_batch->ApplyTaggedWait(sync_queue, sync_tag, last_synchronized_present);
+            }
             pending_batch->Trim();
         }
     }
@@ -242,7 +268,7 @@ void SyncValidator::WaitForFence(VkFence fence) {
         FenceHostSyncPoint &wait_for = fence_it->second;
         if (wait_for.acquired.Invalid()) {
             // This is just a normal fence wait
-            ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {});
+            ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {}, wait_for.queue_sync_tags);
         } else {
             // This a fence wait for a present operation
             ApplyAcquireWait(wait_for.acquired);
@@ -265,7 +291,8 @@ void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
     const TimelineHostSyncPoint &sync_point = *sync_point_it;
     const auto queue_state = GetQueueSyncStateShared(sync_point.queue_id);
 
-    ApplyTaggedWait(sync_point.queue_id, sync_point.tag, queue_state->GetLastSynchronizedPresent());
+    // TODO: specify queue sync tags argument similar to WaitForFence
+    ApplyTaggedWait(sync_point.queue_id, sync_point.tag, queue_state->GetLastSynchronizedPresent(), {});
 
     // Remove signals before the resolving one (keep the resolving signal).
     std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
@@ -2345,7 +2372,7 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     const auto queue_state = GetQueueSyncStateShared(queue);
     if (!queue_state) return;  // Invalid queue
     QueueId waited_queue = queue_state->GetQueueId();
-    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex, queue_state->GetLastSynchronizedPresent());
+    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex, queue_state->GetLastSynchronizedPresent(), {});
 
     // For each timeline, remove all signals signaled on the waited queue, except the last one.
     // The last signal is needed to represent the current timeline state.
@@ -2801,9 +2828,13 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitC
         qs->ApplyPendingUnresolvedBatches();
     }
 
+    const QueueId queue_id = queue_state->GetQueueId();
     FenceHostSyncPoint sync_point;
-    sync_point.queue_id = queue_state->GetQueueId();
+    sync_point.queue_id = queue_id;
     sync_point.tag = ReserveGlobalTagRange(1).begin;
+    if (auto last_batch = queue_sync_states_[queue_id]->LastBatch()) {
+        sync_point.queue_sync_tags = last_batch->GetQueueSyncTags();
+    }
     UpdateFenceHostSyncPoint(fence, std::move(sync_point));
 }
 
