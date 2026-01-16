@@ -1285,14 +1285,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // These VUs are only for tensors used in _shaders_. For use in _datagraphs_, VU 9923 applies.
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4482#note_564658
     if (loc.Get().function != Func::vkCmdDispatchDataGraphARM) {
-        if ((tensor_state->create_info.pDescription->usage & VK_TENSOR_USAGE_SHADER_BIT_ARM) == 0) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
-            skip |= LogError(
-                vuids->tensorARM_pDescription_09900, objlist, loc.Get(),
-                "the %s is using tensor %s created with usage %s, which doesn't include VK_TENSOR_USAGE_SHADER_BIT_ARM.%s",
-                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_state->Handle()).c_str(),
-                string_VkTensorUsageFlagBitsARM(tensor_state->create_info.pDescription->usage), DescribeInstruction().c_str());
-        }
         if (resource_variable.info.tensor_rank != tensor_state->create_info.pDescription->dimensionCount) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
             skip |= LogError(
@@ -1312,6 +1304,19 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
                 string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
         }
+    }
+
+    VkTensorUsageFlagBitsARM usage_flag = (loc.Get().function == Func::vkCmdDispatchDataGraphARM)
+                                              ? VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
+                                              : VK_TENSOR_USAGE_SHADER_BIT_ARM;
+    if ((tensor_state->create_info.pDescription->usage & usage_flag) == 0) {
+        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
+        skip |= LogError(vuids->tensorARM_pDescription_09900, objlist, loc.Get(),
+                         "the %s is using tensor %s created with usage %s, which doesn't include %s.%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(tensor_state->Handle()).c_str(),
+                         string_VkTensorUsageFlagBitsARM(tensor_state->create_info.pDescription->usage),
+                         string_VkTensorUsageFlagBitsARM(usage_flag), DescribeInstruction().c_str());
     }
 
     return skip;

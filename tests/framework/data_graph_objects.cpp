@@ -297,20 +297,39 @@ const std::vector<int64_t> in_tensor_dims = {1, 8, 16, 4};
 const std::vector<int64_t> out_tensor_dims = {in_tensor_dims[0], in_tensor_dims[1] / 4, in_tensor_dims[2] / 4, in_tensor_dims[3]};
 
 // shape for ADD spirv
-const std::vector<int64_t> add_dimensions{1, 4, 4, 2};
+const std::vector<int64_t> add_tensor_dims{1, 4, 4, 2};
 
-void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) {
+// Tensor description for the various spirvs
+VkTensorDescriptionARM DataGraphPipelineHelper::GetTensorDesc(TensorType type) {
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    const std::vector<int64_t> *dims = nullptr;
+    switch (type) {
+        case BASIC_SPIRV_IN:
+            format = VK_FORMAT_R8_SINT;
+            dims = &in_tensor_dims;
+            break;
+        case BASIC_SPIRV_OUT:
+            format = VK_FORMAT_R8_SINT;
+            dims = &out_tensor_dims;
+            break;
+        case ARRAY_SPIRV:
+            format = VK_FORMAT_R32_SINT;
+            dims = &add_tensor_dims;
+            break;
+    }
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = format;
+    desc.dimensionCount = dims->size();
+    desc.pDimensions = dims->data();
+    desc.usage = params_.usage_bit;
+    return desc;
+}
+
+void DataGraphPipelineHelper::InitPipelineResources() {
     if (params_.graph_variant == AddTensorArraySpirv || params_.graph_variant == AddRuntimeTensorArraySpirv) {
-        // tensors for GetSpirvTensorArrayDataGraph(): array of 2 inputs, 1 output
-
-        VkTensorDescriptionARM desc = vku::InitStructHelper();
-        desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-        desc.format = VK_FORMAT_R32_SINT;
-        desc.dimensionCount = add_dimensions.size();
-        desc.pDimensions = add_dimensions.data();
-        desc.pStrides = nullptr;
-        desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
-
+        VkTensorDescriptionARM desc = GetTensorDesc(ARRAY_SPIRV);
         tensors_.resize(3);
         tensor_views_.resize(tensors_.size());
         for (uint32_t i = 0; i < 3; i++) {
@@ -329,8 +348,8 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
 
         // binding 0: 2 x inputs; binding 1: 1 x output
         descriptor_set_layout_bindings_.resize(2);
-        descriptor_set_layout_bindings_[0] = {0, desc_type, 2, VK_SHADER_STAGE_ALL, nullptr};
-        descriptor_set_layout_bindings_[1] = {1, desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
+        descriptor_set_layout_bindings_[0] = {0, params_.desc_type, 2, VK_SHADER_STAGE_ALL, nullptr};
+        descriptor_set_layout_bindings_[1] = {1, params_.desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
     } else {  // default: BasicSpirv
 
         // tensors for GetSpirvModifyableDataGraph(): 1 input, 1 output
@@ -340,22 +359,14 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
         descriptor_set_layout_bindings_.resize(tensors_.size());
         resources_.resize(tensors_.size());
         for (uint32_t i = 0; i < tensors_.size(); i++) {
-            const std::vector<int64_t>& dims = (i == 0) ? in_tensor_dims : out_tensor_dims;
-
-            VkTensorDescriptionARM desc = vku::InitStructHelper();
-            desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-            desc.format = VK_FORMAT_R8_SINT;
-            desc.dimensionCount = dims.size();
-            desc.pDimensions = dims.data();
-            desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
-
+            VkTensorDescriptionARM desc = GetTensorDesc(i == 0 ? BASIC_SPIRV_IN : BASIC_SPIRV_OUT);
             tensors_[i] = std::make_shared<vkt::Tensor>();
             tensor_views_[i] = std::make_shared<vkt::TensorView>();
             InitTensor(*tensors_[i], *tensor_views_[i], desc, params_.protected_tensors);
 
             // last 3 numbers are: descriptor, binding, array index
             resources_[i] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[i]->Description(), 0, i, 0};
-            descriptor_set_layout_bindings_[i] = {i, desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
+            descriptor_set_layout_bindings_[i] = {i, params_.desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
         }
     }
     pipeline_ci_.resourceInfoCount = resources_.size();
@@ -406,7 +417,7 @@ DataGraphPipelineHelper::DataGraphPipelineHelper(VkLayerTest& test, const Helper
                              : params_.graph_variant == AddRuntimeTensorArraySpirv ? GetSpirvTensorArrayDataGraph(true)
                                                                                    : GetSpirvBasicDataGraph());
     CreateShaderModule(spirv_string.c_str(), params_.entrypoint);
-    InitPipelineResources(params_.desc_type);
+    InitPipelineResources();
 
     // Check that the initialisation of the pipeline has been successful
     layer_test_.Monitor().Finish();

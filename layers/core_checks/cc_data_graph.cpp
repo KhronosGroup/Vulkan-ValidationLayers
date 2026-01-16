@@ -386,5 +386,17 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
         }
     }
 
+    // if the pipeline is NULL, skip is already false; otherwise, more checks
+    if (!last_bound_state.pipeline_state) {
+        return skip;
+    }
+
+    const VkPipeline cb_pipeline = last_bound_state.pipeline_state->VkHandle();
+    if (session_state.create_info.dataGraphPipeline != cb_pipeline) {
+        skip |= LogError("VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951", LogObjectList(), error_obj.location,
+            "The pipeline bound to the command buffer (%s) is different from the pipeline bound to the session (%s); session %s.",
+            FormatHandle(cb_pipeline).c_str(), FormatHandle(session_state.create_info.dataGraphPipeline).c_str(), FormatHandle(session_state).c_str());
+    }
+
     return skip;
 }
