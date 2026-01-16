@@ -225,9 +225,11 @@ bool Device::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo &c
 }
 
 bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_info, const Location &create_info_loc) const {
-    const VkBufferCreateFlags flags = create_info.flags;
-    const VkBufferUsageFlags2 usage = create_info.usage;
     bool skip = false;
+
+    const VkBufferCreateFlags flags = create_info.flags;
+    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
+    const VkBufferUsageFlags2 usage = usage_flags2 ? usage_flags2->usage : create_info.usage;
 
     if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
         const VkBufferCreateFlags invalid_flag_mask =
