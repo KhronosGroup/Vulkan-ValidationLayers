@@ -122,9 +122,10 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
 
     // Number of bits set in VkPresentTimingInfoEXT::presentStageQueries for each present that hasn't been completed
     std::deque<std::pair<uint64_t, uint32_t>> present_timing_stage_queries;
-    // Present timing domains and ids
-    std::vector<VkTimeDomainKHR> time_domains;
-    std::vector<uint64_t> time_domain_ids;
+    // Present timing queue size for the swapchain set by vkSetSwapchainPresentTimingQueueSizeEXT
+    uint32_t present_timing_queue_size = 0;
+    // Present timing id to domain map
+    std::unordered_map<uint64_t, VkTimeDomainKHR> time_domains;
     bool present_at_absolute_time_supported;
     bool present_at_relative_time_supported;
 

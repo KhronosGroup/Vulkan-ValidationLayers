@@ -1214,6 +1214,11 @@ class DeviceState : public vvl::base::Device {
                                                  const RecordObject& record_obj) override;
     void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                  const RecordObject& record_obj) override;
+    void PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                             const RecordObject& record_obj) override;
+    void PostCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                           VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                           uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) override;
     void PostCallRecordGetPastPresentationTimingEXT(VkDevice device,
                                                     const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
                                                     VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,

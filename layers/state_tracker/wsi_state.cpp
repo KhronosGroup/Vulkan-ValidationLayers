@@ -110,14 +110,6 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
     acquire_history.fill(vvl::kNoIndex32);
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) {
-        VkSwapchainTimeDomainPropertiesEXT swapchain_time_domain_properties = vku::InitStructHelper();
-        DispatchGetSwapchainTimeDomainPropertiesEXT(dev_data_.VkHandle(), handle, &swapchain_time_domain_properties, nullptr);
-        time_domains.resize(swapchain_time_domain_properties.timeDomainCount);
-        time_domain_ids.resize(swapchain_time_domain_properties.timeDomainCount);
-        swapchain_time_domain_properties.pTimeDomains = time_domains.data();
-        swapchain_time_domain_properties.pTimeDomainIds = time_domain_ids.data();
-        DispatchGetSwapchainTimeDomainPropertiesEXT(dev_data_.VkHandle(), handle, &swapchain_time_domain_properties, nullptr);
-
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
         surface_info.surface = pCreateInfo->surface;
         VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();

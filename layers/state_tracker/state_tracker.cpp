@@ -4152,6 +4152,24 @@ void DeviceState::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const
     PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
 }
 
+void DeviceState::PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                      const RecordObject &record_obj) {
+    auto swapchain_state = Get<Swapchain>(swapchain);
+    swapchain_state->present_timing_queue_size = size;
+}
+
+void DeviceState::PostCallRecordGetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT *pSwapchainTimeDomainProperties,
+    uint64_t *pTimeDomainsCounter, const RecordObject &record_obj) {
+    auto swapchain_state = Get<Swapchain>(swapchain);
+    if (pSwapchainTimeDomainProperties->pTimeDomainIds) {
+        for (uint32_t i = 0; i < pSwapchainTimeDomainProperties->timeDomainCount; ++i) {
+            swapchain_state->time_domains[pSwapchainTimeDomainProperties->pTimeDomainIds[i]] =
+                pSwapchainTimeDomainProperties->pTimeDomains[i];
+        }
+    }
+}
+
 void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
     VkDevice device, const VkPastPresentationTimingInfoEXT *pPastPresentationTimingInfo,
     VkPastPresentationTimingPropertiesEXT *pPastPresentationTimingProperties, const RecordObject &record_obj) {
