@@ -2818,6 +2818,10 @@ TEST_F(PositiveWsi, PresentTimings) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
+    }
+
     VkSurfaceCapabilitiesPresentWait2KHR present_wait_2_capabilities = vku::InitStructHelper();
     VkSurfaceCapabilitiesPresentId2KHR present_id_2_capabilities = vku::InitStructHelper(&present_wait_2_capabilities);
     VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&present_id_2_capabilities);
@@ -2879,6 +2883,14 @@ TEST_F(PositiveWsi, PresentTimings) {
 
     SetPresentImageLayout(images[image_index]);
 
+    VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_props.timeDomainCount);
+    std::vector<uint64_t> time_domain_ids(time_domain_props.timeDomainCount);
+    time_domain_props.pTimeDomains = time_domains.data();
+    time_domain_props.pTimeDomainIds = time_domain_ids.data();
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+
     vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1u);
 
     uint64_t present_id_value = 1u;
@@ -2888,8 +2900,10 @@ TEST_F(PositiveWsi, PresentTimings) {
 
     VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
     present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
+    present_timing_info.timeDomainId = time_domain_ids[0];
     present_timing_info.targetTime = 1u;
     present_timing_info.presentStageQueries = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
+    present_timing_info.targetTimeDomainPresentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
 
     VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper(&present_id);
     present_timings_info.swapchainCount = 1u;
