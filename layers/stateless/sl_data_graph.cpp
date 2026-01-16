@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,19 +40,6 @@ bool Device::ValidateCreateDataGraphPipelinesFlags(const VkPipelineCreateFlags2 
             skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-dataGraphDescriptorBuffer-09885", device, flags_loc,
                              "(%s) includes VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT but the dataGraphDescriptorBuffer "
                              "feature is not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-    }
-
-    if ((flags & (VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) != 0) {
-        if (!enabled_features.pipelineProtectedAccess) {
-            skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-pipelineProtectedAccess-09772", device, flags_loc,
-                             "is %s, but pipelineProtectedAccess feature was not enabled.",
-                             string_VkPipelineCreateFlags2(flags).c_str());
-        }
-        if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-            skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-flags-09773", device, flags_loc,
-                             "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
                              string_VkPipelineCreateFlags2(flags).c_str());
         }
     }

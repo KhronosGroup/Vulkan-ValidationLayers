@@ -5890,12 +5890,12 @@ TEST_F(NegativeWsi, GetSwapchainTimeDomainProperties) {
     swapchain_time_domain_properties.timeDomainCount = 0u;
     swapchain_time_domain_properties.pTimeDomains = &time_domain;
     swapchain_time_domain_properties.pTimeDomainIds = &time_domain_id;
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-Todo1");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-Todo1");
     vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &swapchain_time_domain_properties, nullptr);
     m_errorMonitor->VerifyFound();
 
     swapchain_time_domain_properties.pTimeDomainIds = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainTimeDomainPropertiesEXT-none-Todo2");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkSwapchainTimeDomainPropertiesEXT-none-Todo2");
     vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &swapchain_time_domain_properties, nullptr);
     m_errorMonitor->VerifyFound();
 }

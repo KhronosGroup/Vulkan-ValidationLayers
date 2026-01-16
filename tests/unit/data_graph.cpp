@@ -193,7 +193,7 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesEarlyReturnFlagCacheControlNot
         pipeline.pipeline_ci_.flags = VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR;
     };
     vkt::dg::DataGraphPipelineHelper::OneshotTest(*this, set_info, 0,
-                                                  "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871");
+                                                  "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-02878");
 }
 
 TEST_F(NegativeDataGraph, CreateDataGraphPipelinesFailOnPipelineCompileFlagCacheControlNotEnabled) {
@@ -207,7 +207,7 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesFailOnPipelineCompileFlagCache
         pipeline.pipeline_ci_.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR;
     };
     vkt::dg::DataGraphPipelineHelper::OneshotTest(*this, set_info, 0,
-                                                  "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871");
+                                                  "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-02878");
 }
 
 TEST_F(NegativeDataGraph, CreateDataGraphPipelinesTypeMismatch) {

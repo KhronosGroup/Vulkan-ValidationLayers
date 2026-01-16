@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -888,7 +888,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
         helper.cp_ci_.flags = VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT;
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
-                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02878");
 
     VkPipelineCache pipeline_cache;
     VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
@@ -3768,7 +3768,7 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
         flags2.flags = VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT;
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
-                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02878");
 }
 
 TEST_F(NegativePipeline, PipelineCreationFlags2Library) {
