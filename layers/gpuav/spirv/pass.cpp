@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -681,16 +681,21 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
 
                 current_type_id = current_type->inst_.Operand(constant_value);  // Get element type for next step
             } break;
+            case SpvType::kPointer: {
+                // So what this means is we have a pointer of structs, found in Slang doing something like
+                //
+                //     struct PerFrame {};
+                //     PerFrame* bufPerFrame;
+                //
+                // And the first PtrAccessChain is going to try and index into.
+                // There should be ArrayStride to know how large the Struct is
+                const uint32_t array_stride = GetDecoration(current_type_id, spv::DecorationArrayStride)->Word(3);
+                current_offset = constant_value * array_stride;
+
+                current_type_id = current_type->inst_.Word(3);  // Get pointer type
+            } break;
             default: {
-                // A non-composite implies that this must be the end of the access-chain chain
-                auto next_access_chain_iter = (access_chain_iter)+1;
-                if (next_access_chain_iter != access_chain_insts.rend())
-                {
-                    module_.InternalError(Name(), "FindOffsetInStruct has unexpected non-composite type");
-                    break;
-                }
-                const uint32_t type_size = FindTypeByteSize(current_type_id);
-                current_offset = constant_value * type_size;
+                module_.InternalError(Name(), "FindOffsetInStruct has unexpected non-composite type");
             } break;
         }
 
