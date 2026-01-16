@@ -1105,6 +1105,25 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
 
                 const VkPresentTimingInfoEXT &timing_info = present_timings_info->pTimingInfos[i];
+                if (timing_info.presentStageQueries > 0 && swapchain_state->present_timing_queue_size == 0) {
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4623
+                    skip |= LogError("UNASSIGNED-VkPresentTimingInfoEXT-presentStageQueries", pPresentInfo->pSwapchains[i],
+                                     present_info_loc.dot(Field::pTimingInfos, i).dot(Field::presentStageQueries),
+                                     "is %" PRIu32
+                                     ", but the swapchain's present timing queue size is 0. (Should be set with "
+                                     "vkSetSwapchainPresentTimingQueueSizeEXT)",
+                                     timing_info.presentStageQueries);
+                }
+                auto swapchain_time_domain = swapchain_state->time_domains.find(timing_info.timeDomainId);
+                if (swapchain_time_domain == swapchain_state->time_domains.end()) {
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4623
+                    skip |= LogError(
+                        "UNASSIGNED-VkPresentTimingInfoEXT-timeDomainId", pPresentInfo->pSwapchains[i],
+                        present_info_loc.dot(Field::pTimingInfos, i).dot(Field::timeDomainId),
+                        "is %" PRIu64
+                        ", which is not a valid time domain id that has been returned by vkGetSwapchainTimeDomainPropertiesEXT().",
+                        timing_info.timeDomainId);
+                }
                 if (timing_info.targetTime == 0) {
                     continue;
                 }
@@ -1119,19 +1138,11 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
 
                 if (GetBitSetCount(timing_info.targetTimeDomainPresentStage) != 1) {
-                    bool time_domain_present_stage_local = false;
-                    for (size_t j = 0; j < swapchain_state->time_domains.size(); ++j) {
-                        if (swapchain_state->time_domain_ids[j] == timing_info.timeDomainId) {
-                            time_domain_present_stage_local =
-                                swapchain_state->time_domains[j] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
-                            break;
-                        }
-                    }
-
-                    if (time_domain_present_stage_local) {
+                    if (swapchain_time_domain != swapchain_state->time_domains.end() &&
+                        swapchain_time_domain->second == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
                         skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12238", pPresentInfo->pSwapchains[i],
                                          present_info_loc.dot(Field::pTimingInfos, i).dot(Field::targetTimeDomainPresentStage),
-                                         "is %s but timeDomainId includes VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT and "
+                                         "is %s but timeDomainId is associated with VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT and "
                                          "targetTime is %" PRIu64 ".",
                                          string_VkPresentStageFlagsEXT(timing_info.targetTimeDomainPresentStage).c_str(),
                                          timing_info.targetTime);
