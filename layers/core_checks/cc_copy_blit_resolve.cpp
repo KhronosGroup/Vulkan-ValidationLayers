@@ -3479,7 +3479,8 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             vuid = is_2 ? "VUID-VkResolveImageInfo2-maintenance10-11799" : "VUID-vkCmdResolveImage-maintenance10-11799";
             skip |= ValidateImageFormatFeatureFlags(
                 commandBuffer, *dst_image_state,
-                VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT, dst_image_loc, vuid);
+                VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT, dst_image_loc, vuid,
+                false);
         }
         vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
         skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
