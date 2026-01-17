@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ struct GpuVuid {
     const char* invalid_descriptor_08114 = kVUIDUndefined;
     const char* descriptor_index_oob_10068 = kVUIDUndefined;
     const char* count_exceeds_device_limit = kVUIDUndefined;
-    const char* first_instance_not_zero = kVUIDUndefined;
     const char* group_exceeds_device_limit_x = kVUIDUndefined;
     const char* group_exceeds_device_limit_y = kVUIDUndefined;
     const char* group_exceeds_device_limit_z = kVUIDUndefined;

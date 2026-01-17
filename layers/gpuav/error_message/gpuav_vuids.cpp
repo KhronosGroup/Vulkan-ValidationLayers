@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,6 @@ struct GpuVuidsCmdDrawIndirect : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndirect-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndirect-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawIndirect-None-08114";
-        first_instance_not_zero = "VUID-VkDrawIndirectCommand-firstInstance-00501";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawIndirect-None-10068";
     }
 };
@@ -83,7 +82,6 @@ struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexedIndirect-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexedIndirect-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawIndexedIndirect-None-08114";
-        first_instance_not_zero = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawIndexedIndirect-None-10068";
     }
 };
