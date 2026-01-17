@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -356,7 +356,7 @@ TEST_F(PositiveRayTracingPipeline, DescriptorBuffer) {
                          descriptor_data + buffer_offset);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    pipeline.AddCreateInfoFlags2(VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT);
     pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
     pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);

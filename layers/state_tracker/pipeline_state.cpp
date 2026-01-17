@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -968,7 +968,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetRayTracingDynamicState(*this)),
       ignored_dynamic_state(0),  // RTX has no ignored dynamic state
-      descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
+      descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
@@ -993,7 +993,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetRayTracingDynamicState(*this)),
       ignored_dynamic_state(0),  // RTX has no ignored dynamic state
-      descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
+      descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
@@ -1017,7 +1017,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreat
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(0),          // graph has no dynamic state
       ignored_dynamic_state(0),  // graph has no dynamic state
-      descriptor_buffer_mode((DataGraphCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
+      descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(DataGraphCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
