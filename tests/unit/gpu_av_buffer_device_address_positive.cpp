@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1381,11 +1381,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveGpuAVBufferDeviceAddress, AccessChainStartIsStructEndIsNonComposite) {
-    TEST_DESCRIPTION("Slang will produce a chain of access chains that start with a base of a composite and end on a result type of a non-composite");
-
+TEST_F(PositiveGpuAVBufferDeviceAddress, DescriptorStructPointerSlang) {
+    TEST_DESCRIPTION(
+        "Slang will produce a chain of access chains that start with a base of a composite and end on a result type of a "
+        "non-composite");
     RETURN_IF_SKIP(CheckSlangSupport());
-
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char *slang_shader = R"slang(
@@ -1424,6 +1424,121 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, AccessChainStartIsStructEndIsNonComposi
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, PushConstantStructPointerSlang) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11348");
+    RETURN_IF_SKIP(CheckSlangSupport());
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderDrawParameters);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+    InitRenderTarget();
+
+    const char *vert_source = R"(
+        float4 operator*(float4x4 a, float4 b) { return mul(b, a); }
+
+        struct PerFrame {
+            uint a;
+            uint b;
+            uint c;
+            uint d;
+            float4x4 proj[2];
+        };
+
+        struct PushConstants {
+            PerFrame* bufPerFrame;
+        };
+
+        [[vk::push_constant]] PushConstants pc;
+
+        struct VSOutput {
+            float4 position : SV_Position;
+        };
+
+        [shader("vertex")]
+            VSOutput main() {
+            PerFrame* perFrame = pc.bufPerFrame;
+
+            VSOutput out;
+            out.position = perFrame[2].proj[1] * float4(50.0);
+
+            return out;
+        }
+    )";
+
+    VkShaderObj vs(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 64};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleStructPointerSlang) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11348");
+    RETURN_IF_SKIP(CheckSlangSupport());
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderDrawParameters);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+    InitRenderTarget();
+
+    const char *vert_source = R"(
+        struct Data {
+            float4 a;
+            float4 b;
+            float4 c;
+            float4 d;
+        }
+
+        struct PerFrame {
+            Data proj[4];
+        };
+
+        struct PushConstants {
+            // Each |PerFrame| is has a 256 array stride
+            PerFrame* bufPerFrame;
+        };
+
+        [[vk::push_constant]] PushConstants pc;
+
+        struct VSOutput {
+            float4 position : SV_Position;
+        };
+
+        [shader("vertex")]
+            VSOutput main() {
+            PerFrame* perFrame = pc.bufPerFrame;
+
+            VSOutput out;
+            // Range is from 0 to 1024
+            out.position = (
+                perFrame[0].proj[0].a *
+                perFrame[1].proj[1].b *
+                perFrame[2].proj[2].c *
+                perFrame[3].proj[3].d
+            )
+                * float4(50.0);
+
+            return out;
+        }
+    )";
+
+    VkShaderObj vs(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 64};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChainsDescriptorBuffer) {
