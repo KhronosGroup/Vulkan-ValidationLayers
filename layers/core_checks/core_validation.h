@@ -1255,7 +1255,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                  bool strict, const char* vuid, const Location& image_loc) const;
 
     bool ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state,
-                                         VkFormatFeatureFlags2 desired, const Location& image_loc, const char* vuid) const;
+                                         VkFormatFeatureFlags2 desired, const Location& image_loc, const char* vuid,
+                                         bool all_bits_required = true) const;
 
     template <typename HandleT>
     bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,
