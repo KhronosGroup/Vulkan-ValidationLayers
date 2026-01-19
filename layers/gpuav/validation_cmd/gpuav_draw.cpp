@@ -120,9 +120,9 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         return;
     }
 
-    const char *vuid = vuid_selector(gpuav, cb_state, last_bound);
+    const char* vuid = vuid_selector(gpuav, last_bound);
     if (!vuid) {
-        return;
+        return;  // No reason to validate, there is no possible VUID to report
     }
 
     ValidationCommandFunc validation_cmd = [api_buffer, api_offset, api_stride, first_instance_member_pos, api_draw_count,
@@ -267,28 +267,22 @@ struct FirstInstanceVUIDs {
 };
 
 static FirstInstanceValidationVuidSelector GetFirstInstanceValidationVuidSelector(const FirstInstanceVUIDs &first_instance_vuids) {
-    FirstInstanceValidationVuidSelector vuid_selector = [first_instance_vuids](Validator &gpuav, CommandBufferSubState &cb_state,
-                                                                               const LastBound &last_bound) {
+    FirstInstanceValidationVuidSelector vuid_selector = [first_instance_vuids](Validator& gpuav, const LastBound& last_bound) {
         if (!gpuav.phys_dev_props_core14.supportsNonZeroFirstInstance) {
-            if (last_bound.pipeline_state) {
-                const vku::safe_VkGraphicsPipelineCreateInfo &graphics_ci = last_bound.pipeline_state->GraphicsCreateInfo();
-                if (graphics_ci.pVertexInputState) {
-                    if (auto divisor_state_ci = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
-                            graphics_ci.pVertexInputState->pNext)) {
-                        for (const VkVertexInputBindingDivisorDescription &divisor : vvl::make_span(
-                                 divisor_state_ci->pVertexBindingDivisors, divisor_state_ci->vertexBindingDivisorCount)) {
-                            if (divisor.divisor != 1u) {
-                                return first_instance_vuids.vuid_09461;
-                            }
-                        }
-                    }
-                }
-            }
-            if (last_bound.HasShaderObjects() ||
-                (last_bound.pipeline_state && last_bound.pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT))) {
-                for (const auto &[binding, binding_state] : cb_state.base.dynamic_state_value.vertex_bindings) {
+            if (last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+                for (const auto& [binding, binding_state] : last_bound.cb_state.dynamic_state_value.vertex_bindings) {
                     if (binding_state.desc.divisor != 1) {
                         return first_instance_vuids.vuid_09462;
+                    }
+                }
+            } else if (last_bound.pipeline_state && last_bound.pipeline_state->GraphicsCreateInfo().pVertexInputState) {
+                if (auto divisor_state_ci = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
+                        last_bound.pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext)) {
+                    for (const VkVertexInputBindingDivisorDescription& divisor :
+                         vvl::make_span(divisor_state_ci->pVertexBindingDivisors, divisor_state_ci->vertexBindingDivisorCount)) {
+                        if (divisor.divisor != 1u) {
+                            return first_instance_vuids.vuid_09461;
+                        }
                     }
                 }
             }
@@ -298,6 +292,7 @@ static FirstInstanceValidationVuidSelector GetFirstInstanceValidationVuidSelecto
             return first_instance_vuids.vuid_00501_00554;
         }
 
+        // Return null to show |firstInstance| could be anything and it will still be valid
         return (const char *)nullptr;
     };
 

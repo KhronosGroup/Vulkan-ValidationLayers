@@ -84,28 +84,11 @@ bool CoreChecks::ValidateCmdDrawInstance(const LastBound &last_bound_state, uint
 
     // supportsNonZeroFirstInstance was added from the EXT to KHR (not 1.4) version of VK_KHR_vertex_attribute_divisor
     // If not using the KHR or 1.4 version, we don't check for these VUs
-    if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor)) {
-        if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
-            const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
-                pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
-            if (vertex_input_divisor_state && phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE &&
-                firstInstance != 0u) {
-                for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
-                    if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
-                        skip |= LogError(
-                            vuid.vertex_input_09461, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                            "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32 "].divisor is %" PRIu32
-                            " and firstInstance is %" PRIu32 ", but supportsNonZeroFirstInstance is VK_FALSE.",
-                            i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
-                        break;  // only report first instance of the error
-                    }
-                }
-            }
-        }
-
+    //
+    // Note - These is matching check for these in GPU-AV when |firstInstance| is found in an indirect buffer
+    if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor) && !phys_dev_props_core14.supportsNonZeroFirstInstance) {
         if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-                phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
+            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) && firstInstance != 0u) {
                 for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
                     const auto &desc = binding_state.second.desc;
                     if (desc.divisor != 1u) {
@@ -116,6 +99,21 @@ bool CoreChecks::ValidateCmdDrawInstance(const LastBound &last_bound_state, uint
                                      " and supportsNonZeroFirstInstance is VK_FALSE.",
                                      binding_state.second.index, desc.binding, desc.divisor, firstInstance);
                         break;
+                    }
+                }
+            }
+        } else if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
+            const auto* vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
+                pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
+            if (vertex_input_divisor_state && firstInstance != 0u) {
+                for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
+                    if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
+                        skip |= LogError(
+                            vuid.vertex_input_09461, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                            "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32 "].divisor is %" PRIu32
+                            " and firstInstance is %" PRIu32 ", but supportsNonZeroFirstInstance is VK_FALSE.",
+                            i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
+                        break;  // only report first instance of the error
                     }
                 }
             }
