@@ -1368,6 +1368,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAS) {
     dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     dgi.data.accelerationStructure = 0;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorDataEXT-type-08041");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-08028");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 }

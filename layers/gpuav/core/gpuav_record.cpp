@@ -605,18 +605,6 @@ void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u
                                  record_obj);
 }
 
-void Validator::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             const RecordObject &record_obj) {
-    gpuav::valcmd::RemoveAccelerationStrutureDeviceAddress(*this, accelerationStructure);
-}
-
-void Validator::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
-                                                                       const VkAccelerationStructureDeviceAddressInfoKHR *pInfo,
-                                                                       const RecordObject &record_obj) {
-    gpuav::valcmd::RecordGetAccelerationStructureDeviceAddress(*this, pInfo->accelerationStructure, record_obj.device_address);
-}
-
 void Validator::PreCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj) {

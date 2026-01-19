@@ -351,7 +351,7 @@ TEST_F(PositiveRayTracingPipeline, DescriptorBuffer) {
     uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
 
-    vkt::DescriptorGetInfo buffer_get_info(tlas.GetDstAS()->GetBufferDeviceAddress());
+    vkt::DescriptorGetInfo buffer_get_info(tlas.GetDstAS()->GetAccelerationStructureDeviceAddress());
     vk::GetDescriptorEXT(*m_device, buffer_get_info, descriptor_buffer_properties.accelerationStructureDescriptorSize,
                          descriptor_data + buffer_offset);
 
