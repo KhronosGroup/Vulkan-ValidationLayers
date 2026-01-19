@@ -2158,6 +2158,19 @@ std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
     return ret;
 }
 
+const char* string_SpvFPEncoding(spv::FPEncoding value) {
+    switch (value) {
+        case spv::FPEncoding::FPEncodingBFloat16KHR:
+            return "FPEncodingBFloat16KHR";
+        case spv::FPEncoding::FPEncodingFloat8E4M3EXT:
+            return "FPEncodingFloat8E4M3EXT";
+        case spv::FPEncoding::FPEncodingFloat8E5M2EXT:
+            return "FPEncodingFloat8E5M2EXT";
+        default:
+            return "Unknown";
+    }
+}
+
 const OperandInfo& GetOperandInfo(uint32_t opcode) {
     static const vvl::unordered_map<uint32_t, OperandInfo> kOperandTable{
         // clang-format off

@@ -289,6 +289,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             const char* string_SpvBuiltIn(spv::BuiltIn built_in);
             const char* string_SpvDim(uint32_t dim);
             std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
+            const char* string_SpvFPEncoding(spv::FPEncoding value);
             ''')
 
         hasTypeCase = "\n".join([f"        case spv::{f}:" for f in self.hasType if f not in self.provisionalList])
@@ -643,6 +644,19 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
                 if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
                 return ret;
+            }}
+
+            const char* string_SpvFPEncoding(spv::FPEncoding value) {{
+                switch (value) {{
+                    case spv::FPEncoding::FPEncodingBFloat16KHR:
+                        return "FPEncodingBFloat16KHR";
+                    case spv::FPEncoding::FPEncodingFloat8E4M3EXT:
+                        return "FPEncodingFloat8E4M3EXT";
+                    case spv::FPEncoding::FPEncodingFloat8E5M2EXT:
+                        return "FPEncodingFloat8E5M2EXT";
+                    default:
+                        return "Unknown";
+                }}
             }}
             ''')
 

@@ -172,6 +172,13 @@ uint32_t Instruction::GetBitWidth() const {
     return bit_width;
 }
 
+spv::FPEncoding Instruction::GetFPEncoding() const {
+    if (Opcode() == spv::Op::OpTypeFloat && Length() > 3) {
+        return static_cast<spv::FPEncoding>(Word(3));
+    }
+    return spv::FPEncoding::FPEncodingMax;
+}
+
 spv::BuiltIn Instruction::GetBuiltIn() const {
     if (Opcode() == spv::OpDecorate) {
         return static_cast<spv::BuiltIn>(Word(3));

@@ -72,6 +72,7 @@ class Instruction {
     uint32_t GetConstantValue() const;
     uint32_t GetBitWidth() const;
     uint32_t GetByteWidth() const { return (GetBitWidth() + 31) / 32; }
+    spv::FPEncoding GetFPEncoding() const;
     spv::BuiltIn GetBuiltIn() const;
     uint32_t GetPositionOffset() const { return position_offset_; }
     bool IsArray() const;

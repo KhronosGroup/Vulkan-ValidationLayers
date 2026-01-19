@@ -3031,6 +3031,17 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module &module_
             }
 
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(resource.pNext)) {
+                const spirv::Instruction *element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
+                if (!module_spirv.IsTensorFormatCompatible(tensor_desc->format, *element_type_instr)) {
+                    skip |= LogError("VUID-RuntimeSpirv-pNext-09923", device,
+                                     resource_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
+                                     "(%s) is incompatible with the element type (%s) of the tensor type definition (%s) for spirv "
+                                     "descriptor %s.",
+                                     string_VkFormat(tensor_desc->format),
+                                     module_spirv.DescribeTypeInstruction(*element_type_instr).c_str(),
+                                     element_type_instr->Describe().c_str(), variable.DescribeDescriptor().c_str());
+                }
+
                 const uint32_t spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
                 if (tensor_desc->dimensionCount != spirv_rank) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09923", device,
@@ -3142,16 +3153,18 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module &module_spirv, c
             const VkDataGraphPipelineConstantARM &vk_constant = dg_shader_ci.pConstants[vk_index];
             const Location vk_constant_loc = dg_shader_ci_loc.dot(Field::pConstants, vk_index);
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(vk_constant.pNext)) {
-                const spirv::Instruction *spirv_element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
-                const spirv::NumericType spirv_numeric_type = module_spirv.GetNumericType(spirv_element_type_instr->Word(1));
-                const uint32_t spirv_type_width = spirv_element_type_instr->Word(2);
-                const VkFormat spirv_vk_format = spirv::GetTensorFormat(spirv_numeric_type, spirv_type_width);
+                const spirv::Instruction *element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
+                spirv::NumericType numeric_type = module_spirv.GetNumericType(*element_type_instr);
+                uint32_t bit_width = element_type_instr->GetBitWidth();
+                spv::FPEncoding encoding = element_type_instr->GetFPEncoding();
+                const VkFormat spirv_vk_format = spirv::GetTensorFormat(numeric_type, bit_width, encoding);
                 if (tensor_desc->format != spirv_vk_format) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                      vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
-                                     "(%s) is incompatible with the element type (%s, %" PRIu32 ") of the spirv definition (%s)",
-                                     string_VkFormat(tensor_desc->format), string_NumericType(spirv_numeric_type), spirv_type_width,
-                                     spirv_element_type_instr->Describe().c_str());
+                                     "(%s) is incompatible with the element type (%s) of the spirv definition (%s)",
+                                     string_VkFormat(tensor_desc->format),
+                                     module_spirv.DescribeTypeInstruction(*element_type_instr).c_str(),
+                                     element_type_instr->Describe().c_str());
                 }
 
                 const uint32_t spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
