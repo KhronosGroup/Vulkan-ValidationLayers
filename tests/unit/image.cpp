@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -4774,4 +4774,28 @@ TEST_F(NegativeImage, Image3DWith2DArrayCompatIssue) {
                            nullptr, 1, &image_memory_barrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, Ycbcr2plane444Formats) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT ycbcr_2_plane_features = vku::InitStructHelper();
+    VkPhysicalDeviceMaintenance5Features m5_features = vku::InitStructHelper(&ycbcr_2_plane_features);
+    GetPhysicalDeviceFeatures2(m5_features);
+    if (m5_features.maintenance5 || ycbcr_2_plane_features.ycbcr2plane444Formats) {
+        GTEST_SKIP() << "Requirements not met, skipping test.";
+    }
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetPhysicalDeviceFormatProperties-format-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceFormatProperties-None-12272");
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, &format_properties);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceFormatProperties2-None-12273");
+    VkFormatProperties2 format_properties2 = vku::InitStructHelper();
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, &format_properties2);
+    m_errorMonitor->VerifyFound();
 }

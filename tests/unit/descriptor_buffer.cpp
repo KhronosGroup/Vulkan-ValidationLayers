@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -1908,6 +1908,29 @@ TEST_F(NegativeDescriptorBuffer, TexelBufferFormat) {
 
     uint8_t out;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-None-09508");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, TexelBufferFormat2) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer(*m_device, 4096,
+                       VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                       vkt::device_address);
+
+    VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
+    dai.address = buffer.Address();
+    dai.range = 4;
+    dai.format = VK_FORMAT_G16_B16R16_2PLANE_444_UNORM;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    dgi.data.pUniformTexelBuffer = &dai;
+
+    uint8_t out;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-format-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-None-12271");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
     m_errorMonitor->VerifyFound();
 }

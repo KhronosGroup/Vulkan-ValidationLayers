@@ -3150,6 +3150,7 @@ class VkVideoLayerTest : public VkLayerTest {
         // NOTE: this appears to be required for the format that is chosen in
         // VkVideoLayerTest.BeginCodingIncompatRefPicProfile
         AddOptionalExtensions(VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME);
+        AddOptionalFeature(vkt::Feature::ycbcr2plane444Formats);
 
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME);
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME);

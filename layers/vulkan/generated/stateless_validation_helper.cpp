@@ -7901,6 +7901,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice
                                        "VUID-vkGetPhysicalDeviceFormatProperties-format-parameter");
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pFormatProperties), pFormatProperties,
                                             "VUID-vkGetPhysicalDeviceFormatProperties-pFormatProperties-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, context);
     return skip;
 }
 
@@ -11564,6 +11565,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevic
                                         allowed_structs_VkFormatProperties2.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkFormatProperties2-pNext-pNext", "VUID-VkFormatProperties2-sType-unique", false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, context);
     return skip;
 }
 
