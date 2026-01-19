@@ -3535,6 +3535,15 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:  // not full implemented
             data_field = Field::accelerationStructure;
+            if (pDescriptorInfo->data.accelerationStructure != 0) {
+                if (auto as_array = GetAccelerationStructuresByAddress(pDescriptorInfo->data.accelerationStructure);
+                    as_array.empty()) {
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08028", device, descriptor_info_loc.dot(Field::type),
+                                     "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but accelerationStructure (0x%" PRIx64
+                                     ") is not an address obtained from a currently existing VkAccelerationStructureKHR.",
+                                     pDescriptorInfo->data.accelerationStructure);
+                }
+            }
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
             data_field = Field::accelerationStructure;

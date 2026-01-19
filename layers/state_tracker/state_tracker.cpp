@@ -2768,6 +2768,19 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer c
 void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                const RecordObject &record_obj) {
+    if (auto as_state = Get<vvl::AccelerationStructureKHR>(accelerationStructure)) {
+        if (as_state->acceleration_structure_address != 0) {
+            WriteLockGuard lock(as_with_addresses.array_mutex);
+            auto as_found_it = std::find(as_with_addresses.array.begin(), as_with_addresses.array.end(), as_state.get());
+            while (as_found_it != as_with_addresses.array.end()) {
+                const size_t i = std::distance(as_with_addresses.array.begin(), as_found_it);
+                std::swap(as_with_addresses.array[i], as_with_addresses.array[as_with_addresses.array.size() - 1]);
+                as_with_addresses.array.resize(as_with_addresses.array.size() - 1);
+                as_found_it = as_with_addresses.array.begin() + i;
+            }
+            as_state->acceleration_structure_address = 0;
+        }
+    }
     Destroy<AccelerationStructureKHR>(accelerationStructure);
 }
 
@@ -6035,6 +6048,46 @@ void DeviceState::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->transform_feedback_buffers_bound = bindingCount;
+}
+
+void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                         const VkAccelerationStructureDeviceAddressInfoKHR *pInfo,
+                                                                         const RecordObject &record_obj) {
+    if (!pInfo) {
+        return;
+    }
+    if (record_obj.device_address == 0) {
+        return;
+    }
+    if (auto as_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
+        as_state->acceleration_structure_address = record_obj.device_address;
+        WriteLockGuard lock(as_with_addresses.array_mutex);
+        if (as_with_addresses.array.capacity() <= (as_with_addresses.array.size() + 1)) {
+            as_with_addresses.array.reserve(as_with_addresses.array.capacity() * 2);
+        }
+        as_with_addresses.array.emplace_back(as_state.get());
+    }
+}
+
+small_vector<const vvl::AccelerationStructureKHR *, 2> DeviceState::GetAccelerationStructuresByAddress(
+    VkDeviceAddress address) const {
+    small_vector<const vvl::AccelerationStructureKHR *, 2> as_vector;
+    if (address == 0) {
+        return as_vector;
+    }
+
+    ReadLockGuard lock(as_with_addresses.array_mutex);
+    auto as_found_it =
+        std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
+                     [address](vvl::AccelerationStructureKHR *as) { return as->acceleration_structure_address == address; });
+
+    while (as_found_it != as_with_addresses.array.end()) {
+        as_vector.emplace_back(*as_found_it);
+        as_found_it = std::find_if(as_found_it + 1, as_with_addresses.array.end(), [address](vvl::AccelerationStructureKHR *as) {
+            return as->acceleration_structure_address == address;
+        });
+    }
+    return as_vector;
 }
 
 void DeviceState::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV *pSleepInfo,
