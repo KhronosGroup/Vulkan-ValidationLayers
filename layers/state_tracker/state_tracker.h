@@ -745,7 +745,6 @@ class DeviceState : public vvl::base::Device {
         return result;
     }
 
-    // Return a count pair, {written addresses count, total address ranges count}
     using BufferAddressRange = vvl::range<VkDeviceAddress>;
     [[nodiscard]] size_t GetBufferAddressRangesCount() { return buffer_address_map_.size(); }
     void GetBufferAddressRanges(BufferAddressRange* ranges) const {
@@ -756,6 +755,11 @@ class DeviceState : public vvl::base::Device {
             ranges[written_count++] = address_range;
         }
     }
+
+    // small_vector size comes from field experience, where because of how they recycle memory
+    // some games end up having the same buffer backing 2 acceleration structures,
+    // usually leading to them sharing the same address
+    small_vector<const vvl::AccelerationStructureKHR*, 2> GetAccelerationStructuresByAddress(VkDeviceAddress address) const;
 
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
@@ -1934,7 +1938,9 @@ class DeviceState : public vvl::base::Device {
                                                           uint32_t bindingCount, const VkBuffer* pBuffers,
                                                           const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                           const RecordObject& record_obj) override;
-
+    void PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
+                                                                const RecordObject& record_obj) override;
     void PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkIndirectExecutionSetEXT* pIndirectExecutionSet,
@@ -2066,6 +2072,11 @@ class DeviceState : public vvl::base::Device {
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     BufferAddressRangeMap buffer_address_map_;
     mutable std::shared_mutex buffer_address_lock_;
+
+    struct AccelerationStructuresWithAddressesArray {
+        mutable std::shared_mutex array_mutex;
+        std::vector<vvl::AccelerationStructureKHR*> array;
+    } as_with_addresses;
 
     // < external format, features >
     vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2> ahb_ext_formats_map;
@@ -2221,6 +2232,10 @@ class DeviceProxy : public vvl::base::Device {
 
     NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {
         return const_cast<const vvl::DeviceState*>(device_state)->GetNearestBuffersByAddress(address);
+    }
+
+    small_vector<const vvl::AccelerationStructureKHR*, 2> GetAccelerationStructuresByAddress(VkDeviceAddress address) const {
+        return const_cast<const vvl::DeviceState*>(device_state)->GetAccelerationStructuresByAddress(address);
     }
 
     VkFormatFeatureFlags2 GetPotentialFormatFeatures(VkFormat format) const {
