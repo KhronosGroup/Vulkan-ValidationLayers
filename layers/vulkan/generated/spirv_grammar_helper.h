@@ -38,6 +38,7 @@ const char* string_SpvDecoration(uint32_t decoration);
 const char* string_SpvBuiltIn(spv::BuiltIn built_in);
 const char* string_SpvDim(uint32_t dim);
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
+const char* string_SpvFPEncoding(spv::FPEncoding value);
 
 static constexpr bool OpcodeHasType(uint32_t opcode) {
     switch (opcode) {

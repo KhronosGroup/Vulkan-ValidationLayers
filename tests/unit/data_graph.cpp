@@ -1568,6 +1568,27 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongDimensions) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDataGraph, ResourceTensorWrongFormat) {
+    TEST_DESCRIPTION(
+        "Try creating a datagraph pipeline with a resource based on a tensor with format different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // try a few different formats, different for bit width, type and float encoding
+    for (auto format :
+         {VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
+        vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+        auto *desc =
+            const_cast<VkTensorDescriptionARM *>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
+        desc->format = format;
+
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+        pipeline.CreateDataGraphPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeDataGraph, ResourceTensorMissingDescription) {
     TEST_DESCRIPTION("Try creating a datagraph pipeline with a resource missing the tensor description");
     InitBasicDataGraph();
