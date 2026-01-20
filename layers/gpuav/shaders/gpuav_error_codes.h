@@ -169,7 +169,8 @@ const int kErrorSubCode_PreBuildAccelerationStructures_BlasAddrAlignment = 1;
 const int kErrorSubCode_PreBuildAccelerationStructures_InvalidAS = 2;
 const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer = 3;
 const int kErrorSubCode_PreBuildAccelerationStructures_InvalidASType = 4;
-const int kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap = 5;
+const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory = 5;
+const int kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap = 6;
 
 #ifdef __cplusplus
 }  // namespace glsl
