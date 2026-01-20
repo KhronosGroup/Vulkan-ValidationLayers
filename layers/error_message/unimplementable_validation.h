@@ -748,6 +748,10 @@ const char* not_going_to_do[] = {
     // Adding a bunch of generated code to check crazy edge cases for an extension that was only ever added to
     // layer OpenGL ES on Vulkan is not worth it
     "VUID-VkSamplerCreateInfo-borderColor-04442",
+
+    // Implied by VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03706
+    "VUID-vkCmdBuildAccelerationStructuresKHR-None-03407",
+    " VUID-vkCmdBuildAccelerationStructuresIndirectKHR-None-03407",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
