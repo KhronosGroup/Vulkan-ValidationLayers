@@ -56,7 +56,9 @@ void main() {
 
     uint error_subcode = 0;
 
-    if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
+    if ((blas_addr % 16u ) != 0) {
+        error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasAddrAlignment;
+    } else if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
         error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
         const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
         for (uint as_i = 0; as_i < as_count; ++as_i) {
