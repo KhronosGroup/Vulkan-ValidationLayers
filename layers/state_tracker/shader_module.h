@@ -693,9 +693,7 @@ struct Module {
         // We only need to check index 1, since you can't have double array of descriptors
         std::vector<const Instruction*> descriptor_indexing_spec_const_ac_inst;
 
-        std::vector<spv::Capability> capability_list;
-        // Code on the hot path can cache capabilities for fast access.
-        bool has_capability_runtime_descriptor_array{false};
+        vvl::unordered_set<spv::Capability> capability_list;
 
         bool has_specialization_constants{false};
         bool uses_interpolate_at_sample{false};
@@ -813,10 +811,7 @@ struct Module {
     spv::StorageClass StorageClass(const Instruction &insn) const;
     bool UsesStorageCapabilityStorageClass(const Instruction &insn) const;
 
-    bool HasCapability(spv::Capability find_capability) const {
-        return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
-                           [find_capability](const spv::Capability &capability) { return capability == find_capability; });
-    }
+    bool HasCapability(spv::Capability find_capability) const { return static_data_.capability_list.count(find_capability) != 0; }
 };
 
 }  // namespace spirv

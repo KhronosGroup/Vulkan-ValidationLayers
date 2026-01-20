@@ -1026,11 +1026,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             } break;
 
             case spv::OpCapability:
-                capability_list.push_back(static_cast<spv::Capability>(insn.Word(1)));
-                // Cache frequently checked capabilities
-                if (capability_list.back() == spv::CapabilityRuntimeDescriptorArray) {
-                    has_capability_runtime_descriptor_array = true;
-                }
+                capability_list.insert(static_cast<spv::Capability>(insn.Word(1)));
                 break;
 
             case spv::OpVariable:
