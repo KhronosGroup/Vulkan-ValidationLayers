@@ -82,7 +82,7 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02878" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02878" :
                 loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02878" :
-                loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-02878" :
+                loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::Shader64BitIndexing_11798:
             return

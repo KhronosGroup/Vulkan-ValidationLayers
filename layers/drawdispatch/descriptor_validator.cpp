@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -667,17 +667,19 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             const bool layout_read_only = IsImageLayoutReadOnly(attachment_info.layout);
             const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
+                const char* vuid = attachment_info.IsDepth()     ? vuids->image_subresources_subpass_depth_12339
+                                   : attachment_info.IsStencil() ? vuids->image_subresources_subpass_stencil_12340
+                                                                 : vuids->image_subresources_subpass_color_12338;
                 if (same_view) {
                     const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
-                    skip |= LogError(vuids->image_subresources_subpass_write_06539, objlist, loc.Get(),
-                                     "the %s has %s which will be read from as %s attachment %" PRIu32 ".%s",
-                                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                     FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
-                                     DescribeInstruction().c_str());
+                    skip |= LogError(
+                        vuid, objlist, loc.Get(), "the %s has %s which will be read from as %s attachment %" PRIu32 ".%s",
+                        DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
+                        FormatHandle(framebuffer).c_str(), att_index, DescribeInstruction().c_str());
                 } else if (overlapping_view) {
                     const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
                                                 view_state->Handle());
-                    skip |= LogError(vuids->image_subresources_subpass_write_06539, objlist, loc.Get(),
+                    skip |= LogError(vuid, objlist, loc.Get(),
                                      "the %s has %s which will be overlap read from as %s in %s attachment %" PRIu32 " overlap.%s",
                                      DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                      FormatHandle(image_view).c_str(), FormatHandle(view_state->Handle()).c_str(),

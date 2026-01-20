@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +64,9 @@ struct DrawDispatchVuid {
     const char* push_constants_set_08602 = kVUIDUndefined;
     const char* image_subresources_render_pass_write_06537 = kVUIDUndefined;
     const char* image_subresources_subpass_read_09003 = kVUIDUndefined;
-    const char* image_subresources_subpass_write_06539 = kVUIDUndefined;
+    const char* image_subresources_subpass_color_12338 = kVUIDUndefined;
+    const char* image_subresources_subpass_depth_12339 = kVUIDUndefined;
+    const char* image_subresources_subpass_stencil_12340 = kVUIDUndefined;
     const char* sampler_imageview_type_08609 = kVUIDUndefined;
     const char* sampler_implicitLod_dref_proj_08610 = kVUIDUndefined;
     const char* sampler_bias_offset_08611 = kVUIDUndefined;
