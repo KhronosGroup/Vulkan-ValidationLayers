@@ -72,10 +72,17 @@ void main() {
 
                 if (GET_BUILD_AS_METADATA_BUFFER_STATUS(as_metadata) != BUILD_AS_METADATA_VALID_BUFFER) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+                    break;
                 }
 
                 if (GET_BUILD_AS_METADATA_AS_TYPE(as_metadata) != BUILD_AS_METADATA_AS_TYPE_BLAS) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidASType;
+                    break;
+                }
+
+                if (GET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(as_metadata) != BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
+                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory;
+                    break;
                 }
 
                 break;

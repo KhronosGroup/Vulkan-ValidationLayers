@@ -27,6 +27,10 @@
 #define GET_BUILD_AS_METADATA_AS_TYPE(metadata) ((metadata & (0x3 << 1u)) >> 1u)
 #define SET_BUILD_AS_METADATA_AS_TYPE(as_type) ((uint32_t(as_type) & 0x3) << 1u)
 
+#define BUILD_AS_METADATA_VALID_BUFFER_MEMORY 1u
+#define GET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(metadata) ((metadata & (0x1 << 3u)) >> 3u)
+#define SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_memory_destroyed) ((uint32_t(is_memory_destroyed) & 0x1) << 3u)
+
 #ifdef __cplusplus
 
 #include <cstdint>

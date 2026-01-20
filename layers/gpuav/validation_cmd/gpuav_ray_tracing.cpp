@@ -455,8 +455,11 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         for (const vvl::AccelerationStructureKHR* as : gpuav.device_state->as_with_addresses.array) {
             as_addresses_ptr[written_count] = as->acceleration_structure_address;
             uint32_t metadata = 0;
-            metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(as->buffer_state && !as->buffer_state->Destroyed());
+            const bool is_buffer_destroyed = as->buffer_state && !as->buffer_state->Destroyed();
+            const bool is_buffer_bound_to_memory = is_buffer_destroyed && as->buffer_state->IsMemoryBound();
+            metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed);
             metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->create_info.type);
+            metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
             as_metadatas_ptr[written_count] = metadata;
             const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetDeviceAddressRange();
             as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
@@ -636,10 +639,10 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
-                skip |= gpuav.LogError(
-                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
-                    "%s is an invalid acceleration structure reference - underlying buffer %shas been destroyed. %s.",
-                    invalid_blas_loc_str.c_str(), ss_buffer_str.c_str(), ss_as_str.c_str());
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
+                                       "%s is an invalid acceleration structure reference - underlying buffer %swas already "
+                                       "destroyed when build command started execution. %s.",
+                                       invalid_blas_loc_str.c_str(), ss_buffer_str.c_str(), ss_as_str.c_str());
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidASType: {
@@ -652,6 +655,13 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
                                        "%s is not a bottom level acceleration structure%s%s.", invalid_blas_loc_str.c_str(),
                                        ss_as_type_str.c_str(), ss_as_str.c_str());
+                break;
+            }
+            case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory: {
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03709", objlist, loc_with_debug_region,
+                                       "%s is an invalid acceleration structure reference - underlying buffer %s was not bound to "
+                                       "memory anymore when build command started execution. Memory was probably destroyed. %s.",
+                                       invalid_blas_loc_str.c_str(), ss_buffer_str.c_str(), ss_as_str.c_str());
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap: {
