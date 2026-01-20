@@ -625,6 +625,11 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         // ---
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
+            case kErrorSubCode_PreBuildAccelerationStructures_BlasAddrAlignment: {
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03717", objlist, loc_with_debug_region,
+                                       "%s is not aligned to 16 bytes.", invalid_blas_loc_str.c_str());
+                break;
+            }
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidAS: {
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
                                        "%s is an invalid acceleration structure reference.", invalid_blas_loc_str.c_str());

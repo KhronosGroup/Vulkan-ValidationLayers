@@ -1257,7 +1257,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference1) {
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, tlas_build_info);
         m_command_buffer.End();
 
-        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281",
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03717",
                                              "Infos\\[0\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>"
                                              "\\[0\\].accelerationStructureReference \\(0xbaadbeef\\)");
         m_default_queue->Submit(m_command_buffer);
@@ -1413,7 +1413,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference2) {
     tlas_1[0].AddInstanceDeviceAccelStructRef(*m_device, cube_blas.GetDstAS()->handle(), cube_instance_2);
 
     tlas_1[0].UpdateAccelerationStructureInstance(0, [](VkAccelerationStructureInstanceKHR &instance) {
-        instance.accelerationStructureReference = static_cast<uint64_t>(0xbaadbeef);
+        instance.accelerationStructureReference = static_cast<uint64_t>(0x10);
     });
 
     std::vector<vkt::as::BuildGeometryInfoKHR> tlas_and_blass_build_info_1;
@@ -1437,7 +1437,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference2) {
 
         m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281",
                                              "Infos\\[1\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>"
-                                             "\\[0\\].accelerationStructureReference \\(0xbaadbeef\\)");
+                                             "\\[0\\].accelerationStructureReference \\(0x10\\)");
         m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
         m_errorMonitor->VerifyFound();
