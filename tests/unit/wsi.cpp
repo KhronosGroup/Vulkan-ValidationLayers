@@ -1970,11 +1970,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
-    uint32_t count;
-
-    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
@@ -1982,9 +1977,9 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
@@ -1994,6 +1989,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     const std::array defined_present_modes{VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_KHR,
                                            VK_PRESENT_MODE_FIFO_RELAXED_KHR};
 
+    uint32_t count;
     vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, nullptr);
     std::vector<VkPresentModeKHR> pdev_surface_present_modes(count);
     vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, pdev_surface_present_modes.data());
@@ -2108,6 +2104,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.pNext = &present_scaling_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07765");
+    // Dumb hack, should query for supported present mode
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
@@ -2118,6 +2116,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07766");
+    // Dumb hack, should query for supported present mode
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
@@ -2128,6 +2128,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767");
+    // Dumb hack, should query for supported present mode
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
@@ -2136,6 +2138,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07768");
+    // Dumb hack, should query for supported present mode
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
@@ -2143,6 +2147,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07769");
+    // Dumb hack, should query for supported present mode
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     m_swapchain.Init(*m_device, swapchain_create_info);
@@ -2291,9 +2297,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     uint32_t count;
 
     // Call CreateSwapChain with a VkSwapchainPresentModesCreateInfoEXT struct W/O calling getcompatibleModes/getScalingCaps
-    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
@@ -2301,9 +2304,9 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
@@ -2418,9 +2421,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
-    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
@@ -2428,9 +2428,9 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;

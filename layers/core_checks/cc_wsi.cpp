@@ -99,14 +99,26 @@ bool CoreChecks::ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR &cr
         const VkSurfacePresentScalingCapabilitiesKHR scaling_caps =
             surface_state->GetPresentModeScalingCapabilities(physical_device, create_info.presentMode);
 
-        if (!IsExtentInsideBounds(create_info.imageExtent, scaling_caps.minScaledImageExtent, scaling_caps.maxScaledImageExtent)) {
+        if (scaling_caps.supportedPresentScaling == 0) {
+            // For more information https://gitlab.khronos.org/vulkan/vulkan/-/issues/4634
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07782", device, create_info_loc.dot(Field::imageExtent),
-                             "(%s), which is outside the bounds returned in "
+                             "is %s, but vkGetPhysicalDeviceSurfaceCapabilities2KHR was called inside validation and the "
+                             "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling is zero, therefore there is no valid "
+                             "imageExtent that can be used as the driver doesn't support scaling for %s.\nScaling is enabling "
+                             "because VkSwapchainPresentScalingCreateInfoKHR::scalingBehavior (%s) was not zero.",
+                             string_VkExtent2D(create_info.imageExtent).c_str(), string_VkPresentModeKHR(create_info.presentMode),
+                             string_VkPresentScalingFlagsKHR(present_scaling_ci->scalingBehavior).c_str());
+        } else if (!IsExtentInsideBounds(create_info.imageExtent, scaling_caps.minScaledImageExtent,
+                                         scaling_caps.maxScaledImageExtent)) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07782", device, create_info_loc.dot(Field::imageExtent),
+                             "(%s), which is outside the bounds for %s returned in "
                              "VkSurfacePresentScalingCapabilitiesKHR minScaledImageExtent = (%s), "
-                             "maxScaledImageExtent = (%s).",
-                             string_VkExtent2D(create_info.imageExtent).c_str(),
+                             "maxScaledImageExtent = (%s).\nScaling is enabling because "
+                             "VkSwapchainPresentScalingCreateInfoKHR::scalingBehavior (%s) was not zero.",
+                             string_VkExtent2D(create_info.imageExtent).c_str(), string_VkPresentModeKHR(create_info.presentMode),
                              string_VkExtent2D(scaling_caps.minScaledImageExtent).c_str(),
-                             string_VkExtent2D(scaling_caps.maxScaledImageExtent).c_str());
+                             string_VkExtent2D(scaling_caps.maxScaledImageExtent).c_str(),
+                             string_VkPresentScalingFlagsKHR(present_scaling_ci->scalingBehavior).c_str());
         }
     }
     return skip;
