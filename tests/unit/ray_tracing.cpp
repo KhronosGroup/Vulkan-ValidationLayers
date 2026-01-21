@@ -1820,7 +1820,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         blas.GetInfo().pGeometries = geometries.data();  // .ppGeometries is set in .BuildCmdBuffer()
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788");
         // computed scratch buffer size will be 0 since vkGetAccelerationStructureBuildSizesKHR fails
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12261");
         blas.BuildCmdBuffer(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
@@ -1860,7 +1860,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas.SetScratchBuffer(std::move(bad_scratch));
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12261");
         blas.BuildCmdBuffer(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }

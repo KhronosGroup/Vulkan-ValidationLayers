@@ -954,9 +954,14 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                           : 1;
     if (scratch_size > 0) {
         if (info.scratchData.deviceAddress == 0) {
-            skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
-                                       "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03802"),
-                             device, info_loc.dot(Field::scratchData).dot(Field::deviceAddress), "is zero");
+            const char *scratch_address_range_vuid =
+                info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
+                    ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12261",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12261")
+                    : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12260",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12260");
+            skip |=
+                LogError(scratch_address_range_vuid, device, info_loc.dot(Field::scratchData).dot(Field::deviceAddress), "is zero");
         } else {
             // Hardcoded value of 1 for indirect calls because scratch size cannot be computed on the CPU in this case
             // (need to access build ranges). Easier to hardcode than to add the logic to not perform scratch buffer size
