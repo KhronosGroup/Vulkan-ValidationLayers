@@ -181,6 +181,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                              "%" PRIu32 " of the possible required structures are included in the pNext chain%s.\n%s",
                              defined_structs, (defined_structs > 1) ? " (only 1 is allowed)" : "",
                              PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+            return skip;
         }
 
         if (dg_pipeline_identifier_ci || qcom_model_ci) {

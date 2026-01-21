@@ -262,14 +262,6 @@ TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesPipelineNotCreatedWithCr
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDataGraph, PipelineResourceInfoInvalidArrayElement) {
-    TEST_DESCRIPTION("Try to create a datagraph pipeline where arrayElement in resources is not set to 0");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
-    auto set_info = [&](vkt::dg::DataGraphPipelineHelper &pipeline) { pipeline.resources_.back().arrayElement = 1; };
-    vkt::dg::DataGraphPipelineHelper::OneshotTest(*this, set_info, 0, "VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
-}
-
 TEST_F(NegativeDataGraph, SessionCreateInfoInvalidGraphPipeline) {
     TEST_DESCRIPTION(
         "Try to create a DataGraphPipelineSession where the dataGraphPipeline member of VkDataGraphPipelineSessionCreateInfoARM was "
@@ -1277,7 +1269,8 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongID) {
 }
 
 TEST_F(NegativeDataGraph, GraphConstantTensorWrongRank) {
-    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant based on a tensor with a rank different from the spirv definition");
+    TEST_DESCRIPTION(
+        "Try creating a datagraph pipeline with a constant based on a tensor with rank different from the spirv definition");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
@@ -1428,41 +1421,132 @@ TEST_F(NegativeDataGraph, GraphConstantTensorMissingUsageFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDataGraph, ResourceIsTensorMissingDescription) {
-    TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline when the resources in resourceInfo do not have a VkTensorDescriptionARM in the pNext "
-        "chain");
+TEST_F(NegativeDataGraph, ResourceTensorWrongDescriptorSet) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a resource with descriptorSet different from the spirv definition");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
-    for (auto &resource : pipeline.resources_) {
-        resource.pNext = nullptr;
-        // each incorrect resource generates a separate error
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851");
-    }
+    // incorrect descriptorSet on one resource
+    pipeline.resources_[0].descriptorSet = 42;
+
+    // this triggers 9923 2 times:
+    // - Vulkan pResourceInfos[x].descriptorSet = 42 has no correspondence in the spirv code
+    // - spirv OpVariable has no correspondence in the Vulkan pResourceInfos
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDataGraph, ResourceIsTensorInvalidUsage) {
+TEST_F(NegativeDataGraph, ResourceTensorWrongBinding) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a resource with binding different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // incorrect binding on one resource
+    pipeline.resources_[0].binding = 42;
+
+    // this triggers 9923 2 times:
+    // - Vulkan pResourceInfos[x].binding = 42 has no correspondence in the spirv code
+    // - spirv OpVariable has no correspondence in the Vulkan pResourceInfos
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ResourceTensorArrayElementNotZero) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a resource with arrayElement greater than zero");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // incorrect arrayElement on one resource
+    pipeline.resources_[0].arrayElement = 42;
+
+    // there is some overlap between these 2 VUs, both are triggered
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ResourceTensorWrongRank) {
+    TEST_DESCRIPTION(
+        "Try creating a datagraph pipeline with a resource based on a tensor with rank different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // define a tensor with rank 3, the spirv has rank 4
+    auto *desc =
+        const_cast<VkTensorDescriptionARM *>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
+    const std::vector<int64_t> dimensions{1, 4, 16};
+    desc->dimensionCount = dimensions.size();
+    desc->pDimensions = dimensions.data();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ResourceTensorWrongDimensions) {
+    TEST_DESCRIPTION(
+        "Try creating a datagraph pipeline with a resource based on a tensor with dimensions different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // dim[3] is different from the spirv (4)
+    auto *desc =
+        const_cast<VkTensorDescriptionARM *>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
+    const std::vector<int64_t> dimensions{1, 8, 16, 1};  // dim[3] is 4 in the spirv
+    desc->dimensionCount = dimensions.size();
+    desc->pDimensions = dimensions.data();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ResourceTensorMissingDescription) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a resource missing the tensor description");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // cut the connection to the tensor description
+    pipeline.resources_[0].pNext = nullptr;
+
+    // VU 9923 and 9851 overlap about the existence of a VkTensorDescriptionARM.
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, ResourceTensorInvalidUsage) {
     TEST_DESCRIPTION(
         "Try creating a datagraph pipeline when the VkTensorDescriptionARM struct in the pNext of resources in resourceInfo do "
         "not have a valid Usage member");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    VkTensorDescriptionARM desc = DefaultDesc();
-    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM; // should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
-
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
-    for (auto &resource : pipeline.resources_) {
-        resource.pNext = &desc;
-        // each incorrect resource generates a separate error
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851");
-    }
+    // set an incorrect usage in the tensor description
+    auto *desc =
+        const_cast<VkTensorDescriptionARM *>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
+    desc->usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;  // should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1705,7 +1789,7 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
         pipeline.pipeline_ci_.pResourceInfos = nullptr;
         pipeline.pipeline_ci_.resourceInfoCount = 0;
         m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763");
-        // it's either this error with resources defined, or VU if no resources
+        // we also get this error because we set resourceInfoCount = 0
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
         pipeline.CreateDataGraphPipeline();
         m_errorMonitor->VerifyFound();
@@ -1727,8 +1811,10 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArrayWrongSize) {
     pipeline.CreatePipelineLayout();
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
-    // currently tensor arrays are effectively banned by this VU, we need to suppress it
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    // currently tensor arrays are effectively banned by these 2 VUs, we need to suppress them
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1749,8 +1835,10 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArraySizeZero) {
     pipeline.CreatePipelineLayout();
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
-    // currently tensor arrays are effectively banned by this VU, we need to suppress it
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    // currently tensor arrays are effectively banned by these 2 VUs, we need to suppress them
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1924,4 +2012,77 @@ TEST_F(NegativeDataGraph, DataGraphOpGraphConstantARMNotTensor) {
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
+}
+
+// NOTE: This is meant as a positive test for tensor arrays.
+// Right now they are illegal, but they will be legal at some point.
+// When this happens, remove the SetDesiredError and move to data_graph_positive.cpp
+TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArray) {
+    TEST_DESCRIPTION("Create a datagraph using a tensor array as input.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // currently tensor arrays are banned by VU 9779 and 9923. The mock ICD doesn't create a pipeline, so we can still test
+    // successfully if we ignore them, but a real driver will actually try to create something illegal, and likely crash
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    vkt::dg::HelperParameters params;
+    params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // tensor arrays trigger these 2 VUs, we need to suppress them
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+// NOTE: This is meant as a positive test for tensor arrays.
+// Right now they are illegal, but they will be legal at some point.
+// When this happens, remove the SetDesiredError and move to data_graph_positive.cpp
+TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
+    TEST_DESCRIPTION("Create a datagraph using a tensor runtime array as input.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(Init());
+
+    // currently tensor arrays are banned by VU 9779 and 9923. The mock ICD doesn't create a pipeline, so we can still test
+    // successfully if we ignore these VUs, but a real driver will actually try to create something illegal, and likely crash
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    {
+        // the helper constructs a layout with descriptorCount == 2, matching the size of the spirv array
+        vkt::dg::HelperParameters params;
+        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        // tensor arrays trigger these 2 VUs, we need to suppress them
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+        pipeline.CreateDataGraphPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        vkt::dg::HelperParameters params;
+        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        // override the DataGraphPipelineHelper constructor: set a bigger element count, runtime array will handle this
+        pipeline.descriptor_set_layout_bindings_[0].descriptorCount = 3;
+        pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
+        pipeline.CreatePipelineLayout();
+
+        // tensor arrays trigger these 2 VUs, we need to suppress them
+        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+        pipeline.CreateDataGraphPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }

@@ -253,65 +253,6 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
     }
 }
 
-TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvArray) {
-    TEST_DESCRIPTION("Create a datagraph using a tensor array as input.");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
-
-    // the mock ICD doesn't create a pipeline, so the test succeeds if we ignore VU 9779, but a real driver will actually try to do
-    // something, and crash
-    if (!IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test only supported by MockICD";
-    }
-
-    vkt::dg::HelperParameters params;
-    params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
-    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
-
-    // currently tensor arrays are effectively banned by this VU, we need to suppress it
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
-    pipeline.CreateDataGraphPipeline();
-}
-
-TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
-    TEST_DESCRIPTION("Create a datagraph using a tensor runtime array as input.");
-    InitBasicDataGraph();
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(Init());
-
-    // the mock ICD doesn't create a pipeline, so the test succeeds if we ignore VU 9779, but a real driver will actually try to do
-    // something, and crash
-    if (!IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test only supported by MockICD";
-    }
-
-    {
-        // default helper constructs a descriptor matching the size of the spirv array:
-        // VkDescriptorSetLayoutBinding::descriptorCount == 2
-        vkt::dg::HelperParameters params;
-        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
-        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
-
-        // currently tensor arrays are effectively banned by this VU, we need to suppress it
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
-        pipeline.CreateDataGraphPipeline();
-    }
-    {
-        vkt::dg::HelperParameters params;
-        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
-        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
-
-        // override the DataGraphPipelineHelper constructor: set a bigger element count, runtime array will handle this
-        pipeline.descriptor_set_layout_bindings_[0].descriptorCount = 3;
-        pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
-        pipeline.CreatePipelineLayout();
-
-        // currently tensor arrays are effectively banned by this VU, we need to suppress it
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
-        pipeline.CreateDataGraphPipeline();
-    }
-}
-
 TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     TEST_DESCRIPTION("Dispatch a datagraph using descriptor buffers.");
     InitBasicDataGraph();
