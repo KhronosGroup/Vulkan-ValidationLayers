@@ -5990,12 +5990,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelinePropertiesARM(VkDevice
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
-    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
-    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
     VkPhysicalDevice physicalDevice,
     const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,

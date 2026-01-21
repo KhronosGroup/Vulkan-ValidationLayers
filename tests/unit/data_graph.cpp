@@ -14,6 +14,7 @@
 #include "descriptor_helper.h"
 #include "data_graph_objects.h"
 #include "generated/pnext_chain_extraction.h"
+#include "../layers/utils/vk_struct_compare.h"
 #include <vector>
 
 class NegativeDataGraph : public DataGraphTest {};
@@ -2370,4 +2371,71 @@ TEST_F(NegativeDataGraph, BindWrongBindPoint) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-09911");
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
+    TEST_DESCRIPTION("Try to create a datagraph where the command buffer is allocated on a queue that does not support TOSA 1.0");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // find a queue family that does NOT support TOSA
+    const VkQueueFamilyDataGraphPropertiesARM tosa_1_0_property {
+        VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM,
+        nullptr,
+        {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false},
+        {VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0}
+    };
+    uint32_t queue_without_tosa_1_0_idx = UINT32_MAX;
+    uint32_t n_queue_families;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &n_queue_families, nullptr);
+    for (uint32_t qfi = 0; qfi < n_queue_families; qfi++) {
+        uint32_t n_properties;
+        ASSERT_TRUE(VK_SUCCESS == vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, nullptr));
+        std::vector<VkQueueFamilyDataGraphPropertiesARM> properties(n_properties, {VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM});
+        ASSERT_TRUE(VK_SUCCESS == vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), qfi, &n_properties, properties.data()));
+
+        bool queue_supports_tosa_1_0 = false;
+        for (const auto& p : properties) {
+            if (CompareVkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property, p)) {
+                queue_supports_tosa_1_0 = true;
+                break;
+            }
+        }
+        if (!queue_supports_tosa_1_0) {
+            queue_without_tosa_1_0_idx = qfi;
+            break;
+        }
+    }
+
+    if (UINT32_MAX == queue_without_tosa_1_0_idx) {
+        GTEST_SKIP() << "All queues support TOSA, impossible to create the error condition, skip.";
+    }
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }

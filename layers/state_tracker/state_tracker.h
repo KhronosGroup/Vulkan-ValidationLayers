@@ -2070,6 +2070,8 @@ class DeviceState : public vvl::base::Device {
 
     std::vector<VkCooperativeVectorPropertiesNV> cooperative_vector_properties_nv;
 
+    vvl::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
+
     // Features and properties that depend on platforms being defined
     // They will be false if platform is not defined
     bool android_external_format_resolve_null_color_attachment_prop = false;  // VK_ANDROID_external_format_resolve

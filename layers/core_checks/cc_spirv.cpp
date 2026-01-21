@@ -39,6 +39,7 @@
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
@@ -3168,9 +3169,54 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module &module_spirv, c
     return skip;
 }
 
+// It is not listed in the spec, but each vendor decides which engine/operations are required.
+// TOSA 1.0 is the current valid instruction set for the ARM engine
+const VkQueueFamilyDataGraphPropertiesARM tosa_1_0_property {
+    VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM,
+    nullptr,
+    {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false},
+    {VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0}
+};
+
 bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint32_t queueFamilyIndex, const Location& loc) const {
     bool skip = false;
-    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/11713
+
+    const ShaderStageState *stage_state_ptr = GetDataGraphShaderStage(pipeline);
+    if (!stage_state_ptr) {
+        return skip;
+    }
+    const spirv::EntryPoint *entry_point = stage_state_ptr->entrypoint.get();
+    if (!entry_point) {
+        return skip;
+    }
+
+    // this checks only the ARM operation type, which requires TOSA 1.0, not any of the other operation types (QCOM).
+
+    if (!entry_point->uses_tosa_1_0) {
+        return skip;
+    }
+
+    bool queue_uses_tosa_1_0 = false;
+    // no properties for the specified family index means NO support for TOSA 1.0, i.e. VUID 9941
+    // this also covers completely empty properties, meaning VK_ARM_data_graph extension not supported
+    if (queueFamilyIndex <= device_state->queue_family_data_graph_properties.size()) {
+        for (const auto& p : device_state->queue_family_data_graph_properties.at(queueFamilyIndex)) {
+            if (CompareVkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property, p)) {
+                queue_uses_tosa_1_0 = true;
+                break;
+            }
+        }
+    }
+
+    if (!queue_uses_tosa_1_0) {
+        skip |=
+            LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941", device, loc,
+                     "Entrypoint %s includes \"TOSA.001000.1\" instructions but the queue associated with the command buffer does not include the required property:\n%s"
+                     "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM for queueFamilyIndex %u returned:\n%s",
+                     entry_point->name.c_str(), string_VkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property).c_str(), queueFamilyIndex,
+                     string_VkQueueFamilyDataGraphPropertiesARM(device_state->queue_family_data_graph_properties.at(queueFamilyIndex)).c_str());
+    }
+
     return skip;
 }
 
