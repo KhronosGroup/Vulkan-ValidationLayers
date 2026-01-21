@@ -3533,18 +3533,30 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             address_info = pDescriptorInfo->data.pStorageBuffer;
             break;
 
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:  // not full implemented
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             data_field = Field::accelerationStructure;
-            if (!(enabled_features.nullDescriptor && pDescriptorInfo->data.accelerationStructure == 0)) {
-                if (auto as_array = GetAccelerationStructuresByAddress(pDescriptorInfo->data.accelerationStructure);
-                    as_array.empty()) {
-                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08028", device, descriptor_info_loc.dot(Field::type),
-                                     "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but accelerationStructure (0x%" PRIx64
-                                     ") is not an address obtained from a currently existing VkAccelerationStructureKHR.",
-                                     pDescriptorInfo->data.accelerationStructure);
+            const VkDeviceAddress as_address = pDescriptorInfo->data.accelerationStructure;
+            if (!(enabled_features.nullDescriptor && as_address == 0)) {
+                if (auto as_array = GetAccelerationStructuresByAddress(as_address); as_array.empty()) {
+                    std::stringstream ss;
+                    ss << "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but accelerationStructure (0x%" << std::hex
+                       << as_address
+                       << ") is not an address obtained from a currently existing VkAccelerationStructureKHR after a call to "
+                          "vkGetAccelerationStructureDeviceAddressKHR.";
+
+                    // The address of an AS and that of its underlying VkBuffer can be conflated.
+                    // By searching for ACCELERATION_STRUCTURE_STORAGE_BIT usage, we can likely help identify this
+                    const auto found_buffers = GetBuffersByAddress(as_address);
+                    if (!found_buffers.empty()) {
+                        ss << "\nThe follow buffers were found at this address:\n";
+                        for (const auto &buffer_state : found_buffers) {
+                            ss << "  " << buffer_state->Describe(*this) << "\n";
+                        }
+                    }
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08028", device, descriptor_info_loc.dot(Field::type), "%s", ss.str().c_str());
                 }
             }
-            break;
+        } break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
             data_field = Field::accelerationStructure;
             if (pDescriptorInfo->data.accelerationStructure) {
