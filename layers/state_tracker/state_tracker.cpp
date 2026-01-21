@@ -1123,6 +1123,19 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const
                                                                cooperative_vector_properties_nv.data());
     }
 
+    if (IsExtEnabled(extensions.vk_arm_data_graph)) {
+        uint32_t n_families{0};
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &n_families, nullptr);
+        for (uint32_t i = 0; i < n_families; i++) {
+            std::vector<VkQueueFamilyDataGraphPropertiesARM> family_properties;
+            uint32_t n_properties{0};
+            DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(physical_device, i, &n_properties, nullptr);
+            family_properties.resize(n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+            DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(physical_device, i, &n_properties, family_properties.data());
+            queue_family_data_graph_properties.try_emplace(i, std::move(family_properties));
+        }
+    }
+
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     android_external_format_resolve_null_color_attachment_prop =
         phys_dev_ext_props.android_format_resolve_props.nullColorAttachmentWithExternalFormatResolve;
