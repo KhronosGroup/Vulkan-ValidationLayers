@@ -38,9 +38,16 @@ enum GraphVariant {
     AddRuntimeTensorArraySpirv,  // TOSA ADD, using tensor OpTypeRuntimeArray
 };
 
+enum TensorType {
+    BASIC_SPIRV_IN,
+    BASIC_SPIRV_OUT,
+    ARRAY_SPIRV,
+};
+
 struct HelperParameters {
     bool protected_tensors = false;
     VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    VkTensorUsageFlagsARM usage_bit = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
     const char *spirv_source = nullptr;
     const char *entrypoint = "main";
     GraphVariant graph_variant = BasicSpirv;
@@ -80,7 +87,10 @@ class DataGraphPipelineHelper {
     static std::string GetSpirvModifiableShader(const ModifiableShaderParameters &params = ModifiableShaderParameters());
     static std::string GetSpirvTensorArrayDataGraph(bool is_runtime = false);
 
-    void InitPipelineResources(VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+    VkTensorDescriptionARM GetTensorDesc(TensorType type);
+    void InitPipelineResources();
+    void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const VkTensorDescriptionARM &tensor_desc,
+                    bool is_protected = false);
     void CreatePipelineLayout(const std::vector<VkPushConstantRange> &push_constant_ranges = {});
     VkResult CreateDataGraphPipeline();
     const VkPipeline &Handle() const { return pipeline_; }
@@ -116,8 +126,6 @@ class DataGraphPipelineHelper {
 
   private:
     void CreateShaderModule(const char *spirv_source, const char *entrypoint = "main");
-    void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const VkTensorDescriptionARM &tensor_desc,
-                    bool is_protected);
 
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     HelperParameters params_ = HelperParameters();

@@ -2086,3 +2086,86 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeDataGraph, CmdDispatchWrongPipeline) {
+    TEST_DESCRIPTION("Try to create a datagraph where session and command buffer are bound to different pipelines.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    // make a _copy_ of the command buffer pipeline, so everything else checks out, but it's NOT the same object
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = pipeline.pipeline_ci_;
+    vkt::Pipeline pipeline_copy(*m_device, pipeline_ci);
+
+    // bind the session to the _copy_ pipeline
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline_copy.handle();
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    // setup the command buffer with the _default_ pipeline, as usual.
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
+    m_command_buffer.End();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
+    TEST_DESCRIPTION("Create and execute a datagraph where tensors have the wrong usage flag");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline;
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    // pass a tensor with the wrong usage into the pipeline
+    VkTensorDescriptionARM wrong_desc = pipeline.GetTensorDesc(vkt::dg::TensorType::BASIC_SPIRV_IN);
+    wrong_desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;  // should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
+    vkt::Tensor wrong_tensor;
+    vkt::TensorView wrong_view;
+    pipeline.InitTensor(wrong_tensor, wrong_view, wrong_desc);
+
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &wrong_view.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pDescription-09930");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

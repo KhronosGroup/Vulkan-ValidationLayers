@@ -4739,6 +4739,7 @@ struct DispatchVuidsCmdDispatchDataGraphARM : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchDataGraphARM-None-09935";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDispatchDataGraphARM-None-09936";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatchDataGraphARM-None-09938";
+        tensorARM_pDescription_09900             = "VUID-vkCmdDispatchDataGraphARM-pDescription-09930";
     }
 };
 
