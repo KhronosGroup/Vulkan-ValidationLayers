@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6264,4 +6264,152 @@ TEST_F(NegativeSyncVal, ImageBarrierExecutionDependencySync2) {
     vk::CmdCopyImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, FenceWaitSynchronizesAnotherQueuePartially) {
+    TEST_DESCRIPTION("Waiting on the fence synchronizes accesses on another queue covered by the semaphore scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_third_queue) {
+        GTEST_SKIP() << "Three queues are needed to run this test";
+    }
+
+    vkt::CommandBuffer command_buffer_a(*m_device, m_command_pool);
+    command_buffer_a.SetName(*m_device, "CommandBufferA");
+    m_default_queue->SetName(*m_device, "Queue");
+
+    vkt::CommandBuffer command_buffer_b(*m_device, m_command_pool);
+    command_buffer_b.SetName(*m_device, "CommandBufferB");
+    m_default_queue->SetName(*m_device, "Queue");
+
+    vkt::CommandPool command_pool2(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer command_buffer2(*m_device, command_pool2);
+    command_buffer2.SetName(*m_device, "CommandBuffer2");
+    m_second_queue->SetName(*m_device, "Queue2");
+
+    vkt::CommandPool command_pool3(*m_device, m_third_queue->family_index);
+    vkt::CommandBuffer command_buffer3(*m_device, command_pool3);
+    command_buffer3.SetName(*m_device, "CommandBuffer3");
+    m_third_queue->SetName(*m_device, "Queue3");
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_a.SetName("buffer_a");
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_b.SetName("buffer_b");
+    vkt::Buffer buffer_c(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_c.SetName("buffer_c");
+    vkt::Buffer buffer_d(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_d.SetName("buffer_d");
+
+    vkt::Fence fence(*m_device);
+    vkt::Semaphore semaphore(*m_device);
+
+    command_buffer_a.Begin();
+    command_buffer_a.Copy(buffer_a, buffer_b);
+    command_buffer_a.End();
+    m_default_queue->Submit(command_buffer_a, vkt::Signal(semaphore));
+
+    command_buffer_b.Begin();
+    command_buffer_b.Copy(buffer_c, buffer_d);
+    command_buffer_b.End();
+    m_default_queue->Submit(command_buffer_b);
+
+    command_buffer2.Begin();
+    command_buffer2.End();
+    m_second_queue->Submit(command_buffer2, vkt::Wait(semaphore), fence);
+
+    // Waiting on the fence in addition to the second queue synchronizes accesses on the default queue.
+    // Only accesses covered by the semaphore scope are synchronized on the default queue.
+    // It means command_buffer_a accesses are synchronized and command_buffer_b accesses are NOT synchronized
+    fence.Wait(kWaitTimeout);
+
+    command_buffer3.Begin();
+    command_buffer3.Copy(buffer_c, buffer_d);
+    command_buffer3.End();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    m_third_queue->Submit(command_buffer3);
+    m_errorMonitor->VerifyFound();
+
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncVal, FenceWaitSynchronizesAnotherQueuePartially2) {
+    TEST_DESCRIPTION("Waiting on the fence synchronizes accesses on another queue covered by the semaphore scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_third_queue) {
+        GTEST_SKIP() << "Three queues are needed to run this test";
+    }
+
+    vkt::CommandBuffer command_buffer_a(*m_device, m_command_pool);
+    command_buffer_a.SetName(*m_device, "CommandBufferA");
+    m_default_queue->SetName(*m_device, "Queue");
+
+    vkt::CommandBuffer command_buffer_b(*m_device, m_command_pool);
+    command_buffer_b.SetName(*m_device, "CommandBufferB");
+    m_default_queue->SetName(*m_device, "Queue");
+
+    vkt::CommandPool command_pool2(*m_device, m_second_queue->family_index);
+    vkt::CommandBuffer command_buffer_2a(*m_device, command_pool2);
+    command_buffer_2a.SetName(*m_device, "CommandBuffer2a");
+    vkt::CommandBuffer command_buffer_2b(*m_device, command_pool2);
+    command_buffer_2b.SetName(*m_device, "CommandBuffer2b");
+    m_second_queue->SetName(*m_device, "Queue2");
+
+    vkt::CommandPool command_pool3(*m_device, m_third_queue->family_index);
+    vkt::CommandBuffer command_buffer3(*m_device, command_pool3);
+    command_buffer3.SetName(*m_device, "CommandBuffer3");
+    m_third_queue->SetName(*m_device, "Queue3");
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_a.SetName("buffer_a");
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_b.SetName("buffer_b");
+    vkt::Buffer buffer_c(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_c.SetName("buffer_c");
+    vkt::Buffer buffer_d(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_d.SetName("buffer_d");
+
+    vkt::Fence fence(*m_device);
+    vkt::Semaphore semaphore_a(*m_device);
+    vkt::Semaphore semaphore_b(*m_device);
+
+    command_buffer_a.Begin();
+    command_buffer_a.Copy(buffer_a, buffer_b);
+    command_buffer_a.End();
+    m_default_queue->Submit(command_buffer_a, vkt::Signal(semaphore_a));
+
+    command_buffer_b.Begin();
+    command_buffer_b.Copy(buffer_c, buffer_d);
+    command_buffer_b.End();
+    m_default_queue->Submit(command_buffer_b, vkt::Signal(semaphore_b));
+
+    command_buffer_2a.Begin();
+    command_buffer_2a.End();
+    m_second_queue->Submit(command_buffer_2a, vkt::Wait(semaphore_a), fence);
+
+    // We have semaphor_b wait here but no fence wait. That is why the following
+    // fence wait synchronizes only with command_buffer_a but not with command_buffer_b.
+    command_buffer_2b.Begin();
+    command_buffer_2b.End();
+    m_second_queue->Submit(command_buffer_2b, vkt::Wait(semaphore_b));
+
+    fence.Wait(kWaitTimeout);
+
+    command_buffer3.Begin();
+    command_buffer3.Copy(buffer_c, buffer_d);
+    command_buffer3.End();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    m_third_queue->Submit(command_buffer3);
+    m_errorMonitor->VerifyFound();
+
+    m_device->Wait();
 }
