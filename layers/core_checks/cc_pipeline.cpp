@@ -367,6 +367,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-02392", objlist, error_obj.location,
                              "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
                              string_VkPipelineBindPoint(pipeline_state.pipeline_type));
+        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM) {
+            const LogObjectList objlist(cb_state->Handle(), pipeline);
+            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-09911", objlist, error_obj.location,
+                             "Cannot bind a pipeline of type %s to the datagraph pipeline bind point",
+                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         }
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -441,8 +446,9 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
         return skip;
     }
 
-    const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
-                                       : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
+    const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)         ? VK_QUEUE_GRAPHICS_BIT
+                                       : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point)        ? VK_QUEUE_COMPUTE_BIT
+                                       : (VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM == bind_point) ? VK_QUEUE_DATA_GRAPH_BIT_ARM
                                        : (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point)
                                            ? (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
                                            : VK_QUEUE_FLAG_BITS_MAX_ENUM;
@@ -494,6 +500,8 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
                     vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-00777";
                 } else if (VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR == bind_point) {
                     vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-02391";
+                } else if (VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM == bind_point) {
+                    vuid = "VUID-vkCmdBindPipeline-pipelineBindPoint-09910";
                 }
                 break;
             default:

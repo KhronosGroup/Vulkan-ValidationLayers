@@ -262,6 +262,37 @@ TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesPipelineNotCreatedWithCr
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesDuplicatedProperty) {
+    TEST_DESCRIPTION("Duplicate property in datagraph pipeline properties request");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    // query with `pData` null, to get back the required `dataSize`. Enough to trigger the VUID
+    VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
+    pipeline_info.dataGraphPipeline = pipeline;
+    std::array<VkDataGraphPipelinePropertyQueryResultARM, 3> query_results;
+    // properties 0 and 2 are the same: error
+    query_results[0] = vku::InitStructHelper();
+    query_results[0].property = VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM;
+    query_results[0].pData = nullptr;
+    query_results[0].dataSize = 0;
+    query_results[1] = vku::InitStructHelper();
+    query_results[1].property = VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM;
+    query_results[1].pData = nullptr;
+    query_results[1].dataSize = 0;
+    query_results[2] = vku::InitStructHelper();
+    query_results[2].property = VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM;
+    query_results[2].pData = nullptr;
+    query_results[2].dataSize = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09889");
+    vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, query_results.size(), query_results.data());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDataGraph, SessionCreateInfoInvalidGraphPipeline) {
     TEST_DESCRIPTION(
         "Try to create a DataGraphPipelineSession where the dataGraphPipeline member of VkDataGraphPipelineSessionCreateInfoARM was "
@@ -2168,4 +2199,52 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, BindPipelineCommandPoolFromWrongQueue) {
+    TEST_DESCRIPTION("Try to bind a datagraph pipeline with a command buffer using the wrong queue");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // find a queue that doesn't support datagraph. Also require supporting either graphics
+    // or compute, to avoid "VUID-vkCmdBindPipeline-commandBuffer-cmdpool"
+    uint32_t queueFamilyIndex_no_datagraph_support = vvl::kU32Max;
+    const auto q_props = m_device->Physical().queue_properties_;
+    for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
+        if ((q_props[i].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0 &&
+            (q_props[i].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))) {
+            queueFamilyIndex_no_datagraph_support = i;
+            break;
+        }
+    }
+    if (queueFamilyIndex_no_datagraph_support == vvl::kU32Max) {
+        GTEST_SKIP() << "No queue found that doesn't support VK_QUEUE_DATA_GRAPH_BIT_ARM";
+    }
+    vkt::CommandPool commandPool(*m_device, queueFamilyIndex_no_datagraph_support);
+    vkt::CommandBuffer commandBuffer(*m_device, commandPool);
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    commandBuffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-09910");
+    vk::CmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    m_errorMonitor->VerifyFound();
+    commandBuffer.End();
+}
+
+TEST_F(NegativeDataGraph, BindWrongBindPoint) {
+    TEST_DESCRIPTION("Try to bind a graphics pipeline to the datagraph bind point");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    InitRenderTarget();
+    CreatePipelineHelper pipeline(*this);
+    pipeline.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-09911");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    m_errorMonitor->VerifyFound();
 }
