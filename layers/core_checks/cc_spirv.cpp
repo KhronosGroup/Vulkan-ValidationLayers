@@ -223,15 +223,65 @@ struct ShaderResourceType {
 
     bool HasType(VkDescriptorType type) { return descriptor_type_set.find(type) != descriptor_type_set.end(); }
 
-    std::string Describe() {
+    std::string Describe(bool hints) {
         std::ostringstream ss;
         for (auto it = descriptor_type_set.begin(); it != descriptor_type_set.end(); ++it) {
             if (ss.tellp()) ss << " or ";
             ss << string_VkDescriptorType(VkDescriptorType(*it));
         }
-        if (is_buffer_block) {
-            ss << " (While the SPIR-V says it is a Uniform storage class, it is decorated with BufferBlock, more info at "
-                  "https://docs.vulkan.org/guide/latest/extensions/shader_features.html#VK_KHR_storage_buffer_storage_class)";
+
+        // Currently this is used for 2 checks
+        // - When there is no binding found at all
+        // - When it is found, but the mismatch, here we want to help give hints
+        if (hints) {
+            ss << "\nInfo on SPIR-V mapping for each type:";
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_SAMPLER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_SAMPLER is an OpTypeSampler with UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER is an OpTypeSampledImage that consumes both a OpTypeSampler "
+                      "and OpTypeImage in UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE is an OpTypeImage, with Sampled = 1, in UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_STORAGE_IMAGE is an OpTypeImage, with Sampled = 2, in UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER is an OpTypeImage, with Sampled = 1 and Dim = Buffer, in "
+                      "UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER is an OpTypeImage, with Sampled = 2 and Dim = Buffer, in "
+                      "UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER/VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK is an OpTypeStruct as "
+                      "Uniform";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_STORAGE_BUFFER is an OpTypeStruct as ";
+                if (is_buffer_block) {
+                    ss << "Uniform, with BufferBlock (Vulkan 1.0 didn't have a dedicated StorageBuffer storage class, more info at "
+                          "https://docs.vulkan.org/guide/latest/extensions/"
+                          "shader_features.html#VK_KHR_storage_buffer_storage_class)";
+                } else {
+                    ss << "StorageBuffer";
+                }
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT is an OpTypeImage, with Sampled = 2 and Dim = SubpassData, in "
+                      "UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR is an OpTypeAccelerationStructureKHR in UniformConstant";
+            }
+            if (descriptor_type_set.count(VK_DESCRIPTOR_TYPE_TENSOR_ARM)) {
+                ss << "\n - VK_DESCRIPTOR_TYPE_TENSOR_ARM is an OpTypeTensorARM in UniformConstant";
+            }
+            ss << "\nFull list of mappings can be found at "
+                  "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-storage-class-correspondence";
         }
         return ss.str();
     }
@@ -1652,7 +1702,7 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
                          "SPIR-V (%s) uses descriptor %s but the binding was not declared in the %s.\nPossible VkDescriptorType "
                          "that could be used are: %s",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         print_dsl_info().c_str(), resource_type.Describe().c_str());
+                         print_dsl_info().c_str(), resource_type.Describe(false).c_str());
         return skip;
     }
 
@@ -1666,12 +1716,10 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
     } else if (binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !resource_type.HasType(binding->descriptorType)) {
         skip |= LogError(
             GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Mutable_07990), objlist, loc,
-            "SPIR-V (%s) uses descriptor %s which has a VkDescriptorType mismatch.\n\tVkDescriptorSetLayoutBinding::descriptorType "
-            "is %s\n\tPossible VkDescriptorType for the SPIR-V variable are: %s\nFull list of mappings can be found at "
-            "https://docs.vulkan.org/spec/latest/chapters/"
-            "interfaces.html#interfaces-resources-storage-class-correspondence\n(VkDescriptorSetLayout from %s)",
+            "SPIR-V (%s) uses descriptor %s which has a VkDescriptorType mismatch.\n  VkDescriptorSetLayoutBinding::descriptorType "
+            "is %s\n  Possible VkDescriptorType for the SPIR-V variable are: %s\n(VkDescriptorSetLayout from %s)",
             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-            string_VkDescriptorType(binding->descriptorType), resource_type.Describe().c_str(), print_dsl_info().c_str());
+            string_VkDescriptorType(binding->descriptorType), resource_type.Describe(true).c_str(), print_dsl_info().c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.IsArray()) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
