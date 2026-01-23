@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2025 The Khronos Group Inc.
-# Copyright (c) 2015-2025 Valve Corporation
-# Copyright (c) 2015-2025 LunarG, Inc.
-# Copyright (c) 2015-2025 Google Inc.
+# Copyright (c) 2015-2026 The Khronos Group Inc.
+# Copyright (c) 2015-2026 Valve Corporation
+# Copyright (c) 2015-2026 LunarG, Inc.
+# Copyright (c) 2015-2026 Google Inc.
 # Copyright (c) 2023-2025 RasterGrid Kft.
 # Copyright (C) 2025 Arm Limited.
 #
@@ -294,10 +294,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2025 The Khronos Group Inc.
-            * Copyright (c) 2015-2025 Valve Corporation
-            * Copyright (c) 2015-2025 LunarG, Inc.
-            * Copyright (c) 2015-2025 Google Inc.
+            * Copyright (c) 2015-2026 The Khronos Group Inc.
+            * Copyright (c) 2015-2026 Valve Corporation
+            * Copyright (c) 2015-2026 LunarG, Inc.
+            * Copyright (c) 2015-2026 Google Inc.
             * Copyright (c) 2015-2025 RasterGrid Kft.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");

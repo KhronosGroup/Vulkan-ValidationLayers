@@ -1061,6 +1061,14 @@ virtual void PostCallRecordSubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
                                                       VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
+                                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
+                                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
+                                                              const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice,
                                                                       VkSampleCountFlagBits samples,
                                                                       VkMultisamplePropertiesEXT* pMultisampleProperties,

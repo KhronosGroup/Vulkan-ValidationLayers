@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,6 +141,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
     PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
     PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
+    PFN_vkGetPhysicalDeviceDescriptorSizeEXT GetPhysicalDeviceDescriptorSizeEXT;
     PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
     PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT GetPhysicalDeviceCalibrateableTimeDomainsEXT;
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -538,6 +539,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetImageViewHandleNVX GetImageViewHandleNVX;
     PFN_vkGetImageViewHandle64NVX GetImageViewHandle64NVX;
     PFN_vkGetImageViewAddressNVX GetImageViewAddressNVX;
+    PFN_vkGetDeviceCombinedImageSamplerIndexNVX GetDeviceCombinedImageSamplerIndexNVX;
     PFN_vkCmdDrawIndirectCountAMD CmdDrawIndirectCountAMD;
     PFN_vkCmdDrawIndexedIndirectCountAMD CmdDrawIndexedIndirectCountAMD;
     PFN_vkGetShaderInfoAMD GetShaderInfoAMD;
@@ -578,6 +580,15 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
     PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkWriteSamplerDescriptorsEXT WriteSamplerDescriptorsEXT;
+    PFN_vkWriteResourceDescriptorsEXT WriteResourceDescriptorsEXT;
+    PFN_vkCmdBindSamplerHeapEXT CmdBindSamplerHeapEXT;
+    PFN_vkCmdBindResourceHeapEXT CmdBindResourceHeapEXT;
+    PFN_vkCmdPushDataEXT CmdPushDataEXT;
+    PFN_vkGetImageOpaqueCaptureDataEXT GetImageOpaqueCaptureDataEXT;
+    PFN_vkRegisterCustomBorderColorEXT RegisterCustomBorderColorEXT;
+    PFN_vkUnregisterCustomBorderColorEXT UnregisterCustomBorderColorEXT;
+    PFN_vkGetTensorOpaqueCaptureDataARM GetTensorOpaqueCaptureDataARM;
     PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
     PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;
     PFN_vkCreateValidationCacheEXT CreateValidationCacheEXT;

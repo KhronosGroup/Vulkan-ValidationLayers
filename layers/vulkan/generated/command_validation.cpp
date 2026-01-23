@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1433,6 +1433,33 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Outside, "VUID-vkCmdDispatchGraphIndirectCountAMDX-videocoding",
     "VUID-vkCmdDispatchGraphIndirectCountAMDX-suspended",
     false, true, false,
+}},
+{Func::vkCmdBindSamplerHeapEXT, {
+    "VUID-vkCmdBindSamplerHeapEXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBindSamplerHeapEXT-commandBuffer-cmdpool",
+    CommandScope::Both, kVUIDUndefined,
+    CommandScope::Outside, "VUID-vkCmdBindSamplerHeapEXT-videocoding",
+    kVUIDUndefined,
+    true, false, false,
+}},
+{Func::vkCmdBindResourceHeapEXT, {
+    "VUID-vkCmdBindResourceHeapEXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBindResourceHeapEXT-commandBuffer-cmdpool",
+    CommandScope::Both, kVUIDUndefined,
+    CommandScope::Outside, "VUID-vkCmdBindResourceHeapEXT-videocoding",
+    kVUIDUndefined,
+    true, false, false,
+}},
+{Func::vkCmdPushDataEXT, {
+    "VUID-vkCmdPushDataEXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdPushDataEXT-commandBuffer-cmdpool",
+    CommandScope::Both, kVUIDUndefined,
+    CommandScope::Outside, "VUID-vkCmdPushDataEXT-videocoding",
+    kVUIDUndefined,
+    true, false, false,
 }},
 {Func::vkCmdSetSampleLocationsEXT, {
     "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",

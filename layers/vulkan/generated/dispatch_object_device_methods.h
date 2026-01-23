@@ -538,6 +538,7 @@ void CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX
 uint32_t GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo);
 uint64_t GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo);
 VkResult GetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties);
+uint64_t GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex);
 void CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
                              VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride);
 void CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
@@ -601,6 +602,19 @@ void CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress
 void CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                        VkDeviceAddress countInfo);
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+VkResult WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                    const VkHostAddressRangeEXT* pDescriptors);
+VkResult WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount, const VkResourceDescriptorInfoEXT* pResources,
+                                     const VkHostAddressRangeEXT* pDescriptors);
+void CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo);
+void CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo);
+void CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo);
+VkResult GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages, VkHostAddressRangeEXT* pDatas);
+VkResult RegisterCustomBorderColorEXT(VkDevice device, const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                      VkBool32 requestIndex, uint32_t* pIndex);
+void UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index);
+VkResult GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                       VkHostAddressRangeEXT* pDatas);
 void CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo);
 VkResult GetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image, VkImageDrmFormatModifierPropertiesEXT* pProperties);
 VkResult CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,

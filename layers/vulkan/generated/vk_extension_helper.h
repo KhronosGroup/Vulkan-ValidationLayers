@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,6 +248,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotSupported};
     ExtEnabled vk_khr_pipeline_binary{kNotSupported};
     ExtEnabled vk_khr_swapchain_maintenance1{kNotSupported};
+    ExtEnabled vk_khr_internally_synchronized_queues{kNotSupported};
     ExtEnabled vk_khr_cooperative_matrix{kNotSupported};
     ExtEnabled vk_khr_compute_shader_derivatives{kNotSupported};
     ExtEnabled vk_khr_video_decode_av1{kNotSupported};
@@ -325,6 +326,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_sampler_filter_minmax{kNotSupported};
     ExtEnabled vk_amd_gpu_shader_int16{kNotSupported};
     ExtEnabled vk_amdx_shader_enqueue{kNotSupported};
+    ExtEnabled vk_ext_descriptor_heap{kNotSupported};
     ExtEnabled vk_amd_mixed_attachment_samples{kNotSupported};
     ExtEnabled vk_amd_shader_fragment_mask{kNotSupported};
     ExtEnabled vk_ext_inline_uniform_block{kNotSupported};
@@ -529,6 +531,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_partitioned_acceleration_structure{kNotSupported};
     ExtEnabled vk_ext_device_generated_commands{kNotSupported};
     ExtEnabled vk_mesa_image_alignment_control{kNotSupported};
+    ExtEnabled vk_nv_push_constant_bank{kNotSupported};
     ExtEnabled vk_ext_ray_tracing_invocation_reorder{kNotSupported};
     ExtEnabled vk_ext_depth_clamp_control{kNotSupported};
     ExtEnabled vk_huawei_hdr_vivid{kNotSupported};
@@ -549,6 +552,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
     ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
+    ExtEnabled vk_ext_shader_subgroup_partitioned{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
     ExtEnabled vk_khr_ray_query{kNotSupported};
@@ -724,6 +728,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_ray_tracing_position_fetch:
         case vvl::Extension::_VK_KHR_pipeline_binary:
         case vvl::Extension::_VK_KHR_swapchain_maintenance1:
+        case vvl::Extension::_VK_KHR_internally_synchronized_queues:
         case vvl::Extension::_VK_KHR_cooperative_matrix:
         case vvl::Extension::_VK_KHR_compute_shader_derivatives:
         case vvl::Extension::_VK_KHR_video_decode_av1:
@@ -801,6 +806,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_sampler_filter_minmax:
         case vvl::Extension::_VK_AMD_gpu_shader_int16:
         case vvl::Extension::_VK_AMDX_shader_enqueue:
+        case vvl::Extension::_VK_EXT_descriptor_heap:
         case vvl::Extension::_VK_AMD_mixed_attachment_samples:
         case vvl::Extension::_VK_AMD_shader_fragment_mask:
         case vvl::Extension::_VK_EXT_inline_uniform_block:
@@ -1005,6 +1011,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_partitioned_acceleration_structure:
         case vvl::Extension::_VK_EXT_device_generated_commands:
         case vvl::Extension::_VK_MESA_image_alignment_control:
+        case vvl::Extension::_VK_NV_push_constant_bank:
         case vvl::Extension::_VK_EXT_ray_tracing_invocation_reorder:
         case vvl::Extension::_VK_EXT_depth_clamp_control:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
@@ -1025,6 +1032,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:
         case vvl::Extension::_VK_NV_compute_occupancy_priority:
+        case vvl::Extension::_VK_EXT_shader_subgroup_partitioned:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

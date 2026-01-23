@@ -5501,6 +5501,12 @@ VkResult Device::GetImageViewAddressNVX(VkDevice device, VkImageView imageView, 
     return result;
 }
 
+uint64_t Device::GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex) {
+    uint64_t result = device_dispatch_table.GetDeviceCombinedImageSamplerIndexNVX(device, imageViewIndex, samplerIndex);
+
+    return result;
+}
+
 void Device::CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
                                      VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
     if (!wrap_handles)
@@ -5942,6 +5948,95 @@ void Device::CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, Vk
     device_dispatch_table.CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+VkResult Device::WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                            const VkHostAddressRangeEXT* pDescriptors) {
+    if (!wrap_handles) return device_dispatch_table.WriteSamplerDescriptorsEXT(device, samplerCount, pSamplers, pDescriptors);
+    small_vector<vku::safe_VkSamplerCreateInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSamplers;
+    vku::safe_VkSamplerCreateInfo* local_pSamplers = nullptr;
+    {
+        if (pSamplers) {
+            var_local_pSamplers.resize(samplerCount);
+            local_pSamplers = var_local_pSamplers.data();
+            for (uint32_t index0 = 0; index0 < samplerCount; ++index0) {
+                local_pSamplers[index0].initialize(&pSamplers[index0]);
+                UnwrapPnextChainHandles(local_pSamplers[index0].pNext);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.WriteSamplerDescriptorsEXT(device, samplerCount,
+                                                                       (const VkSamplerCreateInfo*)local_pSamplers, pDescriptors);
+
+    return result;
+}
+
+void Device::CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+    device_dispatch_table.CmdBindSamplerHeapEXT(commandBuffer, pBindInfo);
+}
+
+void Device::CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+    device_dispatch_table.CmdBindResourceHeapEXT(commandBuffer, pBindInfo);
+}
+
+void Device::CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {
+    device_dispatch_table.CmdPushDataEXT(commandBuffer, pPushDataInfo);
+}
+
+VkResult Device::GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                              VkHostAddressRangeEXT* pDatas) {
+    if (!wrap_handles) return device_dispatch_table.GetImageOpaqueCaptureDataEXT(device, imageCount, pImages, pDatas);
+    small_vector<VkImage, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pImages;
+    VkImage* local_pImages = nullptr;
+    {
+        if (pImages) {
+            var_local_pImages.resize(imageCount);
+            local_pImages = var_local_pImages.data();
+            for (uint32_t index0 = 0; index0 < imageCount; ++index0) {
+                local_pImages[index0] = Unwrap(pImages[index0]);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetImageOpaqueCaptureDataEXT(device, imageCount, (const VkImage*)local_pImages, pDatas);
+
+    return result;
+}
+
+VkDeviceSize Instance::GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType) {
+    VkDeviceSize result = instance_dispatch_table.GetPhysicalDeviceDescriptorSizeEXT(physicalDevice, descriptorType);
+
+    return result;
+}
+
+VkResult Device::RegisterCustomBorderColorEXT(VkDevice device, const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                              VkBool32 requestIndex, uint32_t* pIndex) {
+    VkResult result = device_dispatch_table.RegisterCustomBorderColorEXT(device, pBorderColor, requestIndex, pIndex);
+
+    return result;
+}
+
+void Device::UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {
+    device_dispatch_table.UnregisterCustomBorderColorEXT(device, index);
+}
+
+VkResult Device::GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                               VkHostAddressRangeEXT* pDatas) {
+    if (!wrap_handles) return device_dispatch_table.GetTensorOpaqueCaptureDataARM(device, tensorCount, pTensors, pDatas);
+    small_vector<VkTensorARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTensors;
+    VkTensorARM* local_pTensors = nullptr;
+    {
+        if (pTensors) {
+            var_local_pTensors.resize(tensorCount);
+            local_pTensors = var_local_pTensors.data();
+            for (uint32_t index0 = 0; index0 < tensorCount; ++index0) {
+                local_pTensors[index0] = Unwrap(pTensors[index0]);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.GetTensorOpaqueCaptureDataARM(device, tensorCount, (const VkTensorARM*)local_pTensors, pDatas);
+
+    return result;
+}
 
 void Device::CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
     device_dispatch_table.CmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -168,4 +168,10 @@ static constexpr bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags
 
 static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) {
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
+}
+
+static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {
+    return (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM) ||
+           (type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) || (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+           (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
 }

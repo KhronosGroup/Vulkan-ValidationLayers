@@ -202,6 +202,8 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkBindBufferMemory2KHR',
             'vkBindImageMemory2',
             'vkBindImageMemory2KHR',
+            # Needs special handling for VkResourceDescriptorDataEXT union
+            'vkWriteResourceDescriptorsEXT',
         )
 
         # List of all extension structs strings containing handles

@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -515,6 +515,7 @@ PFN_vkCmdCuLaunchKernelNVX CmdCuLaunchKernelNVX;
 PFN_vkGetImageViewHandleNVX GetImageViewHandleNVX;
 PFN_vkGetImageViewHandle64NVX GetImageViewHandle64NVX;
 PFN_vkGetImageViewAddressNVX GetImageViewAddressNVX;
+PFN_vkGetDeviceCombinedImageSamplerIndexNVX GetDeviceCombinedImageSamplerIndexNVX;
 PFN_vkCmdDrawIndirectCountAMD CmdDrawIndirectCountAMD;
 PFN_vkCmdDrawIndexedIndirectCountAMD CmdDrawIndexedIndirectCountAMD;
 PFN_vkGetShaderInfoAMD GetShaderInfoAMD;
@@ -577,6 +578,16 @@ PFN_vkCmdDispatchGraphAMDX CmdDispatchGraphAMDX;
 PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
 PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+PFN_vkWriteSamplerDescriptorsEXT WriteSamplerDescriptorsEXT;
+PFN_vkWriteResourceDescriptorsEXT WriteResourceDescriptorsEXT;
+PFN_vkCmdBindSamplerHeapEXT CmdBindSamplerHeapEXT;
+PFN_vkCmdBindResourceHeapEXT CmdBindResourceHeapEXT;
+PFN_vkCmdPushDataEXT CmdPushDataEXT;
+PFN_vkGetImageOpaqueCaptureDataEXT GetImageOpaqueCaptureDataEXT;
+PFN_vkGetPhysicalDeviceDescriptorSizeEXT GetPhysicalDeviceDescriptorSizeEXT;
+PFN_vkRegisterCustomBorderColorEXT RegisterCustomBorderColorEXT;
+PFN_vkUnregisterCustomBorderColorEXT UnregisterCustomBorderColorEXT;
+PFN_vkGetTensorOpaqueCaptureDataARM GetTensorOpaqueCaptureDataARM;
 PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
 PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
 PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;
@@ -2023,6 +2034,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetImageViewHandleNVX = reinterpret_cast<PFN_vkGetImageViewHandleNVX>(GetDeviceProcAddr(device, "vkGetImageViewHandleNVX"));
                 GetImageViewHandle64NVX = reinterpret_cast<PFN_vkGetImageViewHandle64NVX>(GetDeviceProcAddr(device, "vkGetImageViewHandle64NVX"));
                 GetImageViewAddressNVX = reinterpret_cast<PFN_vkGetImageViewAddressNVX>(GetDeviceProcAddr(device, "vkGetImageViewAddressNVX"));
+                GetDeviceCombinedImageSamplerIndexNVX = reinterpret_cast<PFN_vkGetDeviceCombinedImageSamplerIndexNVX>(GetDeviceProcAddr(device, "vkGetDeviceCombinedImageSamplerIndexNVX"));
             }
         },
         {
@@ -2101,6 +2113,20 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+        {
+            "VK_EXT_descriptor_heap", [](VkInstance instance, VkDevice device) {
+                WriteSamplerDescriptorsEXT = reinterpret_cast<PFN_vkWriteSamplerDescriptorsEXT>(GetDeviceProcAddr(device, "vkWriteSamplerDescriptorsEXT"));
+                WriteResourceDescriptorsEXT = reinterpret_cast<PFN_vkWriteResourceDescriptorsEXT>(GetDeviceProcAddr(device, "vkWriteResourceDescriptorsEXT"));
+                CmdBindSamplerHeapEXT = reinterpret_cast<PFN_vkCmdBindSamplerHeapEXT>(GetDeviceProcAddr(device, "vkCmdBindSamplerHeapEXT"));
+                CmdBindResourceHeapEXT = reinterpret_cast<PFN_vkCmdBindResourceHeapEXT>(GetDeviceProcAddr(device, "vkCmdBindResourceHeapEXT"));
+                CmdPushDataEXT = reinterpret_cast<PFN_vkCmdPushDataEXT>(GetDeviceProcAddr(device, "vkCmdPushDataEXT"));
+                GetImageOpaqueCaptureDataEXT = reinterpret_cast<PFN_vkGetImageOpaqueCaptureDataEXT>(GetDeviceProcAddr(device, "vkGetImageOpaqueCaptureDataEXT"));
+                RegisterCustomBorderColorEXT = reinterpret_cast<PFN_vkRegisterCustomBorderColorEXT>(GetDeviceProcAddr(device, "vkRegisterCustomBorderColorEXT"));
+                UnregisterCustomBorderColorEXT = reinterpret_cast<PFN_vkUnregisterCustomBorderColorEXT>(GetDeviceProcAddr(device, "vkUnregisterCustomBorderColorEXT"));
+                GetTensorOpaqueCaptureDataARM = reinterpret_cast<PFN_vkGetTensorOpaqueCaptureDataARM>(GetDeviceProcAddr(device, "vkGetTensorOpaqueCaptureDataARM"));
+                GetPhysicalDeviceDescriptorSizeEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceDescriptorSizeEXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceDescriptorSizeEXT"));
+            }
+        },
         {
             "VK_EXT_sample_locations", [](VkInstance instance, VkDevice device) {
                 CmdSetSampleLocationsEXT = reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleLocationsEXT"));
@@ -3002,6 +3028,7 @@ void ResetAllExtensions() {
     GetImageViewHandleNVX = nullptr;
     GetImageViewHandle64NVX = nullptr;
     GetImageViewAddressNVX = nullptr;
+    GetDeviceCombinedImageSamplerIndexNVX = nullptr;
     CmdDrawIndirectCountAMD = nullptr;
     CmdDrawIndexedIndirectCountAMD = nullptr;
     GetShaderInfoAMD = nullptr;
@@ -3064,6 +3091,16 @@ void ResetAllExtensions() {
     CmdDispatchGraphIndirectAMDX = nullptr;
     CmdDispatchGraphIndirectCountAMDX = nullptr;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    WriteSamplerDescriptorsEXT = nullptr;
+    WriteResourceDescriptorsEXT = nullptr;
+    CmdBindSamplerHeapEXT = nullptr;
+    CmdBindResourceHeapEXT = nullptr;
+    CmdPushDataEXT = nullptr;
+    GetImageOpaqueCaptureDataEXT = nullptr;
+    GetPhysicalDeviceDescriptorSizeEXT = nullptr;
+    RegisterCustomBorderColorEXT = nullptr;
+    UnregisterCustomBorderColorEXT = nullptr;
+    GetTensorOpaqueCaptureDataARM = nullptr;
     CmdSetSampleLocationsEXT = nullptr;
     GetPhysicalDeviceMultisamplePropertiesEXT = nullptr;
     GetImageDrmFormatModifierPropertiesEXT = nullptr;

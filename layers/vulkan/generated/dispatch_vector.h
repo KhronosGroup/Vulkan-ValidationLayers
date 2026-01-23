@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -1046,6 +1046,9 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetImageViewAddressNVX,
     InterceptIdPreCallRecordGetImageViewAddressNVX,
     InterceptIdPostCallRecordGetImageViewAddressNVX,
+    InterceptIdPreCallValidateGetDeviceCombinedImageSamplerIndexNVX,
+    InterceptIdPreCallRecordGetDeviceCombinedImageSamplerIndexNVX,
+    InterceptIdPostCallRecordGetDeviceCombinedImageSamplerIndexNVX,
     InterceptIdPreCallValidateCmdDrawIndirectCountAMD,
     InterceptIdPreCallRecordCmdDrawIndirectCountAMD,
     InterceptIdPostCallRecordCmdDrawIndirectCountAMD,
@@ -1148,6 +1151,33 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateCmdDispatchGraphIndirectCountAMDX,
     InterceptIdPreCallRecordCmdDispatchGraphIndirectCountAMDX,
     InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX,
+    InterceptIdPreCallValidateWriteSamplerDescriptorsEXT,
+    InterceptIdPreCallRecordWriteSamplerDescriptorsEXT,
+    InterceptIdPostCallRecordWriteSamplerDescriptorsEXT,
+    InterceptIdPreCallValidateWriteResourceDescriptorsEXT,
+    InterceptIdPreCallRecordWriteResourceDescriptorsEXT,
+    InterceptIdPostCallRecordWriteResourceDescriptorsEXT,
+    InterceptIdPreCallValidateCmdBindSamplerHeapEXT,
+    InterceptIdPreCallRecordCmdBindSamplerHeapEXT,
+    InterceptIdPostCallRecordCmdBindSamplerHeapEXT,
+    InterceptIdPreCallValidateCmdBindResourceHeapEXT,
+    InterceptIdPreCallRecordCmdBindResourceHeapEXT,
+    InterceptIdPostCallRecordCmdBindResourceHeapEXT,
+    InterceptIdPreCallValidateCmdPushDataEXT,
+    InterceptIdPreCallRecordCmdPushDataEXT,
+    InterceptIdPostCallRecordCmdPushDataEXT,
+    InterceptIdPreCallValidateGetImageOpaqueCaptureDataEXT,
+    InterceptIdPreCallRecordGetImageOpaqueCaptureDataEXT,
+    InterceptIdPostCallRecordGetImageOpaqueCaptureDataEXT,
+    InterceptIdPreCallValidateRegisterCustomBorderColorEXT,
+    InterceptIdPreCallRecordRegisterCustomBorderColorEXT,
+    InterceptIdPostCallRecordRegisterCustomBorderColorEXT,
+    InterceptIdPreCallValidateUnregisterCustomBorderColorEXT,
+    InterceptIdPreCallRecordUnregisterCustomBorderColorEXT,
+    InterceptIdPostCallRecordUnregisterCustomBorderColorEXT,
+    InterceptIdPreCallValidateGetTensorOpaqueCaptureDataARM,
+    InterceptIdPreCallRecordGetTensorOpaqueCaptureDataARM,
+    InterceptIdPostCallRecordGetTensorOpaqueCaptureDataARM,
     InterceptIdPreCallValidateCmdSetSampleLocationsEXT,
     InterceptIdPreCallRecordCmdSetSampleLocationsEXT,
     InterceptIdPostCallRecordCmdSetSampleLocationsEXT,

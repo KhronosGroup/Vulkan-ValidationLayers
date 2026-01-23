@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2025 Google Inc.
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Google Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,6 +196,10 @@ struct DeviceFeatures {
     bool descriptorBufferPushDescriptors;
     // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
     bool descriptorBufferTensorDescriptors;
+    // VkPhysicalDeviceDescriptorHeapFeaturesEXT
+    bool descriptorHeap;
+    // VkPhysicalDeviceDescriptorHeapFeaturesEXT
+    bool descriptorHeapCaptureReplay;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     bool descriptorBindingPartiallyBound;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -538,6 +542,8 @@ struct DeviceFeatures {
     bool descriptorBindingInlineUniformBlockUpdateAfterBind;
     // VkPhysicalDeviceInlineUniformBlockFeatures, VkPhysicalDeviceVulkan13Features
     bool inlineUniformBlock;
+    // VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR
+    bool internallySynchronizedQueues;
     // VkPhysicalDeviceInvocationMaskFeaturesHUAWEI
     bool invocationMask;
     // VkPhysicalDeviceLegacyDitheringFeaturesEXT
@@ -724,6 +730,8 @@ struct DeviceFeatures {
     bool provokingVertexLast;
     // VkPhysicalDeviceProvokingVertexFeaturesEXT
     bool transformFeedbackPreservesProvokingVertex;
+    // VkPhysicalDevicePushConstantBankFeaturesNV
+    bool pushConstantBank;
     // VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT
     bool formatRgba10x6WithoutYCbCrSampler;
     // VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT
@@ -908,6 +916,8 @@ struct DeviceFeatures {
     bool shaderSMBuiltins;
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     bool shaderSubgroupExtendedTypes;
+    // VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT
+    bool shaderSubgroupPartitioned;
     // VkPhysicalDeviceShaderSubgroupRotateFeatures, VkPhysicalDeviceVulkan14Features
     bool shaderSubgroupRotate;
     // VkPhysicalDeviceShaderSubgroupRotateFeatures, VkPhysicalDeviceVulkan14Features
