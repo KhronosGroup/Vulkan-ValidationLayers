@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -326,6 +326,7 @@ class Device : public vvl::base::Device {
     vvl::concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;
     vvl::unordered_map<VkCommandPool, vvl::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
     vvl::unordered_map<VkDevice, vvl::unordered_set<VkQueue>> device_queues_map;
+    std::vector<VkQueue> internally_synchronized_queues;
 
     // Track per-descriptorsetlayout and per-descriptorset whether read_only is used.
     // This is used to (sloppily) implement the relaxed externsync rules for read_only

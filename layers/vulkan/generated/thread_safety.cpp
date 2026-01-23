@@ -24,6 +24,7 @@
 // NOLINTBEGIN
 
 #include "thread_tracker/thread_safety_validation.h"
+#include "containers/container_utils.h"
 
 namespace threadsafety {
 void Instance::PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -91,24 +92,32 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
 
 void Device::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                       const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
     StartWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
     FinishWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
 
 void Device::PreCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -271,14 +280,18 @@ void Device::PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkI
 
 void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                           const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
     StartWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                            const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
     FinishWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
@@ -2101,14 +2114,18 @@ void Device::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
 
 void Device::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
     StartWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                         const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
     FinishWriteObject(fence, record_obj.location);
     // Host access to fence must be externally synchronized
 }
@@ -4954,30 +4971,42 @@ void Instance::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const Vk
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 void Device::PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                        const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                          const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
@@ -5828,22 +5857,30 @@ void Device::PostCallRecordCmdSetCheckpointNV(VkCommandBuffer commandBuffer, con
 
 void Device::PreCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                    VkCheckpointDataNV* pCheckpointData, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                     VkCheckpointDataNV* pCheckpointData, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                     VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                      VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
@@ -6003,13 +6040,17 @@ void Device::PostCallRecordReleasePerformanceConfigurationINTEL(VkDevice device,
 
 void Device::PreCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                 const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
     StartReadObject(configuration, record_obj.location);
 }
 
 void Device::PostCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                  const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
     FinishReadObject(configuration, record_obj.location);
 }
 
@@ -8300,12 +8341,16 @@ void Device::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
 
 void Device::PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                                  const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PostCallRecordQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                                   const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
 }
 
 void Device::PreCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
