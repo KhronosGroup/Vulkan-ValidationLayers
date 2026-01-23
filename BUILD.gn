@@ -65,7 +65,7 @@ config("vulkan_layer_config") {
     "layers/vulkan",
   ]
   if (is_clang) {
-    cflags = [ "-Wno-extra-semi", "-fbracket-depth=512" ]
+    cflags = [ "-Wno-extra-semi" ]
   }
 }
 
