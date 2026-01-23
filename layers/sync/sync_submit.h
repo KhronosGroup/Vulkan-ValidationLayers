@@ -360,6 +360,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     template <typename Predicate>
     void ApplyPredicatedWait(Predicate &predicate, const LastSynchronizedPresent &last_synchronized_present);
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present);
+    void ApplyDeviceWait(const LastSynchronizedPresent &last_synchronized_present);
     void ApplyAcquireWait(const AcquiredImage &acquired);
     void OnResourceDestroyed(const AccessRange &resource_range);
 

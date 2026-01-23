@@ -366,29 +366,6 @@ class AccessState {
 
     void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope &wait);
 
-    struct WaitQueueTagPredicate {
-        QueueId queue;
-        ResourceUsageTag tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const AccessState &access) const;  // Write access predicate
-    };
-    friend WaitQueueTagPredicate;
-
-    struct WaitTagPredicate {
-        ResourceUsageTag tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const AccessState &access) const;  // Write access predicate
-    };
-    friend WaitTagPredicate;
-
-    struct WaitAcquirePredicate {
-        ResourceUsageTag present_tag;
-        ResourceUsageTag acquire_tag;
-        bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const AccessState &access) const;  // Write access predicate
-    };
-    friend WaitAcquirePredicate;
-
     // Clear read/write accesses that satisfy the predicate
     // (predicate says which accesses should be considered synchronized).
     // Return true if all accesses were cleared and access state is empty
