@@ -160,6 +160,15 @@ const int kMeshShadingOutputPrimitivesMask = 0xFFFF;
 // ---
 const int kInstRayQueryParamOffset_0 = kHeaderSize;
 
+// Ray hit object (VK_EXT_ray_tracing_invocation_reorder)
+// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
+// OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
+// ---
+const int kInstRayHitObjectParamOffset_0 = kHeaderSize;
+// 0 = OpHitObjectTraceRayEXT, 1 = OpHitObjectTraceReorderExecuteEXT,
+// 2 = OpHitObjectTraceRayMotionEXT, 3 = OpHitObjectTraceMotionReorderExecuteEXT
+const int kInstRayHitObjectOpcodeType = kHeaderSize + 1;
+
 // Validation commands shaders
 // ---
 const int kValCmdErrorPayloadDword_0 = kHeaderSize;

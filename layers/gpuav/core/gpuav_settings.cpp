@@ -31,7 +31,7 @@
 
 bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
     return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
-           shader_instrumentation.ray_query || shader_instrumentation.mesh_shading ||
+           shader_instrumentation.ray_query || shader_instrumentation.ray_hit_object || shader_instrumentation.mesh_shading ||
            shader_instrumentation.post_process_descriptor_indexing || shader_instrumentation.vertex_attribute_fetch_oob ||
            shader_instrumentation.sanitizer;
 }
@@ -42,6 +42,7 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
     shader_instrumentation.descriptor_checks = false;
     shader_instrumentation.buffer_device_address = false;
     shader_instrumentation.ray_query = false;
+    shader_instrumentation.ray_hit_object = false;
     shader_instrumentation.mesh_shading = false;
     shader_instrumentation.post_process_descriptor_indexing = false;
     shader_instrumentation.vertex_attribute_fetch_oob = false;
@@ -120,6 +121,7 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TracyMessageStream("    descriptor_checks: " << shader_instrumentation.descriptor_checks);
     VVL_TracyMessageStream("    buffer_device_address: " << shader_instrumentation.buffer_device_address);
     VVL_TracyMessageStream("    ray_query: " << shader_instrumentation.ray_query);
+    VVL_TracyMessageStream("    ray_hit_object: " << shader_instrumentation.ray_hit_object);
     VVL_TracyMessageStream("    mesh_shading: " << shader_instrumentation.mesh_shading);
     VVL_TracyMessageStream("    post_process_descriptor_indexing: " << shader_instrumentation.post_process_descriptor_indexing);
     VVL_TracyMessageStream("    vertex_attribute_fetch_oob: " << shader_instrumentation.vertex_attribute_fetch_oob);

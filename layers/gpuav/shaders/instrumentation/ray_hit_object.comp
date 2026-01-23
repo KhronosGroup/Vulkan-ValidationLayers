@@ -1,0 +1,126 @@
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+// Validation for VK_EXT_ray_tracing_invocation_reorder hit object operations:
+// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT,
+// OpHitObjectTraceRayMotionEXT, OpHitObjectTraceMotionReorderExecuteEXT
+//
+// opcode_type: 0 = OpHitObjectTraceRayEXT, 1 = OpHitObjectTraceReorderExecuteEXT,
+//              2 = OpHitObjectTraceRayMotionEXT, 3 = OpHitObjectTraceMotionReorderExecuteEXT
+// pipeline_flags: bit 0 = pipeline has SKIP_AABBS, bit 1 = pipeline has SKIP_TRIANGLES
+// time: motion time parameter (only valid for opcode_type 2 and 3, pass 0.0 for others)
+bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax, const uint pipeline_flags, const float time)
+{
+    uint error = 0u;
+    uint param_0 = 0u;
+
+    // VUID 11882: time must be between 0.0 and 1.0 (only for motion opcodes)
+    const bool is_motion_opcode = (opcode_type == 2 || opcode_type == 3);
+    if (is_motion_opcode && (time < 0.0f || time > 1.0f)) {
+        error = kErrorSubCodeRayHitObjectTimeOutOfRange;
+    } else if (isnan(ray_tmin)) {
+        error = kErrorSubCodeRayHitObjectMinNaN;
+    } else if (isnan(ray_tmax)) {
+        error = kErrorSubCodeRayHitObjectMaxNaN;
+    } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
+        error = kErrorSubCodeRayHitObjectOriginNaN;
+    } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
+        error = kErrorSubCodeRayHitObjectDirectionNaN;
+    } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
+        error = kErrorSubCodeRayHitObjectOriginFinite;
+    } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
+        error = kErrorSubCodeRayHitObjectDirectionFinite;
+    } else if (ray_tmin < 0.0f) {
+        error = kErrorSubCodeRayHitObjectNegativeMin;
+    } else if (ray_tmax < 0.0f) {
+        error = kErrorSubCodeRayHitObjectNegativeMax;
+    } else if (ray_tmax < ray_tmin) {
+        error = kErrorSubCodeRayHitObjectMinMax;
+    } else {
+        // From SPIRV-Headers
+        const uint OpaqueKHR = 0x00000001;
+        const uint NoOpaqueKHR = 0x00000002;
+        const uint CullBackFacingTrianglesKHR = 0x00000010;
+        const uint CullFrontFacingTrianglesKHR = 0x00000020;
+        const uint CullOpaqueKHR = 0x00000040;
+        const uint CullNoOpaqueKHR = 0x00000080;
+        const uint SkipTrianglesKHR = 0x00000100;
+        const uint SkipAABBsKHR = 0x00000200;
+
+        // Pipeline flags
+        const uint kPipelineHasSkipAABBs = 0x1;
+        const uint kPipelineHasSkipTriangles = 0x2;
+
+        const uint both_skip = SkipTrianglesKHR | SkipAABBsKHR;
+        uint skip_cull_mask = ray_flags &(SkipTrianglesKHR | CullBackFacingTrianglesKHR | CullFrontFacingTrianglesKHR);
+        uint opaque_mask = ray_flags &(OpaqueKHR | NoOpaqueKHR | CullOpaqueKHR | CullNoOpaqueKHR);
+
+        if ((ray_flags & both_skip) == both_skip) {
+            error = kErrorSubCodeRayHitObjectBothSkip;
+            param_0 = ray_flags;
+        } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
+            error = kErrorSubCodeRayHitObjectSkipCull;
+            param_0 = ray_flags;
+        } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
+            error = kErrorSubCodeRayHitObjectOpaque;
+            param_0 = ray_flags;
+        } else if ((ray_flags & SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
+            // VUID 11886: SkipTriangles ray flag with pipeline SKIP_AABBS flag
+            error = kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs;
+            param_0 = ray_flags;
+        } else if ((ray_flags & SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
+            // VUID 11887: SkipAABBs ray flag with pipeline SKIP_TRIANGLES flag
+            error = kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles;
+            param_0 = ray_flags;
+        }
+    }
+
+    if (0u != error) {
+         error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroupInstRayHitObject << kErrorGroupShift) | (error << kErrorSubCodeShift),
+                            param_0,
+                            opcode_type,
+                            0
+                        );
+        return false;
+    }
+
+    return true;
+}
+
+// Check for VUID 11888: SBT index must be <= maxShaderBindingTableRecordIndex
+bool inst_ray_hit_object_sbt_index_check(const uint inst_offset, const uint sbt_index, const uint max_sbt_index)
+{
+    if (sbt_index > max_sbt_index) {
+        error_payload = ErrorPayload(
+            inst_offset,
+            SpecConstantLinkShaderId | (kErrorGroupInstRayHitObject << kErrorGroupShift) | (kErrorSubCodeRayHitObjectSBTIndexExceedsLimit << kErrorSubCodeShift),
+            sbt_index,
+            max_sbt_index,
+            0
+        );
+        return false;
+    }
+    return true;
+}

@@ -347,6 +347,15 @@ struct RayQuery : public Setting {
                "gpuav_validate_ray_query]\n";
     }
 };
+struct RayHitObject : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.shader_instrumentation.ray_hit_object; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.rayTracingInvocationReorder; }
+    void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.ray_hit_object = false; }
+    std::string DisableMessage() {
+        return "\tRay Hit Object validation option was enabled, but the rayTracingInvocationReorder feature is not supported. [Disabling "
+               "gpuav_validate_ray_hit_object]\n";
+    }
+};
 struct MeshShading : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.shader_instrumentation.mesh_shading; }
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.meshShader; }
@@ -394,12 +403,13 @@ struct AccelerationStructuresBuild : public Setting {
 void Validator::InitSettings(const Location &loc) {
     setting::BufferDeviceAddress buffer_device_address;
     setting::RayQuery ray_query;
+    setting::RayHitObject ray_hit_object;
     setting::MeshShading mesh_shading;
     setting::BufferCopies buffer_copies;
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
-    std::array<setting::Setting *, 6> all_settings = {&buffer_device_address, &ray_query,      &mesh_shading,
-                                                      &buffer_copies,         &buffer_content, &as_builds};
+    std::array<setting::Setting *, 7> all_settings = {&buffer_device_address, &ray_query,      &ray_hit_object,
+                                                      &mesh_shading,          &buffer_copies,  &buffer_content, &as_builds};
 
     std::string adjustment_warnings;
     for (auto &setting_object : all_settings) {

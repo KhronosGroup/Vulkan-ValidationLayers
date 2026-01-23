@@ -54,6 +54,14 @@ struct Settings {
     bool support_non_semantic_info;
     bool has_bindless_descriptors;
 
+    // For ray tracing pipelines, stores relevant pipeline create flags for validation
+    // Used to check VUIDs 11886/11887 (SkipTriangles vs SKIP_AABBS pipeline flag, etc.)
+    bool pipeline_has_skip_aabbs_flag = false;
+    bool pipeline_has_skip_triangles_flag = false;
+
+    // For VUID 11888 - maxShaderBindingTableRecordIndex limit check
+    uint32_t max_shader_binding_table_record_index = 0;
+
     // Used if need to report error/warning
     const Location& loc;
 

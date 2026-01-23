@@ -41,6 +41,7 @@ void RegisterRayQueryValidation(Validator &gpuav, CommandBufferSubState &cb) {
             std::ostringstream strm;
 
             const uint32_t error_sub_code = GetSubError(error_record);
+
             switch (error_sub_code) {
                 case kErrorSubCodeRayQueryNegativeMin: {
                     // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values

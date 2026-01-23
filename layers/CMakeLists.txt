@@ -334,6 +334,7 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/mesh_shading.cpp
     gpuav/instrumentation/post_process_descriptor_indexing.cpp
     gpuav/instrumentation/ray_query.cpp
+    gpuav/instrumentation/ray_hit_object.cpp
     gpuav/instrumentation/register_validation.h
     gpuav/instrumentation/sanitizer.cpp
     gpuav/instrumentation/vertex_attribute_fetch_oob.cpp

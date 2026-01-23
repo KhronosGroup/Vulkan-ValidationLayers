@@ -48,6 +48,7 @@
 #include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/ray_query_pass.h"
+#include "gpuav/spirv/ray_hit_object_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
@@ -1001,6 +1002,15 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pi
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
         }
     }
+
+    // Set ray tracing pipeline flags for VUIDs 11886/11887
+    out_instrumentation_dsl.pipeline_has_skip_aabbs_flag =
+        (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
+    out_instrumentation_dsl.pipeline_has_skip_triangles_flag =
+        (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0;
+    // For VUID 11888 - maxShaderBindingTableRecordIndex limit
+    out_instrumentation_dsl.max_shader_binding_table_record_index =
+        phys_dev_ext_props.ray_tracing_invocation_reorder_props.maxShaderBindingTableRecordIndex;
 }
 
 void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT &modified_create_info,
@@ -1504,6 +1514,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.support_non_semantic_info =
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
+    // Ray tracing pipeline flags for VUIDs 11886/11887
+    module_settings.pipeline_has_skip_aabbs_flag = instrumentation_dsl.pipeline_has_skip_aabbs_flag;
+    module_settings.pipeline_has_skip_triangles_flag = instrumentation_dsl.pipeline_has_skip_triangles_flag;
+    // For VUID 11888 - maxShaderBindingTableRecordIndex limit
+    module_settings.max_shader_binding_table_record_index = instrumentation_dsl.max_shader_binding_table_record_index;
 
     spirv::Module module(input_spirv, debug_report, module_settings, modified_features,
                          instrumentation_dsl.set_index_to_bindings_layout_lut);
@@ -1540,6 +1555,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     if (gpuav_settings.shader_instrumentation.ray_query) {
         spirv::RayQueryPass pass(module);
+        modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.ray_hit_object) {
+        spirv::RayHitObjectPass pass(module);
         modified |= pass.Run();
     }
 

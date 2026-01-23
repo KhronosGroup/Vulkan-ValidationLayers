@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@
 namespace gpuav {
 namespace spirv {
 
-// Create a pass to instrument SPV_KHR_ray_query instructions
-class RayQueryPass : public Pass {
+// Create a pass to instrument VK_EXT_ray_tracing_invocation_reorder hit object instructions
+// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
+// OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
+class RayHitObjectPass : public Pass {
   public:
-    RayQueryPass(Module& module);
-    const char* Name() const final { return "RayQueryPass"; }
+    RayHitObjectPass(Module& module);
+    const char* Name() const final { return "RayHitObjectPass"; }
     bool Instrument() final;
     void PrintDebugInfo() const final;
 
@@ -32,15 +34,19 @@ class RayQueryPass : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
+        bool is_sbt_index_check = false;  // true for OpHitObjectSetShaderBindingTableRecordIndexEXT
     };
 
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    uint32_t CreateSBTIndexCheckFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
+    uint32_t GetSBTIndexCheckFunctionId();
 
     // Function IDs to link in
     uint32_t link_function_id_ = 0;
+    uint32_t sbt_index_check_function_id_ = 0;
 };
 
 }  // namespace spirv
