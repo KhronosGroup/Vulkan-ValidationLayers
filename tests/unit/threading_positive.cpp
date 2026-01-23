@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -385,4 +385,73 @@ TEST_F(PositiveThreading, ObjectTrackerPoisoning) {
     };
     std::array<std::thread, 2> threads = {std::thread(thread_func), std::thread(thread_func)};
     for (auto &t : threads) t.join();
+}
+
+TEST_F(PositiveThreading, InternallySynchronizedQueues) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::internallySynchronizedQueues);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t queue_family_property_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu_, &queue_family_property_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_property_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu_, &queue_family_property_count, queue_family_properties.data());
+
+    uint32_t queue_family_index = queue_family_property_count;
+    for (uint32_t i = 0; i < queue_family_property_count; i++) {
+        if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            queue_family_index = i;
+            break;
+        }
+    }
+
+    float queue_priority = 1.0f;
+
+    VkDeviceQueueCreateInfo device_queue_create_info = vku::InitStructHelper();
+    device_queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
+    device_queue_create_info.queueFamilyIndex = queue_family_index;
+    device_queue_create_info.queueCount = 1u;
+    device_queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.pNext = requested_features_.GetEnabledFeatures2();
+    device_ci.queueCreateInfoCount = 1u;
+    device_ci.pQueueCreateInfos = &device_queue_create_info;
+    device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vkt::Device device(gpu_, device_ci);
+    vkt::Queue& queue = *device.QueuesWithGraphicsCapability()[0];
+
+    vkt::CommandPool command_pool(device, queue_family_index);
+
+    vkt::Buffer buffer1(device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer buffer2(device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    vkt::CommandBuffer cmd_buffer1(device, command_pool);
+    cmd_buffer1.Begin();
+    vk::CmdFillBuffer(cmd_buffer1, buffer1, 0, VK_WHOLE_SIZE, 1);
+    cmd_buffer1.End();
+
+    vkt::CommandBuffer cmd_buffer2(device, command_pool);
+    cmd_buffer2.Begin();
+    vk::CmdFillBuffer(cmd_buffer2, buffer1, 0, VK_WHOLE_SIZE, 1);
+    cmd_buffer2.End();
+
+    auto thread_func = [&queue](VkCommandBuffer cmd_buffer) {
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1u;
+        submit_info.pCommandBuffers = &cmd_buffer;
+        vk::QueueSubmit(queue.handle(), 1u, &submit_info, VK_NULL_HANDLE);
+    };
+    std::array<std::thread, 2> threads = {std::thread(thread_func, cmd_buffer1.handle()),
+                                          std::thread(thread_func, cmd_buffer2.handle())};
+    for (auto &t : threads) {
+        t.join();
+    }
+
+    queue.Wait();
 }

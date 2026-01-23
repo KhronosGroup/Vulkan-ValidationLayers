@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -307,7 +307,15 @@ void Device::InitQueues(const VkDeviceCreateInfo &info) {
         queue_storage.reserve(queue_create_info.queueCount);
         for (uint32_t queue_i = 0; queue_i < queue_create_info.queueCount; ++queue_i) {
             VkQueue queue = VK_NULL_HANDLE;
-            vk::GetDeviceQueue(handle(), queue_family_i, queue_i, &queue);
+            if (queue_create_info.flags) {
+                VkDeviceQueueInfo2 queue_info = vku::InitStructHelper();
+                queue_info.flags = queue_create_info.flags;
+                queue_info.queueFamilyIndex = queue_family_i;
+                queue_info.queueIndex = queue_i;
+                vk::GetDeviceQueue2(handle(), &queue_info, &queue);
+            } else {
+                vk::GetDeviceQueue(handle(), queue_family_i, queue_i, &queue);
+            }
 
             // Store single copy of the queue object that will self destruct
             queue_storage.emplace_back(new Queue(queue, queue_family_i));
