@@ -1,5 +1,6 @@
 /* Copyright (c) 2023-2025 Nintendo
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +40,8 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     std::shared_ptr<const spirv::Module> spirv;
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
     std::vector<VkShaderEXT> linked_shaders;
+    const bool descriptor_heap_mode;
+    const uint32_t descriptor_heap_embedded_samplers_count;
 
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map

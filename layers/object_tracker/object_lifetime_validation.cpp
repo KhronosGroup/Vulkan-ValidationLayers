@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,8 @@
 #include "generated/vk_object_types.h"
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
+#include "containers/small_vector.h"
+#include "utils/vk_api_utils.h"
 
 namespace object_lifetimes {
 
@@ -1860,5 +1863,38 @@ void Device::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPi
                                  record_obj.location, device);
         }
     }
+}
+
+bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                        const VkResourceDescriptorInfoEXT* pResources,
+                                                        const VkHostAddressRangeEXT* pDescriptors,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkWriteResourceDescriptorsEXT-device-parameter"
+    if (pResources) {
+        for (uint32_t index0 = 0; index0 < resourceCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pResources, index0);
+            [[maybe_unused]] const Location data_loc = index0_loc.dot(Field::data);
+            if (pResources[index0].data.pImage && IsDescriptorHeapImage(pResources[index0].type)) {
+                [[maybe_unused]] const Location pImage_loc = data_loc.dot(Field::pImage);
+                if (pResources[index0].data.pImage->pView) {
+                    [[maybe_unused]] const Location pView_loc = pImage_loc.dot(Field::pView);
+                    skip |= ValidateObject(pResources[index0].data.pImage->pView->image, kVulkanObjectTypeImage, false,
+                                           "VUID-VkImageViewCreateInfo-image-parameter",
+                                           "UNASSIGNED-VkImageViewCreateInfo-image-parent", pView_loc.dot(Field::image));
+                    if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(
+                            pResources[index0].data.pImage->pView->pNext)) {
+                        [[maybe_unused]] const Location pNext_loc = pView_loc.pNext(Struct::VkSamplerYcbcrConversionInfo);
+                        skip |= ValidateObject(pNext->conversion, kVulkanObjectTypeSamplerYcbcrConversion, false,
+                                               "VUID-VkSamplerYcbcrConversionInfo-conversion-parameter",
+                                               "UNASSIGNED-VkSamplerYcbcrConversionInfo-conversion-parent",
+                                               pNext_loc.dot(Field::conversion));
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
 }
 }  // namespace object_lifetimes

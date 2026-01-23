@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2026 Google, Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2022,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021-2022 ARM, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -7708,6 +7708,51 @@ TEST_F(NegativeDynamicRendering, AttachmentFeedbackLoopInfoInvalidUsage) {
     vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoDescriptorHeap) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    for (int i = 0; i < 2; i++) {
+        VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
+
+        VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        pipeline_rendering_info.pColorAttachmentFormats = &format;
+
+        CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+        pipe.CreateGraphicsPipeline();
+
+        VkCommandBufferAllocateInfo cmd_buffer_allocate_info = vku::InitStructHelper();
+        cmd_buffer_allocate_info.commandPool = m_command_pool.handle();
+        cmd_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+        cmd_buffer_allocate_info.commandBufferCount = 0x1;
+
+        VkCommandBuffer secondary_cmd_buffer;
+        VkResult err = vk::AllocateCommandBuffers(device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
+        ASSERT_EQ(VK_SUCCESS, err);
+
+        const char* expected = (i == 0) ? "VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-descriptorHeap-11200"
+                                        : "VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-descriptorHeap-11201";
+        VkCommandBufferInheritanceDescriptorHeapInfoEXT descriptor_heap_info = vku::InitStructHelper();
+        VkBindHeapInfoEXT heap_bind_info = vku::InitStructHelper();
+        descriptor_heap_info.pSamplerHeapBindInfo = i == 0 ? &heap_bind_info : nullptr;
+        descriptor_heap_info.pResourceHeapBindInfo = i != 0 ? &heap_bind_info : nullptr;
+
+        VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper(&descriptor_heap_info);
+        inheritance_rendering_info.colorAttachmentCount = 1u;
+        inheritance_rendering_info.pColorAttachmentFormats = &format;
+        inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
+
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        begin_info.pInheritanceInfo = &cmd_buffer_inheritance_info;
+
+        m_errorMonitor->SetDesiredError(expected);
+        vk::BeginCommandBuffer(secondary_cmd_buffer, &begin_info);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeDynamicRendering, RenderingAttachmentFlags) {

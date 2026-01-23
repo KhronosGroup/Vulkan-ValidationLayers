@@ -1,6 +1,6 @@
 /* Copyright (c) 2024-2026 The Khronos Group Inc.
  * Copyright (c) 2024-2026 LunarG, Inc.
- * Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (c) 2024-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ enum class PipelineBinaryInfoError {
     BinaryCount_09620,
     BinaryCount_09621,
     BinaryCount_09622,
+    Flags_11311,
+    Flags_11367,
 };
 
 const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinaryInfoError error);

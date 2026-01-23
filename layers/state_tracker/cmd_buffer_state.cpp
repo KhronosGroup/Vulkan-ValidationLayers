@@ -1,9 +1,9 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
 #include "generated/command_validation.h"
+#include "state_tracker/descriptor_mode.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -235,6 +236,40 @@ void CommandBuffer::RemoveChild(std::shared_ptr<StateObject> &child_node) {
     object_bindings.erase(child_node);
 }
 
+// This tracking is awful, in practice people are using only a single descriptor mode per command buffer
+// But in theory you |COULD| do some crazy stuff, like
+//   - Set graphics to use classic descriptor
+//   - Set compute to use Descriptor buffer
+//   - Override both using Heaps
+// To "properly" do this, we woudl need to really devide LastBound state into 3 structs for each
+// For the practical future, we will try and get away just assuming these crazy cases are not happening
+void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode) {
+    // 99% of time, all LastBound will be the same mode
+    bool reset_heap = false;
+    bool reset_buffer = false;
+
+    for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
+        const vvl::DescriptorMode old_mode = lastBound[i].GetDescriptorMode();
+        if (old_mode == new_mode) {
+            continue;  // common case, nothing to do/change
+        }
+
+        if (old_mode == vvl::DescriptorMode::DescriptorModeHeap && !reset_heap) {
+            // mappings in device state object to this command buffer state
+            dev_data.RemoveCommandBufferFromDescriptorHeapReservedAddressMap(this, descriptor_heap.resource_reserved,
+                                                                             descriptor_heap.sampler_reserved);
+
+            descriptor_heap.Reset();
+            reset_heap = true;
+        } else if (old_mode == vvl::DescriptorMode::DescriptorModeBuffer && !reset_buffer) {
+            descriptor_buffer.Reset();
+            reset_buffer = true;
+        }
+
+        lastBound[i].SetDescriptorMode(new_mode);
+    }
+}
+
 // Reset the command buffer state
 // Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CommandBuffer::ResetCBState() {
@@ -310,8 +345,6 @@ void CommandBuffer::ResetCBState() {
     video_encode_quality_level.reset();
     video_session_updates.clear();
 
-    descriptor_buffer.Reset();
-
     // Clean up the label data
     label_stack_depth_ = 0;
     label_commands_.clear();
@@ -320,6 +353,11 @@ void CommandBuffer::ResetCBState() {
 
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
+
+    SetDescriptorMode(vvl::DescriptorModeUnknown);
+    // Need to reset on initalization
+    descriptor_heap.Reset();
+    descriptor_buffer.Reset();
 
     // Clean up the label data
     dev_data.debug_report->ResetCmdDebugUtilsLabel(VkHandle());
@@ -1291,6 +1329,11 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 }
             }
         }
+
+        if (auto descriptor_heap_info =
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceDescriptorHeapInfoEXT>(pBeginInfo->pInheritanceInfo->pNext)) {
+            inheritance_descriptor_heap_info.initialize(descriptor_heap_info);
+        }
     }
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
@@ -1299,6 +1342,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     } else {
         initial_device_mask = (1 << dev_data.physical_device_count) - 1;
     }
+
     performance_lock_acquired = dev_data.performance_lock_acquired;
     updated_queries.clear();
 
@@ -2106,6 +2150,18 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layo
 
     for (auto &item : sub_states_) {
         item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
+    }
+}
+
+void CommandBuffer::RecordCmdPushDataEXT(const VkPushDataInfoEXT& push_data_info, const Location& loc) {
+    RecordCommand(loc);
+    if (push_data_info.data.size > 0) {
+        const size_t begin = push_data_info.offset;
+        const size_t end = push_data_info.offset + push_data_info.data.size;
+        if (descriptor_heap.push_data.size() < end) {
+            descriptor_heap.push_data.resize(end);
+        }
+        memset(descriptor_heap.push_data.data() + begin, 1, end - begin);
     }
 }
 

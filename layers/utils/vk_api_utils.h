@@ -2,6 +2,7 @@
  * Copyright (c) 2019-2026 Valve Corporation
  * Copyright (c) 2019-2026 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,6 +169,50 @@ static constexpr bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags
 
 static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) {
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
+}
+
+static inline const VkSamplerCreateInfo* GetEmbeddedSampler(const VkDescriptorSetAndBindingMappingEXT& mapping) {
+    switch (mapping.source) {
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT:
+            return mapping.sourceData.constantOffset.pEmbeddedSampler;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
+            return mapping.sourceData.pushIndex.pEmbeddedSampler;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
+            return mapping.sourceData.indirectIndex.pEmbeddedSampler;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
+            return mapping.sourceData.indirectIndexArray.pEmbeddedSampler;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
+            return mapping.sourceData.shaderRecordIndex.pEmbeddedSampler;
+        default:
+            return nullptr;
+    }
+}
+
+static inline uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext) {
+    const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
+        vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext);
+    uint32_t count = 0;
+
+    if (mapping_info) {
+        for (uint32_t i = 0; i < mapping_info->mappingCount; ++i) {
+            const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
+            if (GetEmbeddedSampler(mapping) != nullptr) {
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
+static constexpr bool IsDescriptorHeapAddr(const VkDescriptorType type) {
+    return (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) || (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) ||
+           (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+           (type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+}
+
+static constexpr bool IsDescriptorHeapTexelBuffer(const VkDescriptorType type) {
+    return (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) || (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
 }
 
 static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {

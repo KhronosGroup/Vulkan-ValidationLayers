@@ -5483,45 +5483,6 @@ bool Device::PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, uint32_t
     return skip;
 }
 
-bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
-                                                        const VkResourceDescriptorInfoEXT* pResources,
-                                                        const VkHostAddressRangeEXT* pDescriptors,
-                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkWriteResourceDescriptorsEXT-device-parameter"
-    if (pResources) {
-        for (uint32_t index0 = 0; index0 < resourceCount; ++index0) {
-            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pResources, index0);
-            [[maybe_unused]] const Location data_loc = index0_loc.dot(Field::data);
-            if (pResources[index0].data.pImage) {
-                [[maybe_unused]] const Location pImage_loc = data_loc.dot(Field::pImage);
-                if (pResources[index0].data.pImage->pView) {
-                    [[maybe_unused]] const Location pView_loc = pImage_loc.dot(Field::pView);
-                    skip |= ValidateObject(pResources[index0].data.pImage->pView->image, kVulkanObjectTypeImage, false,
-                                           "VUID-VkImageViewCreateInfo-image-parameter",
-                                           "UNASSIGNED-VkImageViewCreateInfo-image-parent", pView_loc.dot(Field::image));
-                    if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(
-                            pResources[index0].data.pImage->pView->pNext)) {
-                        [[maybe_unused]] const Location pNext_loc = pView_loc.pNext(Struct::VkSamplerYcbcrConversionInfo);
-                        skip |= ValidateObject(pNext->conversion, kVulkanObjectTypeSamplerYcbcrConversion, false,
-                                               "VUID-VkSamplerYcbcrConversionInfo-conversion-parameter",
-                                               "UNASSIGNED-VkSamplerYcbcrConversionInfo-conversion-parent",
-                                               pNext_loc.dot(Field::conversion));
-                    }
-                }
-            }
-            if (pResources[index0].data.pTensorARM) {
-                [[maybe_unused]] const Location pTensorARM_loc = data_loc.dot(Field::pTensorARM);
-                skip |= ValidateObject(pResources[index0].data.pTensorARM->tensor, kVulkanObjectTypeTensorARM, false,
-                                       "VUID-VkTensorViewCreateInfoARM-tensor-parameter",
-                                       "UNASSIGNED-VkTensorViewCreateInfoARM-tensor-parent", pTensorARM_loc.dot(Field::tensor));
-            }
-        }
-    }
-
-    return skip;
-}
-
 // vkCmdBindSamplerHeapEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdBindSamplerHeapEXT-commandBuffer-parameter"
 

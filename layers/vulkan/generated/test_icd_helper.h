@@ -4880,11 +4880,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDataEXT(VkDevice devi
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
-                                                                             VkDescriptorType descriptorType) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL RegisterCustomBorderColorEXT(VkDevice device,
                                                                    const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
                                                                    VkBool32 requestIndex, uint32_t* pIndex) {

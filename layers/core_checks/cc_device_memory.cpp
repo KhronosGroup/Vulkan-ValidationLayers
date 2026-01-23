@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2022,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"
@@ -1118,7 +1120,18 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                 }
             }
         }
-
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
+            if (!(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
+                const char* vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-11408" : "VUID-vkBindBufferMemory-buffer-11408";
+                const LogObjectList objlist(buffer, memory);
+                skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
+                                 "was created with VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, "
+                                 "but the bound memory was not allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT "
+                                 "(VkMemoryAllocateFlags::flags were %s).",
+                                 string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+            }
+        }
         // Validate export memory handles. Check if the memory meets the buffer's external memory requirements
         if (mem_info->IsExport() && (mem_info->export_handle_types & buffer_state->external_memory_handle_types) == 0) {
             const char *vuid =
@@ -1903,6 +1916,31 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 if (mem_info) {
                     const VkMemoryAllocateInfo& allocate_info = mem_info->allocate_info;
 
+                    auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(allocate_info.pNext);
+                    const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
+                    if (image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) {
+                        if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
+                            const char* vuid =
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-08113" : "VUID-vkBindImageMemory-image-08113";
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |= LogError(vuid, objlist, loc.dot(Field::image),
+                                             "was created with the VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT bit set, "
+                                             "but the bound memory was allocated with %s and needs "
+                                             "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.",
+                                             string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+                        }
+                        if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+                            const char* vuid =
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-vkBindImageMemory-image-09202";
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |= LogError(vuid, objlist, loc.dot(Field::image),
+                                             "was created with the VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT bit set,"
+                                             "but the bound memory was allocated with %s and needs "
+                                             "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
+                                             string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+                        }
+                    }
+
                     // Validate memory requirements size
                     if (disjoint_mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -2047,8 +2085,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
     const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
     if (image_state.create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
         if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
-            const char* vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-descriptorBufferCaptureReplay-08113"
-                                                : "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113";
+            const char* vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-08113" : "VUID-vkBindImageMemory-image-08113";
             const LogObjectList objlist(bind_info.image, bind_info.memory);
             skip |= LogError(vuid, objlist, loc.dot(Field::image),
                              "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
@@ -2889,6 +2926,38 @@ bool CoreChecks::ValidateDeviceAddress(const Location &device_address_loc, const
                                        VkDeviceAddress device_address) const {
     BufferAddressValidation<0> buffer_address_validator = {};
     return buffer_address_validator.ValidateDeviceAddress(*this, device_address_loc, objlist, device_address);
+}
+
+// Was added so VkDeviceAddressRangeEXT and VkStridedDeviceAddressRangeKHR could share 2 VUs
+bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSize size, bool strided, const Location& loc,
+                                            const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid) const {
+    bool skip = false;
+
+    const char* vuid = kVUIDUndefined;
+    if (size != 0 && address == 0) {
+        vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-size-11411" : "VUID-VkDeviceAddressRangeEXT-size-11411";
+        skip |= LogError(vuid, objlist, loc.dot(Field::address), "is zero, but size is non-zero (%" PRIu64 ")", size);
+    }
+
+    vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-address-11365" : "VUID-VkDeviceAddressRangeEXT-address-11365";
+    BufferAddressValidation<2> buffer_address_validator = {
+        {{{vuid,
+           [address, size](const vvl::Buffer& buffer_state) {
+               const VkDeviceSize end = buffer_state.create_info.size - (address - buffer_state.deviceAddress);
+               return size > end;
+           },
+           [strided, size]() {
+               std::string s = strided ? "VkStridedDeviceAddressRangeKHR" : "VkDeviceAddressRangeEXT";
+               return "The " + s + "::size (" + std::to_string(size) + ") bytes does not fit in any buffer";
+           },
+           kEmptyErrorMsgBuffer},
+          {usage_vuid, [usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & usage) == 0; },
+           [usage]() { return std::string("The following buffers are missing ") + string_VkBufferUsageFlags2(usage); },
+           kUsageErrorMsgBuffer}}}};
+
+    skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size);
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,

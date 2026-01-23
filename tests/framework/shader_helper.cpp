@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -582,4 +582,14 @@ VkShaderObj VkShaderObj::CreateFromASM(VkRenderFramework *framework, const char 
         return shader;
     }
     return {};
+}
+
+VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint32_t binding, uint32_t count,
+                                                             VkSpirvResourceTypeFlagsEXT mask) {
+    VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
+    mapping.descriptorSet = set;
+    mapping.firstBinding = binding;
+    mapping.bindingCount = count;
+    mapping.resourceMask = mask;
+    return mapping;
 }

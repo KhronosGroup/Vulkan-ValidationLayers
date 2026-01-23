@@ -432,6 +432,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const Location& secondary_cb_loc, const QueryObject* active_occlusion_query) const;
     bool ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                               const Location& secondary_cb_loc) const;
+    bool ValidateSecondaryCommandBufferDescriptorHeapInheritance(const vvl::CommandBuffer& cb_state,
+                                                                 const vvl::CommandBuffer& secondary_cb_state,
+                                                                 const Location& secondary_cb_loc) const;
     bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                             const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                             const Location& loc) const;
@@ -509,6 +512,9 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateDeviceAddress(const Location& device_address_loc, const LogObjectList& objlist,
                                VkDeviceAddress device_address) const;
+    bool ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSize size, bool strided, const Location& loc,
+                                    const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid) const;
+
     bool ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                        const char* vuid) const;
     bool ValidateAccelStructsMemoryDoNotOverlap(const Location& function_loc, LogObjectList objlist,
@@ -747,8 +753,18 @@ class CoreChecks : public vvl::DeviceProxy {
                                                 const vvl::Pipeline& pipeline, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                                     const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state,
+                                                   const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
+                                                   const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
+                                                   const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorHeapUntyped(const vvl::CommandBuffer& cb_state, const spirv::Module& module_state,
+                                                  const spirv::EntryPoint& entry_point, const VkPipelineBindPoint bind_point,
+                                                  const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,
+                                                       const VkPipelineBindPoint bind_point,
+                                                       const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                             const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid) const;
     static bool ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, size_t eventCount, size_t firstEventIndex,
@@ -930,6 +946,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const Location& loc) const;
+    bool ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                          const vvl::Pipeline* pipeline, const ShaderStageState& stage_state,
+                                                          const Location& loc) const;
+    bool ValidateDescriptorHeapStructs(const spirv::Module& module_state, const Location& loc) const;
     bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT& create_info, const Location& loc) const;
@@ -2849,6 +2869,27 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                             const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
                                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                   const VkHostAddressRangeEXT* pDescriptors,
+                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                    const VkResourceDescriptorInfoEXT* pResources,
+                                                    const VkHostAddressRangeEXT* pDescriptors,
+                                                    const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                     VkHostAddressRangeEXT* pDatas, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                              const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                       const ErrorObject& error_obj) const override;
+    bool ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer& cb_state, const Location& loc) const;
+    std::string OverlapDataToString(const std::vector<vvl::DeviceState::CommandBufferOverlapData>& overlap_data,
+                                    bool sampler) const;
+    bool ValidateReservedRangeOverlap(VkCommandBuffer commandBuffer, const vvl::CommandBuffer& cb_state,
+                                      const VkBindHeapInfoEXT* pBindInfo, const ErrorObject& error_obj) const;
+    bool ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const Location& loc) const;
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
     bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,

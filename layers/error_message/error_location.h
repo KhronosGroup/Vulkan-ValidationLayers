@@ -1,7 +1,7 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
- * Copyright (C) 2021-2025 Google Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
+ * Copyright (C) 2021-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,6 +215,38 @@ static const std::string& FindVUID(OuterKey key, const Location& loc, const Tabl
         return FindVUID(core_loc, entry->second);
     }
     return empty;
+}
+
+// Used to help get the Field for unions
+// TODO - These should just be generated
+[[maybe_unused]] static vvl::Field DescriptorMappingSourceField(VkDescriptorMappingSourceEXT source) {
+    switch (source) {
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT:
+            return vvl::Field::constantOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
+            return vvl::Field::pushIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
+            return vvl::Field::indirectIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
+            return vvl::Field::indirectIndexArray;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT:
+            return vvl::Field::heapData;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT:
+            return vvl::Field::pushDataOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT:
+            return vvl::Field::pushAddressOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT:
+            return vvl::Field::indirectAddress;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
+            return vvl::Field::shaderRecordIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT:
+            return vvl::Field::shaderRecordDataOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT:
+            return vvl::Field::shaderRecordAddressOffset;
+        default:
+            break;
+    }
+    return vvl::Field::Empty;
 }
 
 }  // namespace vvl

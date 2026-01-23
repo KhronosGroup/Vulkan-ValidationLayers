@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
- * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -856,6 +856,24 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, but the device was created with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1. Device creation with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1 may have been implicit.");
+        }
+    }
+
+    auto opaque_data = vku::FindStructInPNextChain<VkOpaqueCaptureDataCreateInfoEXT>(pCreateInfo->pNext);
+    if (opaque_data && opaque_data->pData) {
+        if ((pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) == 0) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-11281", device,
+                             create_info_loc.pNext(Struct::VkOpaqueCaptureDataCreateInfoEXT, Field::pData),
+                             "is not null, but VkImageCreateInfo flags (%s) does contain "
+                             "VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT.",
+                             string_VkImageCreateFlags(pCreateInfo->flags).c_str());
+        } else {
+            if (opaque_data->pData->size != phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize) {
+                skip |= LogError("VUID-VkImageCreateInfo-pData-11286", device,
+                                 create_info_loc.pNext(Struct::VkOpaqueCaptureDataCreateInfoEXT, Field::pData).dot(Field::size),
+                                 "is %zu, that is not equal to imageCaptureReplayOpaqueDataSize is %zu.", opaque_data->pData->size,
+                                 phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize);
+            }
         }
     }
 

@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
- * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #include <sstream>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
-#include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
 #include "drawdispatch/drawdispatch_vuids.h"
@@ -31,6 +31,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/descriptor_mode.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/shader_object_state.h"
@@ -43,6 +44,7 @@
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 #include "containers/container_utils.h"
+#include "utils/vk_api_utils.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
@@ -1446,11 +1448,32 @@ static bool NeedDrawStateValidated(const vvl::CommandBuffer &cb_state, const vvl
 bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
                                                         const vvl::Pipeline &pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+
+    if (pipeline.descriptor_heap_mode) {
+        for (const auto& stage_state : pipeline.stage_states) {
+            const spirv::Module* module_state = stage_state.spirv_state.get();
+            const spirv::EntryPoint* entry_point = stage_state.entrypoint.get();
+            if (!module_state || !entry_point) {
+                continue;
+            }
+            skip |= ValidateActionStateDescriptorHeapUntyped(cb_state, *module_state, *entry_point, bind_point, vuid);
+
+            // Only need to validate if we know there is a embedded sampler to check against
+            if (pipeline.descriptor_heap_embedded_samplers_count > 0) {
+                if (const auto* mapping_info =
+                        vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(stage_state.GetPNext())) {
+                    skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, *mapping_info, *module_state, *entry_point,
+                                                                      bind_point, vuid);
+                }
+            }
+        }
+    }
+
     // If the pipeline is not using any descriptors, then any descriptor state set can be ignored
     if (pipeline.active_slots.empty()) {
         return skip;
     }
-    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     for (const auto &ds_slot : last_bound_state.ds_slots) {
         // TODO - This currently implicitly is checking for VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT being set
@@ -1477,7 +1500,16 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     }
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
-    if (pipeline.descriptor_buffer_mode) {
+    if (pipeline.descriptor_buffer_mode || pipeline.descriptor_heap_mode) {
+        return skip;
+    }
+
+    // If we are here and using heaps, things have gone bad
+    if (last_bound_state.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
+                         "The %s is using classic VkDescriptorSet/VkPushConstantsInfo, but the command buffer has called "
+                         "vkCmdBindResourceHeapEXT, vkCmdBindSamplerHeapEXT, or vkCmdPushDataEXT and invalidated the descriptors",
+                         FormatHandle(pipeline).c_str());
         return skip;
     }
 
@@ -1557,6 +1589,124 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     return skip;
 }
 
+bool CoreChecks::ValidateActionStateDescriptorHeapUntyped(const vvl::CommandBuffer& cb_state, const spirv::Module& module_state,
+                                                          const spirv::EntryPoint& entry_point,
+                                                          const VkPipelineBindPoint bind_point,
+                                                          const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    if (!module_state.static_data_.has_descriptor_heap) {
+        return skip;
+    }
+
+    for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
+        // If untyped, there will be no mapping to validate
+        if (resource_variable.decorations.IsDescriptorSet()) {
+            continue;
+        }
+        if (resource_variable.is_sampler_heap) {
+            if (cb_state.IsPrimary()) {
+                if (!cb_state.descriptor_heap.sampler_bound) {
+                    skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                     "SPIR-V (%s) uses %s, but a sampler heap was not bound (with vkCmdBindSamplerHeapEXT)",
+                                     string_SpvExecutionModel(entry_point.execution_model),
+                                     resource_variable.DescribeDescriptor().c_str());
+                }
+            } else {
+                if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+                    skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                     "SPIR-V (%s) uses %s, but "
+                                     "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo is NULL",
+                                     string_SpvExecutionModel(entry_point.execution_model),
+                                     resource_variable.DescribeDescriptor().c_str());
+                }
+            }
+        } else if (resource_variable.is_resource_heap) {
+            if (cb_state.IsPrimary()) {
+                if (!cb_state.descriptor_heap.resource_bound) {
+                    skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                     "SPIR-V (%s) uses %s, but a resource heap was not bound (with vkCmdBindResourceHeapEXT)",
+                                     string_SpvExecutionModel(entry_point.execution_model),
+                                     resource_variable.DescribeDescriptor().c_str());
+                }
+            } else {
+                if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+                    skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                     "SPIR-V (%s) uses %s, but "
+                                     "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo is NULL",
+                                     string_SpvExecutionModel(entry_point.execution_model),
+                                     resource_variable.DescribeDescriptor().c_str());
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state,
+                                                           const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
+                                                           const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
+                                                           const VkPipelineBindPoint bind_point,
+                                                           const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    // First loop mappings, likely there might be 100+ mappings, but only 1 or 2 using embedded samplers
+    for (uint32_t i = 0; i < mapping_info.mappingCount; i++) {
+        const auto& mapping = mapping_info.pMappings[i];
+        // Mapping does not refer embedded sampler (either does not contain or cannot contain)
+        const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
+        if (!embedded_sampler) {
+            continue;
+        }
+
+        for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
+            const uint32_t descriptor_set = resource_variable.decorations.set;
+            const uint32_t descriptor_binding = resource_variable.decorations.binding;
+
+            if (mapping.descriptorSet != descriptor_set || descriptor_binding < mapping.firstBinding ||
+                descriptor_binding >= mapping.firstBinding + uint64_t(mapping.bindingCount)) {
+                continue;
+            }
+
+            // Try to find variable type declaration
+            const spirv::Instruction* type = module_state.FindDef(resource_variable.id);
+            ASSERT_AND_CONTINUE(type);
+
+            // Strip off any variable, array or ptrs
+            if (type->Opcode() == spv::OpVariable) {
+                type = module_state.FindDef(type->Word(1));
+            }
+            while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
+                if (type->IsArray()) {
+                    type = module_state.FindDef(type->Word(2));
+                } else {
+                    type = module_state.FindDef(type->Word(3));
+                }
+            }
+
+            // Check whether mapping OpType is covered by the VUIDs
+            if (!IsValueIn(type->Opcode(), {(uint32_t)spv::OpTypeSampler, (uint32_t)spv::OpTypeSampledImage})) {
+                continue;
+            }
+
+            if (cb_state.descriptor_heap.sampler_reserved.valid() &&
+                cb_state.descriptor_heap.sampler_reserved.distance() <
+                    phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
+                skip |=
+                    LogError(vuid.descriptor_heap_11375, cb_state.GetObjectList(bind_point), vuid.loc(),
+                             "Last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
+                             ", that is less than minSamplerHeapReservedRangeWithEmbedded (%" PRIu64
+                             ").\nEmbedded sampler has been used in stage %s with mapping at index %" PRIu32 ".\n%s\n",
+                             cb_state.descriptor_heap.sampler_reserved.distance(),
+                             phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
+                             string_VkShaderStageFlagBits(entry_point.stage), i, module_state.DescribeInstruction(*type).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
                                                             const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
@@ -1564,6 +1714,24 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
 
     // Check if the current shader objects are compatible for the maximum used set with the bound sets.
     for (const auto &shader_state : last_bound_state.shader_object_states) {
+        if (shader_state && shader_state->descriptor_heap_mode) {
+            const spirv::Module* module_state = shader_state->spirv.get();
+            const spirv::EntryPoint* entry_point = shader_state->entrypoint.get();
+            if (module_state && entry_point) {
+                skip |= ValidateActionStateDescriptorHeapUntyped(cb_state, *module_state, *entry_point, bind_point, vuid);
+
+                // Only need to validate if we know there is a embedded sampler to check against
+                if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
+                    if (const auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(
+                            shader_state->safe_create_info.pNext)) {
+                        skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, *mapping_info, *module_state, *entry_point,
+                                                                          bind_point, vuid);
+                    }
+                }
+            }
+            continue;
+        }
+
         // If the shader is not using any descriptors, then any descriptor state set can be ignored
         if (!shader_state || shader_state->active_slots.empty()) {
             continue;
@@ -1633,6 +1801,54 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
     return skip;
 }
 
+bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state,
+                                                               const spirv::EntryPoint* entry_point,
+                                                               const VkPipelineBindPoint bind_point,
+                                                               const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    if (!entry_point || !entry_point->push_constant_variable) {
+        return skip;
+    }
+
+    const auto& pc_variable = *entry_point->push_constant_variable;
+    if (pc_variable.size > 0) {
+        const uint32_t begin = pc_variable.offset;
+        const uint32_t end = begin + pc_variable.size - 1;
+
+        if (!cb_state.descriptor_heap.push_data.empty()) {
+            const uint32_t size = static_cast<uint32_t>(cb_state.descriptor_heap.push_data.size());
+            // Find the first range of bytes which were not set
+            uint32_t unset_start = size;
+            uint32_t unset_end = end;
+            for (uint32_t i = begin; i <= end; i++) {
+                if (i >= size || !cb_state.descriptor_heap.push_data[i]) {
+                    if (unset_start == size) {
+                        unset_start = i;
+                    }
+                } else if (unset_start != size) {
+                    unset_end = i - 1;
+                    break;
+                }
+            }
+            if (unset_start != size) {
+                skip |= LogError(vuid.descriptor_heap_11376, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                 "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                                 "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
+                                 string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset,
+                                 pc_variable.offset + pc_variable.size, unset_start, unset_end);
+            }
+        } else {
+            skip |= LogError(vuid.descriptor_heap_11376, cb_state.GetObjectList(bind_point), vuid.loc(),
+                             "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                             "), while there was no call to vkCmdPushDataEXT.",
+                             string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset,
+                             pc_variable.offset + pc_variable.size);
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_state, const vvl::Pipeline *pipeline,
                                                  const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
@@ -1648,22 +1864,30 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
     //       "life times" of push constants are correct.
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (pipeline) {
+        if (pipeline->descriptor_heap_mode) {
+            for (const auto& stage_state : pipeline->stage_states) {
+                skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage_state.entrypoint.get(),
+                                                                      last_bound_state.bind_point, vuid);
+            }
+        }
         auto const &pipeline_layout = pipeline->PipelineLayoutState();
-        if (!cb_state.push_constant_ranges_layout ||
-            (pipeline_layout->push_constant_ranges_layout == cb_state.push_constant_ranges_layout)) {
-            for (const auto &stage : pipeline->stage_states) {
-                if (!stage.entrypoint || !stage.entrypoint->push_constant_variable) {
-                    continue;  // no static push constant in shader
-                }
+        if (pipeline_layout) {
+            if (!cb_state.push_constant_ranges_layout ||
+                (pipeline_layout->push_constant_ranges_layout == cb_state.push_constant_ranges_layout)) {
+                for (const auto& stage : pipeline->stage_states) {
+                    if (!stage.entrypoint || !stage.entrypoint->push_constant_variable) {
+                        continue;  // no static push constant in shader
+                    }
 
-                // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
-                    skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
-                                     "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                     "pipeline layout %s.",
-                                     string_VkShaderStageFlags(stage.GetStage()).c_str(),
-                                     FormatHandle(pipeline_layout->Handle()).c_str());
+                    // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
+                    if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
+                        const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
+                        skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
+                                         "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
+                                         "pipeline layout %s.",
+                                         string_VkShaderStageFlags(stage.GetStage()).c_str(),
+                                         FormatHandle(pipeline_layout->Handle()).c_str());
+                    }
                 }
             }
         }
@@ -1673,12 +1897,17 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                 if (!stage || !stage->entrypoint || !stage->entrypoint->push_constant_variable) {
                     continue;
                 }
-                // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
-                if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
-                    const LogObjectList objlist(cb_state.Handle(), stage->Handle());
-                    skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
-                                     "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
-                                     string_VkShaderStageFlags(stage->create_info.stage).c_str());
+                if (stage->descriptor_heap_mode) {
+                    skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage->entrypoint.get(),
+                                                                          last_bound_state.bind_point, vuid);
+                } else {
+                    // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
+                    if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
+                        const LogObjectList objlist(cb_state.Handle(), stage->Handle());
+                        skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
+                                         "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
+                                         string_VkShaderStageFlags(stage->create_info.stage).c_str());
+                    }
                 }
             }
         }

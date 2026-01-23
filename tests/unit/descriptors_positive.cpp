@@ -25,7 +25,6 @@ class PositiveDescriptors : public VkLayerTest {};
 
 TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
-    unsigned int i;
 
     RETURN_IF_SKIP(Init());
     OneOffDescriptorSet src_descriptor_set(m_device, {
@@ -38,10 +37,10 @@ TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
                                                          {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      });
 
-    const unsigned int copy_size = 2;
+    const uint32_t copy_size = 2;
     VkCopyDescriptorSet copy_ds_update[copy_size];
     memset(copy_ds_update, 0, sizeof(copy_ds_update));
-    for (i = 0; i < copy_size; i++) {
+    for (uint32_t i = 0; i < copy_size; i++) {
         copy_ds_update[i] = vku::InitStructHelper();
         copy_ds_update[i].srcSet = src_descriptor_set.set_;
         copy_ds_update[i].srcBinding = i;

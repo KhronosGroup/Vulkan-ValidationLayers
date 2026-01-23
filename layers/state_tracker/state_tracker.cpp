@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,6 +108,73 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
             return DispatchGetBufferDeviceAddressKHR(device, &address_info);
         } else {
             return 0;
+        }
+    }
+}
+
+struct CommandBufferReservedAddressEnumOps {
+    using Map = typename DeviceState::DescriptorHeapReservedAddress::RangeMap;
+    using Iterator = typename Map::iterator;
+    using Range = typename Map::key_type;
+
+    void infill(Map& map, const Iterator& pos, const Range& infill_range) const {}
+
+    void update(const Iterator& pos) const {
+        auto& command_buffer_list = pos->second;
+        assert(!command_buffer_list.empty());
+        for (auto command_buffer : command_buffer_list) {
+            if (command_buffer != lookup_value) {
+                buffers.insert(command_buffer);
+            }
+        }
+    }
+    const vvl::CommandBuffer* lookup_value;
+    mutable std::set<const vvl::CommandBuffer*> buffers;
+};
+
+void DeviceState::GetBufferAddressOverlapRanges(const vvl::CommandBuffer* command_buffer, const BufferAddressRange& range,
+                                                bool range_type_sampler,
+                                                std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
+                                                std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
+                                                std::vector<CommandBufferOverlapData>& type_mismatch_data) {
+    if (range.non_empty()) {
+        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+        for (int i = 0; i < 2; i++) {
+            // with i==0 checking resource type, i==1 checking sampler type
+            CommandBufferReservedAddressEnumOps enum_ops{command_buffer, {}};
+            auto& cmd_buffer_map = (i == 0) ? descriptor_heap_reserved_address.resource_cmd_buffer_map
+                                            : descriptor_heap_reserved_address.sampler_cmd_buffer_map;
+            std::vector<CommandBufferOverlapData>& overlap_data = (i == 0) ? resource_type_overlap_data : sampler_type_overlap_data;
+            const bool enable_match = (i == 0 && !range_type_sampler) || (i == 1 && range_type_sampler);
+
+            // get a set of command buffers that overlap the range
+            sparse_container::infill_update_range(cmd_buffer_map, range, enum_ops);
+            for (const vvl::CommandBuffer* cmd_buffer : enum_ops.buffers) {
+                // get full reserved range from command buffer
+                BufferAddressRange cmd_buffer_address_range =
+                    (i == 0) ? cmd_buffer->descriptor_heap.resource_reserved : cmd_buffer->descriptor_heap.sampler_reserved;
+
+                bool report = false;
+                if (range.intersects(cmd_buffer_address_range)) {
+                    if (range == cmd_buffer_address_range) {
+                        if (enable_match) {
+                            // this is legitimate when the reserved range is bound to several command buffers with same heap type
+                            report = false;
+                        } else {
+                            // range match, but type is different: report through a separate list
+                            type_mismatch_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
+                            report = false;
+                        }
+                    } else {
+                        // Pure overlap, but not match
+                        report = true;
+                    }
+                }
+
+                if (report) {
+                    overlap_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
+                }
+            }
         }
     }
 }
@@ -1778,11 +1845,29 @@ void DeviceState::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModu
 
 void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
                                                 const RecordObject &record_obj) {
+    // Don't do state lookup if not needed
+    if (enabled_features.descriptorHeap) {
+        if (const auto& shader_state = Get<ShaderObject>(shader)) {
+            if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
+                descriptor_heap_global_embedded_sampler_count_ -= shader_state->descriptor_heap_embedded_samplers_count;
+            }
+        }
+    }
+
     Destroy<ShaderObject>(shader);
 }
 
 void DeviceState::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                                const RecordObject &record_obj) {
+    // Don't do state lookup if not needed
+    if (enabled_features.descriptorHeap) {
+        if (const auto& pipeline_state = Get<Pipeline>(pipeline)) {
+            if (pipeline_state->descriptor_heap_embedded_samplers_count > 0) {
+                descriptor_heap_global_embedded_sampler_count_ -= pipeline_state->descriptor_heap_embedded_samplers_count;
+            }
+        }
+    }
+
     Destroy<Pipeline>(pipeline);
 }
 
@@ -2023,6 +2108,12 @@ void DeviceState::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipel
             continue;  // vkspec.html#pipelines-multiple
         }
 
+        if (pCreateInfos[i].pStages) {
+            if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
+                descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
+            }
+        }
+
         pipeline_states[i]->SetHandle(pipeline_handle);
         Add(std::move(pipeline_states[i]));
     }
@@ -2063,6 +2154,10 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
             continue;  // vkspec.html#pipelines-multiple
         }
 
+        if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
+            descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
+        }
+
         pipeline_states[i]->SetHandle(pipeline_handle);
         Add(std::move(pipeline_states[i]));
     }
@@ -2099,6 +2194,10 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
         const VkPipeline pipeline_handle = pPipelines[i];
         if (pipeline_handle == VK_NULL_HANDLE) {
             continue;  // vkspec.html#pipelines-multiple
+        }
+
+        if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
+            descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
         }
 
         pipeline_states[i]->SetHandle(pipeline_handle);
@@ -2146,6 +2245,10 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
                 continue;  // vkspec.html#pipelines-multiple
             }
 
+            if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
+                descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
+            }
+
             pipeline_states[i]->SetHandle(pipeline_handle);
             Add(std::move(pipeline_states[i]));
         }
@@ -2170,6 +2273,10 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
             // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
             (void)chassis_state;
             for (size_t i = 0; i < pipeline_states.size(); ++i) {
+                if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
+                    descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
+                }
+
                 pipeline_states[i]->SetHandle(pipelines.second[i]);
                 this->Add(std::move(pipeline_states[i]));
             }
@@ -2897,6 +3004,8 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
     cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, no_push_desc,
                                             dynamicOffsetCount, pDynamicOffsets, record_obj.location);
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
@@ -2931,6 +3040,8 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
             pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets, record_obj.location);
     }
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
@@ -2948,6 +3059,8 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuff
     ASSERT_AND_RETURN(pipeline_layout);
     cb_state->PushDescriptorSetState(pipelineBindPoint, pipeline_layout, set, descriptorWriteCount, pDescriptorWrites,
                                      record_obj.location);
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
 }
 
 void DeviceState::PostCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -2979,6 +3092,8 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuf
                                          pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites,
                                          record_obj.location);
     }
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
 }
 
 void DeviceState::PostCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -3006,9 +3121,22 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     // So really this should be set at vkCmdSetDescriptorBufferOffsetsEXT time where the bindpoint is known.
     // In practice, setting it here is better as if the app messes up, it might crash things.
-    for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
-        cb_state->lastBound[i].SetDescriptorMode(DescriptorModeBuffer);
-    }
+    cb_state->SetDescriptorMode(DescriptorModeBuffer);
+}
+
+void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                           VkPipelineBindPoint pipelineBindPoint,
+                                                                           VkPipelineLayout layout, uint32_t set,
+                                                                           const RecordObject& record_obj) {
+    auto cb_state = Get<CommandBuffer>(commandBuffer);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer);
+}
+
+void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject& record_obj) {
+    auto cb_state = Get<CommandBuffer>(commandBuffer);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer);
 }
 
 void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
@@ -3021,6 +3149,8 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
     ASSERT_AND_RETURN(pipeline_layout);
 
     cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
 }
 
 void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
@@ -3048,6 +3178,8 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
             pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
             pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -3059,6 +3191,8 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
 
     cb_state->RecordCommand(record_obj.location);
     cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo *pPushConstantsInfo,
@@ -4753,7 +4887,10 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto template_state = Get<DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     auto pipeline_layout = Get<PipelineLayout>(layout);
-    if (!cb_state || !template_state || !pipeline_layout) {
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+
+    if (!template_state || !pipeline_layout) {
         return;
     }
 
@@ -4779,7 +4916,10 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate2(
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto template_state = Get<DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
     auto pipeline_layout = Get<PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
-    if (!cb_state || !template_state || !pipeline_layout) {
+
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+
+    if (!template_state || !pipeline_layout) {
         return;
     }
 
@@ -5276,6 +5416,10 @@ void DeviceState::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t creat
             if (i != j && pShaders[j] != VK_NULL_HANDLE && (pCreateInfos[j].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
                 shader_object_state->linked_shaders.push_back(pShaders[j]);
             }
+        }
+
+        if (shader_object_state->descriptor_heap_embedded_samplers_count > 0) {
+            descriptor_heap_global_embedded_sampler_count_ += shader_object_state->descriptor_heap_embedded_samplers_count;
         }
 
         Add(std::move(shader_object_state));
@@ -6161,4 +6305,140 @@ void DeviceState::PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device,
                                                                 const RecordObject &record_obj) {
     Destroy<IndirectCommandsLayout>(indirectCommandsLayout);
 }
+
+struct CommandBufferReservedAddressInfillUpdateOps {
+    using Map = typename DeviceState::DescriptorHeapReservedAddress::RangeMap;
+    using Iterator = typename Map::iterator;
+    using Value = typename Map::value_type;
+    using Mapped = typename Map::mapped_type;
+    using Range = typename Map::key_type;
+
+    void infill(Map& map, const Iterator& pos, const Range& infill_range) const {
+        map.insert(pos, Value(infill_range, insert_value));
+    }
+
+    void update(const Iterator& pos) const {
+        auto& current_buffer_list = pos->second;
+        assert(!current_buffer_list.empty());
+        const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), insert_value[0]);
+        if (buffer_found_it == current_buffer_list.end()) {
+            if (current_buffer_list.capacity() <= (current_buffer_list.size() + 1)) {
+                current_buffer_list.reserve(current_buffer_list.capacity() * 2);
+            }
+            current_buffer_list.emplace_back(insert_value[0]);
+        }
+    }
+    const Mapped& insert_value;
+};
+
+struct CommandBufferReservedAddressRemoveOps {
+    using Map = DeviceState::DescriptorHeapReservedAddress::RangeMap;
+    using Mapped = Map::mapped_type;
+
+    bool operator()(Mapped& cmd_buffer_list) const {
+        auto it = std::find(cmd_buffer_list.begin(), cmd_buffer_list.end(), removed_value);
+        if (it != cmd_buffer_list.end()) {
+            if (cmd_buffer_list.size() == 1) {
+                return true;
+            } else {
+                // Swap with last element and resize to remove it
+                size_t idx = std::distance(cmd_buffer_list.begin(), it);
+                if (idx != cmd_buffer_list.size() - 1) {
+                    std::swap(cmd_buffer_list[idx], cmd_buffer_list.back());
+                }
+                cmd_buffer_list.resize(cmd_buffer_list.size() - 1);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    const vvl::CommandBuffer* removed_value;
+};
+
+void DeviceState::AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
+                                                                             const BufferAddressRange& existing_range,
+                                                                             const BufferAddressRange& new_range, bool sampler) {
+    assert(command_buffer_state != nullptr);
+
+    DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map = sampler ? descriptor_heap_reserved_address.sampler_cmd_buffer_map
+                                                                      : descriptor_heap_reserved_address.resource_cmd_buffer_map;
+
+    if (existing_range.non_empty()) {
+        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
+        cmd_buffer_map.erase_range_or_touch(existing_range, remove_ops);
+    }
+
+    if (new_range.non_empty()) {
+        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+        CommandBufferReservedAddressInfillUpdateOps update_ops{{command_buffer_state}};
+        sparse_container::infill_update_range(cmd_buffer_map, new_range, update_ops);
+    }
+}
+
+void DeviceState::RemoveCommandBufferFromDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
+                                                                          const BufferAddressRange& resource_existing_range,
+                                                                          const BufferAddressRange& sampler_existing_range) {
+    assert(command_buffer_state != nullptr);
+
+    if (resource_existing_range.non_empty()) {
+        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
+        descriptor_heap_reserved_address.resource_cmd_buffer_map.erase_range_or_touch(resource_existing_range, remove_ops);
+    }
+    if (sampler_existing_range.non_empty()) {
+        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
+        descriptor_heap_reserved_address.sampler_cmd_buffer_map.erase_range_or_touch(sampler_existing_range, remove_ops);
+    }
+}
+
+void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                      const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->descriptor_heap.sampler_bound = true;
+    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
+    vvl::range<VkDeviceAddress> reserved = {
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
+
+    if (cb_state->descriptor_heap.sampler_reserved != reserved) {
+        AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(cb_state.get(), cb_state->descriptor_heap.sampler_reserved,
+                                                                   reserved, true);
+        cb_state->descriptor_heap.sampler_reserved = reserved;
+    }
+    cb_state->descriptor_heap.sampler_range = range;
+
+    cb_state->SetDescriptorMode(DescriptorModeHeap);
+}
+
+void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                       const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->descriptor_heap.resource_bound = true;
+    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
+    vvl::range<VkDeviceAddress> reserved = {
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
+
+    if (cb_state->descriptor_heap.resource_reserved != reserved) {
+        AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(cb_state.get(), cb_state->descriptor_heap.resource_reserved,
+                                                                   reserved, false);
+        cb_state->descriptor_heap.resource_reserved = reserved;
+    }
+    cb_state->descriptor_heap.resource_range = range;
+
+    cb_state->SetDescriptorMode(DescriptorModeHeap);
+}
+
+void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                               const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    cb_state->RecordCmdPushDataEXT(*pPushDataInfo, record_obj.location);
+
+    cb_state->SetDescriptorMode(DescriptorModeHeap);
+}
+
 }  // namespace vvl

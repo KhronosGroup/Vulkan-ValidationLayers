@@ -209,3 +209,66 @@ TEST_F(PositiveShader64BitIndexing, CoopVecLoad) {
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveShader64BitIndexing, ConstantSizeOfLength64) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::shader64BitIndexing);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability Int64
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %A Block
+               OpMemberDecorate %A 0 BuiltIn ResourceHeapEXT
+               OpMemberDecorate %A 0 Offset 0
+               OpDecorateId %_runtimearr_15 ArrayStrideIdEXT %16
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+     %uint64 = OpTypeInt 64 0
+          %A = OpTypeStruct %uint
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+         %15 = OpTypeBufferEXT StorageBuffer
+       %16 = OpConstantSizeOfEXT %uint64 %15
+%_runtimearr_15 = OpTypeRuntimeArray %15
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+         %22 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpUntypedAccessChainKHR %_ptr_UniformConstant %_runtimearr_15 %resource_heap %int_0
+         %18 = OpBufferPointerEXT %_ptr_StorageBuffer %14
+         %19 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %A %18 %int_0
+               OpStore %19 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT | VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.CreateComputePipeline(false);
+}
