@@ -549,6 +549,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(vvl PRIVATE
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
+        -fbracket-depth=512
     )
 elseif(MSVC)
     target_compile_options(vvl PRIVATE

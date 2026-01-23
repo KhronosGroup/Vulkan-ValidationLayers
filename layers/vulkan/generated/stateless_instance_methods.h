@@ -302,6 +302,8 @@ bool PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtils
                                                VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
+                                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples,
                                                               VkMultisamplePropertiesEXT* pMultisampleProperties,
                                                               const ErrorObject& error_obj) const override;

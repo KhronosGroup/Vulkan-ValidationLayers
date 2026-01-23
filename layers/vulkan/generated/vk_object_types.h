@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,16 +70,16 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeCuModuleNVX = 38,
     kVulkanObjectTypeCuFunctionNVX = 39,
     kVulkanObjectTypeDebugUtilsMessengerEXT = 40,
-    kVulkanObjectTypeValidationCacheEXT = 41,
-    kVulkanObjectTypeAccelerationStructureNV = 42,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 43,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 44,
-    kVulkanObjectTypeCudaModuleNV = 45,
-    kVulkanObjectTypeCudaFunctionNV = 46,
-    kVulkanObjectTypeAccelerationStructureKHR = 47,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 48,
-    kVulkanObjectTypeMicromapEXT = 49,
-    kVulkanObjectTypeTensorARM = 50,
+    kVulkanObjectTypeTensorARM = 41,
+    kVulkanObjectTypeValidationCacheEXT = 42,
+    kVulkanObjectTypeAccelerationStructureNV = 43,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 44,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 45,
+    kVulkanObjectTypeCudaModuleNV = 46,
+    kVulkanObjectTypeCudaFunctionNV = 47,
+    kVulkanObjectTypeAccelerationStructureKHR = 48,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 49,
+    kVulkanObjectTypeMicromapEXT = 50,
     kVulkanObjectTypeTensorViewARM = 51,
     kVulkanObjectTypeOpticalFlowSessionNV = 52,
     kVulkanObjectTypeShaderEXT = 53,
@@ -177,6 +177,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_CU_FUNCTION_NVX;
         case kVulkanObjectTypeDebugUtilsMessengerEXT:
             return VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+        case kVulkanObjectTypeTensorARM:
+            return VK_OBJECT_TYPE_TENSOR_ARM;
         case kVulkanObjectTypeValidationCacheEXT:
             return VK_OBJECT_TYPE_VALIDATION_CACHE_EXT;
         case kVulkanObjectTypeAccelerationStructureNV:
@@ -195,8 +197,6 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
         case kVulkanObjectTypeMicromapEXT:
             return VK_OBJECT_TYPE_MICROMAP_EXT;
-        case kVulkanObjectTypeTensorARM:
-            return VK_OBJECT_TYPE_TENSOR_ARM;
         case kVulkanObjectTypeTensorViewARM:
             return VK_OBJECT_TYPE_TENSOR_VIEW_ARM;
         case kVulkanObjectTypeOpticalFlowSessionNV:
@@ -299,6 +299,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeCuFunctionNVX;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
             return kVulkanObjectTypeDebugUtilsMessengerEXT;
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+            return kVulkanObjectTypeTensorARM;
         case VK_OBJECT_TYPE_VALIDATION_CACHE_EXT:
             return kVulkanObjectTypeValidationCacheEXT;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV:
@@ -317,8 +319,6 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeBufferCollectionFUCHSIA;
         case VK_OBJECT_TYPE_MICROMAP_EXT:
             return kVulkanObjectTypeMicromapEXT;
-        case VK_OBJECT_TYPE_TENSOR_ARM:
-            return kVulkanObjectTypeTensorARM;
         case VK_OBJECT_TYPE_TENSOR_VIEW_ARM:
             return kVulkanObjectTypeTensorViewARM;
         case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV:
@@ -1052,6 +1052,18 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeDebugUtilsMessengerEXT> {
 };
 
 template <>
+struct VkHandleInfo<VkTensorARM> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeTensorARM;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_TENSOR_ARM;
+    static const char* Typename() { return "VkTensorARM"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeTensorARM> {
+    typedef VkTensorARM Type;
+};
+
+template <>
 struct VkHandleInfo<VkValidationCacheEXT> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeValidationCacheEXT;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT;
@@ -1161,18 +1173,6 @@ struct VkHandleInfo<VkMicromapEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeMicromapEXT> {
     typedef VkMicromapEXT Type;
-};
-
-template <>
-struct VkHandleInfo<VkTensorARM> {
-    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeTensorARM;
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
-    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_TENSOR_ARM;
-    static const char* Typename() { return "VkTensorARM"; }
-};
-template <>
-struct VulkanObjectTypeInfo<kVulkanObjectTypeTensorARM> {
-    typedef VkTensorARM Type;
 };
 
 template <>

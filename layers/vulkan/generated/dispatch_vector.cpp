@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -1150,6 +1150,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageViewAddressNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageViewAddressNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageViewAddressNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceCombinedImageSamplerIndexNVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceCombinedImageSamplerIndexNVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceCombinedImageSamplerIndexNVX);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawIndirectCountAMD);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawIndirectCountAMD);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawIndirectCountAMD);
@@ -1258,6 +1261,33 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDispatchGraphIndirectCountAMDX);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDispatchGraphIndirectCountAMDX);
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateWriteSamplerDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordWriteSamplerDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordWriteSamplerDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateWriteResourceDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordWriteResourceDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordWriteResourceDescriptorsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindSamplerHeapEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindSamplerHeapEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindSamplerHeapEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindResourceHeapEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindResourceHeapEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindResourceHeapEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdPushDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdPushDataEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdPushDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageOpaqueCaptureDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageOpaqueCaptureDataEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageOpaqueCaptureDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateRegisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordRegisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordRegisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateUnregisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordUnregisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordUnregisterCustomBorderColorEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetTensorOpaqueCaptureDataARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetTensorOpaqueCaptureDataARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetTensorOpaqueCaptureDataARM);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetSampleLocationsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetSampleLocationsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetSampleLocationsEXT);

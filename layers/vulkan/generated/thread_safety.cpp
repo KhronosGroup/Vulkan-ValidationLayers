@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,28 +91,24 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
 
 void Device::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                       const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
+    StartReadObject(queue, record_obj.location);
     StartWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
+    FinishReadObject(queue, record_obj.location);
     FinishWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
 void Device::PreCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    StartReadObject(queue, record_obj.location);
 }
 
 void Device::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    FinishReadObject(queue, record_obj.location);
 }
 
 void Device::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -275,17 +271,15 @@ void Device::PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkI
 
 void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                           const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
+    StartReadObject(queue, record_obj.location);
     StartWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                            const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
+    FinishReadObject(queue, record_obj.location);
     FinishWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
@@ -2107,17 +2101,15 @@ void Device::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
 
 void Device::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
+    StartReadObject(queue, record_obj.location);
     StartWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                         const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
+    FinishReadObject(queue, record_obj.location);
     FinishWriteObject(fence, record_obj.location);
-    // Host access to queue must be externally synchronized
     // Host access to fence must be externally synchronized
 }
 
@@ -4616,6 +4608,16 @@ void Device::PostCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView i
     FinishReadObject(imageView, record_obj.location);
 }
 
+void Device::PreCallRecordGetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex,
+                                                                const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex,
+                                                                 const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void Device::PreCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                   uint32_t stride, const RecordObject& record_obj) {
@@ -4952,36 +4954,30 @@ void Instance::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const Vk
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 void Device::PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                        const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    StartReadObject(queue, record_obj.location);
 }
 
 void Device::PostCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    FinishReadObject(queue, record_obj.location);
 }
 
 void Device::PreCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    StartReadObject(queue, record_obj.location);
 }
 
 void Device::PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    FinishReadObject(queue, record_obj.location);
 }
 
 void Device::PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    StartReadObject(queue, record_obj.location);
 }
 
 void Device::PostCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                          const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
-    // Host access to queue must be externally synchronized
+    FinishReadObject(queue, record_obj.location);
 }
 
 void Device::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
@@ -5192,6 +5188,127 @@ void Device::PostCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+void Device::PreCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                     const VkHostAddressRangeEXT* pDescriptors, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                      const VkHostAddressRangeEXT* pDescriptors, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                      const VkResourceDescriptorInfoEXT* pResources,
+                                                      const VkHostAddressRangeEXT* pDescriptors, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                       const VkResourceDescriptorInfoEXT* pResources,
+                                                       const VkHostAddressRangeEXT* pDescriptors, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                 const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                 const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                  const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                         const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                          const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordGetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                       VkHostAddressRangeEXT* pDatas, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+
+    if (pImages) {
+        for (uint32_t index = 0; index < imageCount; index++) {
+            StartReadObject(pImages[index], record_obj.location);
+        }
+    }
+}
+
+void Device::PostCallRecordGetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                        VkHostAddressRangeEXT* pDatas, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+
+    if (pImages) {
+        for (uint32_t index = 0; index < imageCount; index++) {
+            FinishReadObject(pImages[index], record_obj.location);
+        }
+    }
+}
+
+void Device::PreCallRecordRegisterCustomBorderColorEXT(VkDevice device, const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                       VkBool32 requestIndex, uint32_t* pIndex, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordRegisterCustomBorderColorEXT(VkDevice device,
+                                                        const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                        VkBool32 requestIndex, uint32_t* pIndex, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordUnregisterCustomBorderColorEXT(VkDevice device, uint32_t index, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordUnregisterCustomBorderColorEXT(VkDevice device, uint32_t index, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                                        VkHostAddressRangeEXT* pDatas, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+
+    if (pTensors) {
+        for (uint32_t index = 0; index < tensorCount; index++) {
+            StartReadObject(pTensors[index], record_obj.location);
+        }
+    }
+}
+
+void Device::PostCallRecordGetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                                         VkHostAddressRangeEXT* pDatas, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+
+    if (pTensors) {
+        for (uint32_t index = 0; index < tensorCount; index++) {
+            FinishReadObject(pTensors[index], record_obj.location);
+        }
+    }
+}
+
 void Device::PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                    const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
                                                    const RecordObject& record_obj) {
@@ -5886,16 +6003,14 @@ void Device::PostCallRecordReleasePerformanceConfigurationINTEL(VkDevice device,
 
 void Device::PreCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                 const RecordObject& record_obj) {
-    StartWriteObject(queue, record_obj.location);
+    StartReadObject(queue, record_obj.location);
     StartReadObject(configuration, record_obj.location);
-    // Host access to queue must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                  const RecordObject& record_obj) {
-    FinishWriteObject(queue, record_obj.location);
+    FinishReadObject(queue, record_obj.location);
     FinishReadObject(configuration, record_obj.location);
-    // Host access to queue must be externally synchronized
 }
 
 void Device::PreCallRecordGetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,

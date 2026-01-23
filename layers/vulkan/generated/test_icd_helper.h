@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,6 +210,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME, VK_KHR_RAY_TRACING_POSITION_FETCH_SPEC_VERSION},
     {VK_KHR_PIPELINE_BINARY_EXTENSION_NAME, VK_KHR_PIPELINE_BINARY_SPEC_VERSION},
     {VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, VK_KHR_SWAPCHAIN_MAINTENANCE_1_SPEC_VERSION},
+    {VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME, VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_SPEC_VERSION},
     {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_COOPERATIVE_MATRIX_SPEC_VERSION},
     {VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, VK_KHR_COMPUTE_SHADER_DERIVATIVES_SPEC_VERSION},
     {VK_KHR_VIDEO_DECODE_AV1_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_AV1_SPEC_VERSION},
@@ -294,6 +295,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME, VK_AMDX_SHADER_ENQUEUE_SPEC_VERSION},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    {VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, VK_EXT_DESCRIPTOR_HEAP_SPEC_VERSION},
     {VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME, VK_AMD_MIXED_ATTACHMENT_SAMPLES_SPEC_VERSION},
     {VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME, VK_AMD_SHADER_FRAGMENT_MASK_SPEC_VERSION},
     {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, VK_EXT_INLINE_UNIFORM_BLOCK_SPEC_VERSION},
@@ -520,6 +522,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_SPEC_VERSION},
     {VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME, VK_EXT_DEVICE_GENERATED_COMMANDS_SPEC_VERSION},
     {VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME, VK_MESA_IMAGE_ALIGNMENT_CONTROL_SPEC_VERSION},
+    {VK_NV_PUSH_CONSTANT_BANK_EXTENSION_NAME, VK_NV_PUSH_CONSTANT_BANK_SPEC_VERSION},
     {VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, VK_EXT_RAY_TRACING_INVOCATION_REORDER_SPEC_VERSION},
     {VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME, VK_EXT_DEPTH_CLAMP_CONTROL_SPEC_VERSION},
     {VK_HUAWEI_HDR_VIVID_EXTENSION_NAME, VK_HUAWEI_HDR_VIVID_SPEC_VERSION},
@@ -544,6 +547,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_EXTENSION_NAME, VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_SPEC_VERSION},
     {VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_EXTENSION_NAME, VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_SPEC_VERSION},
     {VK_NV_COMPUTE_OCCUPANCY_PRIORITY_EXTENSION_NAME, VK_NV_COMPUTE_OCCUPANCY_PRIORITY_SPEC_VERSION},
+    {VK_EXT_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, VK_EXT_SHADER_SUBGROUP_PARTITIONED_SPEC_VERSION},
     {VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_SPEC_VERSION},
     {VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_SPEC_VERSION},
     {VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_RAY_QUERY_SPEC_VERSION},
@@ -1439,6 +1443,8 @@ static VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, con
 static VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo);
 static VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                              VkImageViewAddressPropertiesNVX* pProperties);
+static VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex,
+                                                                            uint64_t samplerIndex);
 static VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride);
@@ -1554,6 +1560,25 @@ static VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer c
 static VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                                     VkDeviceSize scratchSize, VkDeviceAddress countInfo);
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount,
+                                                                 const VkSamplerCreateInfo* pSamplers,
+                                                                 const VkHostAddressRangeEXT* pDescriptors);
+static VKAPI_ATTR VkResult VKAPI_CALL WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                                  const VkResourceDescriptorInfoEXT* pResources,
+                                                                  const VkHostAddressRangeEXT* pDescriptors);
+static VKAPI_ATTR void VKAPI_CALL CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo);
+static VKAPI_ATTR void VKAPI_CALL CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo);
+static VKAPI_ATTR void VKAPI_CALL CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo);
+static VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                                   VkHostAddressRangeEXT* pDatas);
+static VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
+                                                                             VkDescriptorType descriptorType);
+static VKAPI_ATTR VkResult VKAPI_CALL RegisterCustomBorderColorEXT(VkDevice device,
+                                                                   const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                                   VkBool32 requestIndex, uint32_t* pIndex);
+static VKAPI_ATTR void VKAPI_CALL UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index);
+static VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount,
+                                                                    const VkTensorARM* pTensors, VkHostAddressRangeEXT* pDatas);
 static VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                            const VkSampleLocationsInfoEXT* pSampleLocationsInfo);
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice,
@@ -2715,6 +2740,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetImageViewHandleNVX", (void*)GetImageViewHandleNVX},
     {"vkGetImageViewHandle64NVX", (void*)GetImageViewHandle64NVX},
     {"vkGetImageViewAddressNVX", (void*)GetImageViewAddressNVX},
+    {"vkGetDeviceCombinedImageSamplerIndexNVX", (void*)GetDeviceCombinedImageSamplerIndexNVX},
     {"vkCmdDrawIndirectCountAMD", (void*)CmdDrawIndirectCountAMD},
     {"vkCmdDrawIndexedIndirectCountAMD", (void*)CmdDrawIndexedIndirectCountAMD},
     {"vkGetShaderInfoAMD", (void*)GetShaderInfoAMD},
@@ -2777,6 +2803,16 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdDispatchGraphIndirectAMDX", (void*)CmdDispatchGraphIndirectAMDX},
     {"vkCmdDispatchGraphIndirectCountAMDX", (void*)CmdDispatchGraphIndirectCountAMDX},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    {"vkWriteSamplerDescriptorsEXT", (void*)WriteSamplerDescriptorsEXT},
+    {"vkWriteResourceDescriptorsEXT", (void*)WriteResourceDescriptorsEXT},
+    {"vkCmdBindSamplerHeapEXT", (void*)CmdBindSamplerHeapEXT},
+    {"vkCmdBindResourceHeapEXT", (void*)CmdBindResourceHeapEXT},
+    {"vkCmdPushDataEXT", (void*)CmdPushDataEXT},
+    {"vkGetImageOpaqueCaptureDataEXT", (void*)GetImageOpaqueCaptureDataEXT},
+    {"vkGetPhysicalDeviceDescriptorSizeEXT", (void*)GetPhysicalDeviceDescriptorSizeEXT},
+    {"vkRegisterCustomBorderColorEXT", (void*)RegisterCustomBorderColorEXT},
+    {"vkUnregisterCustomBorderColorEXT", (void*)UnregisterCustomBorderColorEXT},
+    {"vkGetTensorOpaqueCaptureDataARM", (void*)GetTensorOpaqueCaptureDataARM},
     {"vkCmdSetSampleLocationsEXT", (void*)CmdSetSampleLocationsEXT},
     {"vkGetPhysicalDeviceMultisamplePropertiesEXT", (void*)GetPhysicalDeviceMultisamplePropertiesEXT},
     {"vkGetImageDrmFormatModifierPropertiesEXT", (void*)GetImageDrmFormatModifierPropertiesEXT},
@@ -4602,6 +4638,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, Vk
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex,
+                                                                            uint64_t samplerIndex) {
+    return VK_SUCCESS;
+}
+
 static VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride) {
@@ -4816,6 +4857,47 @@ static VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuf
                                                                     VkDeviceSize scratchSize, VkDeviceAddress countInfo) {}
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount,
+                                                                 const VkSamplerCreateInfo* pSamplers,
+                                                                 const VkHostAddressRangeEXT* pDescriptors) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                                  const VkResourceDescriptorInfoEXT* pResources,
+                                                                  const VkHostAddressRangeEXT* pDescriptors) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                                   VkHostAddressRangeEXT* pDatas) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
+                                                                             VkDescriptorType descriptorType) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL RegisterCustomBorderColorEXT(VkDevice device,
+                                                                   const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                                   VkBool32 requestIndex, uint32_t* pIndex) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount,
+                                                                    const VkTensorARM* pTensors, VkHostAddressRangeEXT* pDatas) {
+    return VK_SUCCESS;
+}
+
 static VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                            const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {}
 

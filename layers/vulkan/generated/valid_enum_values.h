@@ -142,6 +142,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkDiscardRectangleModeEXT value)
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorMappingSourceEXT value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlendOverlapEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkCoverageModulationModeNV value) const;

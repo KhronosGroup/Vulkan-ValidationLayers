@@ -7,7 +7,7 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.4.339"
+            "commit": "v1.4.340"
         },
         {
             "name": "Vulkan-Utility-Libraries",
@@ -15,7 +15,7 @@
             "sub_dir": "Vulkan-Utility-Libraries",
             "build_dir": "Vulkan-Utility-Libraries/build",
             "install_dir": "Vulkan-Utility-Libraries/build/install",
-            "commit": "v1.4.339",
+            "commit": "v1.4.340",
             "deps": [
                 {
                     "var_name": "VULKAN_HEADERS_INSTALL_DIR",
@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "babee77020ff82b571d723ce2c0262e2ec0ee3f1"
+            "commit": "04f10f650d514df88b76d25e83db360142c7b174"
         },
         {
             "name": "SPIRV-Tools",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "a1eace9772ea3b5f727359db14305baeaf16a7d7"
+            "commit": "fbe4f3ad913c44fe8700545f8ffe35d1382b7093"
         },
         {
             "name": "mimalloc",
@@ -99,7 +99,7 @@
             "sub_dir": "Vulkan-Loader",
             "build_dir": "Vulkan-Loader/build",
             "install_dir": "Vulkan-Loader/build/install",
-            "commit": "v1.4.339",
+            "commit": "v1.4.340",
             "build_step": "skip",
             "optional": [
                 "tests"

@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -516,6 +516,8 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_calibrated_timestamps, {Reason::Promoted, {vvl::Extension::_VK_KHR_calibrated_timestamps}}},
         {vvl::Extension::_VK_EXT_vertex_attribute_divisor, {Reason::Promoted, {vvl::Extension::_VK_KHR_vertex_attribute_divisor}}},
         {vvl::Extension::_VK_EXT_pipeline_creation_feedback, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_NV_shader_subgroup_partitioned,
+         {Reason::Promoted, {vvl::Extension::_VK_EXT_shader_subgroup_partitioned}}},
         {vvl::Extension::_VK_NV_compute_shader_derivatives,
          {Reason::Promoted, {vvl::Extension::_VK_KHR_compute_shader_derivatives}}},
         {vvl::Extension::_VK_NV_fragment_shader_barycentric,

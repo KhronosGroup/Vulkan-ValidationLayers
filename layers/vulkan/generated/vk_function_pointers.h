@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -481,6 +481,7 @@ extern PFN_vkCmdCuLaunchKernelNVX CmdCuLaunchKernelNVX;
 extern PFN_vkGetImageViewHandleNVX GetImageViewHandleNVX;
 extern PFN_vkGetImageViewHandle64NVX GetImageViewHandle64NVX;
 extern PFN_vkGetImageViewAddressNVX GetImageViewAddressNVX;
+extern PFN_vkGetDeviceCombinedImageSamplerIndexNVX GetDeviceCombinedImageSamplerIndexNVX;
 extern PFN_vkCmdDrawIndirectCountAMD CmdDrawIndirectCountAMD;
 extern PFN_vkCmdDrawIndexedIndirectCountAMD CmdDrawIndexedIndirectCountAMD;
 extern PFN_vkGetShaderInfoAMD GetShaderInfoAMD;
@@ -543,6 +544,16 @@ extern PFN_vkCmdDispatchGraphAMDX CmdDispatchGraphAMDX;
 extern PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
 extern PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+extern PFN_vkWriteSamplerDescriptorsEXT WriteSamplerDescriptorsEXT;
+extern PFN_vkWriteResourceDescriptorsEXT WriteResourceDescriptorsEXT;
+extern PFN_vkCmdBindSamplerHeapEXT CmdBindSamplerHeapEXT;
+extern PFN_vkCmdBindResourceHeapEXT CmdBindResourceHeapEXT;
+extern PFN_vkCmdPushDataEXT CmdPushDataEXT;
+extern PFN_vkGetImageOpaqueCaptureDataEXT GetImageOpaqueCaptureDataEXT;
+extern PFN_vkGetPhysicalDeviceDescriptorSizeEXT GetPhysicalDeviceDescriptorSizeEXT;
+extern PFN_vkRegisterCustomBorderColorEXT RegisterCustomBorderColorEXT;
+extern PFN_vkUnregisterCustomBorderColorEXT UnregisterCustomBorderColorEXT;
+extern PFN_vkGetTensorOpaqueCaptureDataARM GetTensorOpaqueCaptureDataARM;
 extern PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
 extern PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
 extern PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;

@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2025 Google Inc.
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Google Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -708,6 +708,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->swapchainMaintenance1 |= enabled->swapchainMaintenance1 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR: {
+                const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR *>(pNext);
+                features->internallySynchronizedQueues |= enabled->internallySynchronizedQueues == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {
                 const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(pNext);
@@ -877,6 +883,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 break;
             }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT: {
+                const VkPhysicalDeviceDescriptorHeapFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorHeapFeaturesEXT *>(pNext);
+                features->descriptorHeap |= enabled->descriptorHeap == VK_TRUE;
+                features->descriptorHeapCaptureReplay |= enabled->descriptorHeapCaptureReplay == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT: {
                 const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT *>(pNext);
@@ -1811,6 +1824,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->imageAlignmentControl |= enabled->imageAlignmentControl == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_FEATURES_NV: {
+                const VkPhysicalDevicePushConstantBankFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePushConstantBankFeaturesNV *>(pNext);
+                features->pushConstantBank |= enabled->pushConstantBank == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {
                 const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(pNext);
@@ -1925,6 +1944,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *>(pNext);
                 features->computeOccupancyPriority |= enabled->computeOccupancyPriority == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT *>(pNext);
+                features->shaderSubgroupPartitioned |= enabled->shaderSubgroupPartitioned == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

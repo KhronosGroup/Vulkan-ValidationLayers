@@ -2534,6 +2534,12 @@ static inline VkResult DispatchGetImageViewAddressNVX(VkDevice device, VkImageVi
     return dispatch->GetImageViewAddressNVX(device, imageView, pProperties);
 }
 
+static inline uint64_t DispatchGetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex,
+                                                                     uint64_t samplerIndex) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDeviceCombinedImageSamplerIndexNVX(device, imageViewIndex, samplerIndex);
+}
+
 static inline void DispatchCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                    uint32_t stride) {
@@ -2829,6 +2835,65 @@ static inline void DispatchCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
     dispatch->CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+static inline VkResult DispatchWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount,
+                                                          const VkSamplerCreateInfo* pSamplers,
+                                                          const VkHostAddressRangeEXT* pDescriptors) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->WriteSamplerDescriptorsEXT(device, samplerCount, pSamplers, pDescriptors);
+}
+
+static inline VkResult DispatchWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                           const VkResourceDescriptorInfoEXT* pResources,
+                                                           const VkHostAddressRangeEXT* pDescriptors) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->WriteResourceDescriptorsEXT(device, resourceCount, pResources, pDescriptors);
+}
+
+static inline void DispatchCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindSamplerHeapEXT(commandBuffer, pBindInfo);
+}
+
+static inline void DispatchCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindResourceHeapEXT(commandBuffer, pBindInfo);
+}
+
+static inline void DispatchCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdPushDataEXT(commandBuffer, pPushDataInfo);
+}
+
+static inline VkResult DispatchGetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                            VkHostAddressRangeEXT* pDatas) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetImageOpaqueCaptureDataEXT(device, imageCount, pImages, pDatas);
+}
+
+static inline VkDeviceSize DispatchGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
+                                                                      VkDescriptorType descriptorType) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->GetPhysicalDeviceDescriptorSizeEXT(physicalDevice, descriptorType);
+}
+
+static inline VkResult DispatchRegisterCustomBorderColorEXT(VkDevice device,
+                                                            const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                            VkBool32 requestIndex, uint32_t* pIndex) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->RegisterCustomBorderColorEXT(device, pBorderColor, requestIndex, pIndex);
+}
+
+static inline void DispatchUnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->UnregisterCustomBorderColorEXT(device, index);
+}
+
+static inline VkResult DispatchGetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                                             VkHostAddressRangeEXT* pDatas) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetTensorOpaqueCaptureDataARM(device, tensorCount, pTensors, pDatas);
+}
 
 static inline void DispatchCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                     const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {

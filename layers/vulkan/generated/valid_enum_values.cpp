@@ -1561,6 +1561,26 @@ ValidValue stateless::Context::IsValidEnumValue(VkConservativeRasterizationModeE
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorMappingSourceEXT value) const {
+    switch (value) {
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT:
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlendOverlapEXT value) const {
     switch (value) {
         case VK_BLEND_OVERLAP_UNCORRELATED_EXT:
@@ -1819,6 +1839,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeNV va
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV:
             return ValidValue::Valid;
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_NV:
+            return IsExtEnabled(extensions.vk_ext_descriptor_heap) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV:
             return IsExtEnabled(extensions.vk_ext_mesh_shader) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PIPELINE_NV:
@@ -2334,6 +2356,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT v
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT:
             return ValidValue::Valid;
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT:
+            return IsExtEnabled(extensions.vk_ext_descriptor_heap) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
             return IsExtEnabled(extensions.vk_nv_mesh_shader) ? ValidValue::Valid : ValidValue::NoExtension;
@@ -3460,6 +3485,15 @@ const char* stateless::Context::DescribeEnum(VkConservativeRasterizationModeEXT 
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorMappingSourceEXT value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDescriptorMappingSourceEXT value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkBlendOverlapEXT value) const {
     return {};
 }
@@ -3643,6 +3677,8 @@ const char* stateless::Context::DescribeEnum(VkFullScreenExclusiveEXT value) con
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkIndirectCommandsTokenTypeNV value) const {
     switch (value) {
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_NV:
+            return {vvl::Extension::_VK_EXT_descriptor_heap};
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV:
             return {vvl::Extension::_VK_EXT_mesh_shader};
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PIPELINE_NV:
@@ -4030,6 +4066,9 @@ const char* stateless::Context::DescribeEnum(VkIndirectExecutionSetInfoTypeEXT v
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkIndirectCommandsTokenTypeEXT value) const {
     switch (value) {
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT:
+            return {vvl::Extension::_VK_EXT_descriptor_heap};
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
             return {vvl::Extension::_VK_NV_mesh_shader};

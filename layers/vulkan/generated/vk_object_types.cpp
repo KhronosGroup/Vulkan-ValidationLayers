@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,               // kVulkanObjectTypeCuModuleNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT,             // kVulkanObjectTypeCuFunctionNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeDebugUtilsMessengerEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorARM
     VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT,        // kVulkanObjectTypeValidationCacheEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypePerformanceConfigurationINTEL
@@ -78,7 +79,6 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,  // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeMicromapEXT
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorViewARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeShaderEXT
@@ -131,6 +131,7 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkCuModuleNVX",
     "VkCuFunctionNVX",
     "VkDebugUtilsMessengerEXT",
+    "VkTensorARM",
     "VkValidationCacheEXT",
     "VkAccelerationStructureNV",
     "VkPerformanceConfigurationINTEL",
@@ -140,7 +141,6 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkAccelerationStructureKHR",
     "VkBufferCollectionFUCHSIA",
     "VkMicromapEXT",
-    "VkTensorARM",
     "VkTensorViewARM",
     "VkOpticalFlowSessionNV",
     "VkShaderEXT",

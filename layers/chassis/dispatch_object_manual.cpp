@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2284,6 +2284,39 @@ void Device::GetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDe
     }
 
     device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT *)&local_pDescriptorInfo, dataSize, pDescriptor);
+}
+
+VkResult Device::WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount, const VkResourceDescriptorInfoEXT* pResources,
+                                             const VkHostAddressRangeEXT* pDescriptors) {
+    if (!wrap_handles || resourceCount == 0)
+        return device_dispatch_table.WriteResourceDescriptorsEXT(device, resourceCount, pResources, pDescriptors);
+    // When using a union of pointer we still need to unwrap the handles, but since it is a pointer, we can just use the pointer
+    // from the incoming parameter instead of using safe structs as it is less complex doing it here
+    std::vector<vku::safe_VkResourceDescriptorInfoEXT> local_pResources(resourceCount);
+    std::vector<vku::safe_VkImageDescriptorInfoEXT> local_image;
+    local_image.reserve(resourceCount);
+
+    for (uint32_t i = 0; i < resourceCount; i++) {
+        auto& local_pResource = local_pResources[i];
+        local_pResource.initialize(&pResources[i]);
+        if (IsDescriptorHeapImage(local_pResource.type)) {
+            if (local_pResource.data.pImage) {
+                local_image.emplace_back(pResources[i].data.pImage);
+                local_image.back().initialize(pResources[i].data.pImage);
+                local_pResource.data.pImage = local_image.back().ptr();
+                if (local_pResource.data.pImage->pView) {
+                    if (pResources[i].data.pImage->pView->image) {
+                        local_image.back().pView->image = Unwrap(pResources[i].data.pImage->pView->image);
+                    }
+                    if (pResources[i].data.pImage->pView->pNext) {
+                        UnwrapPnextChainHandles(local_pResources[i].data.pImage->pView->pNext);
+                    }
+                }
+            }
+        }
+    }
+
+    return device_dispatch_table.WriteResourceDescriptorsEXT(device, resourceCount, local_pResources[0].ptr(), pDescriptors);
 }
 
 VkResult Device::CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,

@@ -1146,6 +1146,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR: {  // Covers
+                                                                                               // VUID-VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR);
+                VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR* structure =
+                    (VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::internallySynchronizedQueues), structure->internallySynchronizedQueues);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceCooperativeMatrixFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceCooperativeMatrixFeaturesKHR-sType-sType
@@ -1442,6 +1454,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+        // Validation code for VkPhysicalDeviceDescriptorHeapFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT: {  // Covers
+                                                                                // VUID-VkPhysicalDeviceDescriptorHeapFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDescriptorHeapFeaturesEXT);
+                VkPhysicalDeviceDescriptorHeapFeaturesEXT* structure = (VkPhysicalDeviceDescriptorHeapFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::descriptorHeap), structure->descriptorHeap);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::descriptorHeapCaptureReplay), structure->descriptorHeapCaptureReplay);
+            }
+        } break;
 
         // Validation code for VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT: {  // Covers
@@ -3150,6 +3174,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePushConstantBankFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_FEATURES_NV: {  // Covers
+                                                                                  // VUID-VkPhysicalDevicePushConstantBankFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePushConstantBankFeaturesNV);
+                VkPhysicalDevicePushConstantBankFeaturesNV* structure = (VkPhysicalDevicePushConstantBankFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::pushConstantBank), structure->pushConstantBank);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {  // Covers
                                                                                                // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT-sType-sType
@@ -3361,6 +3395,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* structure =
                     (VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::computeOccupancyPriority), structure->computeOccupancyPriority);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT: {  // Covers
+                                                                                            // VUID-VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT);
+                VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT* structure =
+                    (VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderSubgroupPartitioned), structure->shaderSubgroupPartitioned);
             }
         } break;
 
@@ -5923,6 +5968,522 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // VUID-VkPipelineShaderStageNodeCreateInfoAMDX-sType-sType
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+        // Validation code for VkShaderDescriptorSetAndBindingMappingInfoEXT structure members
+        case VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT: {  // Covers
+                                                                                      // VUID-VkShaderDescriptorSetAndBindingMappingInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT);
+                VkShaderDescriptorSetAndBindingMappingInfoEXT* structure = (VkShaderDescriptorSetAndBindingMappingInfoEXT*)header;
+                skip |= ValidateStructTypeArray(
+                    pNext_loc.dot(Field::mappingCount), pNext_loc.dot(Field::pMappings), structure->mappingCount,
+                    structure->pMappings, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT, false, true,
+                    "VUID-VkDescriptorSetAndBindingMappingEXT-sType-sType",
+                    "VUID-VkShaderDescriptorSetAndBindingMappingInfoEXT-pMappings-parameter", kVUIDUndefined);
+
+                if (structure->pMappings != nullptr) {
+                    for (uint32_t mappingIndex = 0; mappingIndex < structure->mappingCount; ++mappingIndex) {
+                        [[maybe_unused]] const Location pMappings_loc = pNext_loc.dot(Field::pMappings, mappingIndex);
+                        constexpr std::array allowed_structs_VkDescriptorSetAndBindingMappingEXT = {
+                            VK_STRUCTURE_TYPE_PUSH_CONSTANT_BANK_INFO_NV};
+
+                        skip |= ValidateStructPnext(pMappings_loc, structure->pMappings[mappingIndex].pNext,
+                                                    allowed_structs_VkDescriptorSetAndBindingMappingEXT.size(),
+                                                    allowed_structs_VkDescriptorSetAndBindingMappingEXT.data(),
+                                                    GeneratedVulkanHeaderVersion,
+                                                    "VUID-VkDescriptorSetAndBindingMappingEXT-pNext-pNext",
+                                                    "VUID-VkDescriptorSetAndBindingMappingEXT-sType-unique", true);
+
+                        skip |=
+                            ValidateFlags(pMappings_loc.dot(Field::resourceMask), vvl::FlagBitmask::VkSpirvResourceTypeFlagBitsEXT,
+                                          AllVkSpirvResourceTypeFlagBitsEXT, structure->pMappings[mappingIndex].resourceMask,
+                                          kRequiredFlags, "VUID-VkDescriptorSetAndBindingMappingEXT-resourceMask-parameter",
+                                          "VUID-VkDescriptorSetAndBindingMappingEXT-resourceMask-requiredbitmask", false);
+
+                        skip |= ValidateRangedEnum(pMappings_loc.dot(Field::source), vvl::Enum::VkDescriptorMappingSourceEXT,
+                                                   structure->pMappings[mappingIndex].source,
+                                                   "VUID-VkDescriptorSetAndBindingMappingEXT-source-parameter");
+
+                        if (structure->pMappings[mappingIndex].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+                            skip |=
+                                ValidateStructType(pMappings_loc.dot(Field::pEmbeddedSampler),
+                                                   structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler,
+                                                   VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, false,
+                                                   "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-parameter",
+                                                   "VUID-VkSamplerCreateInfo-sType-sType");
+
+                            if (structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler != nullptr) {
+                                [[maybe_unused]] const Location pEmbeddedSampler_loc = pMappings_loc.dot(Field::pEmbeddedSampler);
+                                constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                                skip |= ValidateStructPnext(
+                                    pEmbeddedSampler_loc,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->pNext,
+                                    allowed_structs_VkSamplerCreateInfo.size(), allowed_structs_VkSamplerCreateInfo.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                                    "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+                                skip |= ValidateFlags(
+                                    pEmbeddedSampler_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                    AllVkSamplerCreateFlagBits,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->flags,
+                                    kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->magFilter,
+                                    "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->minFilter,
+                                    "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->mipmapMode,
+                                    "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->addressModeU,
+                                    "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->addressModeV,
+                                    "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->addressModeW,
+                                    "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::anisotropyEnable),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.constantOffset.pEmbeddedSampler->anisotropyEnable);
+
+                                skip |= ValidateBool32(
+                                    pEmbeddedSampler_loc.dot(Field::compareEnable),
+                                    structure->pMappings[mappingIndex].sourceData.constantOffset.pEmbeddedSampler->compareEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::unnormalizedCoordinates),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.constantOffset.pEmbeddedSampler->unnormalizedCoordinates);
+                            }
+                        }
+
+                        if (structure->pMappings[mappingIndex].source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+                            skip |= ValidateStructType(pMappings_loc.dot(Field::pEmbeddedSampler),
+                                                       structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler,
+                                                       VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, false,
+                                                       "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-parameter",
+                                                       "VUID-VkSamplerCreateInfo-sType-sType");
+
+                            if (structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler != nullptr) {
+                                [[maybe_unused]] const Location pEmbeddedSampler_loc = pMappings_loc.dot(Field::pEmbeddedSampler);
+                                constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                                skip |= ValidateStructPnext(
+                                    pEmbeddedSampler_loc,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->pNext,
+                                    allowed_structs_VkSamplerCreateInfo.size(), allowed_structs_VkSamplerCreateInfo.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                                    "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+                                skip |=
+                                    ValidateFlags(pEmbeddedSampler_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                                  AllVkSamplerCreateFlagBits,
+                                                  structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->flags,
+                                                  kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->magFilter,
+                                    "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->minFilter,
+                                    "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->mipmapMode,
+                                    "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->addressModeU,
+                                    "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->addressModeV,
+                                    "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->addressModeW,
+                                    "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+                                skip |= ValidateBool32(
+                                    pEmbeddedSampler_loc.dot(Field::anisotropyEnable),
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->anisotropyEnable);
+
+                                skip |= ValidateBool32(
+                                    pEmbeddedSampler_loc.dot(Field::compareEnable),
+                                    structure->pMappings[mappingIndex].sourceData.pushIndex.pEmbeddedSampler->compareEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::unnormalizedCoordinates),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.pushIndex.pEmbeddedSampler->unnormalizedCoordinates);
+                            }
+
+                            skip |= ValidateBool32(
+                                pMappings_loc.dot(Field::useCombinedImageSamplerIndex),
+                                structure->pMappings[mappingIndex].sourceData.pushIndex.useCombinedImageSamplerIndex);
+                        }
+
+                        if (structure->pMappings[mappingIndex].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+                            skip |= ValidateStructType(pMappings_loc.dot(Field::pEmbeddedSampler),
+                                                       structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler,
+                                                       VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, false,
+                                                       "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-parameter",
+                                                       "VUID-VkSamplerCreateInfo-sType-sType");
+
+                            if (structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler != nullptr) {
+                                [[maybe_unused]] const Location pEmbeddedSampler_loc = pMappings_loc.dot(Field::pEmbeddedSampler);
+                                constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                                skip |= ValidateStructPnext(
+                                    pEmbeddedSampler_loc,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->pNext,
+                                    allowed_structs_VkSamplerCreateInfo.size(), allowed_structs_VkSamplerCreateInfo.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                                    "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+                                skip |= ValidateFlags(
+                                    pEmbeddedSampler_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                    AllVkSamplerCreateFlagBits,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->flags,
+                                    kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->magFilter,
+                                    "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->minFilter,
+                                    "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->mipmapMode,
+                                    "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->addressModeU,
+                                    "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->addressModeV,
+                                    "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->addressModeW,
+                                    "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+                                skip |= ValidateBool32(
+                                    pEmbeddedSampler_loc.dot(Field::anisotropyEnable),
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->anisotropyEnable);
+
+                                skip |= ValidateBool32(
+                                    pEmbeddedSampler_loc.dot(Field::compareEnable),
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndex.pEmbeddedSampler->compareEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::unnormalizedCoordinates),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.indirectIndex.pEmbeddedSampler->unnormalizedCoordinates);
+                            }
+
+                            skip |= ValidateBool32(
+                                pMappings_loc.dot(Field::useCombinedImageSamplerIndex),
+                                structure->pMappings[mappingIndex].sourceData.indirectIndex.useCombinedImageSamplerIndex);
+                        }
+
+                        if (structure->pMappings[mappingIndex].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+                            skip |= ValidateStructType(
+                                pMappings_loc.dot(Field::pEmbeddedSampler),
+                                structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler,
+                                VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, false,
+                                "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-parameter",
+                                "VUID-VkSamplerCreateInfo-sType-sType");
+
+                            if (structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler != nullptr) {
+                                [[maybe_unused]] const Location pEmbeddedSampler_loc = pMappings_loc.dot(Field::pEmbeddedSampler);
+                                constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                                skip |= ValidateStructPnext(
+                                    pEmbeddedSampler_loc,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->pNext,
+                                    allowed_structs_VkSamplerCreateInfo.size(), allowed_structs_VkSamplerCreateInfo.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                                    "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+                                skip |= ValidateFlags(
+                                    pEmbeddedSampler_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                    AllVkSamplerCreateFlagBits,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->flags,
+                                    kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->magFilter,
+                                    "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->minFilter,
+                                    "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->mipmapMode,
+                                    "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->addressModeU,
+                                    "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->addressModeV,
+                                    "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.indirectIndexArray.pEmbeddedSampler->addressModeW,
+                                    "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::anisotropyEnable),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.indirectIndexArray.pEmbeddedSampler->anisotropyEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::compareEnable),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.indirectIndexArray.pEmbeddedSampler->compareEnable);
+
+                                skip |=
+                                    ValidateBool32(pEmbeddedSampler_loc.dot(Field::unnormalizedCoordinates),
+                                                   structure->pMappings[mappingIndex]
+                                                       .sourceData.indirectIndexArray.pEmbeddedSampler->unnormalizedCoordinates);
+                            }
+
+                            skip |= ValidateBool32(
+                                pMappings_loc.dot(Field::useCombinedImageSamplerIndex),
+                                structure->pMappings[mappingIndex].sourceData.indirectIndexArray.useCombinedImageSamplerIndex);
+                        }
+
+                        if (structure->pMappings[mappingIndex].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+                            skip |=
+                                ValidateStructType(pMappings_loc.dot(Field::pEmbeddedSampler),
+                                                   structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler,
+                                                   VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, false,
+                                                   "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-parameter",
+                                                   "VUID-VkSamplerCreateInfo-sType-sType");
+
+                            if (structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler != nullptr) {
+                                [[maybe_unused]] const Location pEmbeddedSampler_loc = pMappings_loc.dot(Field::pEmbeddedSampler);
+                                constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                                skip |= ValidateStructPnext(
+                                    pEmbeddedSampler_loc,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->pNext,
+                                    allowed_structs_VkSamplerCreateInfo.size(), allowed_structs_VkSamplerCreateInfo.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                                    "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+                                skip |= ValidateFlags(
+                                    pEmbeddedSampler_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                    AllVkSamplerCreateFlagBits,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->flags,
+                                    kOptionalFlags, "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->magFilter,
+                                    "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->minFilter,
+                                    "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->mipmapMode,
+                                    "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->addressModeU,
+                                    "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->addressModeV,
+                                    "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+                                skip |= ValidateRangedEnum(
+                                    pEmbeddedSampler_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                    structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.pEmbeddedSampler->addressModeW,
+                                    "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::anisotropyEnable),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.shaderRecordIndex.pEmbeddedSampler->anisotropyEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::compareEnable),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.shaderRecordIndex.pEmbeddedSampler->compareEnable);
+
+                                skip |= ValidateBool32(pEmbeddedSampler_loc.dot(Field::unnormalizedCoordinates),
+                                                       structure->pMappings[mappingIndex]
+                                                           .sourceData.shaderRecordIndex.pEmbeddedSampler->unnormalizedCoordinates);
+                            }
+
+                            skip |= ValidateBool32(
+                                pMappings_loc.dot(Field::useCombinedImageSamplerIndex),
+                                structure->pMappings[mappingIndex].sourceData.shaderRecordIndex.useCombinedImageSamplerIndex);
+                        }
+                    }
+                }
+            }
+        } break;
+
+        // Validation code for VkOpaqueCaptureDataCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT: {  // Covers VUID-VkOpaqueCaptureDataCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkOpaqueCaptureDataCreateInfoEXT);
+                VkOpaqueCaptureDataCreateInfoEXT* structure = (VkOpaqueCaptureDataCreateInfoEXT*)header;
+                if (structure->pData != nullptr) {
+                    [[maybe_unused]] const Location pData_loc = pNext_loc.dot(Field::pData);
+                    skip |=
+                        ValidateArray(pData_loc.dot(Field::size), pData_loc.dot(Field::address), structure->pData->size,
+                                      &structure->pData->address, true, true, "VUID-VkHostAddressRangeConstEXT-size-arraylength",
+                                      "VUID-VkHostAddressRangeConstEXT-address-parameter");
+                }
+            }
+        } break;
+
+        // Validation code for VkCommandBufferInheritanceDescriptorHeapInfoEXT structure members
+        case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_DESCRIPTOR_HEAP_INFO_EXT: {  // Covers
+                                                                                       // VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkCommandBufferInheritanceDescriptorHeapInfoEXT);
+                VkCommandBufferInheritanceDescriptorHeapInfoEXT* structure =
+                    (VkCommandBufferInheritanceDescriptorHeapInfoEXT*)header;
+                skip |= ValidateStructType(pNext_loc.dot(Field::pSamplerHeapBindInfo), structure->pSamplerHeapBindInfo,
+                                           VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT, false,
+                                           "VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-pSamplerHeapBindInfo-parameter",
+                                           "VUID-VkBindHeapInfoEXT-sType-sType");
+
+                if (structure->pSamplerHeapBindInfo != nullptr) {
+                    [[maybe_unused]] const Location pSamplerHeapBindInfo_loc = pNext_loc.dot(Field::pSamplerHeapBindInfo);
+                    skip |= ValidateStructPnext(pSamplerHeapBindInfo_loc, structure->pSamplerHeapBindInfo->pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined,
+                                                true);
+                }
+
+                skip |= ValidateStructType(pNext_loc.dot(Field::pResourceHeapBindInfo), structure->pResourceHeapBindInfo,
+                                           VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT, false,
+                                           "VUID-VkCommandBufferInheritanceDescriptorHeapInfoEXT-pResourceHeapBindInfo-parameter",
+                                           "VUID-VkBindHeapInfoEXT-sType-sType");
+
+                if (structure->pResourceHeapBindInfo != nullptr) {
+                    [[maybe_unused]] const Location pResourceHeapBindInfo_loc = pNext_loc.dot(Field::pResourceHeapBindInfo);
+                    skip |= ValidateStructPnext(pResourceHeapBindInfo_loc, structure->pResourceHeapBindInfo->pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined,
+                                                true);
+                }
+            }
+        } break;
+
+        // No Validation code for VkSamplerCustomBorderColorIndexCreateInfoEXT structure members  -- Covers
+        // VUID-VkSamplerCustomBorderColorIndexCreateInfoEXT-sType-sType
+
+        // Validation code for VkSamplerCustomBorderColorCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT: {  // Covers
+                                                                               // VUID-VkSamplerCustomBorderColorCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT);
+                VkSamplerCustomBorderColorCreateInfoEXT* structure = (VkSamplerCustomBorderColorCreateInfoEXT*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::format), vvl::Enum::VkFormat, structure->format,
+                                           "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter");
+            }
+        } break;
+
+        // No Validation code for VkIndirectCommandsLayoutPushDataTokenNV structure members  -- Covers
+        // VUID-VkIndirectCommandsLayoutPushDataTokenNV-sType-sType
+
+        // No Validation code for VkSubsampledImageFormatPropertiesEXT structure members  -- Covers
+        // VUID-VkSubsampledImageFormatPropertiesEXT-sType-sType
+
         // No Validation code for VkAttachmentSampleCountInfoAMD structure members  -- Covers
         // VUID-VkAttachmentSampleCountInfoAMD-sType-sType
 
@@ -6482,6 +7043,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
                                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
                                     VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                     VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -6577,17 +7139,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pfnUserCallback),
                                                 reinterpret_cast<const void*>(structure->pfnUserCallback),
                                                 "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pfnUserCallback-parameter");
-            }
-        } break;
-
-        // Validation code for VkSamplerCustomBorderColorCreateInfoEXT structure members
-        case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT: {  // Covers
-                                                                               // VUID-VkSamplerCustomBorderColorCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT);
-                VkSamplerCustomBorderColorCreateInfoEXT* structure = (VkSamplerCustomBorderColorCreateInfoEXT*)header;
-                skip |= ValidateRangedEnum(pNext_loc.dot(Field::format), vvl::Enum::VkFormat, structure->format,
-                                           "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter");
             }
         } break;
 
@@ -7749,6 +8300,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkImageAlignmentControlCreateInfoMESA structure members  -- Covers
         // VUID-VkImageAlignmentControlCreateInfoMESA-sType-sType
 
+        // No Validation code for VkPushConstantBankInfoNV structure members  -- Covers VUID-VkPushConstantBankInfoNV-sType-sType
+
         // Validation code for VkPipelineViewportDepthClampControlCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT: {  // Covers
                                                                                          // VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-sType-sType
@@ -8041,6 +8594,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE,
@@ -8091,6 +8645,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT,
@@ -8146,6 +8701,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV,
@@ -8196,6 +8752,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_ROTATE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES,
@@ -9040,6 +9597,7 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
             VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
             VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
+            VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
             VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
@@ -9888,6 +10446,7 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
                 VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -9922,8 +10481,6 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                                           &pCreateInfos[createInfoIndex].stage.pSpecializationInfo->pData, false, true,
                                           kVUIDUndefined, "VUID-VkSpecializationInfo-pData-parameter");
             }
-
-            skip |= context.ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);
         }
     }
     if (pAllocator != nullptr) {
@@ -10016,11 +10573,13 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
             VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+            VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
             VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
 
@@ -11432,6 +11991,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_PROPERTIES_ARM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_TENSOR_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV,
@@ -11490,6 +12051,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_CONSTANT_BANK_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV,
@@ -11634,6 +12196,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysical
             VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_NATIVE_BUFFER_USAGE_OHOS,
             VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES,
+            VK_STRUCTURE_TYPE_SUBSAMPLED_IMAGE_FORMAT_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD};
 
         skip |= context.ValidateStructPnext(
@@ -13339,6 +13902,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
+                VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
@@ -13438,6 +14002,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
+                VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
@@ -14376,6 +14941,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
+                VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
@@ -14780,7 +15346,8 @@ bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, con
         "VUID-vkCmdPushConstants2-pPushConstantsInfo-parameter", "VUID-VkPushConstantsInfo-sType-sType");
     if (pPushConstantsInfo != nullptr) {
         [[maybe_unused]] const Location pPushConstantsInfo_loc = loc.dot(Field::pPushConstantsInfo);
-        constexpr std::array allowed_structs_VkPushConstantsInfo = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+        constexpr std::array allowed_structs_VkPushConstantsInfo = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                                                                    VK_STRUCTURE_TYPE_PUSH_CONSTANT_BANK_INFO_NV};
 
         skip |= context.ValidateStructPnext(pPushConstantsInfo_loc, pPushConstantsInfo->pNext,
                                             allowed_structs_VkPushConstantsInfo.size(), allowed_structs_VkPushConstantsInfo.data(),
@@ -19233,6 +19800,15 @@ bool Device::PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView 
     return skip;
 }
 
+bool Device::PreCallValidateGetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nvx_image_view_handle))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_image_view_handle});
+    return skip;
+}
+
 bool Device::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride, const ErrorObject& error_obj) const {
@@ -20139,6 +20715,7 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                        VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -20193,8 +20770,6 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
                                               &pCreateInfos[createInfoIndex].pLibraryInfo->pLibraries, false, true, kVUIDUndefined,
                                               "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
             }
-
-            skip |= context.ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);
         }
     }
     if (pAllocator != nullptr) {
@@ -20298,6 +20873,406 @@ bool Device::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer co
     return skip;
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+bool Device::PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                       const VkHostAddressRangeEXT* pDescriptors,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::samplerCount), loc.dot(Field::pSamplers), samplerCount, pSamplers, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        true, true, "VUID-VkSamplerCreateInfo-sType-sType", "VUID-vkWriteSamplerDescriptorsEXT-pSamplers-parameter",
+        "VUID-vkWriteSamplerDescriptorsEXT-samplerCount-arraylength");
+    if (pSamplers != nullptr) {
+        for (uint32_t samplerIndex = 0; samplerIndex < samplerCount; ++samplerIndex) {
+            [[maybe_unused]] const Location pSamplers_loc = loc.dot(Field::pSamplers, samplerIndex);
+            constexpr std::array allowed_structs_VkSamplerCreateInfo = {
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM,
+                VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT,
+                VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM,
+                VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
+                VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_INDEX_CREATE_INFO_EXT,
+                VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO,
+                VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+            skip |= context.ValidateStructPnext(
+                pSamplers_loc, pSamplers[samplerIndex].pNext, allowed_structs_VkSamplerCreateInfo.size(),
+                allowed_structs_VkSamplerCreateInfo.data(), GeneratedVulkanHeaderVersion, "VUID-VkSamplerCreateInfo-pNext-pNext",
+                "VUID-VkSamplerCreateInfo-sType-unique", true);
+
+            skip |= context.ValidateFlags(pSamplers_loc.dot(Field::flags), vvl::FlagBitmask::VkSamplerCreateFlagBits,
+                                          AllVkSamplerCreateFlagBits, pSamplers[samplerIndex].flags, kOptionalFlags,
+                                          "VUID-VkSamplerCreateInfo-flags-parameter", nullptr, false);
+
+            skip |= context.ValidateRangedEnum(pSamplers_loc.dot(Field::magFilter), vvl::Enum::VkFilter,
+                                               pSamplers[samplerIndex].magFilter, "VUID-VkSamplerCreateInfo-magFilter-parameter");
+
+            skip |= context.ValidateRangedEnum(pSamplers_loc.dot(Field::minFilter), vvl::Enum::VkFilter,
+                                               pSamplers[samplerIndex].minFilter, "VUID-VkSamplerCreateInfo-minFilter-parameter");
+
+            skip |= context.ValidateRangedEnum(pSamplers_loc.dot(Field::mipmapMode), vvl::Enum::VkSamplerMipmapMode,
+                                               pSamplers[samplerIndex].mipmapMode, "VUID-VkSamplerCreateInfo-mipmapMode-parameter");
+
+            skip |=
+                context.ValidateRangedEnum(pSamplers_loc.dot(Field::addressModeU), vvl::Enum::VkSamplerAddressMode,
+                                           pSamplers[samplerIndex].addressModeU, "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+
+            skip |=
+                context.ValidateRangedEnum(pSamplers_loc.dot(Field::addressModeV), vvl::Enum::VkSamplerAddressMode,
+                                           pSamplers[samplerIndex].addressModeV, "VUID-VkSamplerCreateInfo-addressModeV-parameter");
+
+            skip |=
+                context.ValidateRangedEnum(pSamplers_loc.dot(Field::addressModeW), vvl::Enum::VkSamplerAddressMode,
+                                           pSamplers[samplerIndex].addressModeW, "VUID-VkSamplerCreateInfo-addressModeW-parameter");
+
+            skip |= context.ValidateBool32(pSamplers_loc.dot(Field::anisotropyEnable), pSamplers[samplerIndex].anisotropyEnable);
+
+            skip |= context.ValidateBool32(pSamplers_loc.dot(Field::compareEnable), pSamplers[samplerIndex].compareEnable);
+
+            skip |= context.ValidateBool32(pSamplers_loc.dot(Field::unnormalizedCoordinates),
+                                           pSamplers[samplerIndex].unnormalizedCoordinates);
+        }
+    }
+    skip |= context.ValidateArray(loc.dot(Field::samplerCount), loc.dot(Field::pDescriptors), samplerCount, &pDescriptors, true,
+                                  true, "VUID-vkWriteSamplerDescriptorsEXT-samplerCount-arraylength",
+                                  "VUID-vkWriteSamplerDescriptorsEXT-pDescriptors-parameter");
+    if (pDescriptors != nullptr) {
+        for (uint32_t samplerIndex = 0; samplerIndex < samplerCount; ++samplerIndex) {
+            [[maybe_unused]] const Location pDescriptors_loc = loc.dot(Field::pDescriptors, samplerIndex);
+            skip |= context.ValidateArray(pDescriptors_loc.dot(Field::size), pDescriptors_loc.dot(Field::address),
+                                          pDescriptors[samplerIndex].size, &pDescriptors[samplerIndex].address, true, true,
+                                          "VUID-VkHostAddressRangeEXT-size-arraylength",
+                                          "VUID-VkHostAddressRangeEXT-address-parameter");
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
+                                                        const VkResourceDescriptorInfoEXT* pResources,
+                                                        const VkHostAddressRangeEXT* pDescriptors,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::resourceCount), loc.dot(Field::pResources), resourceCount, pResources,
+        VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT, true, true, "VUID-VkResourceDescriptorInfoEXT-sType-sType",
+        "VUID-vkWriteResourceDescriptorsEXT-pResources-parameter", "VUID-vkWriteResourceDescriptorsEXT-resourceCount-arraylength");
+    if (pResources != nullptr) {
+        for (uint32_t resourceIndex = 0; resourceIndex < resourceCount; ++resourceIndex) {
+            [[maybe_unused]] const Location pResources_loc = loc.dot(Field::pResources, resourceIndex);
+            constexpr std::array allowed_structs_VkResourceDescriptorInfoEXT = {VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pResources_loc, pResources[resourceIndex].pNext, allowed_structs_VkResourceDescriptorInfoEXT.size(),
+                allowed_structs_VkResourceDescriptorInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkResourceDescriptorInfoEXT-pNext-pNext", "VUID-VkResourceDescriptorInfoEXT-sType-unique", true);
+
+            skip |= context.ValidateRangedEnum(pResources_loc.dot(Field::type), vvl::Enum::VkDescriptorType,
+                                               pResources[resourceIndex].type, "VUID-VkResourceDescriptorInfoEXT-type-parameter");
+
+            if (pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
+                pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
+                pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT ||
+                pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM ||
+                pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) {
+                skip |= context.ValidateStructType(pResources_loc.dot(Field::pImage), pResources[resourceIndex].data.pImage,
+                                                   VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT, false, kVUIDUndefined,
+                                                   "VUID-VkImageDescriptorInfoEXT-sType-sType");
+
+                if (pResources[resourceIndex].data.pImage != nullptr) {
+                    [[maybe_unused]] const Location pImage_loc = pResources_loc.dot(Field::pImage);
+                    skip |= context.ValidateStructPnext(pImage_loc, pResources[resourceIndex].data.pImage->pNext, 0, nullptr,
+                                                        GeneratedVulkanHeaderVersion, "VUID-VkImageDescriptorInfoEXT-pNext-pNext",
+                                                        kVUIDUndefined, true);
+
+                    skip |= context.ValidateStructType(pImage_loc.dot(Field::pView), pResources[resourceIndex].data.pImage->pView,
+                                                       VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, true,
+                                                       "VUID-VkImageDescriptorInfoEXT-pView-parameter",
+                                                       "VUID-VkImageViewCreateInfo-sType-sType");
+
+                    if (pResources[resourceIndex].data.pImage->pView != nullptr) {
+                        [[maybe_unused]] const Location pView_loc = pImage_loc.dot(Field::pView);
+                        constexpr std::array allowed_structs_VkImageViewCreateInfo = {
+                            VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
+                            VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT,
+                            VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT,
+                            VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM,
+                            VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT,
+                            VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+                            VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
+                            VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO};
+
+                        skip |= context.ValidateStructPnext(pView_loc, pResources[resourceIndex].data.pImage->pView->pNext,
+                                                            allowed_structs_VkImageViewCreateInfo.size(),
+                                                            allowed_structs_VkImageViewCreateInfo.data(),
+                                                            GeneratedVulkanHeaderVersion, "VUID-VkImageViewCreateInfo-pNext-pNext",
+                                                            "VUID-VkImageViewCreateInfo-sType-unique", true);
+
+                        skip |=
+                            context.ValidateFlags(pView_loc.dot(Field::flags), vvl::FlagBitmask::VkImageViewCreateFlagBits,
+                                                  AllVkImageViewCreateFlagBits, pResources[resourceIndex].data.pImage->pView->flags,
+                                                  kOptionalFlags, "VUID-VkImageViewCreateInfo-flags-parameter", nullptr, false);
+
+                        skip |= context.ValidateRequiredHandle(pView_loc.dot(Field::image),
+                                                               pResources[resourceIndex].data.pImage->pView->image);
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::viewType), vvl::Enum::VkImageViewType,
+                                                           pResources[resourceIndex].data.pImage->pView->viewType,
+                                                           "VUID-VkImageViewCreateInfo-viewType-parameter");
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                                           pResources[resourceIndex].data.pImage->pView->format,
+                                                           "VUID-VkImageViewCreateInfo-format-parameter");
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::r), vvl::Enum::VkComponentSwizzle,
+                                                           pResources[resourceIndex].data.pImage->pView->components.r,
+                                                           "VUID-VkComponentMapping-r-parameter");
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::g), vvl::Enum::VkComponentSwizzle,
+                                                           pResources[resourceIndex].data.pImage->pView->components.g,
+                                                           "VUID-VkComponentMapping-g-parameter");
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::b), vvl::Enum::VkComponentSwizzle,
+                                                           pResources[resourceIndex].data.pImage->pView->components.b,
+                                                           "VUID-VkComponentMapping-b-parameter");
+
+                        skip |= context.ValidateRangedEnum(pView_loc.dot(Field::a), vvl::Enum::VkComponentSwizzle,
+                                                           pResources[resourceIndex].data.pImage->pView->components.a,
+                                                           "VUID-VkComponentMapping-a-parameter");
+
+                        skip |= context.ValidateFlags(pView_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                                      AllVkImageAspectFlagBits,
+                                                      pResources[resourceIndex].data.pImage->pView->subresourceRange.aspectMask,
+                                                      kRequiredFlags, "VUID-VkImageSubresourceRange-aspectMask-parameter",
+                                                      "VUID-VkImageSubresourceRange-aspectMask-requiredbitmask", false);
+                    }
+
+                    skip |= context.ValidateRangedEnum(pImage_loc.dot(Field::layout), vvl::Enum::VkImageLayout,
+                                                       pResources[resourceIndex].data.pImage->layout,
+                                                       "VUID-VkImageDescriptorInfoEXT-layout-parameter");
+                }
+            }
+
+            if (pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                skip |=
+                    context.ValidateStructType(pResources_loc.dot(Field::pTexelBuffer), pResources[resourceIndex].data.pTexelBuffer,
+                                               VK_STRUCTURE_TYPE_TEXEL_BUFFER_DESCRIPTOR_INFO_EXT, false, kVUIDUndefined,
+                                               "VUID-VkTexelBufferDescriptorInfoEXT-sType-sType");
+
+                if (pResources[resourceIndex].data.pTexelBuffer != nullptr) {
+                    [[maybe_unused]] const Location pTexelBuffer_loc = pResources_loc.dot(Field::pTexelBuffer);
+                    skip |= context.ValidateStructPnext(pTexelBuffer_loc, pResources[resourceIndex].data.pTexelBuffer->pNext, 0,
+                                                        nullptr, GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkTexelBufferDescriptorInfoEXT-pNext-pNext", kVUIDUndefined, true);
+
+                    skip |= context.ValidateRangedEnum(pTexelBuffer_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                                       pResources[resourceIndex].data.pTexelBuffer->format,
+                                                       "VUID-VkTexelBufferDescriptorInfoEXT-format-parameter");
+                }
+            }
+
+            if (pResources[resourceIndex].type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+                skip |= context.ValidateStructType(pResources_loc.dot(Field::pTensorARM), pResources[resourceIndex].data.pTensorARM,
+                                                   VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM, false, kVUIDUndefined,
+                                                   "VUID-VkTensorViewCreateInfoARM-sType-sType");
+
+                if (pResources[resourceIndex].data.pTensorARM != nullptr) {
+                    [[maybe_unused]] const Location pTensorARM_loc = pResources_loc.dot(Field::pTensorARM);
+                    constexpr std::array allowed_structs_VkTensorViewCreateInfoARM = {
+                        VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
+
+                    skip |= context.ValidateStructPnext(pTensorARM_loc, pResources[resourceIndex].data.pTensorARM->pNext,
+                                                        allowed_structs_VkTensorViewCreateInfoARM.size(),
+                                                        allowed_structs_VkTensorViewCreateInfoARM.data(),
+                                                        GeneratedVulkanHeaderVersion, "VUID-VkTensorViewCreateInfoARM-pNext-pNext",
+                                                        "VUID-VkTensorViewCreateInfoARM-sType-unique", true);
+
+                    skip |=
+                        context.ValidateFlags(pTensorARM_loc.dot(Field::flags), vvl::FlagBitmask::VkTensorViewCreateFlagBitsARM,
+                                              AllVkTensorViewCreateFlagBitsARM, pResources[resourceIndex].data.pTensorARM->flags,
+                                              kOptionalFlags, "VUID-VkTensorViewCreateInfoARM-flags-parameter", nullptr, false);
+
+                    skip |= context.ValidateRequiredHandle(pTensorARM_loc.dot(Field::tensor),
+                                                           pResources[resourceIndex].data.pTensorARM->tensor);
+
+                    skip |= context.ValidateRangedEnum(pTensorARM_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                                       pResources[resourceIndex].data.pTensorARM->format,
+                                                       "VUID-VkTensorViewCreateInfoARM-format-parameter");
+                }
+            }
+        }
+    }
+    skip |= context.ValidateArray(loc.dot(Field::resourceCount), loc.dot(Field::pDescriptors), resourceCount, &pDescriptors, true,
+                                  true, "VUID-vkWriteResourceDescriptorsEXT-resourceCount-arraylength",
+                                  "VUID-vkWriteResourceDescriptorsEXT-pDescriptors-parameter");
+    if (pDescriptors != nullptr) {
+        for (uint32_t resourceIndex = 0; resourceIndex < resourceCount; ++resourceIndex) {
+            [[maybe_unused]] const Location pDescriptors_loc = loc.dot(Field::pDescriptors, resourceIndex);
+            skip |= context.ValidateArray(pDescriptors_loc.dot(Field::size), pDescriptors_loc.dot(Field::address),
+                                          pDescriptors[resourceIndex].size, &pDescriptors[resourceIndex].address, true, true,
+                                          "VUID-VkHostAddressRangeEXT-size-arraylength",
+                                          "VUID-VkHostAddressRangeEXT-address-parameter");
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructType(loc.dot(Field::pBindInfo), pBindInfo, VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT, true,
+                                       "VUID-vkCmdBindSamplerHeapEXT-pBindInfo-parameter", "VUID-VkBindHeapInfoEXT-sType-sType");
+    if (pBindInfo != nullptr) {
+        [[maybe_unused]] const Location pBindInfo_loc = loc.dot(Field::pBindInfo);
+        skip |= context.ValidateStructPnext(pBindInfo_loc, pBindInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined, true);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructType(loc.dot(Field::pBindInfo), pBindInfo, VK_STRUCTURE_TYPE_BIND_HEAP_INFO_EXT, true,
+                                       "VUID-vkCmdBindResourceHeapEXT-pBindInfo-parameter", "VUID-VkBindHeapInfoEXT-sType-sType");
+    if (pBindInfo != nullptr) {
+        [[maybe_unused]] const Location pBindInfo_loc = loc.dot(Field::pBindInfo);
+        skip |= context.ValidateStructPnext(pBindInfo_loc, pBindInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined, true);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructType(loc.dot(Field::pPushDataInfo), pPushDataInfo, VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT, true,
+                                       "VUID-vkCmdPushDataEXT-pPushDataInfo-parameter", "VUID-VkPushDataInfoEXT-sType-sType");
+    if (pPushDataInfo != nullptr) {
+        [[maybe_unused]] const Location pPushDataInfo_loc = loc.dot(Field::pPushDataInfo);
+        constexpr std::array allowed_structs_VkPushDataInfoEXT = {VK_STRUCTURE_TYPE_PUSH_CONSTANT_BANK_INFO_NV};
+
+        skip |= context.ValidateStructPnext(pPushDataInfo_loc, pPushDataInfo->pNext, allowed_structs_VkPushDataInfoEXT.size(),
+                                            allowed_structs_VkPushDataInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkPushDataInfoEXT-pNext-pNext", "VUID-VkPushDataInfoEXT-sType-unique", true);
+
+        skip |= context.ValidateArray(pPushDataInfo_loc.dot(Field::size), pPushDataInfo_loc.dot(Field::address),
+                                      pPushDataInfo->data.size, &pPushDataInfo->data.address, true, true,
+                                      "VUID-VkHostAddressRangeConstEXT-size-arraylength",
+                                      "VUID-VkHostAddressRangeConstEXT-address-parameter");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                         VkHostAddressRangeEXT* pDatas, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateHandleArray(loc.dot(Field::imageCount), loc.dot(Field::pImages), imageCount, pImages, true, true,
+                                        "VUID-vkGetImageOpaqueCaptureDataEXT-imageCount-arraylength");
+    skip |= context.ValidateArray(loc.dot(Field::imageCount), loc.dot(Field::pDatas), imageCount, &pDatas, true, true,
+                                  "VUID-vkGetImageOpaqueCaptureDataEXT-imageCount-arraylength",
+                                  "VUID-vkGetImageOpaqueCaptureDataEXT-pDatas-parameter");
+    if (pDatas != nullptr) {
+        for (uint32_t imageIndex = 0; imageIndex < imageCount; ++imageIndex) {
+            [[maybe_unused]] const Location pDatas_loc = loc.dot(Field::pDatas, imageIndex);
+            skip |= context.ValidateArray(pDatas_loc.dot(Field::size), pDatas_loc.dot(Field::address), pDatas[imageIndex].size,
+                                          &pDatas[imageIndex].address, true, true, "VUID-VkHostAddressRangeEXT-size-arraylength",
+                                          "VUID-VkHostAddressRangeEXT-address-parameter");
+        }
+    }
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType,
+                                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateRangedEnum(loc.dot(Field::descriptorType), vvl::Enum::VkDescriptorType, descriptorType,
+                                       "VUID-vkGetPhysicalDeviceDescriptorSizeEXT-descriptorType-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateRegisterCustomBorderColorEXT(VkDevice device,
+                                                         const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                         VkBool32 requestIndex, uint32_t* pIndex,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pBorderColor), pBorderColor, VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT, true,
+        "VUID-vkRegisterCustomBorderColorEXT-pBorderColor-parameter", "VUID-VkSamplerCustomBorderColorCreateInfoEXT-sType-sType");
+    if (pBorderColor != nullptr) {
+        [[maybe_unused]] const Location pBorderColor_loc = loc.dot(Field::pBorderColor);
+        skip |= context.ValidateRangedEnum(pBorderColor_loc.dot(Field::format), vvl::Enum::VkFormat, pBorderColor->format,
+                                           "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-parameter");
+    }
+    skip |= context.ValidateBool32(loc.dot(Field::requestIndex), requestIndex);
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pIndex), pIndex, "VUID-vkRegisterCustomBorderColorEXT-pIndex-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateUnregisterCustomBorderColorEXT(VkDevice device, uint32_t index, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    return skip;
+}
+
+bool Device::PreCallValidateGetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                                          VkHostAddressRangeEXT* pDatas, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    skip |= context.ValidateHandleArray(loc.dot(Field::tensorCount), loc.dot(Field::pTensors), tensorCount, pTensors, true, true,
+                                        "VUID-vkGetTensorOpaqueCaptureDataARM-tensorCount-arraylength");
+    skip |= context.ValidateArray(loc.dot(Field::tensorCount), loc.dot(Field::pDatas), tensorCount, &pDatas, true, true,
+                                  "VUID-vkGetTensorOpaqueCaptureDataARM-tensorCount-arraylength",
+                                  "VUID-vkGetTensorOpaqueCaptureDataARM-pDatas-parameter");
+    if (pDatas != nullptr) {
+        for (uint32_t tensorIndex = 0; tensorIndex < tensorCount; ++tensorIndex) {
+            [[maybe_unused]] const Location pDatas_loc = loc.dot(Field::pDatas, tensorIndex);
+            skip |= context.ValidateArray(pDatas_loc.dot(Field::size), pDatas_loc.dot(Field::address), pDatas[tensorIndex].size,
+                                          &pDatas[tensorIndex].address, true, true, "VUID-VkHostAddressRangeEXT-size-arraylength",
+                                          "VUID-VkHostAddressRangeEXT-address-parameter");
+        }
+    }
+    return skip;
+}
 
 bool Device::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                      const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
@@ -20841,6 +21816,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                        VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -20901,8 +21877,6 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
                                                        "VUID-VkRayTracingShaderGroupCreateInfoNV-type-parameter");
                 }
             }
-
-            skip |= context.ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);
         }
     }
     if (pAllocator != nullptr) {
@@ -22066,9 +23040,13 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, cons
         if (pCreateInfo->pTokens != nullptr) {
             for (uint32_t tokenIndex = 0; tokenIndex < pCreateInfo->tokenCount; ++tokenIndex) {
                 [[maybe_unused]] const Location pTokens_loc = pCreateInfo_loc.dot(Field::pTokens, tokenIndex);
-                skip |= context.ValidateStructPnext(pTokens_loc, pCreateInfo->pTokens[tokenIndex].pNext, 0, nullptr,
-                                                    GeneratedVulkanHeaderVersion,
-                                                    "VUID-VkIndirectCommandsLayoutTokenNV-pNext-pNext", kVUIDUndefined, true);
+                constexpr std::array allowed_structs_VkIndirectCommandsLayoutTokenNV = {
+                    VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_PUSH_DATA_TOKEN_NV};
+
+                skip |= context.ValidateStructPnext(
+                    pTokens_loc, pCreateInfo->pTokens[tokenIndex].pNext, allowed_structs_VkIndirectCommandsLayoutTokenNV.size(),
+                    allowed_structs_VkIndirectCommandsLayoutTokenNV.data(), GeneratedVulkanHeaderVersion,
+                    "VUID-VkIndirectCommandsLayoutTokenNV-pNext-pNext", "VUID-VkIndirectCommandsLayoutTokenNV-sType-unique", true);
 
                 skip |= context.ValidateRangedEnum(pTokens_loc.dot(Field::tokenType), vvl::Enum::VkIndirectCommandsTokenTypeNV,
                                                    pCreateInfo->pTokens[tokenIndex].tokenType,
@@ -23043,6 +24021,7 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
+                    VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
                     VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
@@ -24026,6 +25005,7 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+            VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
             VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -24058,8 +25038,6 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
                                           &pCreateInfo->stage.pSpecializationInfo->pData, false, true, kVUIDUndefined,
                                           "VUID-VkSpecializationInfo-pData-parameter");
         }
-
-        skip |= context.ValidateRequiredHandle(pCreateInfo_loc.dot(Field::layout), pCreateInfo->layout);
     }
     skip |= context.ValidateStructType(
         loc.dot(Field::pMemoryRequirements), pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true,
@@ -24628,7 +25606,7 @@ bool Device::PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreat
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkTensorCreateInfoARM = {
-            VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM,
+            VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM, VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
 
         skip |=
@@ -24828,7 +25806,7 @@ bool Device::PreCallValidateGetDeviceTensorMemoryRequirementsARM(VkDevice device
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
             constexpr std::array allowed_structs_VkTensorCreateInfoARM = {
-                VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM, VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
 
             skip |= context.ValidateStructPnext(
@@ -25290,7 +26268,7 @@ bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInf
             constexpr std::array allowed_structs_VkShaderCreateInfoEXT = {
                 VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
-                VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
+                VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkShaderCreateInfoEXT.size(),
@@ -27887,6 +28865,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                        VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -27997,8 +28976,6 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                     pCreateInfos[createInfoIndex].pDynamicState->pDynamicStates, false, true, kVUIDUndefined,
                     "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-parameter");
             }
-
-            skip |= context.ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);
         }
     }
     if (pAllocator != nullptr) {
@@ -28415,6 +29392,7 @@ bool Device::ValidatePipelineShaderStageCreateInfo(const Context& context, const
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+        VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT,
         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
@@ -28456,6 +29434,7 @@ bool Device::ValidateCommandBufferInheritanceInfo(const Context& context, const 
     constexpr std::array allowed_structs_VkCommandBufferInheritanceInfo = {
         VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_DESCRIPTOR_HEAP_INFO_EXT,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV,

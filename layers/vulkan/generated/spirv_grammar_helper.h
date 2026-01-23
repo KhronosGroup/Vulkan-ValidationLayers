@@ -324,6 +324,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpReadClockKHR:
         case spv::OpGroupNonUniformQuadAllKHR:
         case spv::OpGroupNonUniformQuadAnyKHR:
+        case spv::OpBufferPointerEXT:
+        case spv::OpUntypedImageTexelPointerEXT:
+        case spv::OpConstantSizeOfEXT:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
@@ -347,7 +350,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpCooperativeVectorMatrixMulNV:
         case spv::OpCooperativeVectorMatrixMulAddNV:
         case spv::OpCooperativeMatrixConvertNV:
-        case spv::OpGroupNonUniformPartitionNV:
+        case spv::OpGroupNonUniformPartitionEXT:
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
         case spv::OpCooperativeVectorLoadNV:
@@ -791,6 +794,10 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpReadClockKHR:
         case spv::OpGroupNonUniformQuadAllKHR:
         case spv::OpGroupNonUniformQuadAnyKHR:
+        case spv::OpTypeBufferEXT:
+        case spv::OpBufferPointerEXT:
+        case spv::OpUntypedImageTexelPointerEXT:
+        case spv::OpConstantSizeOfEXT:
         case spv::OpHitObjectGetWorldToObjectNV:
         case spv::OpHitObjectGetObjectToWorldNV:
         case spv::OpHitObjectGetObjectRayDirectionNV:
@@ -816,7 +823,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpCooperativeVectorMatrixMulNV:
         case spv::OpCooperativeVectorMatrixMulAddNV:
         case spv::OpCooperativeMatrixConvertNV:
-        case spv::OpGroupNonUniformPartitionNV:
+        case spv::OpGroupNonUniformPartitionEXT:
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
         case spv::OpCooperativeVectorLoadNV:
@@ -1026,7 +1033,7 @@ static constexpr bool GroupOperation(uint32_t opcode) {
         case spv::OpGroupNonUniformQuadSwap:
         case spv::OpGroupNonUniformQuadAllKHR:
         case spv::OpGroupNonUniformQuadAnyKHR:
-        case spv::OpGroupNonUniformPartitionNV:
+        case spv::OpGroupNonUniformPartitionEXT:
             return true;
         default:
             return false;
@@ -1330,6 +1337,7 @@ enum class SpvType {
     kUntypedPointerKHR,
     kCooperativeMatrixKHR,
     kRayQueryKHR,
+    kBufferEXT,
     kHitObjectNV,
     kVectorIdEXT,
     kHitObjectEXT,
@@ -1381,6 +1389,8 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kCooperativeMatrixKHR;
         case spv::OpTypeRayQueryKHR:
             return SpvType::kRayQueryKHR;
+        case spv::OpTypeBufferEXT:
+            return SpvType::kBufferEXT;
         case spv::OpTypeHitObjectNV:
             return SpvType::kHitObjectNV;
         case spv::OpTypeVectorIdEXT:
