@@ -976,7 +976,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 allowedTypeCount = f'{allowedStructName}.size()'
                                 allowedTypes = f'{allowedStructName}.data()'
                                 extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
-                                usedLines.append(f'constexpr std::array {allowedStructName} = {{ {extendedBy} }};\n')
+                                usedLines.append(f'constexpr std::array<VkStructureType, {len(struct.extendedBy)}> {allowedStructName} = {{ {extendedBy} }};\n')
 
                             usedLines.append(f'skip |= {context}ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {allowedTypeCount}, {allowedTypes}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
