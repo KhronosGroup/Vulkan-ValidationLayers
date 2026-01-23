@@ -226,6 +226,11 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                                     {prefix}ReadObject{parent_instance}({param.name}[index], record_obj.location);
                                 }}
                             }}\n''')
+                    elif param.type == "VkQueue":
+                        out.append(f'''
+                            if (!vvl::Contains(internally_synchronized_queues, queue)) {{
+                                {prefix}WriteObject{parent_instance}({param.name}, record_obj.location);
+                            }}\n''')
                     elif not param.pointer:
                         # Pointer params are often being created.
                         # They are not being read from.
@@ -254,6 +259,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "thread_tracker/thread_safety_validation.h"
+            #include "containers/container_utils.h"
 
             namespace threadsafety {
             ''')
