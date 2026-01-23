@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -390,5 +390,13 @@
     ss << "[descriptorSet " << resource.descriptorSet << ", ";
     ss << "binding " << resource.binding << ", ";
     ss << "arrayElement " << resource.arrayElement << "]";
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkBindHeapInfoEXT(VkBindHeapInfoEXT info) {
+    std::stringstream ss;
+    ss << "heapRange = { address = " << info.heapRange.address << ", size = " << info.heapRange.size << " }, ";
+    ss << "reservedRangeOffset = " << info.reservedRangeOffset << ", ";
+    ss << "reservedRangeSize = " << info.reservedRangeSize << "";
     return ss.str();
 }

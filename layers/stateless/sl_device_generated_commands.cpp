@@ -1,7 +1,8 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +32,17 @@ static inline bool IsMeshCommand(VkIndirectCommandsTokenTypeEXT type) {
 }
 
 static inline bool IsComputeCommand(VkIndirectCommandsTokenTypeEXT type) {
-    return IsValueIn(type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT,
-                            VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
+    return IsValueIn(
+        type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT,
+               VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT,
+               VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
 }
 
 static inline bool IsRayTracingCommand(VkIndirectCommandsTokenTypeEXT type) {
-    return IsValueIn(type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT,
-                            VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
+    return IsValueIn(
+        type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT,
+               VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT,
+               VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
 }
 
 bool Device::ValidateIndirectExecutionSetPipelineInfo(const Context& context,
@@ -173,11 +178,23 @@ bool Device::ValidateIndirectCommandsPushConstantToken(const Context& context,
         AllVkShaderStageFlagBits, push_constant_token.updateRange.stageFlags, kRequiredFlags,
         "VUID-VkPushConstantRange-stageFlags-parameter", "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
 
-    if (token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT && push_constant_token.updateRange.size != 4) {
+    if ((token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT ||
+         token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) &&
+        push_constant_token.updateRange.size != 4) {
         skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-size-11133", device,
                          push_constant_token_loc.dot(Field::updateRange).dot(Field::size),
                          "is %" PRIu32 ", but needs to be 4 when using VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT.",
                          push_constant_token.updateRange.size);
+    }
+    if (token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT ||
+        token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT) {
+        if (push_constant_token.updateRange.stageFlags != VK_SHADER_STAGE_ALL) {
+            skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-type-11333", device,
+                             push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags),
+                             "is %s but stageFlags is %s (needs to be VK_SHADER_STAGE_ALL).",
+                             string_VkIndirectCommandsTokenTypeEXT(token_type),
+                             string_VkShaderStageFlags(push_constant_token.updateRange.stageFlags).c_str());
+        }
     }
 
     return skip;
@@ -237,6 +254,8 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
     switch (token.type) {
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT:
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT:
             if (!token.data.pPushConstant) {
                 skip |=
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pPushConstant-parameter", device, token_loc.dot(Field::type),
@@ -306,6 +325,13 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
     } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT && !enabled_features.rayTracingMaintenance1) {
         skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-rayTracingMaintenance1-11128", device, token_loc.dot(Field::type),
                          "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT but rayTracingMaintenance1 was not enabled.");
+    } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT ||
+               token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT) {
+        if (!enabled_features.descriptorHeap) {
+            skip |=
+                LogError("VUID-VkIndirectCommandsLayoutTokenEXT-descriptorHeap-11332", device, token_loc.dot(Field::type),
+                         "is %s but descriptorHeap feature was not enabled.", string_VkIndirectCommandsTokenTypeEXT(token.type));
+        }
     }
 
     // offset is ignored for SEQUENCE_INDEX
@@ -450,6 +476,9 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
             valid_stages = false;
         } else if (has_stage_mesh && ((shader_stages | all_mesh_stages) != all_mesh_stages)) {
             valid_stages = false;
+        }
+        if (!valid_stages && shader_stages == VK_SHADER_STAGE_ALL && enabled_features.descriptorHeap) {
+            valid_stages = true;
         }
         if (!valid_stages) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-shaderStages-11112", device,

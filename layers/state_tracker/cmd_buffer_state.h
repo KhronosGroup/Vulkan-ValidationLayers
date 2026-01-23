@@ -1,9 +1,9 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (C) 2025 Arm Limited.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@
 #include "error_message/error_location.h"
 #include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
+#include "containers/range_map.h"
 
 struct Location;
 
@@ -193,6 +194,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     VkCommandBufferUsageFlags begin_info_flags;
     bool has_inheritance;
     vku::safe_VkCommandBufferInheritanceInfo inheritance_info;
+    vku::safe_VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info;
 
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
@@ -560,6 +562,33 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } descriptor_buffer;
 
+    // VK_EXT_descriptor_heap
+    struct DescriptorHeap {
+        // Heap buffer area and for-implementation-reserved-area currently bound by vkCmdBindSamplerHeapEXT
+        bool sampler_bound;
+        vvl::range<VkDeviceAddress> sampler_range;
+        vvl::range<VkDeviceAddress> sampler_reserved;
+        // Heap buffer area and for-implementation-reserved-area currently bound by vkCmdBindResourceHeapEXT
+        bool resource_bound;
+        vvl::range<VkDeviceAddress> resource_range;
+        vvl::range<VkDeviceAddress> resource_reserved;
+        // Heap buffer push data assigned with vkCmdPushDataKHR ranges
+        std::vector<uint8_t> push_data{};
+
+        void Reset() {
+            sampler_bound = false;
+            sampler_reserved = {};
+            sampler_range = {};
+            resource_bound = false;
+            resource_reserved = {};
+            resource_range = {};
+            push_data.clear();
+        }
+    } descriptor_heap;
+
+    void SetDescriptorMode(vvl::DescriptorMode new_mode);
+    void InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode);
+
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
@@ -711,6 +740,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                           const VkDependencyInfo *dependency_info, const Location &loc);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
+    void RecordCmdPushDataEXT(const VkPushDataInfoEXT& push_data_info, const Location& loc);
 
     void RecordBeginConditionalRendering(const Location &loc);
     void RecordEndConditionalRendering(const Location &loc);
@@ -775,8 +805,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // a label on the stack, and for the "end label" command it removes the top label.
     static void ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands, std::vector<std::string> &label_stack);
     // Computes debug region by replaying given commands on top initial label stack.
-    static std::string GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
-                                          const std::vector<std::string> &initial_label_stack = {});
+    static std::string GetDebugRegionName(const std::vector<LabelCommand>& label_commands, uint32_t label_command_index,
+                                          const std::vector<std::string>& initial_label_stack = {});
 
   private:
     void ResetCBState();

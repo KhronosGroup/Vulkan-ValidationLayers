@@ -1,6 +1,7 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,11 +81,13 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
                                    const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
                                    const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
-                                   std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout)
+                                   std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout,
+                                   bool descriptor_heap_mode)
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),
       shader_object_create_info(shader_object_create_info),
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(pipeline_layout),
-      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}
+      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
+      descriptor_heap_mode(descriptor_heap_mode) {}

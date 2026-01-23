@@ -3914,33 +3914,12 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
                          "(%" PRIu64 ") must be less than size (%" PRIu64 ")", strided_range.stride, strided_range.size);
     }
 
-    if (strided_range.size != 0 && strided_range.address == 0) {
-        skip |= LogError("VUID-VkStridedDeviceAddressRangeKHR-size-11411", command_buffer, strided_range_loc.dot(Field::address),
-                         "is zero, but size is non-zero (%" PRIu64 ")", strided_range.size);
-    }
-
     const char *usage_vuid = strided_range_loc.function == Func::vkCmdCopyMemoryIndirectKHR
                                  ? "VUID-VkCopyMemoryIndirectInfoKHR-copyAddressRange-12210"
                                  : "VUID-VkCopyMemoryToImageIndirectInfoKHR-copyAddressRange-12213";
 
-    BufferAddressValidation<2> buffer_address_validator = {
-        {{{"VUID-VkStridedDeviceAddressRangeKHR-address-11365",
-           [&strided_range](const vvl::Buffer &buffer_state) {
-               const VkDeviceSize end = buffer_state.create_info.size - (strided_range.address - buffer_state.deviceAddress);
-               return strided_range.size > end;
-           },
-           [&strided_range]() {
-               return "The VkStridedDeviceAddressRangeKHR::size (" + std::to_string(strided_range.size) +
-                      ") bytes does not fit in any buffer";
-           },
-           kEmptyErrorMsgBuffer},
-
-          {usage_vuid,
-           [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
-           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
-
-    skip |= buffer_address_validator.ValidateDeviceAddress(
-        *this, strided_range_loc.dot(Field::address), LogObjectList(command_buffer), strided_range.address, strided_range.size);
+    skip |= ValidateDeviceAddressRange(strided_range.address, strided_range.size, true, strided_range_loc,
+                                       LogObjectList(command_buffer), VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, usage_vuid);
 
     return skip;
 }

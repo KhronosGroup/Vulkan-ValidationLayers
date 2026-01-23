@@ -34,6 +34,7 @@
 #include <vulkan/vulkan_core.h>
 #include "error_message/spirv_logging.h"
 #include "utils/math_utils.h"
+#include "containers/container_utils.h"
 
 namespace spirv {
 
@@ -83,11 +84,31 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
             flags |= per_primitive_ext;
             break;
         case spv::DecorationOffset:
-            offset |= value;
+            offset = value;
             break;
         default:
             break;
     }
+}
+
+void DecorationBase::AddId(uint32_t decoration, uint32_t id) {
+    switch (decoration) {
+        case spv::DecorationOffsetIdEXT:
+            offset_id = id;
+            break;
+        default:
+            break;
+    }
+}
+
+uint32_t DecorationBase::GetOffset(const Module& module_state) const {
+    // Only at most one can offset can be set
+    if (offset != kInvalidValue) {
+        return offset;
+    }
+    // If offset is a spec constant, should be resolved by now
+    // Spec ensures us OffsetIdEXT will be an unsigned 32-bit int
+    return module_state.GetConstantValueById(offset_id);
 }
 
 // Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
@@ -1019,10 +1040,14 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 const uint32_t target_id = insn.Word(1);
                 const uint32_t member_index = insn.Word(2);
                 decorations[target_id].member_decorations[member_index].Add(insn.Word(3), insn.Length() > 4u ? insn.Word(4) : 0u);
-                member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
                     built_in_decoration_instructions.push_back(&insn);
                 }
+            } break;
+            case spv::OpMemberDecorateIdEXT: {
+                const uint32_t target_id = insn.Word(1);
+                const uint32_t member_index = insn.Word(2);
+                decorations[target_id].member_decorations[member_index].AddId(insn.Word(3), insn.Word(4));
             } break;
 
             case spv::OpCapability:
@@ -1205,11 +1230,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpTypeVector:
                 vector_type_inst.push_back(&insn);
                 break;
-
-            case spv::OpEmitMeshTasksEXT: {
+            case spv::OpEmitMeshTasksEXT:
                 emit_mesh_tasks_inst.push_back(&insn);
                 break;
-            }
+            case spv::OpConstantSizeOfEXT:
+                constant_size_of_inst.push_back(&insn);
+                break;
 
             case spv::OpExtInst: {
                 const uint32_t set = insn.Word(3);
@@ -1369,6 +1395,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             built_in_workgroup_size_id = decoration_inst->Word(1);
         } else if (built_in == spv::BuiltInDrawIndex) {
             has_built_in_draw_index = true;
+        } else if (built_in == spv::BuiltInSamplerHeapEXT || built_in == spv::BuiltInResourceHeapEXT) {
+            has_descriptor_heap = true;
         }
     }
 
@@ -1968,9 +1996,13 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
     }
 }
 
-std::string VariableBase::DescribeDescriptor() const {
+std::string ResourceInterfaceVariable::DescribeDescriptor() const {
     std::ostringstream ss;
-    ss << "[Set " << decorations.set << ", Binding " << decorations.binding;
+    if (!IsHeap()) {
+        ss << "[Set " << decorations.set << ", Binding " << decorations.binding;
+    } else {
+        ss << "[" << (is_sampler_heap ? "Sampler" : "Resource") << " Heap";
+    }
     if (!debug_name.empty()) {
         ss << ", variable \"" << debug_name << "\"";
     }
@@ -2270,6 +2302,13 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
       built_in_block(GetBuiltInBlock(*this, module_state)),
       total_built_in_components(GetBuiltInComponents(*this, module_state)) {}
 
+bool ResourceInterfaceVariable::IsHeap() const {
+    // It is only legal to not have a set/binding for descriptors if they are the heap
+    // We might one day want to know which heap it is, and could just check for |ResourceHeapEXT| or |SamplerHeapEXT| but that will
+    // for sure require more testing
+    return decorations.set == kInvalidValue || decorations.binding == kInvalidValue;
+}
+
 const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable, const Module& module_state) {
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
@@ -2431,6 +2470,37 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         info.bit_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
         info.vk_format = GetTensorFormat(info.numeric_type, info.bit_width);
         info.tensor_rank = module_state.GetConstantValueById(base_type.Word(3));
+    } else if (base_type.Opcode() == spv::OpTypeSampler) {
+        is_sampler = true;
+    }
+
+    for (const auto& accessible_id : entrypoint.accessible_ids) {
+        const Instruction* pointer = module_state.FindDef(accessible_id);
+        if (pointer->IsAccessChain()) {
+            const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
+            if (base->Opcode() == spv::OpVariable && type_id == base->Word(1)) {
+                const spirv::Instruction* base_pointer = module_state.FindDef(base->Word(1));
+                const spirv::Instruction* base_type = module_state.FindDef(base_pointer->Word(3));
+                if (base_type->IsArray()) {
+                    // Taking only the first index (word 4) as that one is used to access arrays of descriptors
+                    const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
+                    const auto access_opcode = (spv::Op)access_op->Opcode();
+                    if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
+                        all_constant_integral_expressions = false;
+                        non_constant_id = accessible_id;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!decorations.IsDescriptorSet()) {
+        // Should only be possible with VK_EXT_descriptor_heap + Untyped Pointers
+        assert(module_state.static_data_.has_descriptor_heap);
+        // TODO - This works for GLSL, make sure this catches all uses
+        is_sampler_heap = decorations.built_in == spv::BuiltInSamplerHeapEXT;
+        is_resource_heap = decorations.built_in == spv::BuiltInResourceHeapEXT;
     }
 
     info.access_mask = access_mask;
@@ -2462,7 +2532,8 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
     : id(struct_insn.Word(1)),
       length(struct_insn.Length() - 2),
       decorations(module_state.GetDecorationSet(id)),
-      has_runtime_array(false) {
+      has_runtime_array(false),
+      has_descriptor_type(false) {
     members.resize(length);
     for (uint32_t i = 0; i < length; i++) {
         Member& member = members[i];
@@ -2474,8 +2545,13 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
         if (it != decorations.member_decorations.end()) {
             member.decorations = &it->second;
         }
-        if (member.insn->Opcode() == spv::OpTypeRuntimeArray) {
+
+        const spv::Op member_opcode = (spv::Op)member.insn->Opcode();
+        if (member_opcode == spv::OpTypeRuntimeArray) {
             has_runtime_array = true;
+        } else if (IsValueIn(member_opcode, {spv::OpTypeSampler, spv::OpTypeImage, spv::OpTypeBufferEXT,
+                                             spv::OpTypeAccelerationStructureKHR, spv::OpTypeTensorARM})) {
+            has_descriptor_type = true;
         }
     }
 }
@@ -2506,7 +2582,7 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     for (uint32_t i = 0; i < members.size(); i++) {
         const auto& member = members[i];
         // all struct elements are required to have offset decorations in Block
-        const uint32_t member_offset = member.decorations->offset;
+        const uint32_t member_offset = member.decorations->GetOffset(module_state);
         offset = std::min(offset, member_offset);
         if (member_offset > highest_element_offset) {
             highest_element_index = i;

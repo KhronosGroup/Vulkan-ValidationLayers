@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -411,7 +411,8 @@ class Pipeline {
     void SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout* set_layouts);
 
     void SetPushConstantRangeSize(uint32_t byte_size);
-    void SetGlslRayGenShader(const char* glsl, void* pNext = nullptr);
+    void SetGlslRayGenShader(const char* glsl, const void* shader_module_create_info_pnext = nullptr,
+                             const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddSpirvRayGenShader(const char* spirv, const char* entry_point);
     void AddSlangRayGenShader(const char* slang, const char* entry_point);
     void AddGlslMissShader(const char* glsl);

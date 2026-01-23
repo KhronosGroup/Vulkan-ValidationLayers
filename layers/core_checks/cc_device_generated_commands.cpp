@@ -1,6 +1,7 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +35,7 @@
 #include "containers/limits.h"
 #include "containers/container_utils.h"
 #include "cc_buffer_address.h"
+#include "utils/assert_utils.h"
 #include "utils/image_utils.h"
 
 static inline bool IsActionCommand(VkIndirectCommandsTokenTypeEXT type) {
@@ -174,33 +176,40 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                  "] (can only list token once).",
                                  index_buffer_token_index);
             }
-        } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
+        } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT ||
+                   token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT) {
             if (sequence_index_token_index == vvl::kNoIndex32) {
                 sequence_index_token_index = i;
             } else {
                 skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11145", device, token_loc.dot(Field::type),
-                                 "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT but also was pTokens[%" PRIu32
-                                 "] (can only list token once).",
-                                 sequence_index_token_index);
+                                 "is %s and pTokens[%" PRIu32 "] is %s (can only list token once).",
+                                 string_VkIndirectCommandsTokenTypeEXT(token.type), sequence_index_token_index,
+                                 string_VkIndirectCommandsTokenTypeEXT(token.type));
             }
         } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT) {
             vertex_buffer_token_index = i;
         }
 
+        const bool push_data = token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT ||
+                               token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT;
         if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT ||
-            token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
-            if (pCreateInfo->pipelineLayout == VK_NULL_HANDLE) {
-                if (!enabled_features.dynamicGeneratedPipelineLayout) {
-                    skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11101", device, token_loc.dot(Field::type),
+            token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT || push_data) {
+            if (!push_data) {
+                if (pCreateInfo->pipelineLayout == VK_NULL_HANDLE) {
+                    if (!enabled_features.dynamicGeneratedPipelineLayout) {
+                        skip |=
+                            LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11101", device, token_loc.dot(Field::type),
                                      "is %s, pipelineLayout is VK_NULL_HANDLE, but the "
                                      "dynamicGeneratedPipelineLayout feature was not enabled.",
                                      string_VkIndirectCommandsTokenTypeEXT(token.type));
-                } else if (!dynamic_layout_create) {
-                    skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11102", device, token_loc.dot(Field::type),
+                    } else if (!dynamic_layout_create) {
+                        skip |=
+                            LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11102", device, token_loc.dot(Field::type),
                                      "is %s, pipelineLayout is VK_NULL_HANDLE, but no "
                                      "there is no VkPipelineLayoutCreateInfo structure attached to the pNext chain.\n%s",
                                      string_VkIndirectCommandsTokenTypeEXT(token.type),
                                      PrintPNextChain(Struct::VkIndirectCommandsLayoutCreateInfoEXT, pCreateInfo->pNext).c_str());
+                    }
                 }
             }
 
@@ -308,7 +317,10 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
     }
 
     auto pipeline_layout = initial_pipeline->PipelineLayoutState();
-    ASSERT_AND_RETURN_SKIP(pipeline_layout);
+    if (!pipeline_layout) {
+        assert(initial_pipeline->descriptor_heap_mode);
+        return skip;
+    }
     for (uint32_t i = 0; i < pipeline_layout->set_layouts.list.size(); i++) {
         if (pipeline_layout->set_layouts.list[i] == nullptr) continue;
         const auto& bindings = pipeline_layout->set_layouts.list[i]->GetBindings();
@@ -331,6 +343,8 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
 bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutionSetShaderInfoEXT& shader_info,
                                                         const Location& shader_info_loc) const {
     bool skip = false;
+    bool descriptor_flag_same = true;
+    VkShaderCreateFlagsEXT descriptor_flag = 0;
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
     vvl::unordered_map<VkShaderStageFlagBits, uint32_t> unique_stages;
@@ -338,11 +352,12 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
         const VkShaderEXT shader_handle = shader_info.pInitialShaders[i];
         const auto shader_object = Get<vvl::ShaderObject>(shader_handle);
         ASSERT_AND_CONTINUE(shader_object);
-        if ((shader_object->create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) == 0) {
+        const VkShaderCreateFlagsEXT shader_flags = shader_object->create_info.flags;
+        if ((shader_flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) == 0) {
             skip |= LogError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-11154", shader_object->Handle(),
                              shader_info_loc.dot(Field::pInitialShaders, i),
                              "is missing VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, was created with flags %s.",
-                             string_VkShaderCreateFlagsEXT(shader_object->create_info.flags).c_str());
+                             string_VkShaderCreateFlagsEXT(shader_flags).c_str());
         }
 
         const VkShaderStageFlagBits stage = shader_object->create_info.stage;
@@ -363,6 +378,24 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
         } else {
             unique_stages[stage] = i;
         }
+
+        if (i == 0) {
+            descriptor_flag = shader_flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
+        } else if ((shader_flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != descriptor_flag) {
+            const char* vuid = descriptor_flag ? "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-11321"
+                                               : "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-11322";
+            skip |= LogError(vuid, shader_handle, shader_info_loc.dot(Field::pInitialShaders, i),
+                             "was created with %s, but pInitialShaders[0] was created with %s.",
+                             string_VkShaderCreateFlagsEXT(shader_flags).c_str(),
+                             string_VkShaderCreateFlagsEXT(descriptor_flag).c_str());
+            descriptor_flag_same = false;
+        }
+    }
+
+    if (descriptor_flag_same && descriptor_flag != 0 && shader_info.pSetLayoutInfos) {
+        const LogObjectList objlist;
+        skip |= LogError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-11323", objlist,
+                         shader_info_loc.dot(Field::pSetLayoutInfos), "(0x%p) is not null", shader_info.pSetLayoutInfos);
     }
 
     return skip;
@@ -953,7 +986,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
 
             const auto initial_pipeline_layout = initial_pipeline->PipelineLayoutState();
             const auto update_pipeline_layout = update_pipeline->PipelineLayoutState();
-            if (initial_pipeline_layout && update_pipeline_layout) {
+            if (initial_pipeline_layout && update_pipeline_layout && !initial_pipeline->descriptor_heap_mode) {
                 const uint32_t set_count = (uint32_t)std::min(initial_pipeline_layout->set_compat_ids.size(),
                                                               update_pipeline_layout->set_compat_ids.size());
                 for (uint32_t set = 0; set < set_count; set++) {
@@ -962,7 +995,8 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                                               update_pipeline->Handle(), update_pipeline_layout->Handle());
                         skip |= LogError(
                             "VUID-vkUpdateIndirectExecutionSetPipelineEXT-None-11039", objlist, set_write_loc.dot(Field::pipeline),
-                            "%s was created with a layout %s which is not compatible with the initialPipeline layout %s for set "
+                            "%s was created with a layout %s which is not compatible with the initialPipeline "
+                            "layout %s for set "
                             "%" PRIu32 ".\n%s",
                             FormatHandle(update_pipeline->VkHandle()).c_str(),
                             FormatHandle(update_pipeline_layout->VkHandle()).c_str(),
@@ -972,6 +1006,17 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                         break;
                     }
                 }
+            }
+            if (initial_pipeline->descriptor_heap_mode != update_pipeline->descriptor_heap_mode) {
+                const LogObjectList objlist(initial_pipeline->Handle(), update_pipeline->Handle());
+                const char* vuid = initial_pipeline->descriptor_heap_mode
+                                       ? "VUID-vkUpdateIndirectExecutionSetPipelineEXT-initialPipeline-11325"
+                                       : "VUID-vkUpdateIndirectExecutionSetPipelineEXT-initialPipeline-11324";
+                skip |= LogError(
+                    vuid, objlist, set_write_loc.dot(Field::pipeline),
+                    "was %screated with VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT, but the initialPipeline was %screated "
+                    "with VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT.",
+                    update_pipeline->descriptor_heap_mode ? "" : "not ", initial_pipeline->descriptor_heap_mode ? "" : "not ");
             }
         }
     }
@@ -994,6 +1039,9 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
     }
 
     vvl::unordered_map<uint32_t, uint32_t> unique_indexes;
+    const VkShaderEXT init_shader_handle = indirect_execution_set->safe_create_info.info.pShaderInfo->pInitialShaders[0];
+    const auto init_shader_object = Get<vvl::ShaderObject>(init_shader_handle);
+
     for (uint32_t i = 0; i < executionSetWriteCount; i++) {
         const VkWriteIndirectExecutionSetShaderEXT& set_shader = pExecutionSetWrites[i];
         const Location set_write_loc = error_obj.location.dot(Field::pExecutionSetWrites, i);
@@ -1096,6 +1144,21 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
                                      "StencilExportEXT.",
                                      ies_shader_stencil_export ? "" : "not ", initial_shader_stencil_export ? "" : "not ");
                 }
+            }
+        }
+        if (indirect_execution_set->safe_create_info.info.pShaderInfo->shaderCount > 0) {
+            if (init_shader_object && update_shader_object &&
+                init_shader_object->descriptor_heap_mode != update_shader_object->descriptor_heap_mode) {
+                const LogObjectList objlist(init_shader_object->Handle(), update_shader_object->Handle());
+                const char* vuid = init_shader_object->descriptor_heap_mode
+                                       ? "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11327"
+                                       : "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11326";
+
+                skip |= LogError(vuid, objlist, set_write_loc.dot(Field::shader),
+                                 "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but pInitialShaders[0] "
+                                 "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.",
+                                 update_shader_object->descriptor_heap_mode ? "" : "not ",
+                                 init_shader_object->descriptor_heap_mode ? "" : "not ");
             }
         }
     }

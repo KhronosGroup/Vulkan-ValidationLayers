@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Copyright (C) 2025 Arm Limited.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -760,6 +760,13 @@ class DeviceState : public vvl::base::Device {
     // some games end up having the same buffer backing 2 acceleration structures,
     // usually leading to them sharing the same address
     small_vector<const vvl::AccelerationStructureKHR*, 2> GetAccelerationStructuresByAddress(VkDeviceAddress address) const;
+
+    // Used in VK_EXT_descriptor_heap to track reserved ranges across all command buffers
+    using CommandBufferOverlapData = std::pair<const vvl::CommandBuffer*, BufferAddressRange>;
+    void GetBufferAddressOverlapRanges(const vvl::CommandBuffer* command_buffer, const BufferAddressRange& range,
+                                       bool range_type_sampler, std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
+                                       std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
+                                       std::vector<CommandBufferOverlapData>& type_mismatch_data);
 
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
@@ -1919,6 +1926,13 @@ class DeviceState : public vvl::base::Device {
     void PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                    const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                  uint32_t set, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+        VkCommandBuffer commandBuffer,
+        const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+        const RecordObject& record_obj) override;
 
     void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                               const RecordObject& record_obj) override;
@@ -1955,6 +1969,12 @@ class DeviceState : public vvl::base::Device {
     void PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                             const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                              const RecordObject& record_obj) override;
+    void PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                      const RecordObject& record_obj) override;
 
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
@@ -2090,6 +2110,21 @@ class DeviceState : public vvl::base::Device {
         std::atomic<VkDeviceSize> sampler = {0u};
     } descriptor_buffer_address_space;
 
+    // For VK_EXT_descriptor_heap need to track global reserved addresses
+    struct DescriptorHeapReservedAddress {
+        // It is likely for a range to only be tied to a single command buffer, thus small_vector with these params
+        using MapStore = small_vector<const vvl::CommandBuffer*, 1, size_t>;
+        // TODO - this should be unordered_map
+        using RangeMap = sparse_container::range_map<VkDeviceAddress, MapStore>;
+
+        // Note: reserved address range can be used in multiple buffers
+        RangeMap sampler_cmd_buffer_map;
+        RangeMap resource_cmd_buffer_map;
+        mutable std::shared_mutex lock;
+    } descriptor_heap_reserved_address;
+
+    std::atomic<uint32_t> descriptor_heap_global_embedded_sampler_count_ = {0u};
+
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;
     mutable std::shared_mutex shader_identifier_map_lock_;
@@ -2100,6 +2135,13 @@ class DeviceState : public vvl::base::Device {
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
     vvl::unordered_map<int, ExternalOpaqueInfo> fd_handle_map_;
     mutable std::shared_mutex fd_handle_map_lock_;
+
+    void AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
+                                                                    const BufferAddressRange& existing_range,
+                                                                    const BufferAddressRange& new_range, bool sampler);
+    void RemoveCommandBufferFromDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
+                                                                 const BufferAddressRange& resource_existing_range,
+                                                                 const BufferAddressRange& sampler_existing_range);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // If vkGetMemoryWin32HandleKHR is called, keep track of HANDLE -> allocation info

@@ -20973,6 +20973,7 @@ bool Device::PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, uint32_t
                                           "VUID-VkHostAddressRangeEXT-address-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateWriteSamplerDescriptorsEXT(device, samplerCount, pSamplers, pDescriptors, context);
     return skip;
 }
 
@@ -21148,6 +21149,7 @@ bool Device::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_
                                           "VUID-VkHostAddressRangeEXT-address-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateWriteResourceDescriptorsEXT(device, resourceCount, pResources, pDescriptors, context);
     return skip;
 }
 
@@ -21165,6 +21167,7 @@ bool Device::PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer,
         skip |= context.ValidateStructPnext(pBindInfo_loc, pBindInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined, true);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBindSamplerHeapEXT(commandBuffer, pBindInfo, context);
     return skip;
 }
 
@@ -21182,6 +21185,7 @@ bool Device::PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer
         skip |= context.ValidateStructPnext(pBindInfo_loc, pBindInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkBindHeapInfoEXT-pNext-pNext", kVUIDUndefined, true);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBindResourceHeapEXT(commandBuffer, pBindInfo, context);
     return skip;
 }
 
@@ -21242,6 +21246,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevic
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::descriptorType), vvl::Enum::VkDescriptorType, descriptorType,
                                        "VUID-vkGetPhysicalDeviceDescriptorSizeEXT-descriptorType-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(physicalDevice, descriptorType, context);
     return skip;
 }
 
@@ -21264,14 +21269,17 @@ bool Device::PreCallValidateRegisterCustomBorderColorEXT(VkDevice device,
     }
     skip |= context.ValidateBool32(loc.dot(Field::requestIndex), requestIndex);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pIndex), pIndex, "VUID-vkRegisterCustomBorderColorEXT-pIndex-parameter");
+    if (!skip) skip |= manual_PreCallValidateRegisterCustomBorderColorEXT(device, pBorderColor, requestIndex, pIndex, context);
     return skip;
 }
 
 bool Device::PreCallValidateUnregisterCustomBorderColorEXT(VkDevice device, uint32_t index, const ErrorObject& error_obj) const {
     bool skip = false;
+    Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_descriptor_heap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_heap});
+    if (!skip) skip |= manual_PreCallValidateUnregisterCustomBorderColorEXT(device, index, context);
     return skip;
 }
 

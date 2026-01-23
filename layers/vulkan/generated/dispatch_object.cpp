@@ -216,6 +216,49 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                 }
             } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT*>(cur_pnext);
+                if (safe_struct->pMappings) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->mappingCount; ++index0) {
+                        if (safe_struct->pMappings[index0].source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT) {
+                            if (safe_struct->pMappings[index0].sourceData.constantOffset.pEmbeddedSampler) {
+                                UnwrapPnextChainHandles(
+                                    safe_struct->pMappings[index0].sourceData.constantOffset.pEmbeddedSampler->pNext);
+                            }
+                        }
+                        if (safe_struct->pMappings[index0].source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+                            if (safe_struct->pMappings[index0].sourceData.pushIndex.pEmbeddedSampler) {
+                                UnwrapPnextChainHandles(
+                                    safe_struct->pMappings[index0].sourceData.pushIndex.pEmbeddedSampler->pNext);
+                            }
+                        }
+                        if (safe_struct->pMappings[index0].source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+                            if (safe_struct->pMappings[index0].sourceData.indirectIndex.pEmbeddedSampler) {
+                                UnwrapPnextChainHandles(
+                                    safe_struct->pMappings[index0].sourceData.indirectIndex.pEmbeddedSampler->pNext);
+                            }
+                        }
+                        if (safe_struct->pMappings[index0].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+                            if (safe_struct->pMappings[index0].sourceData.indirectIndexArray.pEmbeddedSampler) {
+                                UnwrapPnextChainHandles(
+                                    safe_struct->pMappings[index0].sourceData.indirectIndexArray.pEmbeddedSampler->pNext);
+                            }
+                        }
+                        if (safe_struct->pMappings[index0].source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
+                        }
+                        if (safe_struct->pMappings[index0].source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
+                        }
+                        if (safe_struct->pMappings[index0].source ==
+                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+                            if (safe_struct->pMappings[index0].sourceData.shaderRecordIndex.pEmbeddedSampler) {
+                                UnwrapPnextChainHandles(
+                                    safe_struct->pMappings[index0].sourceData.shaderRecordIndex.pEmbeddedSampler->pNext);
+                            }
+                        }
+                    }
+                }
+            } break;
             case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkFrameBoundaryEXT*>(cur_pnext);
                 if (safe_struct->pImages) {

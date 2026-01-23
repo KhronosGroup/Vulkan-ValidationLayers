@@ -1,5 +1,5 @@
 /* Copyright (c) 2023-2025 Nintendo
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,6 +292,10 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
 
         // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
+        const uint32_t embedded_samplers_count = CountDescriptorHeapEmbeddedSamplers(create_info.pNext);
+        if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0 && embedded_samplers_count > 0) {
+            skip |= ValidateEmbeddedSamplersCount(embedded_samplers_count, loc.dot(Field::pCreateInfos, i));
+        }
 
         if (!spirv || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
@@ -314,7 +318,9 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
 
         // Finally, we have "pipeline" level information and can do validation we normally do at pipeline creation time
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
-        const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE);
+        const bool descriptor_heap_mode = (create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0;
+        const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE,
+                                           descriptor_heap_mode);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
 
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
@@ -789,7 +795,7 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             const LogObjectList objlist(cb_state.Handle(), first->Handle(), shader_state->Handle());
             skip |= LogError(vuid.shaders_push_constants_08878, objlist, vuid.loc(),
                              "The bound %s shader was created with a pushConstantRangeCount of %" PRIu32
-                             " which doesn't match the bound %s shader create with a pushConstantRangeCount of %" PRIu32 "",
+                             " which doesn't match the bound %s shader created with a pushConstantRangeCount of %" PRIu32 "",
                              string_VkShaderStageFlagBits(first->create_info.stage), first->create_info.pushConstantRangeCount,
                              string_VkShaderStageFlagBits(shader_state->create_info.stage),
                              shader_state->create_info.pushConstantRangeCount);
@@ -818,7 +824,7 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             skip |=
                 LogError(vuid.shaders_descriptor_layouts_08879, objlist, vuid.loc(),
                          "The bound %s shader was created with a setLayoutCount of %" PRIu32
-                         " which doesn't match the bound %s shader create with a setLayoutCount of %" PRIu32 "",
+                         " which doesn't match the bound %s shader created with a setLayoutCount of %" PRIu32,
                          string_VkShaderStageFlagBits(first->create_info.stage), first->create_info.setLayoutCount,
                          string_VkShaderStageFlagBits(shader_state->create_info.stage), shader_state->create_info.setLayoutCount);
         } else {
@@ -839,6 +845,20 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                     break;
                 }
             }
+        }
+
+        if ((first->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) !=
+            (shader_state->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT)) {
+            const vvl::ShaderObject* heap_shader =
+                (first->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) ? first : shader_state;
+            const vvl::ShaderObject* non_heap_shader =
+                (first->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) ? shader_state : first;
+            const LogObjectList objlist(cb_state.Handle(), heap_shader->Handle(), non_heap_shader->Handle());
+            skip |= LogError(vuid.shaders_descriptor_layouts_08879, objlist, vuid.loc(),
+                             "The bound %s shader was created with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but the bound %s "
+                             "shader was created without VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT",
+                             string_VkShaderStageFlagBits(heap_shader->create_info.stage),
+                             string_VkShaderStageFlagBits(non_heap_shader->create_info.stage));
         }
     }
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <spirv-tools/libspirv.hpp>
 #include <glslang/Public/ShaderLang.h>
 
@@ -82,3 +83,6 @@ class VkShaderObj : public vkt::ShaderModule {
     const char *m_source;
     spv_target_env m_spv_env;
 };
+
+VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint32_t binding, uint32_t count = 1,
+                                                             VkSpirvResourceTypeFlagsEXT mask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT);

@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2026 Google, Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -911,4 +911,65 @@ TEST_F(NegativeBuffer, BindNullVertexBufferWithOffset) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
+}
+
+TEST_F(NegativeBuffer, DescriptorHeapSparse) {
+    TEST_DESCRIPTION("Verify that sparse buffer usage flags correctly handled with descriptor usage flags");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    {
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT;
+        // We must allow next, because we do not add DescriptorHeap extention, to force sparseDescriptorHeaps == VK_FALSE,
+        // that is required vuid 11277 to trigger
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-None-09499");
+        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps");
+    }
+    {
+        VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT;
+
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&buffer_usage_flags);
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = 0;
+        // We must allow next vuid, because we do not add DescriptorHeap extention, to force sparseDescriptorHeaps == VK_FALSE,
+        // that is required vuid 11278 to trigger
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferUsageFlags2CreateInfo-usage-parameter");
+        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps");
+    }
+}
+
+TEST_F(NegativeBuffer, DescriptorHeapProtected) {
+    TEST_DESCRIPTION("Verify that protected buffer usage flags correctly handled with descriptor usage flags");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(Init());
+
+    {
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+        buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT;
+        // We must allow next, because we do not add DescriptorHeap extention, to force protectedDescriptorHeaps == VK_FALSE,
+        // that is required vuid 11279 to trigger
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-None-09499");
+        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps");
+    }
+    {
+        VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT;
+
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&buffer_usage_flags);
+        buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = 0;
+        // We must allow next vuid, because we do not add DescriptorHeap extention, to force protectedDescriptorHeaps == VK_FALSE,
+        // that is required vuid 11280 to trigger
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferUsageFlags2CreateInfo-usage-parameter");
+        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps");
+    }
 }

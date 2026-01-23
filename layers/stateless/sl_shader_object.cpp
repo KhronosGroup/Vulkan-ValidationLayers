@@ -1,5 +1,6 @@
 /* Copyright (c) 2023-2024 Nintendo
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +97,9 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                                                     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
+
+    uint32_t linked_heap_stage = createInfoCount;
+    uint32_t linked_non_heap_stage = createInfoCount;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
@@ -199,6 +203,37 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                              "is VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI.");
         }
 
+        if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
+            if (create_info.setLayoutCount != 0) {
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11290", device, create_info_loc.dot(Field::flags),
+                                 "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but setLayoutCount is %" PRIu32 ".",
+                                 string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.setLayoutCount);
+            } else if (create_info.pSetLayouts) {
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11291", device, create_info_loc.dot(Field::flags),
+                                 "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pSetLayouts is not NULL (0x%p).",
+                                 string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pSetLayouts);
+            }
+            if (create_info.pushConstantRangeCount != 0) {
+                skip |=
+                    LogError("VUID-VkShaderCreateInfoEXT-flags-11370", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pushConstantRangeCount is %" PRIu32 ".",
+                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pushConstantRangeCount);
+            } else if (create_info.pPushConstantRanges) {
+                skip |=
+                    LogError("VUID-VkShaderCreateInfoEXT-flags-11371", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pPushConstantRanges is not NULL (0x%p).",
+                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pPushConstantRanges);
+            }
+        }
+
+        if ((create_info.stage & linkedStages) != 0 && (create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
+            if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
+                linked_heap_stage = i;
+            } else {
+                linked_non_heap_stage = i;
+            }
+        }
+
         skip |= ValidatePushConstantRange(create_info.pushConstantRangeCount, create_info.pPushConstantRanges, create_info_loc);
 
         if (create_info.setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
@@ -206,6 +241,20 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                              "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", create_info.setLayoutCount,
                              phys_dev_props.limits.maxBoundDescriptorSets);
         }
+
+        if (const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
+                vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(create_info.pNext)) {
+            skip |= ValidateShaderDescriptorSetAndBindingMappingInfo(*mapping_info, error_obj.location);
+        }
+    }
+
+    if (linked_heap_stage < createInfoCount && linked_non_heap_stage < createInfoCount) {
+        skip |= LogError(
+            "VUID-vkCreateShadersEXT-flags-11472", device,
+            error_obj.location.dot(Field::pCreateInfos, linked_heap_stage).dot(Field::flags),
+            "has both VK_SHADER_CREATE_LINK_STAGE_BIT_EXT and VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but pCreateInfos[%" PRIu32
+            "].flags has VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but not VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.",
+            linked_non_heap_stage);
     }
 
     return skip;

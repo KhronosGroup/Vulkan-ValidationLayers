@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
 #include "stateless/sl_vuid_maps.h"
 #include "containers/container_utils.h"
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace stateless {
 
@@ -34,7 +36,8 @@ bool Device::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkS
     const auto &error_obj = context.error_obj;
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-                                            VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
+                                            VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
+                                            VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT};
 
     skip |= context.ValidateStructPnext(error_obj.location.dot(Field::pCreateInfo), pCreateInfo->pNext, allowed_structs.size(),
                                         allowed_structs.data(), GeneratedVulkanHeaderVersion,
@@ -129,6 +132,366 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
     return skip;
 }
 
+bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
+                                                              const Location& loc) const {
+    bool skip = false;
+
+    if (!enabled_features.descriptorHeap && mapping_info.mappingCount != 0) {
+        const char* vuid = (loc.function == Func::vkCreateShadersEXT) ? "VUID-VkShaderCreateInfoEXT-descriptorHeap-11314"
+                                                                      : "VUID-VkPipelineShaderStageCreateInfo-descriptorHeap-11314";
+        skip |=
+            LogError(vuid, device, loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::mappingCount),
+                     "is %" PRIu32 ", but must be zero as the descriptorHeap feature was not enabled.", mapping_info.mappingCount);
+    }
+
+    for (uint32_t i = 0; i < mapping_info.mappingCount; ++i) {
+        for (uint32_t j = i + 1; j < mapping_info.mappingCount; ++j) {
+            const auto& mapping_i = mapping_info.pMappings[i];
+            const auto& mapping_j = mapping_info.pMappings[j];
+            const bool same_descriptor_set = mapping_i.descriptorSet == mapping_j.descriptorSet;
+            const bool overlapping_resource_mask = (mapping_i.resourceMask & mapping_j.resourceMask) != 0;
+            if (!same_descriptor_set || !overlapping_resource_mask) {
+                continue;
+            }
+            const uint64_t i_first = (uint64_t)mapping_i.firstBinding;
+            const uint64_t i_count = (uint64_t)mapping_i.bindingCount;
+            const uint64_t j_first = (uint64_t)mapping_j.firstBinding;
+            const uint64_t j_count = (uint64_t)mapping_j.bindingCount;
+            const uint64_t i_last = i_first + i_count;
+            const uint64_t j_last = j_first + j_count;
+            if ((i_first >= j_first && i_first < j_last) || (j_first >= i_first && j_first < i_last)) {
+                std::stringstream ss;
+                ss << "conflicts with pMappings[" << j << "] at resourceMask "
+                   << string_VkSpirvResourceTypeFlagsEXT(mapping_i.resourceMask & mapping_j.resourceMask) << " and descriptorSet "
+                   << mapping_i.descriptorSet << "\npMappings[" << i << "]: firstBinding (" << i_first << "), bindingCount ("
+                   << i_count << "), range [" << i_first << ", " << i_last << "), resourceMask ("
+                   << string_VkSpirvResourceTypeFlagsEXT(mapping_i.resourceMask) << ")\npMappings[" << j << "]: firstBinding ("
+                   << j_first << "), bindingCount (" << j_count << "), range [" << j_first << ", " << j_last << "), resourceMask ("
+                   << string_VkSpirvResourceTypeFlagsEXT(mapping_j.resourceMask) << ")\n";
+                if (mapping_i.resourceMask == VK_SPIRV_RESOURCE_TYPE_ALL_EXT &&
+                    mapping_j.resourceMask == VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
+                    ss << "Hint: If using VK_SPIRV_RESOURCE_TYPE_ALL_EXT then different descriptor types will overlap each if "
+                          "trying to use an array of descriptors. Instead only set resourceMask for what is needed.\n";
+                } else if (mapping_i.resourceMask == mapping_j.resourceMask) {
+                    ss << "Hint: If using a descriptor of array such as\n\tlayout(binding = 0) uniform sampler2D "
+                          "foo[8];\n\tlayout(binding = 2) uniform sampler2D bar;\nfoo[2] and bar are actually mapping to the same "
+                          "resource.\n";
+                }
+
+                const Location mapping_loc = loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i);
+                skip |= LogError("VUID-VkShaderDescriptorSetAndBindingMappingInfoEXT-pMappings-11244", device, mapping_loc, "%s",
+                                 ss.str().c_str());
+                // Only want to report once
+                i = mapping_info.mappingCount;
+                break;
+            }
+        }
+    }
+
+    for (uint32_t i = 0; i < mapping_info.mappingCount; ++i) {
+        const Location map_loc = loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i);
+        const Location data_loc = map_loc.dot(Field::sourceData);
+        const auto& mapping = mapping_info.pMappings[i];
+        if (IsValueIn(mapping.source,
+                      {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT,
+                       VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT}) &&
+            mapping.bindingCount != 1) {
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11245", device, map_loc.dot(Field::bindingCount),
+                             "is %" PRIu32 " (not 1).\nVkDescriptorSetAndBindingMappingEXT::source = %s", mapping.bindingCount,
+                             string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT &&
+            !IsIntegerMultipleOf(mapping.sourceData.pushDataOffset, 4)) {
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11246", device, data_loc.dot(Field::pushDataOffset),
+                             "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                             mapping.sourceData.pushDataOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT &&
+            !IsIntegerMultipleOf(mapping.sourceData.pushAddressOffset, 8)) {
+            skip |=
+                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11247", device, data_loc.dot(Field::pushAddressOffset),
+                         "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                         mapping.sourceData.pushAddressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if ((mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT ||
+             mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT) &&
+            mapping.bindingCount != 1) {
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11248", device, map_loc.dot(Field::bindingCount),
+                             "is %" PRIu32 " (not 1).\nVkDescriptorSetAndBindingMappingEXT::source = %s", mapping.bindingCount,
+                             string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT &&
+            !IsIntegerMultipleOf(mapping.sourceData.shaderRecordDataOffset, 4)) {
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11249", device,
+                             data_loc.dot(Field::shaderRecordDataOffset),
+                             "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                             mapping.sourceData.shaderRecordDataOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT &&
+            !IsIntegerMultipleOf(mapping.sourceData.shaderRecordAddressOffset, 8)) {
+            skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11250", device,
+                             data_loc.dot(Field::shaderRecordAddressOffset),
+                             "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                             mapping.sourceData.shaderRecordAddressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
+            const VkDescriptorMappingSourcePushIndexEXT& push_index = mapping.sourceData.pushIndex;
+
+            if (!IsIntegerMultipleOf(push_index.pushOffset, 4)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourcePushIndexEXT-pushOffset-11258", device,
+                                 data_loc.dot(Field::pushIndex).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 push_index.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (push_index.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+                skip |= LogError("VUID-VkDescriptorMappingSourcePushIndexEXT-pushOffset-11259", device,
+                                 data_loc.dot(Field::pushIndex).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 push_index.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
+            const VkDescriptorMappingSourceIndirectIndexEXT& indirect_index = mapping.sourceData.indirectIndex;
+
+            if (!IsIntegerMultipleOf(indirect_index.pushOffset, 8)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexEXT-pushOffset-11260", device,
+                                 data_loc.dot(Field::indirectIndex).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 mapping.sourceData.indirectIndex.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (indirect_index.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexEXT-pushOffset-11261", device,
+                                 data_loc.dot(Field::indirectIndex).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_index.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (!IsIntegerMultipleOf(indirect_index.addressOffset, 4)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexEXT-addressOffset-11262", device,
+                                 data_loc.dot(Field::indirectIndex).dot(Field::addressOffset),
+                                 "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_index.addressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT) {
+            const VkDescriptorMappingSourceHeapDataEXT& heap_data = mapping.sourceData.heapData;
+            if (!IsIntegerMultipleOf(heap_data.heapOffset, phys_dev_props.limits.minUniformBufferOffsetAlignment)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceHeapDataEXT-heapOffset-11263", device,
+                                 data_loc.dot(Field::heapData).dot(Field::heapOffset),
+                                 "(%" PRIu32 ") is not a multiple of minUniformBufferOffsetAlignment (%" PRIu64
+                                 ")\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 heap_data.heapOffset, phys_dev_props.limits.minUniformBufferOffsetAlignment,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (!IsIntegerMultipleOf(heap_data.pushOffset, 4)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceHeapDataEXT-pushOffset-11264", device,
+                                 data_loc.dot(Field::heapData).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 heap_data.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (heap_data.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceHeapDataEXT-pushOffset-11265", device,
+                                 data_loc.dot(Field::heapData).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 heap_data.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT) {
+            const VkDescriptorMappingSourceIndirectAddressEXT& indirect_address = mapping.sourceData.indirectAddress;
+            if (!IsIntegerMultipleOf(indirect_address.pushOffset, 8)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectAddressEXT-pushOffset-11266", device,
+                                 data_loc.dot(Field::indirectAddress).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_address.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (indirect_address.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectAddressEXT-pushOffset-11267", device,
+                                 data_loc.dot(Field::indirectAddress).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_address.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (!IsIntegerMultipleOf(indirect_address.addressOffset, 8)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectAddressEXT-addressOffset-11268", device,
+                                 data_loc.dot(Field::indirectAddress).dot(Field::addressOffset),
+                                 "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_address.addressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT) {
+            const VkDescriptorMappingSourceShaderRecordIndexEXT& shader_record_index = mapping.sourceData.shaderRecordIndex;
+
+            if (!IsIntegerMultipleOf(shader_record_index.shaderRecordOffset, 4)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-shaderRecordOffset-11269", device,
+                                 data_loc.dot(Field::shaderRecordIndex).dot(Field::shaderRecordOffset),
+                                 "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 shader_record_index.shaderRecordOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (shader_record_index.shaderRecordOffset > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride - 4) {
+                skip |=
+                    LogError("VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-shaderRecordOffset-11270", device,
+                             data_loc.dot(Field::shaderRecordIndex).dot(Field::shaderRecordOffset),
+                             "(%" PRIu32 ") is greater than maxShaderGroupStride (%" PRIu32
+                             ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                             shader_record_index.shaderRecordOffset, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride,
+                             string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
+            const VkDescriptorMappingSourceIndirectIndexArrayEXT& indirect_index_array = mapping.sourceData.indirectIndexArray;
+
+            if (!IsIntegerMultipleOf(indirect_index_array.pushOffset, 8)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pushOffset-11359", device,
+                                 data_loc.dot(Field::indirectIndexArray).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_index_array.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (indirect_index_array.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pushOffset-11360", device,
+                                 data_loc.dot(Field::indirectIndexArray).dot(Field::pushOffset),
+                                 "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
+                                 ") - 8.\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_index_array.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (!IsIntegerMultipleOf(indirect_index_array.addressOffset, 4)) {
+                skip |= LogError("VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-addressOffset-11361", device,
+                                 data_loc.dot(Field::indirectIndexArray).dot(Field::addressOffset),
+                                 "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
+                                 indirect_index_array.addressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+        }
+        if (mapping.resourceMask != 0 && mapping.resourceMask != VK_SPIRV_RESOURCE_TYPE_ALL_EXT) {
+            if (IsValueIn(mapping.source,
+                          {VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
+                           VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT}) &&
+                (mapping.resourceMask & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) == 0) {
+                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11356", device, map_loc.dot(Field::resourceMask),
+                         "is %s (missing "
+                         "VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT).\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                         string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            const VkSpirvResourceTypeFlagsEXT valid_resource_buffer_and_as =
+                VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT | VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT |
+                VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT | VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT;
+            if ((mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT ||
+                 mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT) &&
+                ((mapping.resourceMask & valid_resource_buffer_and_as) == 0)) {
+                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11357", device, map_loc.dot(Field::resourceMask),
+                         "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                         string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            auto get_use_combined_image_sampler_index = [mapping]() {
+                switch (mapping.source) {
+                    case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT: {
+                        const VkDescriptorMappingSourcePushIndexEXT& push_index = mapping.sourceData.pushIndex;
+                        return push_index.useCombinedImageSamplerIndex;
+                    }
+                    case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT: {
+                        const VkDescriptorMappingSourceIndirectIndexEXT& indirect_index = mapping.sourceData.indirectIndex;
+                        return indirect_index.useCombinedImageSamplerIndex;
+                    }
+                    case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT: {
+                        const VkDescriptorMappingSourceShaderRecordIndexEXT& shader_record_index =
+                            mapping.sourceData.shaderRecordIndex;
+                        return shader_record_index.useCombinedImageSamplerIndex;
+                    }
+                    case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT: {
+                        const VkDescriptorMappingSourceIndirectIndexArrayEXT& indirect_index_array =
+                            mapping.sourceData.indirectIndexArray;
+                        return indirect_index_array.useCombinedImageSamplerIndex;
+                    }
+                    default:
+                        return VK_FALSE;
+                }
+            };
+
+            const VkSpirvResourceTypeFlagsEXT valid_mask_sampling_resource = VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT |
+                                                                             VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT |
+                                                                             VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT;
+            if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) &&
+                get_use_combined_image_sampler_index() != VK_FALSE &&
+                ((mapping.resourceMask & valid_mask_sampling_resource) == 0)) {
+                LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11358", device, map_loc.dot(Field::resourceMask),
+                         "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                         string_VkSpirvResourceTypeFlagsEXT(mapping.resourceMask).c_str(),
+                         string_VkDescriptorMappingSourceEXT(mapping.source));
+            }
+            if (IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT})) {
+                const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
+                if (embedded_sampler) {
+                    const vvl::Field source_field = vvl::DescriptorMappingSourceField(mapping.source);
+                    if (mapping.bindingCount != 1) {
+                        skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389", device,
+                                         map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
+                                         "is not NULL (0x%p).\nVkDescriptorSetAndBindingMappingEXT::source = %s.", embedded_sampler,
+                                         string_VkDescriptorMappingSourceEXT(mapping.source));
+                    }
+                    const auto* object_name = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(embedded_sampler->pNext);
+                    if (object_name && object_name->objectType != VK_OBJECT_TYPE_UNKNOWN) {
+                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11402"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11403"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11404"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11405"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11415"
+                                              : nullptr;
+                        if (vuid) {
+                            skip |= LogError(vuid, device, map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
+                                             "contains VkDebugUtilsObjectNameInfoEXT structure with objectType "
+                                             "%s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                             string_VkObjectType(object_name->objectType),
+                                             string_VkDescriptorMappingSourceEXT(mapping.source));
+                        }
+                    }
+                    if (embedded_sampler->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT ||
+                        embedded_sampler->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT) {
+                        const auto vuid = (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourcePushIndexEXT-pEmbeddedSampler-11446"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pEmbeddedSampler-11447"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pEmbeddedSampler-11448"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceShaderRecordIndexEXT-pEmbeddedSampler-11449"
+                                          : (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT)
+                                              ? "VUID-VkDescriptorMappingSourceConstantOffsetEXT-pEmbeddedSampler-11445"
+                                              : nullptr;
+                        if (vuid) {
+                            skip |= LogError(vuid, device,
+                                             map_loc.dot(source_field).dot(Field::pEmbeddedSampler).dot(Field::borderColor),
+                                             "is %s.\nVkDescriptorSetAndBindingMappingEXT::source = %s.",
+                                             string_VkBorderColor(embedded_sampler->borderColor),
+                                             string_VkDescriptorMappingSourceEXT(mapping.source));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 // Called from graphics, compute, raytracing, etc
 bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context &context, const VkPipelineShaderStageCreateInfo &create_info,
                                                          const Location &loc) const {
@@ -147,23 +510,44 @@ bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context &context,
                              string_VkPipelineShaderStageCreateFlags(create_info.flags).c_str());
         }
     }
+
+    if (const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
+            vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(create_info.pNext)) {
+        skip |= ValidateShaderDescriptorSetAndBindingMappingInfo(*mapping_info, loc);
+    }
+
     return skip;
 }
 
 // Called from graphics, compute, raytracing, etc
-bool Device::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
-                                        const Location &loc) const {
+bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
+                                        VkPipelineLayout layout, const Location& loc) const {
     bool skip = false;
     const auto *temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
     const VkPipelineCreateFlags2 create_flags_2 = temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2>(flags);
     const Location flag_loc =
         temp_flags_2 ? loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags) : loc.dot(Field::flags);
 
-    if (temp_flags_2 && (create_flags_2 & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR) && (pipelineCache != VK_NULL_HANDLE)) {
+    if ((create_flags_2 & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR) != 0 && (pipelineCache != VK_NULL_HANDLE)) {
         skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09617), device, flag_loc,
                          "(%s) includes VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR while "
                          "pipelineCache is not VK_NULL_HANDLE.",
                          string_VkPipelineCreateFlags2(create_flags_2).c_str());
+    }
+
+    if ((create_flags_2 & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 && layout != VK_NULL_HANDLE) {
+        skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::Flags_11311), device, flag_loc,
+                         "(%s) includes VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is not VK_NULL_HANDLE (%s).",
+                         string_VkPipelineCreateFlags2(create_flags_2).c_str(), FormatHandle(layout).c_str());
+    } else if ((create_flags_2 & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0 && layout == VK_NULL_HANDLE) {
+        // The check is not found directly in the graphics pipeline because of all the rules around dynamic rendering and GPL (it is
+        // all caught elsewhere where layout must be valid)
+        if (flag_loc.function != Func::vkCreateGraphicsPipelines) {
+            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::Flags_11367), device, flag_loc,
+                             "(%s) does not include VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT while layout is VK_NULL_HANDLE.%s",
+                             string_VkPipelineCreateFlags2(flags).c_str(),
+                             !temp_flags_2 ? " (Make sure you set it with VkPipelineCreateFlags2CreateInfo)" : "");
+        }
     }
 
     const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(next);
@@ -1314,7 +1698,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
-        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
+        skip |=
+            ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info.layout, create_info_loc);
     }
 
     return skip;
@@ -1459,7 +1844,8 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
         skip |= ValidatePipelineShaderStageCreateInfoCommon(context, create_info.stage, create_info_loc.dot(Field::stage));
 
-        skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
+        skip |=
+            ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info.layout, create_info_loc);
     }
     return skip;
 }
