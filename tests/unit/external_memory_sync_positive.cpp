@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -322,6 +322,40 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
 
     vkt::Semaphore import_semaphore(*m_device);
     import_semaphore.ImportHandle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveExternalMemorySync, SyncFdSemaphoreExportImplicitWait) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11493
+    TEST_DESCRIPTION("Exporting sync-fd handle waits for binary signal");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const auto sync_fd_handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_BINARY, sync_fd_handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through FD handle";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = sync_fd_handle_type;
+
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+
+    // This test checks that queue wait does not remove semaphore signal information
+    m_default_queue->Wait();
+
+    // Sync fd export waits for the binary signal
+    int fd_handle = -1;
+    semaphore.ExportHandle(fd_handle, sync_fd_handle_type);
+
+    // It is allowed to signal again
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
 
     m_default_queue->Wait();
 }
