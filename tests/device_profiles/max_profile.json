@@ -83,6 +83,16 @@
                 "VkPhysicalDeviceCustomResolveFeaturesEXT": {
                     "customResolve": true
                 },
+                "VkPhysicalDeviceDescriptorHeapFeaturesEXT": {
+                    "descriptorHeap": true,
+                    "descriptorHeapCaptureReplay": true
+                },
+                "VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT": {
+                    "shaderSubgroupPartitioned": true
+                },
+                "VkPhysicalDevicePushConstantBankFeaturesNV": {
+                    "pushConstantBank": true
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV": {
                     "deviceGeneratedCommands": true
                 },
@@ -113,6 +123,9 @@
                 "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR": {
                     "indirectMemoryCopy": true,
                     "indirectMemoryToImageCopy": true
+                },
+                "VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR": {
+                    "internallySynchronizedQueues": true
                 },
                 "VkPhysicalDevicePresentIdFeaturesKHR": {
                     "presentId": true
@@ -1491,6 +1504,33 @@
                 "VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX": {
                     "perViewPositionAllComponents": true
                 },
+                "VkPhysicalDeviceDescriptorHeapPropertiesEXT": {
+                    "samplerHeapAlignment": 4,
+                    "resourceHeapAlignment": 4,
+                    "maxSamplerHeapSize": 1044480,
+                    "maxResourceHeapSize": 260046848,
+                    "minSamplerHeapReservedRange": 20480,
+                    "minSamplerHeapReservedRangeWithEmbedded": 520192,
+                    "minResourceHeapReservedRange": 0,
+                    "samplerDescriptorSize": 256,
+                    "imageDescriptorSize": 256,
+                    "bufferDescriptorSize": 256,
+                    "samplerDescriptorAlignment": 256,
+                    "imageDescriptorAlignment": 256,
+                    "bufferDescriptorAlignment": 256,
+                    "maxPushDataSize": 256,
+                    "imageCaptureReplayOpaqueDataSize": 8,
+                    "maxDescriptorHeapEmbeddedSamplers": 2032,
+                    "samplerYcbcrConversionCount": 3,
+                    "sparseDescriptorHeaps": 0,
+                    "protectedDescriptorHeaps": 0
+                },
+                "VkPhysicalDevicePushConstantBankPropertiesNV": {
+                    "maxGraphicsPushConstantBanks": 4096,
+                    "maxComputePushConstantBanks": 4096,
+                    "maxGraphicsPushDataBanks": 4096,
+                    "maxComputePushDataBanks": 4096
+                },
                 "VkPhysicalDeviceSubgroupProperties": {
                     "subgroupSize": 32,
                     "supportedStages": [
@@ -2339,6 +2379,7 @@
                 "VK_EXT_depth_range_unrestricted": 1,
                 "VK_EXT_descriptor_buffer": 1,
                 "VK_EXT_descriptor_indexing": 1,
+                "VK_EXT_descriptor_heap": 1,
                 "VK_EXT_device_address_binding_report": 1,
                 "VK_EXT_device_fault": 1,
                 "VK_EXT_device_generated_commands": 1,
@@ -2432,6 +2473,7 @@
                 "VK_EXT_shader_replicated_composites": 1,
                 "VK_EXT_shader_stencil_export": 1,
                 "VK_EXT_shader_subgroup_ballot": 1,
+                "VK_EXT_shader_subgroup_partitioned": 1,
                 "VK_EXT_shader_subgroup_vote": 1,
                 "VK_EXT_shader_viewport_index_layer": 1,
                 "VK_EXT_shader_uniform_buffer_unsized_array": 1,
@@ -2525,6 +2567,7 @@
                 "VK_KHR_image_format_list": 1,
                 "VK_KHR_imageless_framebuffer": 1,
                 "VK_KHR_incremental_present": 1,
+                "VK_KHR_internally_synchronized_queues": 1,
                 "VK_KHR_map_memory2": 1,
                 "VK_KHR_maintenance1": 1,
                 "VK_KHR_maintenance2": 1,
@@ -2664,6 +2707,7 @@
                 "VK_NV_partitioned_acceleration_structure": 1,
                 "VK_NV_per_stage_descriptor_set": 1,
                 "VK_NV_present_barrier": 1,
+                "VK_NV_push_constant_bank": 1,
                 "VK_NV_raw_access_chains": 1,
                 "VK_NV_ray_tracing": 1,
                 "VK_NV_ray_tracing_invocation_reorder": 1,

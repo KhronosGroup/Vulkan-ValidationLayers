@@ -84,7 +84,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "b937eae5e2ae1e29efe8f8775feaa434239806d2",
+            "commit": "f0bd0257c308b9a26562c1a30c4748a0219cc951",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
@@ -112,7 +112,7 @@
             "sub_dir": "Vulkan-Profiles",
             "build_dir": "Vulkan-Profiles/build",
             "install_dir": "Vulkan-Profiles/build/install",
-            "commit": "v1.4.337",
+            "commit": "v1.4.340",
             "build_step": "skip",
             "optional": [
                 "tests"
