@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 // The resource tag index is relative to the command buffer or queue in which it's found
 using QueueId = uint32_t;
 constexpr static QueueId kQueueIdInvalid = QueueId(vvl::kNoIndex32);
-constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
 
 using ResourceUsageTag = size_t;
 

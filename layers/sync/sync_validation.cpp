@@ -2394,10 +2394,9 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
         global_last_synchronized_present.Merge(batch->last_synchronized_present);
     }
 
-    // DeviceWaitIdle is equivalent to waiting on the fence on all queues.
-    // Tagged wait will preserve unsynchronized present operations.
+    // Device wait will preserve unsynchronized present operations.
     for (const auto &batch : batches) {
-        batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex, global_last_synchronized_present);
+        batch->ApplyDeviceWait(global_last_synchronized_present);
     }
 
     // For each timeline keep only the last signal per queue.

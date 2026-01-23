@@ -873,38 +873,6 @@ void AccessState::ApplySemaphore(const SemaphoreScope &signal, const SemaphoreSc
     if (last_write.has_value()) last_write->dependency_chain = read_execution_barriers;
 }
 
-// Read access predicate for queue wait
-bool AccessState::WaitQueueTagPredicate::operator()(const ReadState &read_access) const {
-    return (read_access.queue == queue) && (read_access.tag <= tag) &&
-           (read_access.stage != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL);
-}
-bool AccessState::WaitQueueTagPredicate::operator()(const AccessState &access) const {
-    if (!access.last_write.has_value()) return false;
-    const auto &write_state = *access.last_write;
-    return write_state.queue == queue && (write_state.tag <= tag) &&
-           write_state.access_index != SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
-}
-
-// Read access predicate for queue wait
-bool AccessState::WaitTagPredicate::operator()(const ReadState &read_access) const {
-    return (read_access.tag <= tag) && (read_access.stage != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL);
-}
-bool AccessState::WaitTagPredicate::operator()(const AccessState &access) const {
-    if (!access.last_write.has_value()) return false;
-    const auto &write_state = *access.last_write;
-    return (write_state.tag <= tag) && write_state.access_index != SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
-}
-
-// Present operations only matching only the *exactly* tagged present and acquire operations
-bool AccessState::WaitAcquirePredicate::operator()(const ReadState &read_access) const {
-    return (read_access.tag == acquire_tag) && (read_access.stage == VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL);
-}
-bool AccessState::WaitAcquirePredicate::operator()(const AccessState &access) const {
-    if (!access.last_write.has_value()) return false;
-    const auto &write_state = *access.last_write;
-    return (write_state.tag == present_tag) && write_state.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
-}
-
 ResourceUsageRange AccessState::GetFirstAccessRange() const {
     if (first_accesses_.empty()) {
         return {};

@@ -335,29 +335,76 @@ void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSync
     });
 }
 
+struct WaitQueueTagPredicate {
+    QueueId queue;
+    ResourceUsageTag tag;
+
+    bool operator()(const ReadState& read_access) const {
+        return read_access.queue == queue && read_access.tag <= tag &&
+               read_access.stage != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL;
+    }
+    bool operator()(const AccessState& access) const {
+        if (!access.HasWriteOp()) {
+            return false;
+        }
+        const WriteState& write_state = access.LastWrite();
+        return write_state.queue == queue && write_state.tag <= tag &&
+               write_state.access_index != SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
+    }
+};
+
+struct DeviceWaitPredicate {
+    bool operator()(const ReadState& read_access) const {
+        return read_access.stage != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL;
+    }
+    bool operator()(const AccessState& access) const {
+        if (!access.HasWriteOp()) {
+            return false;
+        }
+        return access.LastWrite().access_index != SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
+    }
+};
+
+// Present operations matching only the *exactly* tagged present and acquire operations
+struct WaitAcquirePredicate {
+    ResourceUsageTag present_tag;
+    ResourceUsageTag acquire_tag;
+
+    bool operator()(const ReadState& read_access) const {
+        return read_access.tag == acquire_tag && read_access.stage == VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL;
+    }
+    bool operator()(const AccessState& access) const {
+        if (!access.HasWriteOp()) {
+            return false;
+        }
+        const WriteState& write_state = access.LastWrite();
+        return write_state.tag == present_tag && write_state.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
+    }
+};
+
 void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
                                         const LastSynchronizedPresent& last_synchronized_present) {
-    const bool any_queue = (queue_id == kQueueAny);
+    WaitQueueTagPredicate predicate{queue_id, tag};
+    ApplyPredicatedWait(predicate, last_synchronized_present);
 
-    if (any_queue) {
-        // This isn't just avoid an unneeded test, but to allow *all* queues to to be waited in a single pass
-        // (and it does avoid doing the same test for every access, as well as avoiding the need for the predicate
-        // to grok Queue/Device/Wait differences.
-        AccessState::WaitTagPredicate predicate{tag};
-        ApplyPredicatedWait(predicate, last_synchronized_present);
-    } else {
-        AccessState::WaitQueueTagPredicate predicate{queue_id, tag};
-        ApplyPredicatedWait(predicate, last_synchronized_present);
-    }
-
-    // SwapChain acquire QBC's have no queue, but also, events are always empty.
-    if (queue_state_ && (queue_id == GetQueueId() || any_queue)) {
+    // SwapChain acquire batch contexts have no queue
+    if (queue_state_ && queue_id == GetQueueId()) {
         events_context_.ApplyTaggedWait(queue_state_->GetQueueFlags(), tag);
     }
 }
 
+void QueueBatchContext::ApplyDeviceWait(const LastSynchronizedPresent& last_synchronized_present) {
+    DeviceWaitPredicate predicate;
+    ApplyPredicatedWait(predicate, last_synchronized_present);
+
+    // SwapChain acquire batch contexts have no queue
+    if (queue_state_) {
+        events_context_.ApplyTaggedWait(queue_state_->GetQueueFlags(), ResourceUsageRecord::kMaxIndex);
+    }
+}
+
 void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
-    AccessState::WaitAcquirePredicate predicate{acquired.present_tag, acquired.acquire_tag};
+    WaitAcquirePredicate predicate{acquired.present_tag, acquired.acquire_tag};
     ApplyPredicatedWait(predicate, {});
 }
 
