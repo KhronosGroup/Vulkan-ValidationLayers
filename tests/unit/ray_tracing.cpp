@@ -5616,10 +5616,17 @@ TEST_F(NegativeRayTracing, DescriptorBuffers) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    uint8_t buffer[128];
+    uint8_t buffer[256]; // (max accelerationStructureDescriptorSize)
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
     dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     dgi.data.accelerationStructure = 0xbaadbeef;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-08028");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    // This is getting underyling buffer, not the acceleration structure
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    dgi.data.accelerationStructure = tlas.GetDstAS()->GetBufferDeviceAddress();
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-08028");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();

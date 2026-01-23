@@ -109,15 +109,13 @@ class BufferAddressValidation {
                 ss << "\nAbove at range " << string_range_hex(nearest.above_range) << " has buffers:";
                 for (const auto buffer : nearest.above_buffers) {
                     // use std::to_string() to print as simple way to print size as decimal, not hex, like everything else
-                    ss << "\n  " << validator.FormatHandle(buffer->Handle()) << ", size " << std::to_string(buffer->create_info.size) << ", range "
-                       << string_range_hex(buffer->DeviceAddressRange());
+                    ss << "\n  " << buffer->Describe(validator);
                 }
             }
             if (!nearest.below_buffers.empty()) {
                 ss << "\nBelow at range " << string_range_hex(nearest.below_range) << " has buffers:";
                 for (const auto buffer : nearest.below_buffers) {
-                    ss << "\n  " << validator.FormatHandle(buffer->Handle()) << ", size " << std::to_string(buffer->create_info.size) << ", range "
-                       << string_range_hex(buffer->DeviceAddressRange());
+                    ss << "\n  " << buffer->Describe(validator);
                 }
             }
             skip |= validator.LogError("VUID-VkDeviceAddress-size-11364", objlist, device_address_loc, "%s", ss.str().c_str());
@@ -246,11 +244,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
 
             // Always print the buffer range/size
             error_msg += "  ";  // small indent help to visualize
-            error_msg += validator.FormatHandle(buffer->Handle());
-            error_msg += ", size ";
-            error_msg += std::to_string(buffer->create_info.size);
-            error_msg += ", range ";
-            error_msg += string_range_hex(buffer->DeviceAddressRange());
+            error_msg += buffer->Describe(validator);
             error_msg += " ";
             error_msg += error_msg_buffer_func(*buffer);
             error_msg += "\n";
@@ -277,8 +271,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
 [[maybe_unused]] static std::string PrintBufferRanges(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffers) {
     std::ostringstream ss;
     for (const auto& buffer : buffers) {
-        ss << "  " << validator.FormatHandle(buffer->Handle()) << " : size " << buffer->create_info.size << " : range "
-           << string_range_hex(buffer->DeviceAddressRange()) << '\n';
+        ss << "  " << buffer->Describe(validator) << '\n';
     }
     return ss.str();
 }
