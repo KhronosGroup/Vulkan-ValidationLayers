@@ -398,6 +398,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                                              &phys_dev_ext_props.ray_tracing_props_nv);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_ray_tracing_pipeline,
                                              &phys_dev_ext_props.ray_tracing_props_khr);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_ray_tracing_invocation_reorder,
+                                             &phys_dev_ext_props.ray_tracing_invocation_reorder_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_acceleration_structure,
                                              &phys_dev_ext_props.acc_structure_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_fragment_density_map,

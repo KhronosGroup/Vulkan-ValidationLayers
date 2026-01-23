@@ -41,6 +41,7 @@ const int kErrorGroupGpuCopyMemoryIndirect = 10;
 const int kErrorGroupInstSanitizer = 11;
 const int kErrorGroupGpuPreBuildAccelerationStructures = 12;
 const int kErrorGroupInstMeshShading = 13;
+const int kErrorGroupInstRayHitObject = 14;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
@@ -97,6 +98,27 @@ const int kErrorSubCodeRayQueryOriginNaN = 9;
 const int kErrorSubCodeRayQueryDirectionNaN = 10;
 const int kErrorSubCodeRayQueryOriginFinite = 11;
 const int kErrorSubCodeRayQueryDirectionFinite = 12;
+
+// Ray Hit Object (VK_EXT_ray_tracing_invocation_reorder)
+// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
+// OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
+//
+const int kErrorSubCodeRayHitObjectNegativeMin = 1;
+const int kErrorSubCodeRayHitObjectNegativeMax = 2;
+const int kErrorSubCodeRayHitObjectBothSkip = 3;
+const int kErrorSubCodeRayHitObjectSkipCull = 4;
+const int kErrorSubCodeRayHitObjectOpaque = 5;
+const int kErrorSubCodeRayHitObjectMinMax = 6;
+const int kErrorSubCodeRayHitObjectMinNaN = 7;
+const int kErrorSubCodeRayHitObjectMaxNaN = 8;
+const int kErrorSubCodeRayHitObjectOriginNaN = 9;
+const int kErrorSubCodeRayHitObjectDirectionNaN = 10;
+const int kErrorSubCodeRayHitObjectOriginFinite = 11;
+const int kErrorSubCodeRayHitObjectDirectionFinite = 12;
+const int kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs = 13;
+const int kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles = 14;
+const int kErrorSubCodeRayHitObjectSBTIndexExceedsLimit = 15;
+const int kErrorSubCodeRayHitObjectTimeOutOfRange = 16;
 
 // MeshShading
 //

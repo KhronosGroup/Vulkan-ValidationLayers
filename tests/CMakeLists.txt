@@ -117,6 +117,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_spirv_positive.cpp
     unit/gpu_av_ray_query.cpp
     unit/gpu_av_ray_query_positive.cpp
+    unit/gpu_av_ray_hit_object.cpp
+    unit/gpu_av_ray_hit_object_positive.cpp
     unit/gpu_av_ray_tracing.cpp
     unit/gpu_av_ray_tracing_positive.cpp
     unit/gpu_av_vertex_attribute_fetch.cpp

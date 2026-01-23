@@ -119,6 +119,7 @@ struct DeviceExtensionProperties {
 #endif
     VkPhysicalDeviceMemoryDecompressionPropertiesEXT memory_decompression_props;
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM renderpass_counter_by_region_props;
+    VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT ray_tracing_invocation_reorder_props;
     VkPhysicalDeviceShaderLongVectorPropertiesEXT shader_long_vector_props;
 };
 

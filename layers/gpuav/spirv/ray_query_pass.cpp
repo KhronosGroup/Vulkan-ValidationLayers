@@ -26,7 +26,7 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunction = {"inst_ray_query", instrumentation_ray_query_comp_function_0_offset};
+const static OfflineFunction kOfflineFunction = {"inst_ray_query_comp", instrumentation_ray_query_comp_function_0_offset};
 
 RayQueryPass::RayQueryPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 

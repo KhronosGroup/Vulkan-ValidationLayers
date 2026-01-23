@@ -107,6 +107,9 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
             break;  // don't track structs currently
         case SpvType::kVectorIdEXT:
             break;  // don't track coopvec currently
+        case SpvType::kHitObjectNV:
+        case SpvType::kHitObjectEXT:
+            break;  // don't track hit objects currently
         default:
             assert(false && "unsupported SpvType");
             break;

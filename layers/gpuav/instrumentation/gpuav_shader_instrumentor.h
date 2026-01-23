@@ -184,6 +184,11 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
         bool has_bindless_descriptors = false;
         // < set , [ bindings ] >
         std::vector<std::vector<spirv::BindingLayout>> set_index_to_bindings_layout_lut;
+        // Pipeline flags for ray tracing validation (VUIDs 11886/11887)
+        bool pipeline_has_skip_aabbs_flag = false;
+        bool pipeline_has_skip_triangles_flag = false;
+        // For VUID 11888 - maxShaderBindingTableRecordIndex limit check
+        uint32_t max_shader_binding_table_record_index = 0;
     };
     void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
