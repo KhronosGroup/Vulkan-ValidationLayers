@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1916,9 +1916,11 @@ void Pipeline::SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescript
 
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
 
-void Pipeline::SetGlslRayGenShader(const char *glsl, void *pNext) {
+void Pipeline::SetGlslRayGenShader(const char* glsl, const void* shader_module_create_info_pnext,
+                                   const void* pipeline_shader_stage_create_info_pNext) {
     ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(*device_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2,
-                                                                SPV_SOURCE_GLSL, nullptr, "main", pNext));
+                                                                SPV_SOURCE_GLSL, nullptr, "main", shader_module_create_info_pnext,
+                                                                pipeline_shader_stage_create_info_pNext));
 }
 
 void Pipeline::AddSpirvRayGenShader(const char *spirv, const char *entry_point) {
@@ -1984,7 +1986,7 @@ void Pipeline::BuildPipeline() {
     push_constant_range.size = push_constant_range_size_;
 
     // Create pipeline layout
-    if (!pipeline_layout_.initialized()) {
+    if (!pipeline_layout_.initialized() && (create_flags_2_.flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0) {
         if (push_constant_range_size_ > 0) {
             pipeline_layout_ci_.pushConstantRangeCount = 1;
             pipeline_layout_ci_.pPushConstantRanges = &push_constant_range;
@@ -2015,6 +2017,7 @@ void Pipeline::BuildPipeline() {
         raygen_stage_ci.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         raygen_stage_ci.module = ray_gen_shader->handle();
         raygen_stage_ci.pName = ray_gen_shader->GetStageCreateInfo().pName;
+        raygen_stage_ci.pNext = ray_gen_shader->GetStageCreateInfo().pNext;
         pipeline_stage_cis.emplace_back(raygen_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
@@ -2030,6 +2033,7 @@ void Pipeline::BuildPipeline() {
         miss_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         miss_stage_ci.module = miss_shader->handle();
         miss_stage_ci.pName = miss_shader->GetStageCreateInfo().pName;
+        miss_stage_ci.pNext = miss_shader->GetStageCreateInfo().pNext;
         pipeline_stage_cis.emplace_back(miss_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR miss_group_ci = vku::InitStructHelper();
@@ -2045,6 +2049,7 @@ void Pipeline::BuildPipeline() {
         closest_hit_stage_ci.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         closest_hit_stage_ci.module = closest_hit->handle();
         closest_hit_stage_ci.pName = closest_hit->GetStageCreateInfo().pName;
+        closest_hit_stage_ci.pNext = closest_hit->GetStageCreateInfo().pNext;
         pipeline_stage_cis.emplace_back(closest_hit_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR closest_hit_group_ci = vku::InitStructHelper();

@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ namespace vvl {
 enum DescriptorMode {
     DescriptorModeClassic = 0,  // Vulkan 1.0
     DescriptorModeBuffer = 1,   // VK_EXT_descriptor_buffer
-    DescriptorModeCount = 2,    // Used by GPU-AV to hold array for each mode
+    DescriptorModeHeap = 2,     // VK_EXT_descriptor_heap
+    DescriptorModeCount = 3,    // Used by GPU-AV to hold array for each mode
 
     // This means there is no "direct" bound descriptor, this is still a "valid" value if there are only push constants, if this is
     // the case, the bound pipeline/pipelineLayout can give hint which to mode to use, but this should only be done at a
@@ -32,7 +33,7 @@ enum DescriptorMode {
     //
     // You can bind classic/buffer pipeline back-and-forth, but those only matter at draw/dispath time.
     // Binding descriptors, **invalidates** the other descriptor modes, so they always are used first to set the mode.
-    DescriptorModeUnknown = 3
+    DescriptorModeUnknown = 4
 };
 
 }  // namespace vvl

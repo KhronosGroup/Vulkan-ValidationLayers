@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2026 Google, Inc.
- * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2310,6 +2310,128 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2MemoryDecompression) {
 
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapMem) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    VkPipelineStageFlags2 flags[] = {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT, VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT};
+    for (int i = 0; i < 2; i++) {
+        m_command_buffer.Begin();
+
+        barrier.srcAccessMask = flags[i];
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-11294");
+        m_command_buffer.BarrierKHR(barrier);
+        m_errorMonitor->VerifyFound();
+
+        barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+        barrier.dstAccessMask = flags[i];
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-11294");
+        m_command_buffer.BarrierKHR(barrier);
+        m_errorMonitor->VerifyFound();
+
+        m_command_buffer.End();
+        m_errorMonitor->VerifyFound();
+
+        m_command_buffer.Reset();
+    }
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapImg) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineStageFlags2 flags[] = {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT, VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT};
+    for (int i = 0; i < 2; i++) {
+        vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        barrier.image = image.handle();
+        barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        barrier.srcAccessMask = flags[i];
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-srcAccessMask-11294");
+        m_command_buffer.Barrier(barrier);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+
+        barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+        barrier.dstAccessMask = flags[i];
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dstAccessMask-11294");
+        m_command_buffer.Barrier(barrier);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+
+        m_command_buffer.Reset();
+    }
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorHeapBuf) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineStageFlags2 flags[] = {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT, VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT};
+    for (int i = 0; i < 2; i++) {
+        vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+
+        barrier.buffer = buffer.handle();
+        barrier.size = VK_WHOLE_SIZE;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        barrier.srcAccessMask = flags[i];
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-srcAccessMask-11294");
+        m_command_buffer.Barrier(barrier);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+
+        barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+        barrier.dstAccessMask = flags[i];
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-dstAccessMask-11294");
+        m_command_buffer.Barrier(barrier);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+
+        m_command_buffer.Reset();
+    }
 }
 
 TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {

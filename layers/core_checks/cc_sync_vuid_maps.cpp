@@ -1,8 +1,8 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
- * Copyright (C) 2021-2025 Google Inc.
- * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
+ * Copyright (C) 2021-2026 Google Inc.
+ * Modifications Copyright (C) 2024-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -822,6 +822,24 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 6>> &GetAccess
              {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-08118"},
              {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-08118"},
              {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-08118"},
+         }}},
+        {VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT,
+         ValueType{{
+             {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-11294"},
+             {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-11294"},
+             {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-11294"},
+         }}},
+        {VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT,
+         ValueType{{
+             {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-11294"},
+             {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-11294"},
+             {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-11294"},
+             {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-11294"},
          }}},
         {VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT,
          ValueType{{

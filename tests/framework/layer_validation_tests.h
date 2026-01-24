@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Copyright (C) 2025 Arm Limited.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -309,6 +310,30 @@ class DescriptorBufferTest : public VkLayerTest {
 class DescriptorIndexingTest : public VkLayerTest {
   public:
     void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
+};
+
+class DescriptorHeapTest : public VkLayerTest {
+  public:
+    void InitBasicDescriptorHeap();
+    void CreateResourceHeap(VkDeviceSize app_size);
+    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);
+
+    void BindResourceHeap();
+    void BindSamplerHeap();
+
+    VkDeviceSize AlignedAppend(VkDeviceSize& end, VkDescriptorType type, uint32_t count = 1);
+    VkDeviceSize AlignResource(VkDeviceSize offset);
+    VkDeviceSize AlignSampler(VkDeviceSize offset);
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+
+    vkt::Buffer resource_heap_;
+    uint8_t* resource_heap_data_ = nullptr;
+    vkt::Buffer sampler_heap_;
+    uint8_t* sampler_heap_data_ = nullptr;
+
+  private:
+    bool embedded_samplers = false;
 };
 
 class DynamicRenderingTest : public VkLayerTest {

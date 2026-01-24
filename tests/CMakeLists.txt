@@ -1,7 +1,8 @@
 # ~~~
-# Copyright (c) 2014-2025 Valve Corporation
-# Copyright (c) 2014-2025 LunarG, Inc.
+# Copyright (c) 2014-2026 Valve Corporation
+# Copyright (c) 2014-2026 LunarG, Inc.
 # Copyright (C) 2025 Arm Limited.
+# Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,6 +56,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/legacy_positive.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp
+    unit/descriptor_heap.cpp
+    unit/descriptor_heap_positive.cpp
     unit/descriptor_indexing.cpp
     unit/descriptor_indexing_positive.cpp
     unit/descriptors.cpp

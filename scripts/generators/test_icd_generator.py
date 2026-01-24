@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -i
 #
 # Copyright (c) 2024-2026 The Khronos Group Inc.
+# Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -126,6 +127,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkCreatePipelineBinariesKHR',
             'vkGetPipelineBinaryDataKHR',
             'vkGetPartitionedAccelerationStructuresBuildSizesNV',
+            'vkGetPhysicalDeviceDescriptorSizeEXT',
         ]
 
     def generate(self):

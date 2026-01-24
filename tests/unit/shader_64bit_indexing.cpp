@@ -240,3 +240,47 @@ TEST_F(NegativeShader64BitIndexing, ShaderMissingEnable) {
     const vkt::Shader shader(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShader64BitIndexing, ConstantSizeOfLength64) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::shader64BitIndexing);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpCapability Int64
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+     %uint64 = OpTypeInt 64 0
+         %15 = OpTypeBufferEXT StorageBuffer
+       %16 = OpConstantSizeOfEXT %uint64 %15
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpConstantSizeOfEXT-11475");
+    pipe.CreateComputePipeline(false);
+    m_errorMonitor->VerifyFound();
+}

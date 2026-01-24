@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2026 The Khronos Group Inc.
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +20,7 @@
 
 #include "chassis/dispatch_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/small_vector.h"
 #include "generated/dispatch_functions.h"
@@ -471,6 +473,12 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance10,
                                              &phys_dev_ext_props.maintenance10_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_tensors, &phys_dev_ext_props.tensor_properties);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_heap,
+                                             &phys_dev_ext_props.descriptor_heap_props);
+    if (IsExtEnabled(extensions.vk_arm_tensors)) {
+        instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_heap,
+                                                 &phys_dev_ext_props.descriptor_heap_tensor_props);
+    }
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
                                              &phys_dev_ext_props.android_format_resolve_props);

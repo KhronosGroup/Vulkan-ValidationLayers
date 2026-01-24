@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1891,5 +1891,69 @@ TEST_F(NegativeRayTracingNV, DescriptorGetInfo) {
     dgi.data.accelerationStructure = 0;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorDataEXT-type-08042");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingNV, WriteResourcePartitionedAccelerationStructure) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    const VkDeviceSize descriptor_size =
+        vk::GetPhysicalDeviceDescriptorSizeEXT(gpu_, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+    std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeEXT device_address_range = {buffer.Address(), 256};
+
+    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
+    resource_info.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+    resource_info.data.pAddressRange = &device_address_range;
+
+    VkHostAddressRangeEXT descriptor = {data.data(), static_cast<size_t>(descriptor_size)};
+    // May not be aligned as required, but that is not focus of test
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkResourceDescriptorInfoEXT-type-11454");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11483");
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingNV, WriteResourceAccelerationStructure) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    const VkDeviceSize descriptor_size =
+        vk::GetPhysicalDeviceDescriptorSizeEXT(gpu_, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+    std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeEXT device_address_range = {buffer.Address(), 256};
+
+    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
+    resource_info.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+    resource_info.data.pAddressRange = &device_address_range;
+
+    VkHostAddressRangeEXT descriptor = {data.data(), static_cast<size_t>(descriptor_size)};
+    // May not be aligned as required, but that is not focus of test
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkResourceDescriptorInfoEXT-type-11454");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11468");
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
     m_errorMonitor->VerifyFound();
 }

@@ -1,6 +1,6 @@
 /*
 ** Copyright (c) 2015-2018, 2023-2025 The Khronos Group Inc.
-** Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
+** Modifications Copyright (C) 2024-2026 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -1184,6 +1184,10 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     if (sync2_features) {
         sync2_features->synchronization2 = VK_TRUE;
     }
+    auto descriptor_heap_feature = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapFeaturesEXT>(pFeatures->pNext);
+    if (descriptor_heap_feature) {
+        descriptor_heap_feature->descriptorHeap = VK_TRUE;
+    }
     auto video_maintenance1_features = vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>(pFeatures->pNext);
     if (video_maintenance1_features) {
         video_maintenance1_features->videoMaintenance1 = VK_TRUE;
@@ -1305,6 +1309,29 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         mesh_shader_props->prefersLocalInvocationPrimitiveOutput = VK_TRUE;
         mesh_shader_props->prefersCompactVertexOutput = VK_TRUE;
         mesh_shader_props->prefersCompactPrimitiveOutput = VK_TRUE;
+    }
+
+    auto* descriptor_heap_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapPropertiesEXT>(pProperties->pNext);
+    if (descriptor_heap_props) {
+        descriptor_heap_props->samplerHeapAlignment = 4;
+        descriptor_heap_props->resourceHeapAlignment = 4;
+        descriptor_heap_props->maxSamplerHeapSize = 1044480;
+        descriptor_heap_props->maxResourceHeapSize = 260046848;
+        descriptor_heap_props->minSamplerHeapReservedRange = 20480;
+        descriptor_heap_props->minSamplerHeapReservedRangeWithEmbedded = 520192;
+        descriptor_heap_props->minResourceHeapReservedRange = 0;
+        descriptor_heap_props->samplerDescriptorSize = 256;
+        descriptor_heap_props->imageDescriptorSize = 256;
+        descriptor_heap_props->bufferDescriptorSize = 256;
+        descriptor_heap_props->samplerDescriptorAlignment = 256;
+        descriptor_heap_props->imageDescriptorAlignment = 256;
+        descriptor_heap_props->bufferDescriptorAlignment = 256;
+        descriptor_heap_props->maxPushDataSize = 256;
+        descriptor_heap_props->imageCaptureReplayOpaqueDataSize = 8;
+        descriptor_heap_props->maxDescriptorHeapEmbeddedSamplers = 2032;
+        descriptor_heap_props->samplerYcbcrConversionCount = 3;
+        descriptor_heap_props->sparseDescriptorHeaps = 0;
+        descriptor_heap_props->protectedDescriptorHeaps = 0;
     }
 
     auto* fragment_density_map2_props =
@@ -1965,6 +1992,30 @@ static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(Vk
     pSizeInfo->accelerationStructureSize = 256;
     pSizeInfo->buildScratchSize = 256;
     pSizeInfo->updateScratchSize = 4;
+}
+
+static VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
+                                                                             VkDescriptorType descriptorType) {
+    // Some of these must match VkPhysicalDeviceDescriptorHeapPropertiesEXT
+    // others are arbitrary
+    switch (descriptorType) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return 256;
+        default:
+            break;
+    }
+    return 0;
 }
 
 }  // namespace icd

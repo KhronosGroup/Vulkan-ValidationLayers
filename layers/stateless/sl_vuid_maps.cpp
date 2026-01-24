@@ -1,6 +1,6 @@
 /* Copyright (c) 2024-2026 The Khronos Group Inc.
  * Copyright (c) 2024-2026 LunarG, Inc.
- * Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (c) 2024-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,22 @@ const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinary
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09622"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-binaryCount-09622"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-binaryCount-09622"},
+         }}},
+        {PipelineBinaryInfoError::Flags_11311,
+         {{
+             {Key(Func::vkCreateGraphicsPipelines), "VUID-VkGraphicsPipelineCreateInfo-flags-11311"},
+             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-VkRayTracingPipelineCreateInfoNV-flags-11311"},
+             {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11311"},
+             {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-VkExecutionGraphPipelineCreateInfoAMDX-flags-11311"},
+             {Key(Func::vkCreateComputePipelines), "VUID-VkComputePipelineCreateInfo-flags-11311"},
+         }}},
+        {PipelineBinaryInfoError::Flags_11367,
+         {{
+             {Key(Func::vkCreateGraphicsPipelines), "UNASSIGNED"},  // not used
+             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-VkRayTracingPipelineCreateInfoNV-None-11368"},
+             {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-VkRayTracingPipelineCreateInfoKHR-None-11369"},
+             {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-VkExecutionGraphPipelineCreateInfoAMDX-None-11363"},
+             {Key(Func::vkCreateComputePipelines), "VUID-VkComputePipelineCreateInfo-None-11367"},
          }}},
     };
 

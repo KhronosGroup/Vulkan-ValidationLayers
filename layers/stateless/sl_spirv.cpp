@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2022,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Copyright (c) 2025 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,8 +1,8 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
+ * Modifications Copyright (C) 2020-2022,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,6 +82,10 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
     // Also you might be deep in a function and it is easier to do a if/else check if it is dynamic rendering or not there.
     vku::safe_VkSubpassDescription2 *subpass_desc = nullptr;
     const auto rp_state = pipeline.RenderPassState();
+
+    if (pipeline.descriptor_heap_embedded_samplers_count > 0) {
+        skip |= ValidateEmbeddedSamplersCount(pipeline.descriptor_heap_embedded_samplers_count, create_info_loc);
+    }
 
     if (rp_state && rp_state->UsesDynamicRendering()) {
         skip |= ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(pipeline, create_info_loc);
@@ -342,6 +346,23 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                              string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
                              string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+        }
+
+        if (pipeline.descriptor_heap_mode != lib->descriptor_heap_mode) {
+            if (pipeline.descriptor_heap_mode) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11273", device, library_loc,
+                                 "was created with %s, which is missing "
+                                 "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(),
+                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            } else {
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-flags-11274", device, library_loc,
+                    "was created with %s, but VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT is not included in %s (%s).",
+                    string_VkPipelineCreateFlags2(lib->create_flags).c_str(), create_info_loc.dot(Field::flags).Fields().c_str(),
+                    string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            }
         }
 
         const bool lib_has_capture_internal =
@@ -647,8 +668,10 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // If libraries are included then pipeline layout can be NULL. See
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6144
         if (!pipeline_layout_state && (!pipeline.library_create_info || pipeline.library_create_info->libraryCount == 0)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
-                             "is not a valid VkPipelineLayout, but defines a complete set of state.");
+            if (!pipeline.descriptor_heap_mode) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
+                                 "is not a valid VkPipelineLayout, but defines a complete set of state.");
+            }
         }
 
         // graphics_lib_type effectively tracks which parts of the pipeline are defined by graphics libraries.
@@ -687,7 +710,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                             "(%s) is incompatible with the %s specified in the fragment shader library: %s",
                             FormatHandle(linking_layout_handle).c_str(), FormatHandle(fs_layout_handle).c_str(), err_msg.c_str());
                     }
-                } else {
+                } else if (!pipeline.descriptor_heap_mode) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", device, create_info_loc.dot(Field::layout),
                                      "is null/invalid and therefore not compatible with the libraries layout");
                 }
@@ -821,7 +844,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     if ((pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) &&
-        !pipeline_layout_state) {
+        !pipeline_layout_state && !pipeline.descriptor_heap_mode) {
         const char *vuid = (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags)
                                ? "VUID-VkGraphicsPipelineCreateInfo-flags-06642"
                                : "VUID-VkGraphicsPipelineCreateInfo-layout-06602";
@@ -895,7 +918,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
 
         // Push Constants must match regardless of VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
-        if (!pre_raster_info.layout->push_constant_ranges_layout->empty() &&
+        if (pre_raster_info.layout && !pre_raster_info.layout->push_constant_ranges_layout->empty() && frag_shader_info.layout &&
             !frag_shader_info.layout->push_constant_ranges_layout->empty()) {
             const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_info.layout->push_constant_ranges_layout->size());
             const uint32_t frag_shader_count = static_cast<uint32_t>(frag_shader_info.layout->push_constant_ranges_layout->size());
@@ -974,9 +997,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // Check for consistent shader bindings + layout across libraries
         const auto &pre_raster_set_layouts = pre_raster_info.layout->set_layouts;
         const auto &fs_set_layouts = frag_shader_info.layout->set_layouts;
-        const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_set_layouts.list.size());
-        const uint32_t frag_shader_count = static_cast<uint32_t>(fs_set_layouts.list.size());
-        if (not_independent_sets && pre_raster_count != frag_shader_count) {
+        const uint32_t pre_raster_count = pre_raster_info.layout ? static_cast<uint32_t>(pre_raster_set_layouts.list.size()) : 0;
+        const uint32_t frag_shader_count = frag_shader_info.layout ? static_cast<uint32_t>(fs_set_layouts.list.size()) : 0;
+        if (not_independent_sets && pre_raster_count != frag_shader_count && !pipeline.descriptor_heap_mode) {
             const char *vuid =
                 only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613" : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
             LogObjectList objlist(pre_raster_info.layout->Handle(), frag_shader_info.layout->Handle());
@@ -1117,7 +1140,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 LogObjectList objlist(pre_raster_info.layout->Handle(), frag_shader_info.layout->Handle());
                 skip |= LogError(vuid, objlist, create_info_loc, "%s", msg.str().c_str());
                 break;
-            } else if (not_independent_sets) {
+            } else if (not_independent_sets && !pipeline.descriptor_heap_mode) {
                 // both handles are valid, but without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, need to check everything
                 // is identically defined
                 if (pre_raster_dsl->GetCreateFlags() != fs_dsl->GetCreateFlags()) {

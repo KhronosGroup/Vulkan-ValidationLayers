@@ -1,10 +1,11 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
+ * Modifications Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,6 +112,8 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
     VkPhysicalDeviceTileMemoryHeapPropertiesQCOM tile_memory_heap_props;
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_props;
+    VkPhysicalDeviceDescriptorHeapTensorPropertiesARM descriptor_heap_tensor_props;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif

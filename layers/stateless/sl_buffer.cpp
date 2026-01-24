@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2026 Google Inc.
+ * Copyright (C) 2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,21 +61,36 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
             ~(VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT |
               VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT |
               VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
-              VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR);
+              VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR |
+              VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
         if (usage & invalid) {
             skip |= LogError("VUID-VkBufferCreateInfo-flags-09641", device, create_info_loc.dot(Field::flags),
                              "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage contains %s.",
                              string_VkBufferUsageFlags2(usage & invalid).c_str());
         }
-    };
+        if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
+            !phys_dev_ext_props.descriptor_heap_props.protectedDescriptorHeaps) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4646
+            skip |= LogError("UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps", device, create_info_loc.dot(Field::flags),
+                             "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage is %s.",
+                             string_VkBufferUsageFlags2(usage).c_str());
+        }
+    }
 
-    auto dedicated_allocation_buffer = vku::FindStructInPNextChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
-    if (dedicated_allocation_buffer && dedicated_allocation_buffer->dedicatedAllocation == VK_TRUE) {
-        if (pCreateInfo->flags &
-            (VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) {
+    if ((pCreateInfo->flags & (VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT |
+                               VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) != 0) {
+        auto dedicated_allocation_buffer = vku::FindStructInPNextChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
+        if (dedicated_allocation_buffer && dedicated_allocation_buffer->dedicatedAllocation == VK_TRUE) {
             skip |= LogError("VUID-VkBufferCreateInfo-pNext-01571", device, create_info_loc.dot(Field::flags),
                              "%s when VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation is VK_TRUE.",
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
+        }
+        if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
+            !phys_dev_ext_props.descriptor_heap_props.sparseDescriptorHeaps) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4646
+            skip |= LogError("UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps", device, create_info_loc.dot(Field::flags),
+                             "(%s) includes sparse flags, and usage is %s, but sparseDescriptorHeaps is VK_FALSE.",
+                             string_VkBufferCreateFlags(pCreateInfo->flags).c_str(), string_VkBufferUsageFlags2(usage).c_str());
         }
     }
 

@@ -86,12 +86,15 @@ struct DecorationBase {
     uint32_t component = 0;
     uint32_t index = 0;
 
-    uint32_t offset = 0;
+    uint32_t offset = kInvalidValue;
+    uint32_t offset_id = kInvalidValue;  // OffsetIdEXT
+    uint32_t GetOffset(const Module& module_state) const;
 
     // A given object can only have a single BuiltIn OpDecoration
     spv::BuiltIn built_in = kInvalidBuiltIn;
 
     void Add(uint32_t decoration, uint32_t value);
+    void AddId(uint32_t decoration, uint32_t id);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
@@ -112,6 +115,7 @@ struct DecorationSet : public DecorationBase {
     bool HasAnyBuiltIn() const;
     bool HasInMember(FlagBit flag_bit) const;
     bool AllMemberHave(FlagBit flag_bit) const;
+    bool IsDescriptorSet() const { return set != kInvalidValue && binding != kInvalidValue; }
 };
 
 // Tracking of OpExecutionMode / OpExecutionModeId values
@@ -218,6 +222,8 @@ struct TypeStructInfo {
     const uint32_t length;  // number of elements
     const DecorationSet &decorations;
     bool has_runtime_array;
+    // VK_EXT_descriptor_heap allows subset of opaque types inside a struct
+    bool has_descriptor_type;
 
     // data about each member in struct
     struct Member {
@@ -342,7 +348,6 @@ struct VariableBase {
     const Instruction* debug_global_variable;  // DebugGlobalVariable from NonSemantic.Shader.DebugInfo.100
     // We need to store a std::string since the original SPIR-V string can be gone when we need to print this in an error message
     const std::string debug_name;  // OpName or OpString (empty if no debug info found)
-    std::string DescribeDescriptor() const;
 
     // These are helpers to show how the variable will be STATICALLY accessed.
     // (It would require a lot of GPU-AV overhead to detect if the access is dynamic and that level of fine control is currently not
@@ -449,6 +454,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     // "constant integral expressions" is fancy spec language to mean "you are not doing dynamic descriptor indexing into an array"
     // NOTE - This just checks if there is ANY non-costant access
     bool all_constant_integral_expressions{true};
+    uint32_t non_constant_id{0};
 
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
     // can't be checked at pipeline creation time as they depend on the object bound (Image/Tensor) or its view.
@@ -489,6 +495,9 @@ struct ResourceInterfaceVariable : public VariableBase {
     uint64_t descriptor_hash = 0;
     bool IsImage() const { return base_type.Opcode() == spv::OpTypeImage; }
 
+    bool IsHeap() const;
+    std::string DescribeDescriptor() const;
+
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     bool is_storage_image{false};
     bool is_storage_texel_buffer{false};
@@ -496,6 +505,10 @@ struct ResourceInterfaceVariable : public VariableBase {
     const bool is_uniform_buffer;
     bool is_input_attachment{false};
     bool is_storage_tensor{false};
+    bool is_sampler{false};
+
+    bool is_resource_heap{false};
+    bool is_sampler_heap{false};
 
     ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
                               const ParsedInfo &parsed);
@@ -663,8 +676,7 @@ struct Module {
         // [OpSpecConstant Result ID -> OpDecorate SpecID value] mapping
         vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
-        std::vector<const Instruction *> decoration_inst;
-        std::vector<const Instruction *> member_decoration_inst;
+        std::vector<const Instruction*> decoration_inst;
         // Find all variable instructions to build faster LUT
         std::vector<const Instruction *> variable_inst;
         // Both variables and instruction explicitly accessing untyped variables
@@ -673,6 +685,8 @@ struct Module {
         bool has_shader_tile_image_depth_read{false};
         bool has_shader_tile_image_stencil_read{false};
         bool has_shader_tile_image_color_read{false};
+        // Detects SamplerHeapEXT/ResourceHeapEXT
+        bool has_descriptor_heap{false};
         // BuiltIn we just care about existing or not, don't have to be written to
         // TODO - Make bitmask
         bool has_built_in_layer{false};
@@ -683,6 +697,7 @@ struct Module {
         std::vector<const Instruction *> cooperative_matrix_inst;
         std::vector<const Instruction *> cooperative_vector_inst;
         std::vector<const Instruction *> emit_mesh_tasks_inst;
+        std::vector<const Instruction*> constant_size_of_inst;
         std::vector<const Instruction *> array_length_inst;
         std::vector<const Instruction *> vector_type_inst;
 

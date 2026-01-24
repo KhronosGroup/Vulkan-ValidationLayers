@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2026 Valve Corporation
  * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
- * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "../framework/pipeline_helper.h"
 
 class NegativeSecondaryCommandBuffer : public VkLayerTest {};
 
@@ -1531,5 +1532,102 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachm
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10927");
     vk::CmdDraw(secondary, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
+    secondary.End();
+}
+
+TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+    vkt::Buffer resource_buffer(*m_device, heap_props.bufferDescriptorSize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
+                                vkt::device_address);
+    vkt::Buffer sampler_buffer(*m_device, heap_props.samplerDescriptorSize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
+                               vkt::device_address);
+
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT resource_heap_bind_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT sampler_heap_bind_info = vku::InitStructHelper();
+    resource_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    sampler_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    inheritance_descriptor_heap_info.pResourceHeapBindInfo = &resource_heap_bind_info;
+    inheritance_descriptor_heap_info.pSamplerHeapBindInfo = &sampler_heap_bind_info;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_descriptor_heap_info);
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&begin_info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-commandBuffer-11295");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-commandBuffer-11296");
+    vk::CmdBindDescriptorSets(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    secondary.End();
+}
+
+TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo_1_4) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+    vkt::Buffer resource_buffer(*m_device, heap_props.bufferDescriptorSize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
+                                vkt::device_address);
+    vkt::Buffer sampler_buffer(*m_device, heap_props.samplerDescriptorSize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
+                               vkt::device_address);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0u);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_descriptor_heap_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT resource_heap_bind_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT sampler_heap_bind_info = vku::InitStructHelper();
+    resource_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    sampler_heap_bind_info.heapRange = {resource_buffer.Address(), resource_buffer.CreateInfo().size};
+    inheritance_descriptor_heap_info.pResourceHeapBindInfo = &resource_heap_bind_info;
+    inheritance_descriptor_heap_info.pSamplerHeapBindInfo = &sampler_heap_bind_info;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_descriptor_heap_info);
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&begin_info);
+
+    VkBindDescriptorSetsInfo bind_ds_info = vku::InitStructHelper();
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bind_ds_info.layout = pipeline_layout.handle();
+    bind_ds_info.firstSet = 0;
+    bind_ds_info.descriptorSetCount = 1;
+    bind_ds_info.pDescriptorSets = &descriptor_set.set_;
+    bind_ds_info.dynamicOffsetCount = 0;
+    bind_ds_info.pDynamicOffsets = nullptr;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets2-commandBuffer-11295");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets2-commandBuffer-11296");
+    vk::CmdBindDescriptorSets2(secondary.handle(), &bind_ds_info);
+    m_errorMonitor->VerifyFound();
+
     secondary.End();
 }

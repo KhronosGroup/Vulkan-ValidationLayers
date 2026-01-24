@@ -1564,7 +1564,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferCaptureReplay) {
         // no allocate flags
         vkt::DeviceMemory mem(*m_device, mem_alloc_info);
 
-        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-08113");
         m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-09202");
         vk::BindImageMemory(device(), temp_image, mem, 0);
         m_errorMonitor->VerifyFound();

@@ -1,8 +1,8 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
+ * Modifications Copyright (C) 2020,2025-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,6 +91,11 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
     VkPipelineBindPoint pipeline_type;
     VkPipelineCreateFlags2 create_flags;
+
+    // Use |create_flags| and used to not have everyone need to re-parse the flags
+    const bool descriptor_buffer_mode;
+    const bool descriptor_heap_mode;
+
     vvl::span<const vku::safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
     VkPipelineShaderStageCreateInfo data_graph_shader_stage_ci;
     const vku::safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
@@ -137,12 +142,13 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     CBDynamicFlags ignored_dynamic_state;
 
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-    const bool descriptor_buffer_mode = false;
     const bool uses_pipeline_robustness = false;
     const bool uses_pipeline_vertex_robustness = false;
     bool ignore_color_attachments = true;
 
     mutable bool binary_data_released = false;
+
+    const uint32_t descriptor_heap_embedded_samplers_count;
 
     // TODO - Because we have hack to create a pipeline at PreCallValidate time (for GPL) we have no proper way to create inherited
     // state objects of the pipeline This is to make it clear that while currently everyone has to allocate this memory, it is only
@@ -586,6 +592,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         // Signal that the custom initialization was not used
         return false;
     }
+    static uint32_t CountDescriptorHeapEmbeddedSamplers(const Pipeline& pipe_state);
 
   protected:
     static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const DeviceState &state,

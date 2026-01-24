@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 #include "state_tracker/buffer_state.h"
+#include <sstream>
 #include "generated/dispatch_functions.h"
 #include "state_tracker/state_tracker.h"
 
