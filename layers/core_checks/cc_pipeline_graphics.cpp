@@ -4263,12 +4263,25 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
                          view_mask);
     }
 
-    if (!enabled_features.multiviewMeshShader && (stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-        const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"
-                                             : "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064";
-        skip |= LogError(vuid, device, multiview_loc,
+    if (stages & VK_SHADER_STAGE_MESH_BIT_EXT) {
+        if (!enabled_features.multiviewMeshShader) {
+            const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"
+                                                 : "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064";
+            skip |=
+                LogError(vuid, device, multiview_loc,
                          "is 0x%" PRIx32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
                          view_mask);
+        }
+
+        uint32_t highest_view_bit = static_cast<uint32_t>(MostSignificantBit(view_mask));
+        if (highest_view_bit > 0 && highest_view_bit >= phys_dev_ext_props.mesh_shader_props_ext.maxMeshMultiviewViewCount) {
+            const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-12326"
+                                                 : "VUID-VkGraphicsPipelineCreateInfo-renderPass-12325";
+            skip |= LogError(vuid, device, multiview_loc,
+                             "is 0x%" PRIx32 ", its highest bit (%" PRIu32
+                             ") is not less than VkPhysicalDeviceMultiviewProperties::maxMeshMultiviewViewCount (%" PRIu32 ").",
+                             view_mask, highest_view_bit, phys_dev_ext_props.mesh_shader_props_ext.maxMeshMultiviewViewCount);
+        }
     }
 
     for (const auto &stage : pipeline.stage_states) {
