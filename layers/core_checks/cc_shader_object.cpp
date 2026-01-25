@@ -382,14 +382,20 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
                              "tessellation evaluation shader (%s).",
                              string_SpvExecutionMode(tesc.subdivision), string_SpvExecutionMode(tese.subdivision));
         }
-        if (tesc.orientation != spirv::kInvalidValue && tese.orientation != spirv::kInvalidValue &&
-            tesc.orientation != tese.orientation) {
+        if (tesc.orientation == spirv::kInvalidValue && tese.orientation == spirv::kInvalidValue) {
+            skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-12224", device, loc,
+                             "The orientation of generated triangles is not specified in either of the tessellation shaders.");
+        } else if (tesc.orientation != spirv::kInvalidValue && tese.orientation != spirv::kInvalidValue &&
+                   tesc.orientation != tese.orientation) {
             skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, loc,
                              "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                              "tessellation evaluation shader (%s).",
                              string_SpvExecutionMode(tesc.orientation), string_SpvExecutionMode(tese.orientation));
         }
-        if (tesc.spacing != spirv::kInvalidValue && tese.spacing != spirv::kInvalidValue && tesc.spacing != tese.spacing) {
+        if (tesc.spacing == spirv::kInvalidValue && tese.spacing == spirv::kInvalidValue) {
+            skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-12225", device, loc,
+                             "The spacing of segments is not specified in either of the tessellation shaders.");
+        } else if (tesc.spacing != spirv::kInvalidValue && tese.spacing != spirv::kInvalidValue && tesc.spacing != tese.spacing) {
             skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, loc,
                              "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                              "tessellation evaluation shader (%s).",
