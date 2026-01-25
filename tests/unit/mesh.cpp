@@ -1352,3 +1352,81 @@ TEST_F(NegativeMesh, TaskPayloadSharedMissingShaderObject) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeMesh, RenderPassViewMask) {
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::multiviewMeshShader);
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+
+    VkPhysicalDeviceVulkan11Properties props = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper(&props);
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    if (props.maxMultiviewViewCount == mesh_shader_properties.maxMeshMultiviewViewCount) {
+        GTEST_SKIP() << "Test requires maxMultiviewViewCount to be greater than maxMeshMultiviewViewCount";
+    }
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.viewMask = 1u << mesh_shader_properties.maxMeshMultiviewViewCount;
+
+    VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attach_desc;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-12325");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMesh, RenderingViewMask) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::multiviewMeshShader);
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+
+    VkPhysicalDeviceVulkan11Properties props = vku::InitStructHelper();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper(&props);
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    if (props.maxMultiviewViewCount == mesh_shader_properties.maxMeshMultiviewViewCount) {
+        GTEST_SKIP() << "Test requires maxMultiviewViewCount to be greater than maxMeshMultiviewViewCount";
+    }
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
+    pipeline_rendering_ci.viewMask = 1u << mesh_shader_properties.maxMeshMultiviewViewCount;
+    pipeline_rendering_ci.colorAttachmentCount = 1u;
+    pipeline_rendering_ci.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-12326");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
