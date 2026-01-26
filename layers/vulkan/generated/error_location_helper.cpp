@@ -9415,6 +9415,35 @@ std::string String(const Requirements& requirements) {
     return out.str();
 }
 
-}  // namespace vvl
+vvl::Field Field_VkDescriptorMappingSourceDataEXT(VkDescriptorMappingSourceEXT selector) {
+    switch (selector) {
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT:
+            return vvl::Field::constantOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT:
+            return vvl::Field::pushIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT:
+            return vvl::Field::indirectIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT:
+            return vvl::Field::indirectIndexArray;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT:
+            return vvl::Field::heapData;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT:
+            return vvl::Field::pushDataOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT:
+            return vvl::Field::pushAddressOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT:
+            return vvl::Field::indirectAddress;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT:
+            return vvl::Field::shaderRecordIndex;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT:
+            return vvl::Field::shaderRecordDataOffset;
+        case VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT:
+            return vvl::Field::shaderRecordAddressOffset;
+        default:
+            break;
+    }
+    return vvl::Field::Empty;
+}
 
+}  // namespace vvl
 // NOLINTEND

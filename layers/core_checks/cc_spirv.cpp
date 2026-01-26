@@ -3319,7 +3319,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                 }
 
                 if (!IsIntegerMultipleOf(info.offset, info.align) || !IsIntegerMultipleOf(info.array_stride, info.align)) {
-                    const Field source_field = vvl::DescriptorMappingSourceField(mapping.source);
+                    const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
                     const Field offset_field = is_sampler ? Field::samplerHeapOffset : Field::heapOffset;
                     const Field stride_field = is_sampler ? Field::samplerHeapArrayStride : Field::heapArrayStride;
 
@@ -3445,7 +3445,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         loc.pNext(Struct::VkShaderDescriptorSetAndBindingMappingInfoEXT, Field::pMappings, i).dot(Field::source),
                         "(%s) is used to map to an array of descriptors %s, but %s.pEmbeddedSampler is %p (not null)",
                         string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                        String(vvl::DescriptorMappingSourceField(mapping.source)), embedded_sampler);
+                        String(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source)), embedded_sampler);
                 }
             }
 
