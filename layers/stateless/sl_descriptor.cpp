@@ -764,7 +764,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysic
                     VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
                     VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM,
                     VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
-                    VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
+                    VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV,
+                    VK_DESCRIPTOR_TYPE_TENSOR_ARM, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
         skip |= LogError("VUID-vkGetPhysicalDeviceDescriptorSizeEXT-type-11362", physicalDevice,
                          context.error_obj.location.dot(Field::descriptorType), "(%s) is not in the allowed list.",
                          string_VkDescriptorType(descriptorType));
