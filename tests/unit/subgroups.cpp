@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -275,10 +275,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
         !(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
         GTEST_SKIP() << "Required features not supported";
     }
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     const char *csSource = R"glsl(
         #version 450

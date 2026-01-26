@@ -563,6 +563,7 @@ struct EntryPoint {
     const vvl::unordered_set<uint32_t> accessible_ids;
 
     // only one Push Constant block is allowed per entry point
+    // (This assumption is broken with VK_NV_push_constant_bank, but not fully supported)
     std::shared_ptr<const PushConstantVariable> push_constant_variable;
     // For both Task and Mesh entry point, there can be one TaskPayloadWorkgroupEXT variable
     std::shared_ptr<const TaskPayloadVariable> task_payload_variable;

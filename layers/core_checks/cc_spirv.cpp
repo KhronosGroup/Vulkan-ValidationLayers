@@ -132,8 +132,10 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
                                            const Location &loc) const {
     bool skip = false;
 
-    // TODO - Workaround for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-    if (module_state.static_data_.has_specialization_constants) {
+    if (stage_state.descriptor_heap_mode) {
+        return skip;
+    } else if (module_state.static_data_.has_specialization_constants) {
+        // TODO - Workaround for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
         return skip;
     }
 
@@ -144,44 +146,28 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
     }
 
     PushConstantRangesId shader_object_push_constant_ranges_id;
-    std::vector<VkPushConstantRange> const *push_constant_ranges;
-    std::string stage_vuid;
-    std::string range_vuid;
+    std::vector<VkPushConstantRange> const* push_constant_ranges;
     if (pipeline) {
-        if (!pipeline->PipelineLayoutState()) {
-            return skip;  // can be null for Descriptor Heaps
-        }
         push_constant_ranges = pipeline->PipelineLayoutState()->push_constant_ranges_layout.get();
-        switch (pipeline->GetCreateInfoSType()) {
-            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                stage_vuid = "VUID-VkGraphicsPipelineCreateInfo-layout-07987";
-                range_vuid = "VUID-VkGraphicsPipelineCreateInfo-layout-10069";
-                break;
-            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                stage_vuid = "VUID-VkComputePipelineCreateInfo-layout-07987";
-                range_vuid = "VUID-VkComputePipelineCreateInfo-layout-10069";
-                break;
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                stage_vuid = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07987";
-                range_vuid = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-10069";
-                break;
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-                stage_vuid = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07987";
-                range_vuid = "VUID-VkRayTracingPipelineCreateInfoNV-layout-10069";
-                break;
-            default:
-                assert(false);
-                break;
-        }
     } else {
-        if (stage_state.descriptor_heap_mode) {
-            return skip;
-        }
         shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info->pushConstantRangeCount,
                                                                stage_state.shader_object_create_info->pPushConstantRanges);
         push_constant_ranges = shader_object_push_constant_ranges_id.get();
-        stage_vuid = "VUID-VkShaderCreateInfoEXT-codeType-10064";
-        range_vuid = "VUID-VkShaderCreateInfoEXT-codeType-10065";
+    }
+
+    if (!push_constant_ranges || push_constant_ranges->empty()) {
+        LogObjectList objlist(module_state.handle());
+        std::string msg = "";
+        if (pipeline) {
+            objlist.add(pipeline->PipelineLayoutState()->Handle());
+            msg = FormatHandle(pipeline->PipelineLayoutState()->Handle());
+        } else {
+            msg = "VkShaderCreateInfoEXT::pPushConstantRanges";
+        }
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::PushConstantStage_07987), objlist,
+                         loc, "SPIR-V (%s) is using push constants, but no VkPushConstantRange were found in %s.",
+                         string_VkShaderStageFlags(stage).c_str(), msg.c_str());
+        return skip;
     }
 
     bool found_stage = false;
@@ -197,7 +183,8 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
                 if (pipeline) {
                     objlist.add(pipeline->PipelineLayoutState()->Handle());
                 }
-                skip |= LogError(range_vuid, objlist, loc,
+                skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::PushConstantRange_10069),
+                                 objlist, loc,
                                  "SPIR-V (%s) has a push constant buffer Block with range [%" PRIu32 ", %" PRIu32
                                  "] which outside the VkPushConstantRange of [%" PRIu32 ", %" PRIu32 "].",
                                  string_VkShaderStageFlags(stage).c_str(), push_constant_variable->offset, push_constant_end,
@@ -209,15 +196,20 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
 
     if (!found_stage) {
         LogObjectList objlist(module_state.handle());
-        std::string msg = "";
+        std::stringstream ss;
+        ss << "SPIR-V (" << string_VkShaderStageFlags(stage) << ") is using push constants, but ";
         if (pipeline) {
             objlist.add(pipeline->PipelineLayoutState()->Handle());
-            msg = FormatHandle(pipeline->PipelineLayoutState()->Handle());
+            ss << FormatHandle(pipeline->PipelineLayoutState()->Handle());
         } else {
-            msg = "VkShaderCreateInfoEXT::pPushConstantRanges";
+            ss << "VkShaderCreateInfoEXT::pPushConstantRanges";
         }
-        skip |= LogError(stage_vuid, objlist, loc, "SPIR-V (%s) Push constant are used, but %s doesn't set %s.",
-                         string_VkShaderStageFlags(stage).c_str(), msg.c_str(), string_VkShaderStageFlags(stage).c_str());
+        ss << " doesn't set any with " << string_VkShaderStageFlags(stage) << "\nCurrent VkPushConstantRange:";
+        for (auto const& range : *push_constant_ranges) {
+            ss << "\n - " << string_VkPushConstantRange(range);
+        }
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::PushConstantStage_07987), objlist,
+                         loc, "%s", ss.str().c_str());
     }
     return skip;
 }

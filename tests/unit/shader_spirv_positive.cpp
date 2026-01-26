@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2198,10 +2198,6 @@ TEST_F(PositiveShaderSpirv, ExtendedTypesEnabled) {
         GTEST_SKIP() << "Required features not supported";
     }
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     const char *csSource = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_arithmetic : enable
@@ -2299,10 +2295,6 @@ TEST_F(PositiveShaderSpirv, NonSemanticInfoEnabled) {
     if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_shader_non_semantic_info not supported";
     }
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     const char *source = R"(
                    OpCapability Shader
@@ -2415,6 +2407,77 @@ TEST_F(PositiveShaderSpirv, Bitwise32bitMaintenance9) {
         }
     )glsl";
     VkShaderObj cs(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+}
+
+TEST_F(PositiveShaderSpirv, PushConstantBank) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PUSH_CONSTANT_BANK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::pushConstantBank);
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"glsl(
+        #version 460
+        #extension GL_NV_push_constant_bank : enable
+
+        layout(std430, binding = 0) buffer ResultData {
+            uint bank[4];
+        } resultData;
+
+        layout(push_constant, bank = 1) uniform PushConstantBank1 {
+            uint data;
+        } bank1;
+
+        layout(push_constant, bank = 2, member_offset = 64) uniform PushConstantBank2 {
+            uint data;
+        } bank2_offset;
+
+        void main() {
+            resultData.bank[1] = bank1.data;
+            resultData.bank[2] = bank2_offset.data;
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 64};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, PartitonedEXT) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderSubgroupPartitioned);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_prop);
+    if (!(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_EXT) ||
+        !(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
+        GTEST_SKIP() << "Required features not supported";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_NV_shader_subgroup_partitioned: enable
+        layout(set = 0, binding = 0) buffer StorageBuffer { float x; uvec4 y; };
+        void main(){
+            y = subgroupPartitionNV(x); // is also OpGroupNonUniformPartitionEXT
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveShaderSpirv, ShaderFma) {
