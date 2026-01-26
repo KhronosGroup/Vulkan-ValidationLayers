@@ -23,10 +23,12 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include "containers/limits.h"
 #include "core_validation.h"
 #include "core_checks/cc_state_tracker.h"
 #include "cc_buffer_address.h"
 #include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "utils/ray_tracing_utils.h"
 #include "utils/math_utils.h"
 #include "state_tracker/ray_tracing_state.h"
@@ -511,6 +513,47 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevic
     return skip;
 }
 
+bool CoreChecks::ValidateAccelerationVertex(VkFormat vertex_format, VkDeviceOrHostAddressConstKHR vertex_data,
+                                            VkDeviceSize vertex_stride, const LogObjectList& objlist, const Location& loc) const {
+    bool skip = false;
+
+    uint32_t format_alignment = 0;
+    const bool is_packed = vkuFormatIsPacked(vertex_format);
+    if (is_packed) {
+        format_alignment = vkuFormatTexelBlockSize(vertex_format);
+    } else {
+        uint32_t min_component_bits_size = vvl::kU32Max;
+        const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(vertex_format);
+        for (uint32_t component_i = 0; component_i < format_info.component_count; ++component_i) {
+            min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
+        }
+        format_alignment = min_component_bits_size / 8;
+    }
+
+    if (!IsPointerAligned(vertex_data.deviceAddress, format_alignment)) {
+        const char* vuid = loc.function == Func::vkCmdBuildAccelerationStructuresKHR
+                               ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711"
+                               : "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711";
+        skip |= LogError(vuid, objlist, loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                         "(0x%" PRIx64 ") is not aligned to the %s (%" PRIu32 ") of its corresponding vertexFormat (%s).",
+                         vertex_data.deviceAddress, is_packed ? "texel block size" : "minimum component byte size",
+                         format_alignment, string_VkFormat(vertex_format));
+    }
+    if (!IsIntegerMultipleOf(vertex_stride, format_alignment)) {
+        const char* vuid = loc.structure == Struct::VkAccelerationStructureGeometrySpheresDataNV
+                               ? "VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431"
+                           : loc.structure == Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV
+                               ? "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421"
+                               : "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735";
+        skip |= LogError(vuid, objlist, loc.dot(Field::vertexStride),
+                         "(%" PRIu64 ") is not a multiple to the %s (%" PRIu32 ") of its corresponding vertexFormat (%s).",
+                         vertex_stride, is_packed ? "texel block size" : "minimum component byte size", format_alignment,
+                         string_VkFormat(vertex_format));
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
                                              const VkAccelerationStructureBuildGeometryInfoKHR &info,
                                              const VkAccelerationStructureBuildRangeInfoKHR *geometry_build_ranges,
@@ -614,30 +657,8 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                  string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
             } else {
                 // Only try to get format info if vertex format is valid
-                const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(triangles.vertexFormat);
-                uint32_t min_component_bits_size = format_info.components[0].size;
-                for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
-                    min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
-                }
-                const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                if (!IsPointerAligned(triangles.vertexData.deviceAddress, min_component_byte_size)) {
-                    skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
-                                               "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
-                                     cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                     "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                     ") of its corresponding vertex "
-                                     "format (%s).",
-                                     triangles.vertexData.deviceAddress, min_component_byte_size,
-                                     string_VkFormat(triangles.vertexFormat));
-                }
-                if (!IsIntegerMultipleOf(triangles.vertexStride, min_component_byte_size)) {
-                    skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
-                                     p_geom_geom_triangles_loc.dot(Field::vertexStride),
-                                     "is %" PRIu64 " and is not a multiple to the minimum component byte size (%" PRIu32
-                                     ") of its corresponding vertex "
-                                     "format (%s).",
-                                     triangles.vertexStride, min_component_byte_size, string_VkFormat(triangles.vertexFormat));
-                }
+                skip |= ValidateAccelerationVertex(triangles.vertexFormat, triangles.vertexData, triangles.vertexStride, cb_objlist,
+                                                   p_geom_geom_triangles_loc);
             }
 
             if (triangles.transformData.deviceAddress != 0 && geometry_build_range_primitive_count > 0) {
@@ -743,8 +764,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
             }
 
             const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_struct->vertexFormat);
-            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_struct->radiusFormat);
-
             if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434", cmd_buffer,
                                  p_geom_geom_spheres_loc.dot(Field::vertexFormat),
@@ -753,57 +772,12 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                  string_VkFormat(sphere_struct->vertexFormat),
                                  string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
             } else {
-                if (vkuFormatIsPacked(sphere_struct->vertexFormat)) {
-                    const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_struct->vertexFormat);
-                    if (!IsIntegerMultipleOf(sphere_struct->vertexStride, format_block_size)) {
-                        skip |=
-                            LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
-                                     p_geom_geom_spheres_loc.dot(Field::vertexStride),
-                                     "is %" PRIu64 " and is not aligned to the texel block size (%" PRIu32
-                                     ") of vertexFormat "
-                                     "%s",
-                                     sphere_struct->vertexStride, format_block_size, string_VkFormat(sphere_struct->vertexFormat));
-                    }
-
-                } else {
-                    const uint32_t format_component_count = vkuFormatComponentCount(sphere_struct->vertexFormat);
-                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(sphere_struct->vertexFormat);
-                    uint32_t min_component_bits_size = format_info.components[0].size;
-                    for (uint32_t component_i = 1; component_i < format_component_count; ++component_i) {
-                        min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
-                    }
-                    const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                    if (!IsPointerAligned(sphere_struct->vertexData.deviceAddress, min_component_byte_size)) {
-                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
-                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
-                                         cmd_buffer, p_geom_geom_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                         "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                         ") of vertexFormat "
-                                         "%s",
-                                         sphere_struct->vertexData.deviceAddress, min_component_byte_size,
-                                         string_VkFormat(sphere_struct->vertexFormat));
-                    }
-                    if (!IsIntegerMultipleOf(sphere_struct->vertexStride, min_component_byte_size)) {
-                        skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
-                                         p_geom_geom_spheres_loc.dot(Field::vertexStride),
-                                         "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                         ") of vertexFormat "
-                                         "%s",
-                                         sphere_struct->vertexStride, min_component_byte_size,
-                                         string_VkFormat(sphere_struct->vertexFormat));
-                    }
-                }
+                // Only try to get format info if vertex format is valid
+                skip |= ValidateAccelerationVertex(sphere_struct->vertexFormat, sphere_struct->vertexData,
+                                                   sphere_struct->vertexStride, cb_objlist, p_geom_geom_spheres_loc);
             }
 
-            if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
-                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434", cmd_buffer,
-                                 p_geom_geom_spheres_loc.dot(Field::vertexFormat),
-                                 "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
-                                 "(supported bufferFeatures: %s)",
-                                 string_VkFormat(sphere_struct->vertexFormat),
-                                 string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
-            }
-
+            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_struct->radiusFormat);
             if (!(radius_properties.bufferFeatures & VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusFormat-10435", cmd_buffer,
                                  p_geom_geom_spheres_loc.dot(Field::radiusFormat),
@@ -859,8 +833,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                               cb_objlist, sphere_linear_struct->radiusData.deviceAddress);
             }
             const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_linear_struct->vertexFormat);
-            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_linear_struct->radiusFormat);
-
             if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423", cmd_buffer,
                                  p_geom_geom_linear_spheres_loc.dot(Field::vertexFormat),
@@ -868,51 +840,13 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                  "(supported bufferFeatures: %s)",
                                  string_VkFormat(sphere_linear_struct->vertexFormat),
                                  string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
+            } else {
+                // Only try to get format info if vertex format is valid
+                skip |= ValidateAccelerationVertex(sphere_linear_struct->vertexFormat, sphere_linear_struct->vertexData,
+                                                   sphere_linear_struct->vertexStride, cb_objlist, p_geom_geom_linear_spheres_loc);
             }
 
-            else {
-                if (vkuFormatIsPacked(sphere_linear_struct->vertexFormat)) {
-                    const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_linear_struct->vertexFormat);
-                    if (!IsIntegerMultipleOf(sphere_linear_struct->vertexStride, format_block_size)) {
-                        skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423",
-                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
-                                         "is %" PRIu64 " and is not aligned to the texel block size (%" PRIu32
-                                         ") of vertexFormat "
-                                         "%s",
-                                         sphere_linear_struct->vertexStride, format_block_size,
-                                         string_VkFormat(sphere_linear_struct->vertexFormat));
-                    }
-                } else {
-                    const uint32_t format_component_count = vkuFormatComponentCount(sphere_linear_struct->vertexFormat);
-                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(sphere_linear_struct->vertexFormat);
-                    uint32_t min_component_bits_size = format_info.components[0].size;
-                    for (uint32_t component_i = 1; component_i < format_component_count; ++component_i) {
-                        min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
-                    }
-                    const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                    if (!IsPointerAligned(sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size)) {
-                        skip |=
-                            LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
-                                               "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
-                                     cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                     "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                     ") of vertexFormat "
-                                     "%s",
-                                     sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size,
-                                     string_VkFormat(sphere_linear_struct->vertexFormat));
-                    }
-                    if (!IsIntegerMultipleOf(sphere_linear_struct->vertexStride, min_component_byte_size)) {
-                        skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421",
-                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
-                                         "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
-                                         ") of vertexFormat "
-                                         "%s",
-                                         sphere_linear_struct->vertexStride, min_component_byte_size,
-                                         string_VkFormat(sphere_linear_struct->vertexFormat));
-                    }
-                }
-            }
-
+            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_linear_struct->radiusFormat);
             if (!(radius_properties.bufferFeatures & VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusFormat-10424", cmd_buffer,
                                  p_geom_geom_linear_spheres_loc.dot(Field::radiusFormat),
