@@ -25,6 +25,11 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         self.fields = set()
         self.pointer_fields = set()
 
+        # could generate "all" but currently only generate those that are are used
+        self.union_helper = {
+            'VkDescriptorMappingSourceEXT' : 'VkDescriptorMappingSourceDataEXT',
+        }
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -169,8 +174,13 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
 
             // Used to help know which struct in a pNext chain is
             Struct StypeToStruct(VkStructureType stype);
-            }  // namespace vvl
+
+            // The following are helpers to get the Field for a union look up
             ''')
+        for key, value in self.union_helper.items():
+            out.append(f'vvl::Field Field_{value}({key} selector);')
+
+        out.append('\n}  // namespace vvl')
         self.write("".join(out))
 
     def generateSource(self):
@@ -322,7 +332,22 @@ Func FindAlias(Func func) {
                 return out.str();
             }
 
-        }  // namespace vvl
         ''')
 
+        for key, value in self.union_helper.items():
+            out.append(f'vvl::Field Field_{value}({key} selector) {{')
+            out.append('switch (selector) {')
+            union_members = self.vk.structs[value].members
+            for member in union_members:
+                out.append(f'  case {member.selection[0]}:')
+                out.append(f'     return vvl::Field::{member.name};')
+            out.append('''
+                            default:
+                                break;
+                        }
+                        return vvl::Field::Empty;
+                    }\n
+                    ''')
+
+        out.append('\n}  // namespace vvl')
         self.write("".join(out))

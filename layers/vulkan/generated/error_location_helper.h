@@ -6214,6 +6214,8 @@ Func FindAlias(Func func);
 
 // Used to help know which struct in a pNext chain is
 Struct StypeToStruct(VkStructureType stype);
-}  // namespace vvl
 
+// The following are helpers to get the Field for a union look up
+vvl::Field Field_VkDescriptorMappingSourceDataEXT(VkDescriptorMappingSourceEXT selector);
+}  // namespace vvl
 // NOLINTEND

@@ -435,7 +435,7 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                            VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT})) {
                 const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
                 if (embedded_sampler) {
-                    const vvl::Field source_field = vvl::DescriptorMappingSourceField(mapping.source);
+                    const vvl::Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
                     if (mapping.bindingCount != 1) {
                         skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389", device,
                                          map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
