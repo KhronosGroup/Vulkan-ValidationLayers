@@ -627,9 +627,13 @@ void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
         assert(type == VK_SEMAPHORE_TYPE_BINARY);  // checked by validation phase
         // Exporting a semaphore payload to a handle with copy transference has the same side effects
         // on the source semaphore's payload as executing a semaphore wait operation
-        if (std::optional<SubmissionReference> waitable_submit = GetPendingBinarySignalSubmission()) {
-            uint64_t temp_payload;  // we don't need output parameter
-            EnqueueWait(*waitable_submit, temp_payload);
+        if (std::optional<SubmissionReference> pending_signal_submit = GetPendingBinarySignalSubmission()) {
+            uint64_t temp_payload;  // don't need output parameter
+            EnqueueWait(*pending_signal_submit, temp_payload);
+        } else {
+            assert(completed_.op_type == kSignal);  // checked by validation phase
+            completed_.op_type = kWait;
+            completed_.queue = nullptr;  // Export's wait is not associated with a queue
         }
     }
 }
