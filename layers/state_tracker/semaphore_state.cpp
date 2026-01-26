@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -53,7 +53,7 @@ vvl::Semaphore::Semaphore(DeviceState &device, VkSemaphore handle, const VkSemap
 #endif  // VK_USE_PLATFORM_METAL_EXT
       device_(device),
       current_payload_(type_create_info ? type_create_info->initialValue : 0),
-      completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, SubmissionReference{}, current_payload_},
+      completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, current_payload_},
       next_payload_(current_payload_ + 1) {
 }
 
@@ -89,8 +89,8 @@ const VulkanTypedHandle *vvl::Semaphore::InUse() const {
     // cannot be derived from timeline_. It's a bit unconventional. Maybe we need better
     // separation between in-use tracking on other type of functionality. Or maybe it's about
     // better definitions.
-    if (completed_.submit.queue) {
-        return &completed_.submit.queue->Handle();
+    if (completed_.queue) {
+        return &completed_.queue->Handle();
     }
     assert(false && "Can't find queue that uses the semaphore");
     static const VulkanTypedHandle empty{};
@@ -143,7 +143,7 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_
         if (timeline_.empty()) {
             if (scope_ != vvl::Semaphore::kInternal) {
                 // for external semaphore mark wait as completed, no guarantee of signal visibility
-                completed_ = SemOp(kWait, wait_submit, 0);
+                completed_ = SemOp(kWait, wait_submit.queue, 0);
                 current_payload_ = 0;
                 return;
             } else {
@@ -165,7 +165,7 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_
         // The matching waits should be resolved against completed_ in this case.
         assert(!vvl::Contains(timeline_, payload));
         completed_.op_type = kWait;
-        completed_.submit = wait_submit;
+        completed_.queue = wait_submit.queue;
         return;
     }
 
@@ -333,8 +333,8 @@ void vvl::Semaphore::GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquir
 
     auto guard = ReadLock();
     if (timeline_.empty()) {
-        if (completed_.op_type == kSignal && completed_.submit.queue) {
-            queue = completed_.submit.queue->VkHandle();
+        if (completed_.op_type == kSignal && completed_.queue) {
+            queue = completed_.queue->VkHandle();
         } else if (completed_.op_type == kBinaryAcquire) {
             acquire_command = *completed_.acquire_command;
         }
@@ -479,11 +479,7 @@ void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, con
             retire = CanRetireTimelineWait(current_queue, payload);
         }
         if (retire) {
-            // SemOp::submit is used only by the binary semaphores.
-            // Binary semaphores can have at most one wait per timepoint.
-            const auto submit_ref = (type == VK_SEMAPHORE_TYPE_BINARY) ? timepoint.wait_submits[0] : SubmissionReference{};
-
-            RetireTimePoint(payload, kWait, submit_ref);
+            RetireTimePoint(payload, kWait, current_queue);
             return;
         }
 
@@ -497,7 +493,7 @@ void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, con
 
     if (retire_external_payload) {
         auto guard = WriteLock();
-        RetireTimePoint(external_payload, kWait, SubmissionReference{});
+        RetireTimePoint(external_payload, kWait, nullptr);
     }
 }
 
@@ -510,7 +506,7 @@ void vvl::Semaphore::RetireSignal(uint64_t payload) {
     assert(timepoint.signal_submit.has_value());
 
     OpType completed_op = kSignal;
-    SubmissionReference completed_submit = *timepoint.signal_submit;
+    const Queue *completed_op_queue = timepoint.signal_submit->queue;
 
     // If there is a wait operation then mark it as the last completed instead.
     // The reason to do this here instead on the waiter side (after it is unblocked)
@@ -518,14 +514,16 @@ void vvl::Semaphore::RetireSignal(uint64_t payload) {
     // In this case it's the signal that defines the last completed value.
     if (!timepoint.wait_submits.empty()) {
         completed_op = kWait;
-        // SemOp::submit is used only for binary semaphores which can have only single wait
-        completed_submit = timepoint.wait_submits[0];
+        // NOTE: for timeline semaphores there can be several waiters. Also for timeline
+        // semaphores the queue of the completed operation is only used by Semaphore::InUse
+        // for reporting purposes. We can choose any valid wait queue if there are multiple.
+        completed_op_queue = timepoint.wait_submits[0].queue;
     }
 
-    RetireTimePoint(payload, completed_op, completed_submit);
+    RetireTimePoint(payload, completed_op, completed_op_queue);
 }
 
-void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, SubmissionReference completed_submit) {
+void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, const Queue *completed_op_queue) {
     auto it = timeline_.begin();
     while (it != timeline_.end() && it->first <= payload) {
         assert(it->first > completed_.payload);
@@ -533,7 +531,7 @@ void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, Subm
         ++it;
     }
     timeline_.erase(timeline_.begin(), it);
-    completed_ = SemOp(completed_op, completed_submit, payload);
+    completed_ = SemOp(completed_op, completed_op_queue, payload);
 
     // Update the current payload only if the given payload is larger.
     // vkSignalSemaphore updates the current payload immediately, so it can be
