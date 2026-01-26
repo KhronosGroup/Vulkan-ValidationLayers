@@ -116,6 +116,8 @@ enum class SpirvInterfaceVariableError {
     DescriptorCount_07991,
     Inline_10391,
     DescriptorHeapMapping_11312,
+    PushConstantStage_07987,
+    PushConstantRange_10069,
 };
 const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVariableError error);
 

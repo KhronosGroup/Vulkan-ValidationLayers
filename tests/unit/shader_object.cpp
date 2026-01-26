@@ -5570,10 +5570,6 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
         GTEST_SKIP() << "local_size_x (32) is not a multiple of subgroupSize";
     }
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
     // Tests are assume that Float16 3*5 is not available
     const char* comp_src = R"glsl(
         #version 450
