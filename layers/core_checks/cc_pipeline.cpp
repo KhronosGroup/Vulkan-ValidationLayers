@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -352,27 +352,16 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     const vvl::Pipeline &pipeline_state = *pipeline_ptr;
 
     if (pipelineBindPoint != pipeline_state.pipeline_type) {
-        if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            const LogObjectList objlist(cb_state->Handle(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00779", objlist, error_obj.location,
-                             "Cannot bind a pipeline of type %s to the graphics pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
-        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            const LogObjectList objlist(cb_state->Handle(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00780", objlist, error_obj.location,
-                             "Cannot bind a pipeline of type %s to the compute pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
-        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-            const LogObjectList objlist(cb_state->Handle(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-02392", objlist, error_obj.location,
-                             "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
-        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM) {
-            const LogObjectList objlist(cb_state->Handle(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-09911", objlist, error_obj.location,
-                             "Cannot bind a pipeline of type %s to the datagraph pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
-        }
+        const LogObjectList objlist(cb_state->Handle(), pipeline);
+        const char* vuid =
+            pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS          ? "VUID-vkCmdBindPipeline-pipelineBindPoint-00779"
+            : pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE         ? "VUID-vkCmdBindPipeline-pipelineBindPoint-00780"
+            : pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR ? "VUID-vkCmdBindPipeline-pipelineBindPoint-02392"
+            : pipelineBindPoint == VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM  ? "VUID-vkCmdBindPipeline-pipelineBindPoint-09911"
+                                                                          : kVUIDUndefined;
+        skip |= LogError(vuid, objlist, error_obj.location.dot(Field::pipelineBindPoint), "is %s but %s is created as %s.",
+                         string_VkPipelineBindPoint(pipelineBindPoint), FormatHandle(pipeline).c_str(),
+                         string_VkPipelineBindPoint(pipeline_state.pipeline_type));
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             skip |= ValidateGraphicsPipelineBindPoint(*cb_state, pipeline_state, error_obj.location);
@@ -507,7 +496,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
             default:
                 break;
         }
-        skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
+        skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support %s.",
                          FormatHandle(cb_state.Handle()).c_str(), FormatHandle(pool->Handle()).c_str(),
                          string_VkPipelineBindPoint(bind_point));
     }
