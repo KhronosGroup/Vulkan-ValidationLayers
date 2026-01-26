@@ -259,9 +259,19 @@ bool CoreChecks::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice devic
 
     if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM != pipeline_ptr->GetCreateInfoSType()) {
         skip |= LogError("VUID-VkDataGraphPipelineInfoARM-dataGraphPipeline-09803", device,
-                         error_obj.location.dot(Field::dataGraphPipeline),
+                         error_obj.location.dot(Field::pPipelineInfo).dot(Field::dataGraphPipeline),
                          "was not created with vkCreateDataGraphPipelinesARM. The create info structure type was %s",
                          string_VkStructureType(pipeline_ptr->GetCreateInfoSType()));
+    }
+    for (uint32_t i = 0; i < propertiesCount; i++) {
+        const VkDataGraphPipelinePropertyQueryResultARM& prop1 = pProperties[i];
+        for (uint32_t j = i+1; j < propertiesCount; j++) {
+            const VkDataGraphPipelinePropertyQueryResultARM& prop2 = pProperties[j];
+            if (prop1.property == prop2.property) {
+                skip |= LogError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09889", device, error_obj.location.dot(Field::pProperties, i).dot(Field::property),
+                                "and pProperties[%" PRIu32 "].property are the same (%s).", j, string_VkDataGraphPipelinePropertyARM(prop1.property));
+            }
+        }
     }
 
     return skip;
