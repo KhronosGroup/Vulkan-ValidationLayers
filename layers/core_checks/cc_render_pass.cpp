@@ -860,52 +860,55 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
     // Need to check for Preserve attachments as they are not part of the AttachmentInfo (as it is a rare case with no equivalent in
     // dynamic rendering) (Same thing currently with multiView mask)
     if (!rp_state.UsesDynamicRendering()) {
-        const VkRenderPassCreateInfo2 *rpci = rp_state.create_info.ptr();
-        const VkImageView *image_views = cb_state.active_framebuffer.get()->create_info.pAttachments;
-        for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-            const auto view_state = Get<vvl::ImageView>(image_views[i]);
-            ASSERT_AND_CONTINUE(view_state && view_state->image_state);
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
+            const vvl::ImageView* attachment = attachment_info.image_view;
+            if (!attachment) {
+                continue;  // VK_ATTACHMENT_UNUSED
+            }
             const bool has_offset_flag =
-                (view_state->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) != 0;
+                (attachment->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) != 0;
 
             // fdm attachment
-            const auto *fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
-            const VkSubpassDescription2 &subpass = rpci->pSubpasses[cb_state.GetActiveSubpass()];
+            const auto* fdm_attachment =
+                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp_state.create_info.pNext);
             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED &&
                 fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                if (subpass.viewMask == 0) {
+                const uint32_t view_mask = cb_state.GetViewMask();
+                if (view_mask == 0) {
                     if (fdm_offset_end_info.fragmentDensityOffsetCount != 1) {
-                        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
+                        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), attachment->Handle());
                         skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06511",
                                          objlist, end_info_loc.dot(Field::fragmentDensityOffsetCount),
                                          "(%" PRIu32 ") should only be 1 when the multiview feature is not enabled.",
                                          fdm_offset_end_info.fragmentDensityOffsetCount);
                     }
-                } else if (view_state->normalized_subresource_range.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount) {
-                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
+                } else if (attachment->normalized_subresource_range.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount) {
+                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), attachment->Handle());
                     skip |= LogError(
                         "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06510", objlist,
                         end_info_loc.dot(Field::fragmentDensityOffsetCount),
                         "(%" PRIu32 ") does not match the fragmentDensityMapAttachment (pAttachments[%" PRIu32
-                        "] %s) subresourceRange.layerCount (%s) (subpass viewMask is 0x%" PRIx32 ")",
-                        fdm_offset_end_info.fragmentDensityOffsetCount, i, FormatHandle(*view_state).c_str(),
-                        string_LayerCount(view_state->image_state->create_info, view_state->create_info.subresourceRange).c_str(),
-                        subpass.viewMask);
+                        "] %s) subresourceRange.layerCount (%s) (subpass %" PRIu32 " viewMask is 0x%" PRIx32 ")",
+                        fdm_offset_end_info.fragmentDensityOffsetCount, i, FormatHandle(*attachment).c_str(),
+                        string_LayerCount(attachment->image_state->create_info, attachment->create_info.subresourceRange).c_str(),
+                        cb_state.GetActiveSubpass(), view_mask);
                 }
             }
 
             // Preserve attachments
+            const vku::safe_VkSubpassDescription2& subpass = rp_state.create_info.pSubpasses[cb_state.GetActiveSubpass()];
             for (uint32_t k = 0; k < subpass.preserveAttachmentCount; k++) {
-                const auto attachment = subpass.pPreserveAttachments[k];
-                if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) && !has_offset_flag) {
-                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
+                const uint32_t preserve_index = subpass.pPreserveAttachments[k];
+                if (preserve_index != VK_ATTACHMENT_UNUSED && preserve_index == i && !has_offset_flag) {
+                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), attachment->Handle());
                     skip |= LogError(
                         "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509", objlist,
                         end_info_loc.dot(Field::fragmentDensityOffsetCount),
                         "is %" PRIu32 " but preserveAttachmentCount[%" PRIu32 "] (pAttachments[%" PRIu32
                         "] %s) references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                        fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*view_state).c_str(),
-                        FormatHandle(*view_state->image_state).c_str());
+                        fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*attachment).c_str(),
+                        FormatHandle(*attachment->image_state).c_str());
                 }
             }
         }
@@ -1580,21 +1583,21 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
         for (uint32_t j = 0; j < subpass.preserveAttachmentCount; ++j) {
             const Location preserve_loc = subpass_loc.dot(Field::preserveAttachmentCount, j);
-            uint32_t attachment = subpass.pPreserveAttachments[j];
-            if (attachment == VK_ATTACHMENT_UNUSED) {
+            const uint32_t preserve_index = subpass.pPreserveAttachments[j];
+            if (preserve_index == VK_ATTACHMENT_UNUSED) {
                 const char *vuid =
                     use_rp2 ? "VUID-VkSubpassDescription2-attachment-03073" : "VUID-VkSubpassDescription-attachment-00853";
                 skip |= LogError(vuid, device, preserve_loc, "must not be VK_ATTACHMENT_UNUSED.");
             } else {
-                skip |= ValidateAttachmentIndex(attachment, create_info.attachmentCount, preserve_loc);
-                if (attachment < create_info.attachmentCount) {
-                    skip |= AddAttachmentUse(attachment_uses, attachment_layouts, attachment, ATTACHMENT_PRESERVE,
+                skip |= ValidateAttachmentIndex(preserve_index, create_info.attachmentCount, preserve_loc);
+                if (preserve_index < create_info.attachmentCount) {
+                    skip |= AddAttachmentUse(attachment_uses, attachment_layouts, preserve_index, ATTACHMENT_PRESERVE,
                                              VkImageLayout(0) /* preserve doesn't have any layout */, preserve_loc);
                 }
 
                 if (fragment_density_map_info) {
                     const uint32_t fdm_attachment_index = fragment_density_map_info->fragmentDensityMapAttachment.attachment;
-                    if ((fdm_attachment_index != VK_ATTACHMENT_UNUSED) && (attachment == fdm_attachment_index)) {
+                    if (fdm_attachment_index != VK_ATTACHMENT_UNUSED && preserve_index == fdm_attachment_index) {
                         skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548",
                                          device, preserve_loc,
                                          "is also referenced by "
