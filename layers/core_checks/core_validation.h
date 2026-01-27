@@ -2885,8 +2885,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                        const ErrorObject& error_obj) const override;
     bool ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer& cb_state, const Location& loc) const;
-    std::string OverlapDataToString(const std::vector<vvl::DeviceState::CommandBufferOverlapData>& overlap_data,
-                                    bool sampler) const;
     bool ValidateReservedRangeOverlap(const vvl::CommandBuffer& cb_state, const VkBindHeapInfoEXT* pBindInfo,
                                       const Location& loc) const;
     bool ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const Location& loc) const;

@@ -112,68 +112,6 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
-struct CommandBufferReservedAddressEnumOps {
-    using Map = typename DeviceState::DescriptorHeapReservedAddress::RangeMap;
-    using Iterator = typename Map::iterator;
-    using Range = typename Map::key_type;
-
-    void infill(Map& map, const Iterator& pos, const Range& infill_range) const {}
-
-    void update(const Iterator& pos) const {
-        auto& command_buffer_list = pos->second;
-        assert(!command_buffer_list.empty());
-        for (auto command_buffer : command_buffer_list) {
-            if (command_buffer != lookup_value) {
-                buffers.insert(command_buffer);
-            }
-        }
-    }
-    const vvl::CommandBuffer* lookup_value;
-    mutable std::set<const vvl::CommandBuffer*> buffers;
-};
-
-void DeviceState::GetBufferAddressOverlapRanges(const vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& range,
-                                                bool is_bind_sampler,
-                                                std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
-                                                std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
-                                                std::vector<CommandBufferOverlapData>& type_mismatch_data) {
-    assert(range.non_empty());
-
-    WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-    for (int i = 0; i < 2; i++) {
-        // with i==0 checking resource type, i==1 checking sampler type
-        const bool is_sampler = i == 1;
-
-        // get a set of command buffers that overlap the range
-        CommandBufferReservedAddressEnumOps enum_ops{cb_state, {}};
-        DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map =
-            is_sampler ? descriptor_heap_reserved_address.sampler_map : descriptor_heap_reserved_address.resource_map;
-        sparse_container::infill_update_range(cmd_buffer_map, range, enum_ops);
-
-        std::vector<CommandBufferOverlapData>& overlap_data = is_sampler ? sampler_type_overlap_data : resource_type_overlap_data;
-        const bool enable_match = (!is_sampler && !is_bind_sampler) || (is_sampler && is_bind_sampler);
-        for (const vvl::CommandBuffer* cmd_buffer : enum_ops.buffers) {
-            // get full reserved range from command buffer
-            const vvl::range<VkDeviceAddress>& cmd_buffer_address_range =
-                is_sampler ? cmd_buffer->descriptor_heap.sampler_reserved : cmd_buffer->descriptor_heap.resource_reserved;
-
-            if (range.intersects(cmd_buffer_address_range)) {
-                if (range == cmd_buffer_address_range) {
-                    if (enable_match) {
-                        // this is legitimate when the reserved range is bound to several command buffers with same heap type
-                    } else {
-                        // range match, but type is different: report through a separate list
-                        type_mismatch_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
-                    }
-                } else {
-                    // Pure overlap, but not match
-                    overlap_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
-                }
-            }
-        }
-    }
-}
-
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
