@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,17 +81,17 @@ void RegisterRayQueryValidation(Validator &gpuav, CommandBufferSubState &cb) {
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
                 } break;
                 case kErrorSubCodeRayQueryBothSkip: {
-                    const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+                    const uint32_t value = error_record[kInstLogErrorParameterOffset_0];
                     strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889";
                 } break;
                 case kErrorSubCodeRayQuerySkipCull: {
-                    const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+                    const uint32_t value = error_record[kInstLogErrorParameterOffset_0];
                     strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06890";
                 } break;
                 case kErrorSubCodeRayQueryOpaque: {
-                    const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+                    const uint32_t value = error_record[kInstLogErrorParameterOffset_0];
                     strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891";
                 } break;

@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,19 +155,6 @@ const uint kInstBuffAddrAccessPayloadMaskAccessInfo = 0x3FFFFFFF;
 // This is because the limits for both of these on all known devices is 1024
 const int kMeshShadingOutputVerticesShift = 16;
 const int kMeshShadingOutputPrimitivesMask = 0xFFFF;
-
-// Ray query
-// ---
-const int kInstRayQueryParamOffset_0 = kHeaderSize;
-
-// Ray hit object (VK_EXT_ray_tracing_invocation_reorder)
-// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
-// OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
-// ---
-const int kInstRayHitObjectParamOffset_0 = kHeaderSize;
-// 0 = OpHitObjectTraceRayEXT, 1 = OpHitObjectTraceReorderExecuteEXT,
-// 2 = OpHitObjectTraceRayMotionEXT, 3 = OpHitObjectTraceMotionReorderExecuteEXT
-const int kInstRayHitObjectOpcodeType = kHeaderSize + 1;
 
 // Validation commands shaders
 // ---

@@ -21,21 +21,26 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
+// From SPIRV-Headers
+const uint OpHitObjectTraceReorderExecuteEXT = 5311;
+const uint OpHitObjectTraceMotionReorderExecuteEXT = 5312;
+const uint OpHitObjectTraceRayEXT = 5316;
+const uint OpHitObjectTraceRayMotionEXT = 5317;
+
 // Validation for VK_EXT_ray_tracing_invocation_reorder hit object operations:
-// OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT,
-// OpHitObjectTraceRayMotionEXT, OpHitObjectTraceMotionReorderExecuteEXT
 //
-// opcode_type: 0 = OpHitObjectTraceRayEXT, 1 = OpHitObjectTraceReorderExecuteEXT,
-//              2 = OpHitObjectTraceRayMotionEXT, 3 = OpHitObjectTraceMotionReorderExecuteEXT
-// pipeline_flags: bit 0 = pipeline has SKIP_AABBS, bit 1 = pipeline has SKIP_TRIANGLES
-// time: motion time parameter (only valid for opcode_type 2 and 3, pass 0.0 for others)
+// pipeline_flags:
+//      bit 0 = pipeline has SKIP_AABBS
+//      bit 1 = pipeline has SKIP_TRIANGLES
+// time:
+//    motion time parameter (only valid for opcode_type "Motion" opcodes, pass 0.0 for others)
 bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax, const uint pipeline_flags, const float time)
 {
     uint error = 0u;
     uint param_0 = 0u;
 
-    // VUID 11882: time must be between 0.0 and 1.0 (only for motion opcodes)
-    const bool is_motion_opcode = (opcode_type == 2 || opcode_type == 3);
+    const bool is_motion_opcode = (opcode_type == OpHitObjectTraceRayMotionEXT || opcode_type == OpHitObjectTraceMotionReorderExecuteEXT);
+
     if (is_motion_opcode && (time < 0.0f || time > 1.0f)) {
         error = kErrorSubCodeRayHitObjectTimeOutOfRange;
     } else if (isnan(ray_tmin)) {
@@ -85,11 +90,11 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
             error = kErrorSubCodeRayHitObjectOpaque;
             param_0 = ray_flags;
         } else if ((ray_flags & SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
-            // VUID 11886: SkipTriangles ray flag with pipeline SKIP_AABBS flag
+            // SkipTriangles ray flag with pipeline SKIP_AABBS flag
             error = kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs;
             param_0 = ray_flags;
         } else if ((ray_flags & SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
-            // VUID 11887: SkipAABBs ray flag with pipeline SKIP_TRIANGLES flag
+            // SkipAABBs ray flag with pipeline SKIP_TRIANGLES flag
             error = kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles;
             param_0 = ray_flags;
         }
@@ -109,7 +114,6 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
     return true;
 }
 
-// Check for VUID 11888: SBT index must be <= maxShaderBindingTableRecordIndex
 bool inst_ray_hit_object_sbt_index_check(const uint inst_offset, const uint sbt_index, const uint max_sbt_index)
 {
     if (sbt_index > max_sbt_index) {
