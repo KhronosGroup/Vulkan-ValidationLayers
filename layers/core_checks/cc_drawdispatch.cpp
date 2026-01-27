@@ -1650,12 +1650,16 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
                                                            const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
+    // It is possible to only have embedded samplers, in that case, you are not required to
+    if (cb_state.descriptor_heap.sampler_reserved.empty() || !cb_state.descriptor_heap.sampler_reserved.valid()) {
+        return skip;
+    }
+
     // First loop mappings, likely there might be 100+ mappings, but only 1 or 2 using embedded samplers
     for (uint32_t i = 0; i < mapping_info.mappingCount; i++) {
         const auto& mapping = mapping_info.pMappings[i];
         // Mapping does not refer embedded sampler (either does not contain or cannot contain)
-        const VkSamplerCreateInfo* embedded_sampler = GetEmbeddedSampler(mapping);
-        if (!embedded_sampler) {
+        if (GetEmbeddedSampler(mapping) == nullptr) {
             continue;
         }
 
@@ -1689,17 +1693,19 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
                 continue;
             }
 
-            if (cb_state.descriptor_heap.sampler_reserved.valid() &&
-                cb_state.descriptor_heap.sampler_reserved.distance() <
-                    phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
+            if (cb_state.descriptor_heap.sampler_reserved.distance() <
+                phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
                 skip |=
                     LogError(vuid.descriptor_heap_11375, cb_state.GetObjectList(bind_point), vuid.loc(),
-                             "Last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
-                             ", that is less than minSamplerHeapReservedRangeWithEmbedded (%" PRIu64
-                             ").\nEmbedded sampler has been used in stage %s with mapping at index %" PRIu32 ".\n%s\n",
+                             "SPIR-V (%s) uses %s which is an embedded sampler set with pMappings[%" PRIu32
+                             "].sourceData.%s.pEmbeddedSampler\n"
+                             "The last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
+                             ", that is less than minSamplerHeapReservedRangeWithEmbedded (%" PRIu64 ").\n  %s\n",
+                             string_SpvExecutionModel(entry_point.execution_model), resource_variable.DescribeDescriptor().c_str(),
+                             i, String(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source)),
                              cb_state.descriptor_heap.sampler_reserved.distance(),
                              phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
-                             string_VkShaderStageFlagBits(entry_point.stage), i, module_state.DescribeInstruction(*type).c_str());
+                             module_state.DescribeInstruction(*type).c_str());
             }
         }
     }
