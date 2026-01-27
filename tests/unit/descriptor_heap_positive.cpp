@@ -1071,6 +1071,86 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     }
 }
 
+TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11558");
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    // Resource descriptor heap buffer
+    const VkDeviceSize resource_stride = Align(heap_props.bufferDescriptorSize, heap_props.samplerDescriptorAlignment);
+    const VkDeviceSize resource_descriptor_count = 4;
+    const VkDeviceSize resource_heap_size_app = AlignResource(resource_descriptor_count * resource_stride);
+    const VkDeviceSize resource_heap_size = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
+    const VkDeviceSize out_data_buffer_size = 256;
+
+    vkt::Buffer resource_heap(*m_device, resource_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+    const auto resource_heap_ptr = static_cast<char*>(resource_heap.Memory().Map());
+
+    // Output buffer descriptor
+    vkt::Buffer out_buffer(*m_device, out_data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+
+    VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), out_data_buffer_size};
+    VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
+    out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    out_descriptor_info.data.pAddressRange = &out_address_range;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
+
+    VkDescriptorSetAndBindingMappingEXT mappings[3];
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+
+    VkSamplerCreateInfo embedded_sampler = SafeSaneSamplerCreateInfo();
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = 1u * (uint32_t)resource_stride;
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+    mappings[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+
+    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[2].sourceData.constantOffset.heapOffset = 2u * (uint32_t)resource_stride;
+    mappings[2].sourceData.constantOffset.heapArrayStride = 0;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 3;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer Output { int result[]; };
+        layout(set = 0, binding = 1) uniform sampler samp;
+        layout(set = 0, binding = 2) uniform texture2D tex;
+        void main() {
+            ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+            vec2 texCoord = vec2(gl_GlobalInvocationID.xy) / 1.0;
+            vec4 color = texture(sampler2D(tex, samp), texCoord);
+            result[gl_LocalInvocationIndex] = int(color.r);
+        }
+    )glsl";
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.CreateComputePipeline(false);
+
+    // Don't need to call vkCmdBindSamplerHeapEXT if only using embedded
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
