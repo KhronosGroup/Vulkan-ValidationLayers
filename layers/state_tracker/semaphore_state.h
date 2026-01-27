@@ -56,7 +56,7 @@ class Semaphore : public RefcountedStateObject {
     struct SwapchainWaitInfo {
         std::shared_ptr<vvl::Swapchain> swapchain;
         uint32_t image_index = vvl::kNoIndex32;  // image being presented
-        uint32_t acquire_counter_value = 0;   // value of vvl::Swapchain::acquire_count when the image was acquired
+        uint32_t acquire_counter_value = 0;      // value of vvl::Swapchain::acquire_request_count when the image was acquired
     };
 
     struct SemOp {

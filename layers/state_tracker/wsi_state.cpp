@@ -107,7 +107,7 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
       dev_data(dev_data_) {
     // Initialize with visible values for debugging purposes.
     // This helps to show used slots during the first few frames.
-    acquire_history.fill(vvl::kNoIndex32);
+    acquire_history_ring_buffer.fill(vvl::kNoIndex32);
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) {
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
@@ -139,10 +139,6 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
         images[image_index].present_wait_semaphores.emplace_back(semaphore);
     }
 
-    if (present_id > max_present_id) {
-        max_present_id = present_id;
-    }
-
     // If this swapchain is retired (became oldSwapchain) then register the swapchain present
     // wait semaphores in the *new* swapchain. It will be responsible for tracking semaphores in-use status.
     // Old swapchain can't track semaphore in-use status anymore. That functionality is part of acquire logic
@@ -150,6 +146,19 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
     if (new_swapchain) {
         auto &old_wait_semaphores = new_swapchain->old_swapchain_present_wait_semaphores;
         old_wait_semaphores.insert(old_wait_semaphores.end(), present_wait_semaphores.begin(), present_wait_semaphores.end());
+    }
+
+    // Present id tracking
+    if (present_id > max_present_id) {
+        max_present_id = present_id;
+    }
+    if (present_id > 0) {
+        // the present id ring buffer is allocated only when the application uses present ids
+        if (present_id_ring_buffer.empty()) {
+            present_id_ring_buffer.resize(present_id_ring_buffer_size);
+        }
+        present_id_ring_buffer[present_id_request_count % present_id_ring_buffer_size] = {present_id, present_submission_ref};
+        present_id_request_count++;
     }
 }
 
@@ -200,8 +209,8 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     }
     images[image_index].ResetPresentWaitSemaphores();
 
-    acquire_history[acquire_count % acquire_history_max_length] = image_index;
-    acquire_count++;
+    acquire_history_ring_buffer[acquire_request_count % acquire_history_ring_buffer_size] = image_index;
+    acquire_request_count++;
 }
 
 void Swapchain::Destroy() {
@@ -257,20 +266,35 @@ std::shared_ptr<const vvl::Image> Swapchain::GetSwapChainImageShared(uint32_t in
 }
 
 uint32_t Swapchain::GetAcquireHistoryLength() const {
-    return (acquire_count >= acquire_history_max_length) ? acquire_history_max_length : acquire_count;
+    return acquire_request_count >= acquire_history_ring_buffer_size ? acquire_history_ring_buffer_size : acquire_request_count;
 }
 
 uint32_t Swapchain::GetAcquiredImageIndexFromHistory(uint32_t acquire_history_index) const {
     const uint32_t history_length = GetAcquireHistoryLength();
     assert(acquire_history_index < history_length);
 
-    const uint32_t global_start_index = acquire_count - history_length;
+    const uint32_t global_start_index = acquire_request_count - history_length;
     const uint32_t global_index = global_start_index + acquire_history_index;
-    const uint32_t ring_buffer_index = global_index % acquire_history_max_length;
+    const uint32_t ring_buffer_index = global_index % acquire_history_ring_buffer_size;
 
-    const uint32_t acquire_image_index = acquire_history[ring_buffer_index];
+    const uint32_t acquire_image_index = acquire_history_ring_buffer[ring_buffer_index];
     assert(acquire_image_index != vvl::kNoIndex32);
     return acquire_image_index;
+}
+
+uint32_t Swapchain::GetPresentIdInfoCount() const {
+    return present_id_request_count >= present_id_ring_buffer_size ? present_id_ring_buffer_size : present_id_request_count;
+}
+
+Swapchain::PresentIdInfo Swapchain::GetPresentIdInfo(uint32_t present_id_info_index) {
+    const uint32_t info_count = GetPresentIdInfoCount();
+    assert(present_id_info_index < info_count);
+
+    const uint32_t global_start_index = present_id_request_count - info_count;
+    const uint32_t global_index = global_start_index + present_id_info_index;
+    const uint32_t ring_buffer_index = global_index % present_id_ring_buffer_size;
+
+    return present_id_ring_buffer[ring_buffer_index];
 }
 
 void Surface::Destroy() {

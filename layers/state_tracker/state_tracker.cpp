@@ -4100,13 +4100,13 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 
     std::vector<QueueSubmission> present_submissions;  // TODO: use small_vector. Update interfaces to use span
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        present_submissions.emplace_back(present_loc.dot(Field::pSwapchains, i));
+        QueueSubmission &present_submission = present_submissions.emplace_back(present_loc.dot(Field::pSwapchains, i));
         if (present_fence_info) {
-            present_submissions.back().AddFence(Get<Fence>(present_fence_info->pFences[i]));
+            present_submission.AddFence(Get<Fence>(present_fence_info->pFences[i]));
         }
         auto swapchain = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
-        present_submissions.back().swapchain = swapchain->VkHandle();
-        present_submissions.back().swapchain_image = swapchain->GetSwapChainImageShared(pPresentInfo->pImageIndices[i]);
+        present_submission.swapchain = swapchain->VkHandle();
+        present_submission.swapchain_image = swapchain->GetSwapChainImageShared(pPresentInfo->pImageIndices[i]);
     }
 
     vvl::Semaphore::SwapchainWaitInfo semaphore_swapchain_info;
@@ -4118,7 +4118,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 
         // Store the value of the acquire counter that corresponds to the presented image.
         // When we get an error we can find where in the acquire history this semaphore was used the last time.
-        semaphore_swapchain_info.acquire_counter_value = semaphore_swapchain_info.swapchain->acquire_count;
+        semaphore_swapchain_info.acquire_counter_value = semaphore_swapchain_info.swapchain->acquire_request_count;
 
         // Usually acquire_counter_value it's the current vvl::Swapchain::acquire_count but for the case when
         // application acquires multiple images before presenting we iterate to find specific image index.
@@ -4314,6 +4314,37 @@ void DeviceState::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAc
     if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex, record_obj.location.function);
+}
+
+void DeviceState::RecordWaitForPresent(VkDevice device, VkSwapchainKHR swapchain, uint64_t present_id, const Location &location) {
+    if (auto swapchain_state = Get<Swapchain>(swapchain)) {
+        // Find the smallest registered present id >= the given present id,
+        // and ensure that the queue has progressed to the corresponding seq location
+        const uint32_t present_id_info_count = swapchain_state->GetPresentIdInfoCount();
+        for (uint32_t i = 0; i < present_id_info_count; i++) {
+            const Swapchain::PresentIdInfo present_id_info = swapchain_state->GetPresentIdInfo(i);
+            if (present_id_info.present_id >= present_id) {
+                present_id_info.present_submission_ref.queue->NotifyAndWait(location, present_id_info.present_submission_ref.seq);
+                break;
+            }
+        }
+    }
+}
+
+void DeviceState::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+                                                  const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS && record_obj.result != VK_SUBOPTIMAL_KHR) {
+        return;
+    }
+    RecordWaitForPresent(device, swapchain, presentId, record_obj.location);
+}
+
+void DeviceState::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                   const VkPresentWait2InfoKHR *pPresentWait2Info, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS && record_obj.result != VK_SUBOPTIMAL_KHR) {
+        return;
+    }
+    RecordWaitForPresent(device, swapchain, pPresentWait2Info->presentId, record_obj.location);
 }
 
 std::shared_ptr<PhysicalDevice> InstanceState::CreatePhysicalDeviceState(VkPhysicalDevice handle) {

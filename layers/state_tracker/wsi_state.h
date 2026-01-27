@@ -104,10 +104,27 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     DeviceState &dev_data;
     uint32_t acquired_images = 0;
 
-    // Image acquire history
-    static constexpr uint32_t acquire_history_max_length = 16;
-    std::array<uint32_t, acquire_history_max_length> acquire_history;  // ring buffer contains the last acquired images
-    uint32_t acquire_count = 0;                                        // total number of image acquire requests
+    // Image acquire history ring buffer (most recently acquired image indices)
+    static constexpr uint32_t acquire_history_ring_buffer_size = 16;
+    std::array<uint32_t, acquire_history_ring_buffer_size> acquire_history_ring_buffer;
+    uint32_t acquire_request_count = 0;
+    uint32_t GetAcquireHistoryLength() const;
+    uint32_t GetAcquiredImageIndexFromHistory(uint32_t acquire_history_index) const;
+
+    // Present ids and associated information ring buffer.
+    // It is not reasonable to keep all present id, instead, track the fixed
+    // number of the most recent present ids. This works well in practice
+    // since synchronization often involves only the last few frames.
+    // The storage for the ring buffer is allocated on the first usage.
+    static constexpr uint32_t present_id_ring_buffer_size = 24;
+    struct PresentIdInfo {
+        uint64_t present_id;
+        SubmissionReference present_submission_ref;
+    };
+    std::vector<PresentIdInfo> present_id_ring_buffer;
+    uint32_t present_id_request_count = 0;
+    uint32_t GetPresentIdInfoCount() const;
+    PresentIdInfo GetPresentIdInfo(uint32_t present_id_info_index);
 
     // Old swapchain state:
     // The new swapchain is a swapchain for which *this* swapchain is the oldSwapchain.
@@ -152,9 +169,6 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     SwapchainImage GetSwapChainImage(uint32_t index) const;
 
     std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
-
-    uint32_t GetAcquireHistoryLength() const;
-    uint32_t GetAcquiredImageIndexFromHistory(uint32_t acquire_history_index) const;
 
     std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
