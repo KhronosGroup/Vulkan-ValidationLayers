@@ -94,15 +94,6 @@ bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDa
         }
     }
 
-    for (uint32_t j = 0; j < create_info.resourceInfoCount; j++) {
-        auto resource = create_info.pResourceInfos[j];
-        if (resource.arrayElement != 0) {
-            skip |= LogError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779", device,
-                             create_info_loc.dot(Field::pResourceInfos, j).dot(Field::arrayElement), "(%" PRIu32 ") is not zero",
-                             resource.arrayElement);
-        }
-    }
-
     return skip;
 }
 

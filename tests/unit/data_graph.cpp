@@ -1146,7 +1146,7 @@ TEST_F(NegativeDataGraph, ShaderModuleCreateInfoInvalidConstantID) {
     graph_pipeline_constant.pConstantData = &constant_data;
     pipeline.shader_module_ci_.constantCount = 1;
     pipeline.shader_module_ci_.pConstants = &graph_pipeline_constant;
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1172,10 +1172,9 @@ TEST_F(NegativeDataGraph, TensorSparsitySuppliedMissingDescription) {
     pipeline.shader_module_ci_.pConstants = &constant;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09775");
-    // 9921 and 9850 will also be triggered since we need a description for this
+    // 9921 will also be triggered since we need a description for this
     // Graph Constant ID and we are intentionally not passing one
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1292,9 +1291,11 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongID) {
     pipeline.shader_module_ci_.constantCount = 1;
     pipeline.shader_module_ci_.pConstants = &constant;
 
-    // VU 9921 and 9774 overlap about the ID.
+    // 9921 triggered 2 times:
+    // - Vulkan pConstants[x].id = 42 has no correspondence in the spirv code
+    // - spirv OpGraphConstantARM has no correspondence in the Vulkan pConstants
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1401,8 +1402,6 @@ TEST_F(NegativeDataGraph, GraphConstantTensorMissingDescription) {
     pipeline.shader_module_ci_.constantCount = 1;
     pipeline.shader_module_ci_.pConstants = &constant;
 
-    // VU 9921 and 9850 overlap about the existence of a VkTensorDescriptionARM.
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
@@ -1462,7 +1461,7 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongDescriptorSet) {
     // incorrect descriptorSet on one resource
     pipeline.resources_[0].descriptorSet = 42;
 
-    // this triggers 9923 2 times:
+    // 9923 triggered 2 times:
     // - Vulkan pResourceInfos[x].descriptorSet = 42 has no correspondence in the spirv code
     // - spirv OpVariable has no correspondence in the Vulkan pResourceInfos
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
@@ -1481,7 +1480,7 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongBinding) {
     // incorrect binding on one resource
     pipeline.resources_[0].binding = 42;
 
-    // this triggers 9923 2 times:
+    // 9923 triggered 2 times:
     // - Vulkan pResourceInfos[x].binding = 42 has no correspondence in the spirv code
     // - spirv OpVariable has no correspondence in the Vulkan pResourceInfos
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
@@ -1500,9 +1499,7 @@ TEST_F(NegativeDataGraph, ResourceTensorArrayElementNotZero) {
     // incorrect arrayElement on one resource
     pipeline.resources_[0].arrayElement = 42;
 
-    // there is some overlap between these 2 VUs, both are triggered
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1557,8 +1554,6 @@ TEST_F(NegativeDataGraph, ResourceTensorMissingDescription) {
     // cut the connection to the tensor description
     pipeline.resources_[0].pNext = nullptr;
 
-    // VU 9923 and 9851 overlap about the existence of a VkTensorDescriptionARM.
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
@@ -1842,8 +1837,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArrayWrongSize) {
     pipeline.CreatePipelineLayout();
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
-    // currently tensor arrays are effectively banned by these 2 VUs, we need to suppress them
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    // tensor arrays also triggers VU 9923s (2 tensors, 2 errors)
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
@@ -1866,8 +1860,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArraySizeZero) {
     pipeline.CreatePipelineLayout();
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
-    // currently tensor arrays are effectively banned by these 2 VUs, we need to suppress them
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    // tensor arrays also triggers VU 9923s (2 tensors, 2 errors)
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
@@ -2053,8 +2046,8 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArray) {
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    // currently tensor arrays are banned by VU 9779 and 9923. The mock ICD doesn't create a pipeline, so we can still test
-    // successfully if we ignore them, but a real driver will actually try to create something illegal, and likely crash
+    // currently tensor arrays are banned by VU 9923. The mock ICD doesn't create a pipeline, so we can still test
+    // successfully if we ignore it, but a real driver will actually try to create something illegal, and likely crash
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
@@ -2063,8 +2056,6 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArray) {
     params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
-    // tensor arrays trigger these 2 VUs, we need to suppress them
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
@@ -2080,8 +2071,8 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(Init());
 
-    // currently tensor arrays are banned by VU 9779 and 9923. The mock ICD doesn't create a pipeline, so we can still test
-    // successfully if we ignore these VUs, but a real driver will actually try to create something illegal, and likely crash
+    // currently tensor arrays are banned by VU 9923. The mock ICD doesn't create a pipeline, so we can still test
+    // successfully if we ignore it, but a real driver will actually try to create something illegal, and likely crash
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
@@ -2092,8 +2083,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
         params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
-        // tensor arrays trigger these 2 VUs, we need to suppress them
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        // tensor arrays triggers VU 9923, we need to suppress it (2 tensors, 2 errors)
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
         pipeline.CreateDataGraphPipeline();
@@ -2109,8 +2099,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
         pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
         pipeline.CreatePipelineLayout();
 
-        // tensor arrays trigger these 2 VUs, we need to suppress them
-        m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        // tensor arrays triggers VU 9923, we need to suppress it (2 tensors, 2 errors)
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
         pipeline.CreateDataGraphPipeline();

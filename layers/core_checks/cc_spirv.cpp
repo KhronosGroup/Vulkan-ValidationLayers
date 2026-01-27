@@ -2978,15 +2978,8 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module& module_
             // "its arrayElement member must be zero if OpVariable is not a OpTypeArray or if OpVariable is a OpTypeArray of
             // OpTypeTensorARM with Shape present"
             if (resource.arrayElement != 0) {
-                if (!variable.IsArray()) {
-                    LogError("VUID-RuntimeSpirv-pNext-09923", device, resource_loc.dot(Field::arrayElement),
-                             "(%" PRIu32 ") is not zero, but descriptor %s is not a OpTypeArray.", resource.arrayElement,
-                             variable.DescribeDescriptor().c_str());
-                } else if (variable.IsArray() && (tensor_type_instr.Length() == 5)) {
-                    LogError("VUID-RuntimeSpirv-pNext-09923", device, resource_loc.dot(Field::arrayElement),
-                             "(%" PRIu32 ") is not zero, but descriptor %s is an OpTypeArray with a Shape present .",
-                             resource.arrayElement, variable.DescribeDescriptor().c_str());
-                }
+                LogError("VUID-RuntimeSpirv-pNext-09923", device, resource_loc.dot(Field::arrayElement),
+                         "(%" PRIu32 ") is not zero.\n%s", resource.arrayElement, variable.DescribeDescriptor().c_str());
             }
 
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(resource.pNext)) {
@@ -3042,13 +3035,6 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module& module_
                                  "(%s) invalid for tensor resource %s", string_VkTensorUsageFlagsARM(tensor_desc->usage).c_str(),
                                  string_VkDataGraphPipelineResourceInfoARM(resource).c_str());
                 }
-            } else {
-                // NOTE: there is an overlap in VUs: a missing VkTensorDescriptionARM has already triggered 9923 above
-                skip |= LogError("VUID-VkDataGraphPipelineResourceInfoARM-descriptorSet-09851", device, resource_loc,
-                                 "%s identifies a tensor or array of tensor resources, but the pNext chain doesn't include a "
-                                 "VkTensorDescriptionARM structure.\n%s",
-                                 string_VkDataGraphPipelineResourceInfoARM(resource).c_str(),
-                                 PrintPNextChain(Struct::VkDataGraphPipelineResourceInfoARM, resource.pNext).c_str());
             }
         }
     }
@@ -3154,7 +3140,7 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module& module_spirv, c
         const VkDataGraphPipelineConstantARM& constant = dg_shader_ci.pConstants[i];
         const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, i);
         if (!pConstant_matched[i]) {
-            skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
+            skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device, constant_loc.dot(Field::id),
                              "(%" PRIu32 ") does not match the id of any of the OpGraphConstantARM instructions in module",
                              constant.id);
         } else {
@@ -3173,13 +3159,6 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module& module_spirv, c
                         ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid tiling (%s)",
                         constant.id, string_VkTensorTilingARM(tensor_desc->tiling));
                 }
-            } else {
-                // NOTE: there is an overlap in VUs: a missing VkTensorDescriptionARM has already triggered 9921 above
-                skip |=
-                    LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc.dot(Field::id),
-                             "(%" PRIu32
-                             ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain.\n%s",
-                             constant.id, PrintPNextChain(Struct::VkDataGraphPipelineConstantARM, constant.pNext).c_str());
             }
         }
     }
