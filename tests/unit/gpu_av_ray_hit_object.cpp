@@ -16,29 +16,13 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
-#include "../../layers/gpuav/shaders/gpuav_shaders_constants.h"
 
-// HitObject tests for VUIDs 11878-11888
-// These require VK_EXT_ray_tracing_invocation_reorder extension
+class NegativeGpuAVRayHitObject : public GpuAVRayHitObjectTest {};
 
-class NegativeGpuAVHitObject : public GpuAVRayQueryTest {
-  public:
-    void InitHitObjectTest() {
-        SetTargetApiVersion(VK_API_VERSION_1_2);
-        AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
-        AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-        AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
-        AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
-        InitGpuAVRayQuery();
-    }
-};
-
-TEST_F(NegativeGpuAVHitObject, HitObjectNegativeTmin) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with negative tmin - VUID 11879");
+TEST_F(NegativeGpuAVRayHitObject, NegativeTmin) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with negative tmin");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -92,8 +76,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectNegativeTmin) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectTmaxLessThanTmin) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with tmax < tmin - VUID 11880");
+TEST_F(NegativeGpuAVRayHitObject, TmaxLessThanTmin) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with tmax < tmin");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -148,8 +132,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectTmaxLessThanTmin) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectOriginNaN) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with NaN in origin - VUID 11881");
+TEST_F(NegativeGpuAVRayHitObject, OriginNaN) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with NaN in origin");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -205,8 +189,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectOriginNaN) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectOriginNonFinite) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with infinity in origin - VUID 11878");
+TEST_F(NegativeGpuAVRayHitObject, OriginNonFinite) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with infinity in origin");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -261,8 +245,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectOriginNonFinite) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectBothSkipFlags) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with both SkipTriangles and SkipAABBs flags - VUID 11883");
+TEST_F(NegativeGpuAVRayHitObject, BothSkipFlags) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with both SkipTriangles and SkipAABBs flags");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -317,8 +301,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectBothSkipFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectOpaqueFlags) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with conflicting opaque flags - VUID 11885");
+TEST_F(NegativeGpuAVRayHitObject, OpaqueFlags) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with conflicting opaque flags");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -372,8 +356,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectOpaqueFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectSkipAndCullFlags) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipTriangles and CullBackFacing flags - VUID 11884");
+TEST_F(NegativeGpuAVRayHitObject, SkipAndCullFlags) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipTriangles and CullBackFacing flags");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -428,8 +412,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectSkipAndCullFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectSkipTrianglesWithPipelineSkipAABBs) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipTriangles flag and pipeline SKIP_AABBS - VUID 11886");
+TEST_F(NegativeGpuAVRayHitObject, SkipTrianglesWithPipelineSkipAABBs) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipTriangles flag and pipeline SKIP_AABBS");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -485,8 +469,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectSkipTrianglesWithPipelineSkipAABBs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectSkipAABBsWithPipelineSkipTriangles) {
-    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipAABBs flag and pipeline SKIP_TRIANGLES - VUID 11887");
+TEST_F(NegativeGpuAVRayHitObject, SkipAABBsWithPipelineSkipTriangles) {
+    TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipAABBs flag and pipeline SKIP_TRIANGLES");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -542,23 +526,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectSkipAABBsWithPipelineSkipTriangles) {
     m_errorMonitor->VerifyFound();
 }
 
-// Motion opcode test - requires VK_NV_ray_tracing_motion_blur
-class NegativeGpuAVHitObjectMotion : public GpuAVRayQueryTest {
-  public:
-    void InitHitObjectMotionTest() {
-        SetTargetApiVersion(VK_API_VERSION_1_2);
-        AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
-        AddRequiredExtensions(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME);
-        AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-        AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
-        AddRequiredFeature(vkt::Feature::rayTracingMotionBlur);
-        InitGpuAVRayQuery();
-    }
-};
-
-TEST_F(NegativeGpuAVHitObjectMotion, HitObjectMotionTimeOutOfRange) {
-    TEST_DESCRIPTION("hitObjectTraceRayMotionEXT with time outside [0.0, 1.0] - VUID 11882");
+TEST_F(NegativeGpuAVRayHitObject, MotionTimeOutOfRange) {
+    TEST_DESCRIPTION("hitObjectTraceRayMotionEXT with time outside [0.0, 1.0]");
     RETURN_IF_SKIP(InitHitObjectMotionTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -614,8 +583,10 @@ TEST_F(NegativeGpuAVHitObjectMotion, HitObjectMotionTimeOutOfRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObject, HitObjectSBTIndexExceedsLimit) {
-    TEST_DESCRIPTION("hitObjectSetShaderBindingTableRecordIndexEXT with index exceeding limit - VUID 11888");
+TEST_F(NegativeGpuAVRayHitObject, SBTIndexExceedsLimit) {
+    TEST_DESCRIPTION("hitObjectSetShaderBindingTableRecordIndexEXT with index exceeding limit");
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(InitHitObjectTest());
 
     // Get the max SBT index from device properties
@@ -685,9 +656,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectSBTIndexExceedsLimit) {
     m_errorMonitor->VerifyFound();
 }
 
-// Tests for hitObjectTraceReorderExecuteEXT
-TEST_F(NegativeGpuAVHitObject, HitObjectTraceReorderExecuteNegativeTmin) {
-    TEST_DESCRIPTION("hitObjectTraceReorderExecuteEXT with negative tmin - VUID 11879");
+TEST_F(NegativeGpuAVRayHitObject, TraceReorderExecuteNegativeTmin) {
+    TEST_DESCRIPTION("hitObjectTraceReorderExecuteEXT with negative tmin");
     RETURN_IF_SKIP(InitHitObjectTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -740,10 +710,8 @@ TEST_F(NegativeGpuAVHitObject, HitObjectTraceReorderExecuteNegativeTmin) {
     m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
-
-// Tests for hitObjectTraceMotionReorderExecuteEXT
-TEST_F(NegativeGpuAVHitObjectMotion, HitObjectTraceMotionReorderExecuteNegativeTmin) {
-    TEST_DESCRIPTION("hitObjectTraceMotionReorderExecuteEXT with negative tmin - VUID 11879");
+TEST_F(NegativeGpuAVRayHitObject, TraceMotionReorderExecuteNegativeTmin) {
+    TEST_DESCRIPTION("hitObjectTraceMotionReorderExecuteEXT with negative tmin");
     RETURN_IF_SKIP(InitHitObjectMotionTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
@@ -799,8 +767,8 @@ TEST_F(NegativeGpuAVHitObjectMotion, HitObjectTraceMotionReorderExecuteNegativeT
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVHitObjectMotion, HitObjectTraceMotionReorderExecuteTimeOutOfRange) {
-    TEST_DESCRIPTION("hitObjectTraceMotionReorderExecuteEXT with time outside [0.0, 1.0] - VUID 11882");
+TEST_F(NegativeGpuAVRayHitObject, TraceMotionReorderExecuteTimeOutOfRange) {
+    TEST_DESCRIPTION("hitObjectTraceMotionReorderExecuteEXT with time outside [0.0, 1.0]");
     RETURN_IF_SKIP(InitHitObjectMotionTest());
 
     vkt::rt::Pipeline pipeline(*this, m_device);

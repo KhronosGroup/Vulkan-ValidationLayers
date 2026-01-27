@@ -16,26 +16,41 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
 // Positive tests for VK_EXT_ray_tracing_invocation_reorder hit object operations
 
-class PositiveGpuAVHitObject : public GpuAVRayQueryTest {
-  public:
-    void InitHitObjectTest() {
-        SetTargetApiVersion(VK_API_VERSION_1_2);
-        AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
-        AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-        AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
-        AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
-        InitGpuAVRayQuery();
-    }
-};
+void GpuAVRayHitObjectTest::InitHitObjectTest(std::vector<VkLayerSettingEXT> layer_settings) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
+    AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+}
 
-TEST_F(PositiveGpuAVHitObject, HitObjectTraceRayBasic) {
+void GpuAVRayHitObjectTest::InitHitObjectMotionTest(std::vector<VkLayerSettingEXT> layer_settings) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
+    AddRequiredFeature(vkt::Feature::rayTracingMotionBlur);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+}
+
+class PositiveGpuAVRayHitObject : public GpuAVRayHitObjectTest {};
+
+TEST_F(PositiveGpuAVRayHitObject, TraceRayBasic) {
     TEST_DESCRIPTION("hitObjectTraceRayEXT with valid parameters");
     RETURN_IF_SKIP(InitHitObjectTest());
 
@@ -82,7 +97,7 @@ TEST_F(PositiveGpuAVHitObject, HitObjectTraceRayBasic) {
 }
 
 // TODO: Test causes GPU fault - needs investigation
-TEST_F(PositiveGpuAVHitObject, HitObjectDynamicTminTmax) {
+TEST_F(PositiveGpuAVRayHitObject, DynamicTminTmax) {
     TEST_DESCRIPTION("hitObjectTraceRayEXT with dynamically set valid tmin and tmax");
     RETURN_IF_SKIP(InitHitObjectTest());
 
@@ -137,7 +152,7 @@ TEST_F(PositiveGpuAVHitObject, HitObjectDynamicTminTmax) {
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVHitObject, HitObjectDynamicRayFlags) {
+TEST_F(PositiveGpuAVRayHitObject, DynamicRayFlags) {
     TEST_DESCRIPTION("hitObjectTraceRayEXT with dynamically set valid ray flags");
     RETURN_IF_SKIP(InitHitObjectTest());
 
@@ -192,7 +207,7 @@ TEST_F(PositiveGpuAVHitObject, HitObjectDynamicRayFlags) {
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVHitObject, HitObjectDynamicRayFlagsSkipTriangles) {
+TEST_F(PositiveGpuAVRayHitObject, DynamicRayFlagsSkipTriangles) {
     TEST_DESCRIPTION("hitObjectTraceRayEXT with SkipTriangles flag (without conflicting pipeline flag)");
     RETURN_IF_SKIP(InitHitObjectTest());
 
@@ -248,7 +263,7 @@ TEST_F(PositiveGpuAVHitObject, HitObjectDynamicRayFlagsSkipTriangles) {
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVHitObject, HitObjectTraceReorderExecuteBasic) {
+TEST_F(PositiveGpuAVRayHitObject, TraceReorderExecuteBasic) {
     TEST_DESCRIPTION("hitObjectTraceReorderExecuteEXT with valid parameters");
     RETURN_IF_SKIP(InitHitObjectTest());
 
@@ -294,22 +309,7 @@ TEST_F(PositiveGpuAVHitObject, HitObjectTraceReorderExecuteBasic) {
     m_device->Wait();
 }
 
-// Motion blur positive tests
-class PositiveGpuAVHitObjectMotion : public GpuAVRayQueryTest {
-  public:
-    void InitHitObjectMotionTest() {
-        SetTargetApiVersion(VK_API_VERSION_1_2);
-        AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        AddRequiredExtensions(VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
-        AddRequiredExtensions(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME);
-        AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-        AddRequiredFeature(vkt::Feature::rayTracingInvocationReorder);
-        AddRequiredFeature(vkt::Feature::rayTracingMotionBlur);
-        InitGpuAVRayQuery();
-    }
-};
-
-TEST_F(PositiveGpuAVHitObjectMotion, HitObjectTraceRayMotionValidTime) {
+TEST_F(PositiveGpuAVRayHitObject, TraceRayMotionValidTime) {
     TEST_DESCRIPTION("hitObjectTraceRayMotionEXT with valid time in [0.0, 1.0]");
     RETURN_IF_SKIP(InitHitObjectMotionTest());
 
@@ -376,7 +376,7 @@ TEST_F(PositiveGpuAVHitObjectMotion, HitObjectTraceRayMotionValidTime) {
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVHitObjectMotion, HitObjectTraceMotionReorderExecuteValidTime) {
+TEST_F(PositiveGpuAVRayHitObject, TraceMotionReorderExecuteValidTime) {
     TEST_DESCRIPTION("hitObjectTraceMotionReorderExecuteEXT with valid time in [0.0, 1.0]");
     RETURN_IF_SKIP(InitHitObjectMotionTest());
 
@@ -433,8 +433,10 @@ TEST_F(PositiveGpuAVHitObjectMotion, HitObjectTraceMotionReorderExecuteValidTime
     m_device->Wait();
 }
 
-TEST_F(PositiveGpuAVHitObject, HitObjectSBTIndexWithinLimit) {
+TEST_F(PositiveGpuAVRayHitObject, SBTIndexWithinLimit) {
     TEST_DESCRIPTION("hitObjectSetShaderBindingTableRecordIndexEXT with valid index within limit");
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(InitHitObjectTest());
 
     // Get the max SBT index from device properties

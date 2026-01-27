@@ -14,6 +14,7 @@
  */
 
 #include "ray_hit_object_pass.h"
+#include "containers/container_utils.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -31,11 +32,14 @@ const static OfflineFunction kSBTIndexCheckFunction = {"inst_ray_hit_object_sbt_
 
 RayHitObjectPass::RayHitObjectPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-// By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t RayHitObjectPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 uint32_t RayHitObjectPass::GetSBTIndexCheckFunctionId() { return GetLinkFunction(sbt_index_check_function_id_, kSBTIndexCheckFunction); }
 
+// OpHitObjectTraceRayEXT
+// OpHitObjectTraceRayMotionEXT
+// OpHitObjectTraceReorderExecuteEXT
+// OpHitObjectTraceMotionReorderExecuteEXT
 uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
@@ -43,21 +47,14 @@ uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* 
 
     const uint32_t opcode = meta.target_instruction->Opcode();
 
-    // Operand positions for ray parameters:
-    // OpHitObjectTraceRayEXT:              HitObj, AS, RayFlags, CullMask, SBTOffset, SBTStride, MissIndex, Origin, TMin, Direction, TMax, Payload
-    // OpHitObjectTraceRayMotionEXT:        HitObj, AS, RayFlags, CullMask, SBTOffset, SBTStride, MissIndex, Origin, TMin, Direction, TMax, Time, Payload
-    // OpHitObjectTraceReorderExecuteEXT:   HitObj, AS, RayFlags, CullMask, SBTOffset, SBTStride, MissIndex, Origin, TMin, Direction, TMax, ...
-    // OpHitObjectTraceMotionReorderExecuteEXT: HitObj, AS, RayFlags, CullMask, SBTOffset, SBTStride, MissIndex, Origin, TMin, Direction, TMax, Time, ...
-    uint32_t ray_flags_id, ray_origin_id, ray_tmin_id, ray_direction_id, ray_tmax_id;
-    uint32_t time_id = 0;
-
     // All HitObject opcodes have ray parameters at the same positions
-    ray_flags_id = meta.target_instruction->Operand(2);
-    ray_origin_id = meta.target_instruction->Operand(7);
-    ray_tmin_id = meta.target_instruction->Operand(8);
-    ray_direction_id = meta.target_instruction->Operand(9);
-    ray_tmax_id = meta.target_instruction->Operand(10);
-    // Motion opcodes have time at Operand(11)
+    const uint32_t ray_flags_id = meta.target_instruction->Operand(2);
+    const uint32_t ray_origin_id = meta.target_instruction->Operand(7);
+    const uint32_t ray_tmin_id = meta.target_instruction->Operand(8);
+    const uint32_t ray_direction_id = meta.target_instruction->Operand(9);
+    const uint32_t ray_tmax_id = meta.target_instruction->Operand(10);
+
+    uint32_t time_id = 0;
     if (opcode == spv::OpHitObjectTraceRayMotionEXT || opcode == spv::OpHitObjectTraceMotionReorderExecuteEXT) {
         time_id = meta.target_instruction->Operand(11);
     }
@@ -65,21 +62,8 @@ uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    // opcode_type: 0 = OpHitObjectTraceRayEXT, 1 = OpHitObjectTraceReorderExecuteEXT,
-    //              2 = OpHitObjectTraceRayMotionEXT, 3 = OpHitObjectTraceMotionReorderExecuteEXT
-    uint32_t opcode_type = 0;
-    if (opcode == spv::OpHitObjectTraceRayEXT) {
-        opcode_type = 0;
-    } else if (opcode == spv::OpHitObjectTraceReorderExecuteEXT) {
-        opcode_type = 1;
-    } else if (opcode == spv::OpHitObjectTraceRayMotionEXT) {
-        opcode_type = 2;
-    } else if (opcode == spv::OpHitObjectTraceMotionReorderExecuteEXT) {
-        opcode_type = 3;
-    }
-    const uint32_t opcode_type_id = type_manager_.CreateConstantUInt32(opcode_type).Id();
+    const uint32_t opcode_type_id = type_manager_.CreateConstantUInt32(opcode).Id();
 
-    // Pipeline flags for VUIDs 11886/11887
     const uint32_t pipeline_flags =
         (module_.settings_.pipeline_has_skip_aabbs_flag ? 1u : 0u) |
         (module_.settings_.pipeline_has_skip_triangles_flag ? 2u : 0u);
@@ -98,13 +82,12 @@ uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* 
     return function_result;
 }
 
-// VUID-RuntimeSpirv-maxShaderBindingTableRecordIndex-11888
+// OpHitObjectSetShaderBindingTableRecordIndexEXT
 uint32_t RayHitObjectPass::CreateSBTIndexCheckFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetSBTIndexCheckFunctionId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
-    // OpHitObjectSetShaderBindingTableRecordIndexEXT operands: HitObject, RecordIndex
     const uint32_t sbt_index_id = meta.target_instruction->Operand(1);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -120,14 +103,15 @@ uint32_t RayHitObjectPass::CreateSBTIndexCheckFunctionCall(BasicBlock& block, In
 }
 
 bool RayHitObjectPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
-    const uint32_t opcode = inst.Opcode();
+    const spv::Op opcode = (spv::Op)inst.Opcode();
     if (opcode == spv::OpHitObjectSetShaderBindingTableRecordIndexEXT) {
         meta.target_instruction = &inst;
         meta.is_sbt_index_check = true;
         return true;
     }
-    if (opcode != spv::OpHitObjectTraceRayEXT && opcode != spv::OpHitObjectTraceReorderExecuteEXT &&
-        opcode != spv::OpHitObjectTraceRayMotionEXT && opcode != spv::OpHitObjectTraceMotionReorderExecuteEXT) {
+
+    if (!IsValueIn(opcode, {spv::OpHitObjectTraceRayEXT, spv::OpHitObjectTraceReorderExecuteEXT, spv::OpHitObjectTraceRayMotionEXT,
+                            spv::OpHitObjectTraceMotionReorderExecuteEXT})) {
         return false;
     }
     meta.target_instruction = &inst;

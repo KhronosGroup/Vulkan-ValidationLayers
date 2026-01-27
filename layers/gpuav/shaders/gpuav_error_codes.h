@@ -117,8 +117,8 @@ const int kErrorSubCodeRayHitObjectOriginFinite = 11;
 const int kErrorSubCodeRayHitObjectDirectionFinite = 12;
 const int kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs = 13;
 const int kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles = 14;
-const int kErrorSubCodeRayHitObjectSBTIndexExceedsLimit = 15;
-const int kErrorSubCodeRayHitObjectTimeOutOfRange = 16;
+const int kErrorSubCodeRayHitObjectTimeOutOfRange = 15;
+const int kErrorSubCodeRayHitObjectSBTIndexExceedsLimit = 16;
 
 // MeshShading
 //
