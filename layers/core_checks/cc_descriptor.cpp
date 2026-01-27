@@ -5828,8 +5828,9 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
 
 bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const Location& loc) const {
     bool skip = false;
-    // Onyl vkCreateSampler should be calling with no new samplers
-    assert(new_sampler_count != 0 || loc.function == Func::vkCreateSampler);
+    // Only vkCreateSampler should be calling with no new samplers
+    const bool is_create_sampler = loc.function == Func::vkCreateSampler;
+    assert(new_sampler_count != 0 || is_create_sampler);
 
     const uint32_t samplers_count = (uint32_t)Count<vvl::Sampler>();
 
@@ -5848,11 +5849,11 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
             : loc.function == Func::vkCreateShadersEXT             ? "VUID-vkCreateShadersEXT-pCreateInfos-11413"
                                                                    : kVUIDUndefined;
         skip |= LogError(vuid, device, loc,
-                         "contains embedded samplers, but on this device there are currently %" PRIu32
-                         " VkSampler that were allocated "
-                         "which is at the limit of %" PRIu32 "\nmaxSamplerAllocationCount = %" PRIu32
-                         "\nminSamplerHeapReservedRangeWithEmbedded = %" PRIu64 "\nsamplerDescriptorSize = %" PRIu64 "\n",
-                         samplers_count, max_count, phys_dev_props.limits.maxSamplerAllocationCount,
+                         "%s, but on this VkDevice there are currently %" PRIu32
+                         " VkSampler created, which is at the limit of %" PRIu32 "\n maxSamplerAllocationCount = %" PRIu32
+                         "\n minSamplerHeapReservedRangeWithEmbedded = %" PRIu64 "\n samplerDescriptorSize = %" PRIu64 "\n",
+                         is_create_sampler ? "is creating a new sampler" : "contains embedded samplers", samplers_count, max_count,
+                         phys_dev_props.limits.maxSamplerAllocationCount,
                          phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
                          phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
     }
@@ -5868,8 +5869,8 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                                                                    : kVUIDUndefined;
         skip |=
             LogError(vuid, device, loc,
-                     "contains %" PRIu32 " embedded samplers, but on this device there are currently %" PRIu32
-                     " VkSampler objects the sum exceeds maxDescriptorHeapEmbeddedSamplers (%" PRIu32 ")\n",
+                     "contains %" PRIu32 " embedded samplers, but on this VkDevice there are currently %" PRIu32
+                     " VkSampler created, and this will now exceed maxDescriptorHeapEmbeddedSamplers (%" PRIu32 ")",
                      new_sampler_count, samplers_count, phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers);
     }
 
