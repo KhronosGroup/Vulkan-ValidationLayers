@@ -1813,6 +1813,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
                                                                  const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
                                                                  const ErrorObject& error_obj) const override;
+    bool ValidateAccelerationVertex(VkFormat vertex_format, VkDeviceOrHostAddressConstKHR vertex_data, VkDeviceSize vertex_stride,
+                                    const LogObjectList& objlist, const Location& loc) const;
     // Validate buffers accessed using a device address
     bool ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
                                      const VkAccelerationStructureBuildGeometryInfoKHR& info,
