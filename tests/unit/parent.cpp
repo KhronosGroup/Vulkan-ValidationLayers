@@ -748,6 +748,35 @@ TEST_F(NegativeParent, UpdateDescriptorSetsCombinedImageSampler) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeParent, UpdateDescriptorSetsTensor) {
+    TEST_DESCRIPTION("Try to update tensor descriptors on the wrong device.");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    // tensor and view allocated on the main device (m_device)
+    vkt::Tensor tensor(*m_device);
+    tensor.BindToMem();
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor;
+    tensor_view_create_info.format = tensor.Format();
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    // allocate the descriptor set on a different device (m_second_device)
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+    OneOffDescriptorSet descriptor_set(m_second_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorTensorInfo(0, &view.handle(), 0);
+
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-12324");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeParent, DescriptorSetLayout) {
     TEST_DESCRIPTION("Create pipeline layout from a descriptor set layout that was created on a different device");
     RETURN_IF_SKIP(Init());
