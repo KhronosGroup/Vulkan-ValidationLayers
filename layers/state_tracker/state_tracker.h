@@ -1735,6 +1735,12 @@ class DeviceState : public vvl::base::Device {
                                            VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) override;
     void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
                                             const RecordObject& record_obj) override;
+    void RecordWaitForPresent(VkDevice device, VkSwapchainKHR swapchain, uint64_t present_id, const Location& location);
+    void PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+                                         const RecordObject& record_obj) override;
+    void PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                          const RecordObject& record_obj) override;
+
     // State Utilty functions
     std::vector<std::shared_ptr<const vvl::ImageView>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                           const vvl::Framebuffer& fb_state) const;
