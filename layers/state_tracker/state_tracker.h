@@ -761,13 +761,6 @@ class DeviceState : public vvl::base::Device {
     // usually leading to them sharing the same address
     small_vector<const vvl::AccelerationStructureKHR*, 2> GetAccelerationStructuresByAddress(VkDeviceAddress address) const;
 
-    // Used in VK_EXT_descriptor_heap to track reserved ranges across all command buffers
-    using CommandBufferOverlapData = std::pair<const vvl::CommandBuffer*, BufferAddressRange>;
-    void GetBufferAddressOverlapRanges(const vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& range,
-                                       bool is_bind_sampler, std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
-                                       std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
-                                       std::vector<CommandBufferOverlapData>& type_mismatch_data);
-
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
 
