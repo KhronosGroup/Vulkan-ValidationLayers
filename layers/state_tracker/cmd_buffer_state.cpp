@@ -256,8 +256,7 @@ void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode) {
 
         if (old_mode == vvl::DescriptorMode::DescriptorModeHeap && !reset_heap) {
             // mappings in device state object to this command buffer state
-            dev_data.RemoveCommandBufferFromDescriptorHeapReservedAddressMap(this, descriptor_heap.resource_reserved,
-                                                                             descriptor_heap.sampler_reserved);
+            dev_data.RemoveCommandBufferHeapReservedAddressMap(this);
 
             descriptor_heap.Reset();
             reset_heap = true;

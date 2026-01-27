@@ -132,46 +132,41 @@ struct CommandBufferReservedAddressEnumOps {
     mutable std::set<const vvl::CommandBuffer*> buffers;
 };
 
-void DeviceState::GetBufferAddressOverlapRanges(const vvl::CommandBuffer* command_buffer, const BufferAddressRange& range,
-                                                bool range_type_sampler,
+void DeviceState::GetBufferAddressOverlapRanges(const vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& range,
+                                                bool is_bind_sampler,
                                                 std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
                                                 std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
                                                 std::vector<CommandBufferOverlapData>& type_mismatch_data) {
-    if (range.non_empty()) {
-        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-        for (int i = 0; i < 2; i++) {
-            // with i==0 checking resource type, i==1 checking sampler type
-            CommandBufferReservedAddressEnumOps enum_ops{command_buffer, {}};
-            auto& cmd_buffer_map = (i == 0) ? descriptor_heap_reserved_address.resource_cmd_buffer_map
-                                            : descriptor_heap_reserved_address.sampler_cmd_buffer_map;
-            std::vector<CommandBufferOverlapData>& overlap_data = (i == 0) ? resource_type_overlap_data : sampler_type_overlap_data;
-            const bool enable_match = (i == 0 && !range_type_sampler) || (i == 1 && range_type_sampler);
+    assert(range.non_empty());
 
-            // get a set of command buffers that overlap the range
-            sparse_container::infill_update_range(cmd_buffer_map, range, enum_ops);
-            for (const vvl::CommandBuffer* cmd_buffer : enum_ops.buffers) {
-                // get full reserved range from command buffer
-                BufferAddressRange cmd_buffer_address_range =
-                    (i == 0) ? cmd_buffer->descriptor_heap.resource_reserved : cmd_buffer->descriptor_heap.sampler_reserved;
+    WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+    for (int i = 0; i < 2; i++) {
+        // with i==0 checking resource type, i==1 checking sampler type
+        const bool is_sampler = i == 1;
 
-                bool report = false;
-                if (range.intersects(cmd_buffer_address_range)) {
-                    if (range == cmd_buffer_address_range) {
-                        if (enable_match) {
-                            // this is legitimate when the reserved range is bound to several command buffers with same heap type
-                            report = false;
-                        } else {
-                            // range match, but type is different: report through a separate list
-                            type_mismatch_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
-                            report = false;
-                        }
+        // get a set of command buffers that overlap the range
+        CommandBufferReservedAddressEnumOps enum_ops{cb_state, {}};
+        DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map =
+            is_sampler ? descriptor_heap_reserved_address.sampler_map : descriptor_heap_reserved_address.resource_map;
+        sparse_container::infill_update_range(cmd_buffer_map, range, enum_ops);
+
+        std::vector<CommandBufferOverlapData>& overlap_data = is_sampler ? sampler_type_overlap_data : resource_type_overlap_data;
+        const bool enable_match = (!is_sampler && !is_bind_sampler) || (is_sampler && is_bind_sampler);
+        for (const vvl::CommandBuffer* cmd_buffer : enum_ops.buffers) {
+            // get full reserved range from command buffer
+            const vvl::range<VkDeviceAddress>& cmd_buffer_address_range =
+                is_sampler ? cmd_buffer->descriptor_heap.sampler_reserved : cmd_buffer->descriptor_heap.resource_reserved;
+
+            if (range.intersects(cmd_buffer_address_range)) {
+                if (range == cmd_buffer_address_range) {
+                    if (enable_match) {
+                        // this is legitimate when the reserved range is bound to several command buffers with same heap type
                     } else {
-                        // Pure overlap, but not match
-                        report = true;
+                        // range match, but type is different: report through a separate list
+                        type_mismatch_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
                     }
-                }
-
-                if (report) {
+                } else {
+                    // Pure overlap, but not match
                     overlap_data.push_back(CommandBufferOverlapData(cmd_buffer, cmd_buffer_address_range));
                 }
             }
@@ -6356,41 +6351,43 @@ struct CommandBufferReservedAddressRemoveOps {
     const vvl::CommandBuffer* removed_value;
 };
 
-void DeviceState::AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
-                                                                             const BufferAddressRange& existing_range,
-                                                                             const BufferAddressRange& new_range, bool sampler) {
-    assert(command_buffer_state != nullptr);
+void DeviceState::UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state,
+                                                            const vvl::range<VkDeviceAddress>& new_range, bool is_sampler) {
+    assert(cb_state != nullptr);
 
-    DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map = sampler ? descriptor_heap_reserved_address.sampler_cmd_buffer_map
-                                                                      : descriptor_heap_reserved_address.resource_cmd_buffer_map;
+    WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+
+    const vvl::range<VkDeviceAddress>& existing_range =
+        is_sampler ? cb_state->descriptor_heap.sampler_reserved : cb_state->descriptor_heap.resource_reserved;
+    DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map =
+        is_sampler ? descriptor_heap_reserved_address.sampler_map : descriptor_heap_reserved_address.resource_map;
 
     if (existing_range.non_empty()) {
-        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
+        CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
         cmd_buffer_map.erase_range_or_touch(existing_range, remove_ops);
     }
 
     if (new_range.non_empty()) {
-        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-        CommandBufferReservedAddressInfillUpdateOps update_ops{{command_buffer_state}};
+        CommandBufferReservedAddressInfillUpdateOps update_ops{{cb_state}};
         sparse_container::infill_update_range(cmd_buffer_map, new_range, update_ops);
     }
 }
 
-void DeviceState::RemoveCommandBufferFromDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
-                                                                          const BufferAddressRange& resource_existing_range,
-                                                                          const BufferAddressRange& sampler_existing_range) {
-    assert(command_buffer_state != nullptr);
+void DeviceState::RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state) {
+    assert(cb_state != nullptr);
 
+    WriteLockGuard guard(descriptor_heap_reserved_address.lock);
+
+    const vvl::range<VkDeviceAddress>& resource_existing_range = cb_state->descriptor_heap.resource_reserved;
     if (resource_existing_range.non_empty()) {
-        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
-        descriptor_heap_reserved_address.resource_cmd_buffer_map.erase_range_or_touch(resource_existing_range, remove_ops);
+        CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
+        descriptor_heap_reserved_address.resource_map.erase_range_or_touch(resource_existing_range, remove_ops);
     }
+
+    const vvl::range<VkDeviceAddress>& sampler_existing_range = cb_state->descriptor_heap.sampler_reserved;
     if (sampler_existing_range.non_empty()) {
-        WriteLockGuard guard(descriptor_heap_reserved_address.lock);
-        CommandBufferReservedAddressRemoveOps remove_ops{command_buffer_state};
-        descriptor_heap_reserved_address.sampler_cmd_buffer_map.erase_range_or_touch(sampler_existing_range, remove_ops);
+        CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
+        descriptor_heap_reserved_address.sampler_map.erase_range_or_touch(sampler_existing_range, remove_ops);
     }
 }
 
@@ -6398,16 +6395,17 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
                                                       const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->descriptor_heap.sampler_bound = true;
-    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
+
     vvl::range<VkDeviceAddress> reserved = {
         pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
         pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
 
     if (cb_state->descriptor_heap.sampler_reserved != reserved) {
-        AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(cb_state.get(), cb_state->descriptor_heap.sampler_reserved,
-                                                                   reserved, true);
+        UpdateCommandBufferHeapReservedAddressMap(cb_state.get(), reserved, true);
         cb_state->descriptor_heap.sampler_reserved = reserved;
     }
+
+    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
     cb_state->descriptor_heap.sampler_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap);
@@ -6417,16 +6415,17 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
                                                        const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->descriptor_heap.resource_bound = true;
-    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
+
     vvl::range<VkDeviceAddress> reserved = {
         pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
         pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
 
     if (cb_state->descriptor_heap.resource_reserved != reserved) {
-        AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(cb_state.get(), cb_state->descriptor_heap.resource_reserved,
-                                                                   reserved, false);
+        UpdateCommandBufferHeapReservedAddressMap(cb_state.get(), reserved, false);
         cb_state->descriptor_heap.resource_reserved = reserved;
     }
+
+    vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
     cb_state->descriptor_heap.resource_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap);
