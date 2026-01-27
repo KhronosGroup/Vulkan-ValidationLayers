@@ -763,8 +763,8 @@ class DeviceState : public vvl::base::Device {
 
     // Used in VK_EXT_descriptor_heap to track reserved ranges across all command buffers
     using CommandBufferOverlapData = std::pair<const vvl::CommandBuffer*, BufferAddressRange>;
-    void GetBufferAddressOverlapRanges(const vvl::CommandBuffer* command_buffer, const BufferAddressRange& range,
-                                       bool range_type_sampler, std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
+    void GetBufferAddressOverlapRanges(const vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& range,
+                                       bool is_bind_sampler, std::vector<CommandBufferOverlapData>& resource_type_overlap_data,
                                        std::vector<CommandBufferOverlapData>& sampler_type_overlap_data,
                                        std::vector<CommandBufferOverlapData>& type_mismatch_data);
 
@@ -2114,12 +2114,12 @@ class DeviceState : public vvl::base::Device {
     struct DescriptorHeapReservedAddress {
         // It is likely for a range to only be tied to a single command buffer, thus small_vector with these params
         using MapStore = small_vector<const vvl::CommandBuffer*, 1, size_t>;
-        // TODO - this should be unordered_map
         using RangeMap = sparse_container::range_map<VkDeviceAddress, MapStore>;
 
-        // Note: reserved address range can be used in multiple buffers
-        RangeMap sampler_cmd_buffer_map;
-        RangeMap resource_cmd_buffer_map;
+        // Maps to track which command buffers are using reserved ranges
+        // Note: reserved address range can be used in multiple command buffers
+        RangeMap sampler_map;
+        RangeMap resource_map;
         mutable std::shared_mutex lock;
     } descriptor_heap_reserved_address;
 
@@ -2136,12 +2136,9 @@ class DeviceState : public vvl::base::Device {
     vvl::unordered_map<int, ExternalOpaqueInfo> fd_handle_map_;
     mutable std::shared_mutex fd_handle_map_lock_;
 
-    void AddOrUpdateCommandBufferInDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
-                                                                    const BufferAddressRange& existing_range,
-                                                                    const BufferAddressRange& new_range, bool sampler);
-    void RemoveCommandBufferFromDescriptorHeapReservedAddressMap(vvl::CommandBuffer* command_buffer_state,
-                                                                 const BufferAddressRange& resource_existing_range,
-                                                                 const BufferAddressRange& sampler_existing_range);
+    void UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& new_range,
+                                                   bool is_sampler);
+    void RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // If vkGetMemoryWin32HandleKHR is called, keep track of HANDLE -> allocation info

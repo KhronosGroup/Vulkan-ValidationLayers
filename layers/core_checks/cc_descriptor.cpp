@@ -5556,41 +5556,46 @@ std::string CoreChecks::OverlapDataToString(const std::vector<vvl::DeviceState::
     return css.str();
 }
 
-bool CoreChecks::ValidateReservedRangeOverlap(VkCommandBuffer commandBuffer, const vvl::CommandBuffer& cb_state,
-                                              const VkBindHeapInfoEXT* pBindInfo, const ErrorObject& error_obj) const {
+bool CoreChecks::ValidateReservedRangeOverlap(const vvl::CommandBuffer& cb_state, const VkBindHeapInfoEXT* pBindInfo,
+                                              const Location& loc) const {
     bool skip = false;
 
-    if (pBindInfo->reservedRangeSize > 0) {
-        const bool range_type_sampler = error_obj.location.function == vvl::Func::vkCmdBindSamplerHeapEXT;
-        vvl::range<VkDeviceAddress> reserved = {
-            pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
-            pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
-        std::vector<vvl::DeviceState::CommandBufferOverlapData> resource_overlap_data;
-        std::vector<vvl::DeviceState::CommandBufferOverlapData> sampler_overlap_data;
-        std::vector<vvl::DeviceState::CommandBufferOverlapData> type_mismatch_data;
+    if (pBindInfo->reservedRangeSize == 0) {
+        return skip;
+    }
 
-        device_state->GetBufferAddressOverlapRanges(&cb_state, reserved, range_type_sampler, resource_overlap_data,
-                                                    sampler_overlap_data, type_mismatch_data);
-        if (!resource_overlap_data.empty() || !sampler_overlap_data.empty() || !type_mismatch_data.empty()) {
-            const std::string resource_overlap_data_info = OverlapDataToString(resource_overlap_data, false);
-            const std::string sampler_overlap_data_info = OverlapDataToString(sampler_overlap_data, true);
-            const std::string type_mismatch_data_info = OverlapDataToString(type_mismatch_data, !range_type_sampler);
-            const char* vuid = range_type_sampler ? "VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11228"
-                                                  : "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11236";
-            const char* type = range_type_sampler ? "sampler" : "resource";
-            std::stringstream ss;
+    const bool is_bind_sampler = loc.function == vvl::Func::vkCmdBindSamplerHeapEXT;
+    vvl::range<VkDeviceAddress> reserved = {
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset,
+        pBindInfo->heapRange.address + pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize};
+    if (!reserved.non_empty()) {
+        return skip;
+    }
 
-            if (!resource_overlap_data_info.empty() || !sampler_overlap_data_info.empty()) {
-                ss << "overlaps with, but does not exactly match:\n" << resource_overlap_data_info << sampler_overlap_data_info;
-            }
-            if (!type_mismatch_data_info.empty()) {
-                ss << "exactly match, but heap type is different:\n" << type_mismatch_data_info;
-            }
-            skip |=
-                LogError(vuid, commandBuffer, error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::address),
-                         "sets the %s descriptor heap reserved area %s that:\n%s", type, string_range_hex(reserved).c_str(),
-                         ss.str().c_str());
+    std::vector<vvl::DeviceState::CommandBufferOverlapData> resource_overlap_data;
+    std::vector<vvl::DeviceState::CommandBufferOverlapData> sampler_overlap_data;
+    std::vector<vvl::DeviceState::CommandBufferOverlapData> type_mismatch_data;
+
+    device_state->GetBufferAddressOverlapRanges(&cb_state, reserved, is_bind_sampler, resource_overlap_data, sampler_overlap_data,
+                                                type_mismatch_data);
+    if (!resource_overlap_data.empty() || !sampler_overlap_data.empty() || !type_mismatch_data.empty()) {
+        const std::string resource_overlap_data_info = OverlapDataToString(resource_overlap_data, false);
+        const std::string sampler_overlap_data_info = OverlapDataToString(sampler_overlap_data, true);
+        const std::string type_mismatch_data_info = OverlapDataToString(type_mismatch_data, !is_bind_sampler);
+        const char* vuid =
+            is_bind_sampler ? "VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11228" : "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11236";
+        std::stringstream ss;
+        ss << "sets the " << (is_bind_sampler ? "sampler" : "resource") << " descriptor heap reserved area "
+           << string_range_hex(reserved) << " that:\n";
+
+        if (!resource_overlap_data_info.empty() || !sampler_overlap_data_info.empty()) {
+            ss << "overlaps with, but does not exactly match:\n" << resource_overlap_data_info << sampler_overlap_data_info;
         }
+        if (!type_mismatch_data_info.empty()) {
+            ss << "exactly match, but heap type is different:\n" << type_mismatch_data_info;
+        }
+        skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::address), "%s",
+                         ss.str().c_str());
     }
 
     return skip;
@@ -5612,7 +5617,7 @@ bool CoreChecks::PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
                          "began with VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (0x%p).",
                          cb_state->inheritance_descriptor_heap_info.pSamplerHeapBindInfo);
     }
-    skip |= ValidateReservedRangeOverlap(commandBuffer, *cb_state.get(), pBindInfo, error_obj);
+    skip |= ValidateReservedRangeOverlap(*cb_state, pBindInfo, error_obj.location);
 
     return skip;
 }
@@ -5634,7 +5639,7 @@ bool CoreChecks::PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer commandBu
                          cb_state->inheritance_descriptor_heap_info.pResourceHeapBindInfo);
     }
 
-    skip |= ValidateReservedRangeOverlap(commandBuffer, *cb_state.get(), pBindInfo, error_obj);
+    skip |= ValidateReservedRangeOverlap(*cb_state, pBindInfo, error_obj.location);
 
     return skip;
 }
