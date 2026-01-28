@@ -341,12 +341,15 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer when nullDescriptor enabled");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
+    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                         VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                        VK_DESCRIPTOR_TYPE_TENSOR_ARM};
     for (auto type : types) {
         const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
         auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(size));
@@ -355,7 +358,7 @@ TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
         resource_desc_info.type = type;
         VkHostAddressRangeEXT descriptors = {data.get(), static_cast<size_t>(size)};
 
-        // We do not expect error messages due to nullDescriptor enables pTexelBuffer, pAddressRange, pImage to be null
+        // We do not expect error messages due to nullDescriptor enables pTexelBuffer, pAddressRange, pImage, pTensorARM to be null
         vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
     }
 }

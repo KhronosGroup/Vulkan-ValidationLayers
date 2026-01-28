@@ -1687,6 +1687,12 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                     }
                 }
             }
+        } else if (IsDescriptorHeapTensor(resource.type)) {
+            if (!resource.data.pTensorARM && !enabled_features.nullDescriptor) {
+                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-None-11457", device, data_loc.dot(Field::pTensorARM),
+                                 "is NULL, but nullDescriptor feature is not enabled. (type is %s)",
+                                 string_VkDescriptorType(resource.type));
+            }
         } else {
             skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11210", device, resource_loc.dot(Field::type),
                              "(%s) is not a supported type when using descriptor heaps.", string_VkDescriptorType(resource.type));

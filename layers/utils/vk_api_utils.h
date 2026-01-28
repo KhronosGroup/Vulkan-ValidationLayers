@@ -220,3 +220,7 @@ static constexpr bool IsDescriptorHeapImage(const VkDescriptorType type) {
            (type == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) || (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
            (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
 }
+
+static constexpr bool IsDescriptorHeapTensor(const VkDescriptorType type) {
+    return (type == VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+}
