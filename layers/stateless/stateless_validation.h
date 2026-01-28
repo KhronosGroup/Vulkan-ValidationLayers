@@ -927,6 +927,9 @@ class Device : public vvl::base::Device {
                                                               const ErrorObject &error_obj) const override;
 #endif
 
+    bool ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoEXT& info, const VkDescriptorType type,
+                                          const Location& loc) const;
+
     bool manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
                                                            const VkResourceDescriptorInfoEXT* pResources,
                                                            const VkHostAddressRangeEXT* pDescriptors, const Context& context) const;

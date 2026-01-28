@@ -3165,13 +3165,13 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
     } else if (address_loc.field == Field::pUniformTexelBuffer) {
         buffer_usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12222";
-        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12267";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12269";
         limit_field = Field::minTexelBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
     } else if (address_loc.field == Field::pStorageTexelBuffer) {
         buffer_usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12223";
-        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12268";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12270";
         limit_field = Field::minTexelBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
     }
