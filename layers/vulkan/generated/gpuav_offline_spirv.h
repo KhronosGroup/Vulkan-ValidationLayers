@@ -91,8 +91,8 @@ extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert[];
 // These offset match the function in the order they are declared in the GLSL source
 extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_function_0_offset;
 
-extern const uint32_t validation_cmd_build_acceleration_structures_comp_size;
-extern const uint32_t validation_cmd_build_acceleration_structures_comp[];
+extern const uint32_t validation_cmd_blas_comp_size;
+extern const uint32_t validation_cmd_blas_comp[];
 
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp_size;
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp[];
@@ -117,6 +117,9 @@ extern const uint32_t validation_cmd_first_instance_comp[];
 
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp_size;
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp[];
+
+extern const uint32_t validation_cmd_tlas_comp_size;
+extern const uint32_t validation_cmd_tlas_comp[];
 
 extern const uint32_t validation_cmd_trace_rays_comp_size;
 extern const uint32_t validation_cmd_trace_rays_comp[];

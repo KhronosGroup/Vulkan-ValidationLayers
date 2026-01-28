@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -388,10 +388,13 @@ struct BufferContent : public Setting {
 struct AccelerationStructuresBuild : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_acceleration_structures_builds; }
     // Validation shader branches on a push constant value to fetch different descriptors
-    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) {
+        return features.shaderInt64 && features.storageBuffer8BitAccess && features.storageBuffer16BitAccess;
+    }
     void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
     std::string DisableMessage() {
-        return "\t structure builds validation option was enabled, but the shaderInt64 feature is not "
+        return "\t structure builds validation option was enabled, but the shaderInt64 or storageBuffer8BitAccess or "
+               "storageBuffer16BitAccess features are not "
                "supported. [Disabling "
                "gpuav_acceleration_structures_builds]\n";
     }

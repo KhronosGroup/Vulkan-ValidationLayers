@@ -2417,3 +2417,153 @@ TEST_F(NegativeGpuAVRayTracing, TLASinBLASlist) {
     ASSERT_EQ(debug_buffer_ptr[1], 0);
     ASSERT_EQ(debug_buffer_ptr[2], 1);
 }
+
+TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex) {
+    TEST_DESCRIPTION("In the geometry specifying a cube and used to create an AS, have an out of bounds index.");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+    vkt::Buffer &cube_index_buffer = cube.GetTrianglesDeviceIndexBuffer();
+    auto index_buffer_ptr = static_cast<uint32_t *>(cube_index_buffer.Memory().Map());
+    index_buffer_ptr[0] = 30;
+    index_buffer_ptr[6] = 42;
+    index_buffer_ptr[35] = 666;
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
+                                         "Index \\(42\\) \\+ firstVertex \\(0\\) = 42");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
+                                         "Index \\(30\\) \\+ firstVertex \\(0\\) = 30");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
+                                         "Index \\(666\\) \\+ firstVertex \\(0\\) = 666");
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex2) {
+    TEST_DESCRIPTION(
+        "In the geometry specifying a cube and used to create an AS, have an out of bounds index. Set maxVertex to something other "
+        "than 7");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+    cube.GetVkObj().geometry.triangles.maxVertex = 6;
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
+                                         "Index \\(7\\) \\+ firstVertex \\(0\\) = 7", 4);
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
+    TEST_DESCRIPTION(
+        "In the geometry specifying a cube and used to create an AS, have an out of bounds index. Play with primitiveOffset");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+    std::array<uint32_t, 3 * 2 * 6 * 2> indices = {
+        {// In bounds indices
+         3, 0, 4, 4, 7, 3, 0, 4, 5, 0, 5, 1, 4, 5, 6, 4, 6, 7, 1, 6, 5, 1, 2, 6, 2, 6, 7, 2, 7, 3, 0, 1, 3, 1, 3, 2,
+         // Out of bounds
+         3 + 0, 0 + 0, 4 + 0, 4 + 0, 7 + 0, 3 + 0, 0 + 0, 4 + 0, 5 + 0, 0 + 0, 5 + 0, 1 + 0, 4 + 0, 5 + 0, 6 + 0, 4 + 0, 6 + 0,
+         7 + 0, 1 + 0, 6 + 0, 5 + 0, 1 + 0, 2 + 0, 6 + 0, 2 + 0, 6 + 0, 7 + 0, 2 + 0, 7 + 0, 3 + 0, 0 + 0, 1 + 0, 3 + 0, 1 + 0,
+         3 + 0, 2 + 8}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    std::copy(indices.begin(), indices.end(), index_buffer_ptr);
+    index_buffer.Memory().Unmap();
+
+    cube.SetTrianglesDeviceIndexBuffer(std::move(index_buffer));
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+
+    cube_blas.GetBuildRanges()[0].primitiveOffset = 36 * sizeof(uint32_t);
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
+                                         "Index \\(10\\) \\+ firstVertex \\(0\\) = 10", 1);
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}

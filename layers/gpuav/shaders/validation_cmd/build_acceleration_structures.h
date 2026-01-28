@@ -106,8 +106,7 @@ layout(buffer_reference, scalar) buffer PtrToBlasBuiltInCmd { Range buffer_range
 const uint kBuildASValidationMode_invalid_AS = 0;
 const uint kBuildASValidationMode_memory_overlaps = 1;
 
-// Case where arrayOfPointers is false
-struct AccelerationStructureReferencePushData {
+struct TLASValidationShaderPushData {
     PtrtoPtrToAccelerationStructureArrays ptr_to_ptr_to_accel_structs_arrays;
     uint64_t valid_dummy_blas_addr;
 
@@ -123,6 +122,16 @@ struct AccelerationStructureReferencePushData {
 
     PtrToBlasBuiltInCmd blas_built_in_cmd_array_ptr;
     uint blas_built_in_cmd_array_size;
+};
+
+struct BLASValidationShaderPushData {
+    uint64_t index_data;  // Cast it appropriately according to index_type
+    uint index_type;
+    uint max_vertex;
+    uint first_vertex;
+    uint primitive_offset;
+    uint primitive_count;
+    uint error_info_i;
 };
 
 #ifdef __cplusplus

@@ -127,6 +127,8 @@ GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer &&index_buff
     return *this;
 }
 
+vkt::Buffer &GeometryKHR::GetTrianglesDeviceIndexBuffer() { return triangles_.device_index_buffer; }
+
 GeometryKHR &GeometryKHR::SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer) {
     triangles_.host_index_buffer = std::move(index_buffer);
     vk_obj_.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;

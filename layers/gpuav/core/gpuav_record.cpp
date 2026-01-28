@@ -616,7 +616,8 @@ void Validator::PreCallRecordCmdBuildAccelerationStructuresKHR(
     }
     auto &cb_sub_state = SubState(*cb_state);
     const LastBound &last_bound = cb_state->GetLastBoundRayTracing();
-    valcmd::BuildAccelerationStructures(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
+    valcmd::TLAS(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
+    valcmd::BLAS(*this, record_obj.location, cb_sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
