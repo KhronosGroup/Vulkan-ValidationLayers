@@ -751,7 +751,11 @@ const char* not_going_to_do[] = {
 
     // Implied by VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03706
     "VUID-vkCmdBuildAccelerationStructuresKHR-None-03407",
-    " VUID-vkCmdBuildAccelerationStructuresIndirectKHR-None-03407",
+    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-None-03407",
+
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4621
+    // There is no real known use for this as it will break many things prior
+    "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrRange-02748",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
