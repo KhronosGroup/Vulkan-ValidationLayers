@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,24 +43,24 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                                                                  std::string& out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            if (GetErrorGroup(error_record) != kErrorGroupInstBufferDeviceAddress) {
+            if (GetErrorGroup(error_record) != kErrorGroup_InstBufferDeviceAddress) {
                 return error_found;
             }
             error_found = true;
 
             std::ostringstream strm;
 
-            const uint32_t payload = error_record[kInstLogErrorParameterOffset_2];
-            const bool is_write = ((payload >> kInstBuffAddrAccessPayloadShiftIsWrite) & 1) != 0;
-            const bool is_struct = ((payload >> kInstBuffAddrAccessPayloadShiftIsStruct) & 1) != 0;
+            const uint32_t payload = error_record[kInst_LogError_ParameterOffset_2];
+            const bool is_write = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsWrite) & 1) != 0;
+            const bool is_struct = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsStruct) & 1) != 0;
 
-            const uint64_t address = *reinterpret_cast<const uint64_t*>(error_record + kInstLogErrorParameterOffset_0);
+            const uint64_t address = *reinterpret_cast<const uint64_t*>(error_record + kInst_LogError_ParameterOffset_0);
 
             const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
-                case kErrorSubCodeBufferDeviceAddressUnallocRef: {
+                case kErrorSubCode_BufferDeviceAddress_UnallocRef: {
                     const char* access_type = is_write ? "written" : "read";
-                    const uint32_t byte_size = payload & kInstBuffAddrAccessPayloadMaskAccessInfo;
+                    const uint32_t byte_size = payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo;
                     strm << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x"
                          << std::hex << address << '.';
                     if (is_struct) {
@@ -73,9 +73,9 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                     out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819";
 
                 } break;
-                case kErrorSubCodeBufferDeviceAddressAlignment: {
+                case kErrorSubCode_BufferDeviceAddress_Alignment: {
                     const char* access_type = is_write ? "OpStore" : "OpLoad";
-                    const uint32_t alignment = (payload & kInstBuffAddrAccessPayloadMaskAccessInfo);
+                    const uint32_t alignment = (payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo);
                     strm << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex << address
                          << " is not aligned to the instruction Aligned operand of " << std::dec << alignment << '.';
                     out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";

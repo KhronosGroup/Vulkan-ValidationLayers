@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,18 +348,19 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const InstrumentedShader *instrumented_shader = nullptr;
-        const uint32_t shader_id = error_record[glsl::kHeaderShaderIdErrorOffset] & glsl::kShaderIdMask;
+        const uint32_t shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
         auto it = gpuav.instrumented_shaders_map_.find(shader_id);
         if (it != gpuav.instrumented_shaders_map_.end()) {
             instrumented_shader = &it->second;
         }
 
-        const uint32_t stage_id = error_record[glsl::kHeaderStageInstructionIdOffset] >> glsl::kStageIdShift;
-        const uint32_t instruction_position_offset = error_record[glsl::kHeaderStageInstructionIdOffset] & glsl::kInstructionIdMask;
+        const uint32_t stage_id = error_record[glsl::kHeader_StageInstructionIdOffset] >> glsl::kStageId_Shift;
+        const uint32_t instruction_position_offset =
+            error_record[glsl::kHeader_StageInstructionIdOffset] & glsl::kInstructionId_Mask;
         GpuShaderInstrumentor::ShaderMessageInfo shader_info{stage_id,
-                                                             error_record[glsl::kHeaderStageInfoOffset_0],
-                                                             error_record[glsl::kHeaderStageInfoOffset_1],
-                                                             error_record[glsl::kHeaderStageInfoOffset_2],
+                                                             error_record[glsl::kHeader_StageInfoOffset_0],
+                                                             error_record[glsl::kHeader_StageInfoOffset_1],
+                                                             error_record[glsl::kHeader_StageInfoOffset_2],
                                                              instruction_position_offset,
                                                              shader_id};
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(

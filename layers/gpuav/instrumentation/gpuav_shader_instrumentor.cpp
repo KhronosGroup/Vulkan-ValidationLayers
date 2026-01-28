@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1491,7 +1491,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     if (unique_shader_id >= glsl::kMaxInstrumentedShaders) {
         InternalWarning(device, loc, "kMaxInstrumentedShaders limit has been hit, no shaders can be instrumented.");
         return false;
-    } else if ((input_spirv.size() * sizeof(uint32_t)) > (1 << glsl::kStageIdShift)) {
+    } else if ((input_spirv.size() * sizeof(uint32_t)) > (1 << glsl::kStageId_Shift)) {
         // If we are hitting this, will need to rethink limit (if someone hits this, please raise an issue!)
         InternalWarning(
             device, loc,
@@ -1700,28 +1700,28 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrumentor::ShaderMessageInfo &shader_info,
                                  const std::vector<uint32_t> &instructions) {
     switch (shader_info.stage_id) {
-        case glsl::kExecutionModelMultiEntryPoint: {
+        case glsl::kExecutionModel_MultiEntryPoint: {
             ss << "Stage has multiple OpEntryPoint (";
             ::spirv::GetExecutionModelNames(instructions, ss);
             ss << ") and could not detect stage. ";
         } break;
-        case glsl::kExecutionModelVertex: {
+        case glsl::kExecutionModel_Vertex: {
             ss << "Stage = Vertex. Vertex Index = " << shader_info.stage_info_0 << " Instance Index = " << shader_info.stage_info_1
                << ". ";
         } break;
-        case glsl::kExecutionModelTessellationControl: {
+        case glsl::kExecutionModel_TessellationControl: {
             ss << "Stage = Tessellation Control.  Invocation ID = " << shader_info.stage_info_0
                << ", Primitive ID = " << shader_info.stage_info_1;
         } break;
-        case glsl::kExecutionModelTessellationEvaluation: {
+        case glsl::kExecutionModel_TessellationEvaluation: {
             ss << "Stage = Tessellation Eval.  Primitive ID = " << shader_info.stage_info_0 << ", TessCoord (u, v) = ("
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelGeometry: {
+        case glsl::kExecutionModel_Geometry: {
             ss << "Stage = Geometry.  Primitive ID = " << shader_info.stage_info_0
                << " Invocation ID = " << shader_info.stage_info_1 << ". ";
         } break;
-        case glsl::kExecutionModelFragment: {
+        case glsl::kExecutionModel_Fragment: {
             // Should use std::bit_cast but requires c++20
             float x_coord;
             float y_coord;
@@ -1729,47 +1729,47 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
             std::memcpy(&y_coord, &shader_info.stage_info_1, sizeof(float));
             ss << "Stage = Fragment.  Fragment coord (x,y) = (" << x_coord << ", " << y_coord << "). ";
         } break;
-        case glsl::kExecutionModelGLCompute: {
+        case glsl::kExecutionModel_GLCompute: {
             ss << "Stage = Compute.  Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
-        case glsl::kExecutionModelRayGenerationKHR: {
+        case glsl::kExecutionModel_RayGenerationKHR: {
             ss << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelIntersectionKHR: {
+        case glsl::kExecutionModel_IntersectionKHR: {
             ss << "Stage = Intersection.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelAnyHitKHR: {
+        case glsl::kExecutionModel_AnyHitKHR: {
             ss << "Stage = Any Hit.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", " << shader_info.stage_info_1
                << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelClosestHitKHR: {
+        case glsl::kExecutionModel_ClosestHitKHR: {
             ss << "Stage = Closest Hit.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelMissKHR: {
+        case glsl::kExecutionModel_MissKHR: {
             ss << "Stage = Miss.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", " << shader_info.stage_info_1
                << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelCallableKHR: {
+        case glsl::kExecutionModel_CallableKHR: {
             ss << "Stage = Callable.  Global Launch ID (x,y,z) = (" << shader_info.stage_info_0 << ", " << shader_info.stage_info_1
                << ", " << shader_info.stage_info_2 << "). ";
         } break;
-        case glsl::kExecutionModelTaskEXT: {
+        case glsl::kExecutionModel_TaskEXT: {
             ss << "Stage = TaskEXT. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
-        case glsl::kExecutionModelMeshEXT: {
+        case glsl::kExecutionModel_MeshEXT: {
             ss << "Stage = MeshEXT. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
-        case glsl::kExecutionModelTaskNV: {
+        case glsl::kExecutionModel_TaskNV: {
             ss << "Stage = TaskNV. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
-        case glsl::kExecutionModelMeshNV: {
+        case glsl::kExecutionModel_MeshNV: {
             ss << "Stage = MeshNV. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
                << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;

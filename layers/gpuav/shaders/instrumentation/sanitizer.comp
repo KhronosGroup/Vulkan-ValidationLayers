@@ -29,7 +29,7 @@ bool inst_sanitizer_divide_by_zero(const bool is_invalid, const uint inst_offset
     if (is_invalid) {
         error_payload = ErrorPayload(
                         inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerDivideZero << kErrorSubCodeShift),
+                        SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_DivideZero << kErrorSubCode_Shift),
                         opcode,
                         vector_size,
                         0);
@@ -43,7 +43,7 @@ void inst_sanitizer_image_gather(const uint inst_offset, const uint component)
 {
     error_payload = ErrorPayload(
                     inst_offset,
-                    SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerImageGather << kErrorSubCodeShift),
+                    SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_ImageGather << kErrorSubCode_Shift),
                     component,
                     0,
                     0);
@@ -56,7 +56,7 @@ bool inst_sanitizer_pow(const bool is_invalid, const uint inst_offset, const uin
     if (is_invalid) {
         error_payload = ErrorPayload(
                         inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerPow << kErrorSubCodeShift),
+                        SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_Pow << kErrorSubCode_Shift),
                         vector_size,
                         x,
                         y);
@@ -70,7 +70,7 @@ bool inst_sanitizer_atan2(const bool is_invalid, const uint inst_offset)
     if (is_invalid) {
         error_payload = ErrorPayload(
                         inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerAtan2 << kErrorSubCodeShift),
+                        SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_Atan2 << kErrorSubCode_Shift),
                         0,
                         0,
                         0);
@@ -84,7 +84,7 @@ bool inst_sanitizer_fminman(const bool is_x_invalid, const bool is_y_invalid, co
     if (is_x_invalid || is_y_invalid) {
         error_payload = ErrorPayload(
                         inst_offset,
-                        SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerFminmax << kErrorSubCodeShift),
+                        SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_Fminmax << kErrorSubCode_Shift),
                         uint(is_x_invalid) | (uint(is_y_invalid) << 1),
                         vector_size,
                         glsl_opcode);

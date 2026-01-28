@@ -31,7 +31,7 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_sanitizer_comp, instrumentation_sanitizer_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCodeSanitizerCount] = {
+const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCode_Sanitizer_Count] = {
     {"empty", 0},
     {"inst_sanitizer_divide_by_zero", instrumentation_sanitizer_comp_function_0_offset},
     {"inst_sanitizer_image_gather", instrumentation_sanitizer_comp_function_1_offset},
@@ -41,7 +41,7 @@ const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCodeSanitizerCount
 };
 
 SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
-    for (uint32_t i = 0; i < glsl::kErrorSubCodeSanitizerCount; i++) {
+    for (uint32_t i = 0; i < glsl::kErrorSubCode_Sanitizer_Count; i++) {
         link_function_ids_[i] = 0;
     }
 }
@@ -196,7 +196,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    if (meta.sub_code == glsl::kErrorSubCodeSanitizerDivideZero) {
+    if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_DivideZero) {
         const uint32_t is_invalid_id = DivideByZeroCheck(block, inst_it, meta);
 
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
@@ -206,7 +206,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
         block.CreateInstruction(
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, is_invalid_id, inst_position_id, opcode_id, vector_size_id}, inst_it);
-    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerImageGather) {
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_ImageGather) {
         const uint32_t void_type = type_manager_.GetTypeVoid().Id();
         // If the OpConstant was a signed int, this will "cast" it by making a new OpConstant with the same value
         const uint32_t component_value_id = type_manager_.CreateConstantUInt32(meta.constant_value).Id();
@@ -215,7 +215,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
         const_cast<Instruction*>(meta.target_instruction)->UpdateWord(5, safe_value_id);
         block.CreateInstruction(spv::OpFunctionCall,
                                 {void_type, function_result, function_def, inst_position_id, component_value_id}, inst_it);
-    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerPow) {
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_Pow) {
         const uint32_t is_invalid_id = PowCheck(block, inst_it, meta);
 
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
@@ -243,12 +243,12 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
             spv::OpFunctionCall,
             {bool_type, function_result, function_def, is_invalid_id, inst_position_id, vector_size_id, x_value_id, y_value_id},
             inst_it);
-    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerAtan2) {
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_Atan2) {
         const uint32_t is_invalid_id = Atan2Check(block, inst_it, meta);
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
         block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, is_invalid_id, inst_position_id},
                                 inst_it);
-    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerFminmax) {
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_Fminmax) {
         const BoolResultXY is_invalid_id = FminmaxCheck(block, inst_it, meta);
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
         const uint32_t vector_size = meta.result_type->VectorSize();
@@ -314,7 +314,7 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
         }
 
         meta.result_type = type_manager_.FindTypeById(inst.TypeId());
-        meta.sub_code = glsl::kErrorSubCodeSanitizerDivideZero;
+        meta.sub_code = glsl::kErrorSubCode_Sanitizer_DivideZero;
         return true;
     } else if (opcode == spv::OpImageGather) {
         // 04664 requires this to be a constant
@@ -322,7 +322,7 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
             const uint32_t constant_value = constant->GetValueUint32();
             // TODO - Support spec constants
             if (!constant->is_spec_constant_ && constant_value > 3) {
-                meta.sub_code = glsl::kErrorSubCodeSanitizerImageGather;
+                meta.sub_code = glsl::kErrorSubCode_Sanitizer_ImageGather;
                 meta.skip_safe_mode = true;
                 meta.constant_value = constant_value;
                 return true;
@@ -331,11 +331,11 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
     } else if (opcode == spv::OpExtInst && inst.Word(3) == glsl_std450_id_) {
         uint32_t glsl_opcode = inst.Word(4);
         if (glsl_opcode == GLSLstd450Pow) {
-            meta.sub_code = glsl::kErrorSubCodeSanitizerPow;
+            meta.sub_code = glsl::kErrorSubCode_Sanitizer_Pow;
         } else if (glsl_opcode == GLSLstd450Atan2) {
-            meta.sub_code = glsl::kErrorSubCodeSanitizerAtan2;
+            meta.sub_code = glsl::kErrorSubCode_Sanitizer_Atan2;
         } else if (glsl_opcode == GLSLstd450FMin || glsl_opcode == GLSLstd450FMax) {
-            meta.sub_code = glsl::kErrorSubCodeSanitizerFminmax;
+            meta.sub_code = glsl::kErrorSubCode_Sanitizer_Fminmax;
             meta.glsl_opcode = glsl_opcode;
         } else {
             return false;

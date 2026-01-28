@@ -42,25 +42,25 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
     const bool is_motion_opcode = (opcode_type == OpHitObjectTraceRayMotionEXT || opcode_type == OpHitObjectTraceMotionReorderExecuteEXT);
 
     if (is_motion_opcode && (time < 0.0f || time > 1.0f)) {
-        error = kErrorSubCodeRayHitObjectTimeOutOfRange;
+        error = kErrorSubCode_RayHitObject_TimeOutOfRange;
     } else if (isnan(ray_tmin)) {
-        error = kErrorSubCodeRayHitObjectMinNaN;
+        error = kErrorSubCode_RayHitObject_MinNaN;
     } else if (isnan(ray_tmax)) {
-        error = kErrorSubCodeRayHitObjectMaxNaN;
+        error = kErrorSubCode_RayHitObject_MaxNaN;
     } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
-        error = kErrorSubCodeRayHitObjectOriginNaN;
+        error = kErrorSubCode_RayHitObject_OriginNaN;
     } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
-        error = kErrorSubCodeRayHitObjectDirectionNaN;
+        error = kErrorSubCode_RayHitObject_DirectionNaN;
     } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
-        error = kErrorSubCodeRayHitObjectOriginFinite;
+        error = kErrorSubCode_RayHitObject_OriginFinite;
     } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
-        error = kErrorSubCodeRayHitObjectDirectionFinite;
+        error = kErrorSubCode_RayHitObject_DirectionFinite;
     } else if (ray_tmin < 0.0f) {
-        error = kErrorSubCodeRayHitObjectNegativeMin;
+        error = kErrorSubCode_RayHitObject_NegativeMin;
     } else if (ray_tmax < 0.0f) {
-        error = kErrorSubCodeRayHitObjectNegativeMax;
+        error = kErrorSubCode_RayHitObject_NegativeMax;
     } else if (ray_tmax < ray_tmin) {
-        error = kErrorSubCodeRayHitObjectMinMax;
+        error = kErrorSubCode_RayHitObject_MinMax;
     } else {
         // From SPIRV-Headers
         const uint OpaqueKHR = 0x00000001;
@@ -81,21 +81,21 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
         uint opaque_mask = ray_flags &(OpaqueKHR | NoOpaqueKHR | CullOpaqueKHR | CullNoOpaqueKHR);
 
         if ((ray_flags & both_skip) == both_skip) {
-            error = kErrorSubCodeRayHitObjectBothSkip;
+            error = kErrorSubCode_RayHitObject_BothSkip;
             param_0 = ray_flags;
         } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayHitObjectSkipCull;
+            error = kErrorSubCode_RayHitObject_SkipCull;
             param_0 = ray_flags;
         } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayHitObjectOpaque;
+            error = kErrorSubCode_RayHitObject_Opaque;
             param_0 = ray_flags;
         } else if ((ray_flags & SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
             // SkipTriangles ray flag with pipeline SKIP_AABBS flag
-            error = kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs;
+            error = kErrorSubCode_RayHitObject_SkipTrianglesWithPipelineSkipAABBs;
             param_0 = ray_flags;
         } else if ((ray_flags & SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
             // SkipAABBs ray flag with pipeline SKIP_TRIANGLES flag
-            error = kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles;
+            error = kErrorSubCode_RayHitObject_SkipAABBsWithPipelineSkipTriangles;
             param_0 = ray_flags;
         }
     }
@@ -103,7 +103,7 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
     if (0u != error) {
          error_payload = ErrorPayload(
                             inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroupInstRayHitObject << kErrorGroupShift) | (error << kErrorSubCodeShift),
+                            SpecConstantLinkShaderId | (kErrorGroup_InstRayHitObject << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             param_0,
                             opcode_type,
                             0
@@ -119,7 +119,7 @@ bool inst_ray_hit_object_sbt_index_check(const uint inst_offset, const uint sbt_
     if (sbt_index > max_sbt_index) {
         error_payload = ErrorPayload(
             inst_offset,
-            SpecConstantLinkShaderId | (kErrorGroupInstRayHitObject << kErrorGroupShift) | (kErrorSubCodeRayHitObjectSBTIndexExceedsLimit << kErrorSubCodeShift),
+            SpecConstantLinkShaderId | (kErrorGroup_InstRayHitObject << kErrorGroup_Shift) | (kErrorSubCode_RayHitObject_SBTIndexExceedsLimit << kErrorSubCode_Shift),
             sbt_index,
             max_sbt_index,
             0

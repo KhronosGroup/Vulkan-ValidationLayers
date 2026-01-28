@@ -1,4 +1,4 @@
-/* Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ void RegisterMeshShadingValidation(Validator &gpuav, CommandBufferSubState &cb) 
                    std::string &out_vuid_msg) {
                     using namespace glsl;
                     bool error_found = false;
-                    if (GetErrorGroup(error_record) != kErrorGroupInstMeshShading) {
+                    if (GetErrorGroup(error_record) != kErrorGroup_InstMeshShading) {
                         return error_found;
                     }
                     error_found = true;
@@ -42,11 +42,11 @@ void RegisterMeshShadingValidation(Validator &gpuav, CommandBufferSubState &cb) 
                     const uint32_t error_sub_code = GetSubError(error_record);
                     switch (error_sub_code) {
                         case kErrorSubCode_MeshShading_SetMeshOutputs: {
-                            const uint32_t vertex_count = error_record[kInstLogErrorParameterOffset_0];
-                            const uint32_t primitive_count = error_record[kInstLogErrorParameterOffset_1];
-                            const uint32_t encoded_output = error_record[kInstLogErrorParameterOffset_2];
-                            const uint32_t output_vertices = encoded_output >> kMeshShadingOutputVerticesShift;
-                            const uint32_t output_primitive = encoded_output & kMeshShadingOutputPrimitivesMask;
+                            const uint32_t vertex_count = error_record[kInst_LogError_ParameterOffset_0];
+                            const uint32_t primitive_count = error_record[kInst_LogError_ParameterOffset_1];
+                            const uint32_t encoded_output = error_record[kInst_LogError_ParameterOffset_2];
+                            const uint32_t output_vertices = encoded_output >> kInst_MeshShading_OutputVerticesShift;
+                            const uint32_t output_primitive = encoded_output & kInst_MeshShading_OutputPrimitivesMask;
 
                             // We normally don't do "logic" to determine the VU, but in this case, its valuable to print both value,
                             // so we already have all the information and easier to select the VUID here than via the shader

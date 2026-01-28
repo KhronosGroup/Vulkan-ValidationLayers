@@ -27,98 +27,98 @@ namespace glsl {
 // Error Groups
 //
 // These will match one-for-one with the file found in gpu_shader folder
-// Note - We currently have a max of 256 slots for error groups (see kHeaderShaderIdErrorOffset)
-const int kErrorGroupInstDescriptorIndexingOOB = 1;
-const int kErrorGroupInstBufferDeviceAddress = 2;
-const int kErrorGroupInstRayQuery = 3;
-const int kErrorGroupGpuPreDraw = 4;
-const int kErrorGroupGpuPreDispatch = 5;
-const int kErrorGroupGpuPreTraceRays = 6;
-const int kErrorGroupGpuCopyBufferToImage = 7;
-const int kErrorGroupInstDescriptorClass = 8;
-const int kErrorGroupInstIndexedDraw = 9;
-const int kErrorGroupGpuCopyMemoryIndirect = 10;
-const int kErrorGroupInstSanitizer = 11;
-const int kErrorGroupGpuPreBuildAccelerationStructures = 12;
-const int kErrorGroupInstMeshShading = 13;
-const int kErrorGroupInstRayHitObject = 14;
+// Note - We currently have a max of 256 slots for error groups (see kHeader_ShaderIdErrorOffset)
+const int kErrorGroup_InstDescriptorIndexingOOB = 1;
+const int kErrorGroup_InstBufferDeviceAddress = 2;
+const int kErrorGroup_InstRayQuery = 3;
+const int kErrorGroup_GpuPreDraw = 4;
+const int kErrorGroup_GpuPreDispatch = 5;
+const int kErrorGroup_GpuPreTraceRays = 6;
+const int kErrorGroup_GpuCopyBufferToImage = 7;
+const int kErrorGroup_InstDescriptorClass = 8;
+const int kErrorGroup_InstIndexedDraw = 9;
+const int kErrorGroup_GpuCopyMemoryIndirect = 10;
+const int kErrorGroup_InstSanitizer = 11;
+const int kErrorGroup_GpuPreBuildAccelerationStructures = 12;
+const int kErrorGroup_InstMeshShading = 13;
+const int kErrorGroup_InstRayHitObject = 14;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
-const int kExecutionModelVertex = 0;
-const int kExecutionModelTessellationControl = 1;
-const int kExecutionModelTessellationEvaluation = 2;
-const int kExecutionModelGeometry = 3;
-const int kExecutionModelFragment = 4;
-const int kExecutionModelGLCompute = 5;
-const int kExecutionModelKernel = 6;
-const int kExecutionModelTaskNV = 7;
-const int kExecutionModelMeshNV = 8;
-const int kExecutionModelRayGenerationKHR = 9;
-const int kExecutionModelIntersectionKHR = 10;
-const int kExecutionModelAnyHitKHR = 11;
-const int kExecutionModelClosestHitKHR = 12;
-const int kExecutionModelMissKHR = 13;
-const int kExecutionModelCallableKHR = 14;
-const int kExecutionModelTaskEXT = 15;
-const int kExecutionModelMeshEXT = 16;
+const int kExecutionModel_Vertex = 0;
+const int kExecutionModel_TessellationControl = 1;
+const int kExecutionModel_TessellationEvaluation = 2;
+const int kExecutionModel_Geometry = 3;
+const int kExecutionModel_Fragment = 4;
+const int kExecutionModel_GLCompute = 5;
+const int kExecutionModel_Kernel = 6;
+const int kExecutionModel_TaskNV = 7;
+const int kExecutionModel_MeshNV = 8;
+const int kExecutionModel_RayGenerationKHR = 9;
+const int kExecutionModel_IntersectionKHR = 10;
+const int kExecutionModel_AnyHitKHR = 11;
+const int kExecutionModel_ClosestHitKHR = 12;
+const int kExecutionModel_MissKHR = 13;
+const int kExecutionModel_CallableKHR = 14;
+const int kExecutionModel_TaskEXT = 15;
+const int kExecutionModel_MeshEXT = 16;
 // Used for MultiEntry and there is no single stage set
-const int kExecutionModelMultiEntryPoint = 31;
+const int kExecutionModel_MultiEntryPoint = 31;
 
 // Descriptor Indexing
 //
-const int kErrorSubCodeDescriptorIndexingBounds = 1;
-const int kErrorSubCodeDescriptorIndexingUninitialized = 2;
-const int kErrorSubCodeDescriptorIndexingDestroyed = 3;
+const int kErrorSubCode_DescriptorIndexing_Bounds = 1;
+const int kErrorSubCode_DescriptorIndexing_Uninitialized = 2;
+const int kErrorSubCode_DescriptorIndexing_Destroyed = 3;
 
 // Descriptor Class specific errors
 //
 // Buffers
-const int kErrorSubCodeDescriptorClassGeneralBufferBounds = 1;
+const int kErrorSubCode_DescriptorClass_GeneralBufferBounds = 1;
 // Texel Buffers
-const int kErrorSubCodeDescriptorClassTexelBufferBounds = 2;
+const int kErrorSubCode_DescriptorClass_TexelBufferBounds = 2;
 // Buffers, but with Cooperative Matrix
-const int kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds = 3;
+const int kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds = 3;
 
 // Buffer Device Address
 //
-const int kErrorSubCodeBufferDeviceAddressUnallocRef = 1;
-const int kErrorSubCodeBufferDeviceAddressAlignment = 2;
+const int kErrorSubCode_BufferDeviceAddress_UnallocRef = 1;
+const int kErrorSubCode_BufferDeviceAddress_Alignment = 2;
 
 // Ray Query
 //
-const int kErrorSubCodeRayQueryNegativeMin = 1;
-const int kErrorSubCodeRayQueryNegativeMax = 2;
-const int kErrorSubCodeRayQueryBothSkip = 3;
-const int kErrorSubCodeRayQuerySkipCull = 4;
-const int kErrorSubCodeRayQueryOpaque = 5;
-const int kErrorSubCodeRayQueryMinMax = 6;
-const int kErrorSubCodeRayQueryMinNaN = 7;
-const int kErrorSubCodeRayQueryMaxNaN = 8;
-const int kErrorSubCodeRayQueryOriginNaN = 9;
-const int kErrorSubCodeRayQueryDirectionNaN = 10;
-const int kErrorSubCodeRayQueryOriginFinite = 11;
-const int kErrorSubCodeRayQueryDirectionFinite = 12;
+const int kErrorSubCode_RayQuery_NegativeMin = 1;
+const int kErrorSubCode_RayQuery_NegativeMax = 2;
+const int kErrorSubCode_RayQuery_BothSkip = 3;
+const int kErrorSubCode_RayQuery_SkipCull = 4;
+const int kErrorSubCode_RayQuery_Opaque = 5;
+const int kErrorSubCode_RayQuery_MinMax = 6;
+const int kErrorSubCode_RayQuery_MinNaN = 7;
+const int kErrorSubCode_RayQuery_MaxNaN = 8;
+const int kErrorSubCode_RayQuery_OriginNaN = 9;
+const int kErrorSubCode_RayQuery_DirectionNaN = 10;
+const int kErrorSubCode_RayQuery_OriginFinite = 11;
+const int kErrorSubCode_RayQuery_DirectionFinite = 12;
 
 // Ray Hit Object (VK_EXT_ray_tracing_invocation_reorder)
 // OpHitObjectTraceRayEXT, OpHitObjectTraceReorderExecuteEXT, OpHitObjectTraceRayMotionEXT,
 // OpHitObjectTraceMotionReorderExecuteEXT, OpHitObjectSetShaderBindingTableRecordIndexEXT
 //
-const int kErrorSubCodeRayHitObjectNegativeMin = 1;
-const int kErrorSubCodeRayHitObjectNegativeMax = 2;
-const int kErrorSubCodeRayHitObjectBothSkip = 3;
-const int kErrorSubCodeRayHitObjectSkipCull = 4;
-const int kErrorSubCodeRayHitObjectOpaque = 5;
-const int kErrorSubCodeRayHitObjectMinMax = 6;
-const int kErrorSubCodeRayHitObjectMinNaN = 7;
-const int kErrorSubCodeRayHitObjectMaxNaN = 8;
-const int kErrorSubCodeRayHitObjectOriginNaN = 9;
-const int kErrorSubCodeRayHitObjectDirectionNaN = 10;
-const int kErrorSubCodeRayHitObjectOriginFinite = 11;
-const int kErrorSubCodeRayHitObjectDirectionFinite = 12;
-const int kErrorSubCodeRayHitObjectSkipTrianglesWithPipelineSkipAABBs = 13;
-const int kErrorSubCodeRayHitObjectSkipAABBsWithPipelineSkipTriangles = 14;
-const int kErrorSubCodeRayHitObjectTimeOutOfRange = 15;
-const int kErrorSubCodeRayHitObjectSBTIndexExceedsLimit = 16;
+const int kErrorSubCode_RayHitObject_NegativeMin = 1;
+const int kErrorSubCode_RayHitObject_NegativeMax = 2;
+const int kErrorSubCode_RayHitObject_BothSkip = 3;
+const int kErrorSubCode_RayHitObject_SkipCull = 4;
+const int kErrorSubCode_RayHitObject_Opaque = 5;
+const int kErrorSubCode_RayHitObject_MinMax = 6;
+const int kErrorSubCode_RayHitObject_MinNaN = 7;
+const int kErrorSubCode_RayHitObject_MaxNaN = 8;
+const int kErrorSubCode_RayHitObject_OriginNaN = 9;
+const int kErrorSubCode_RayHitObject_DirectionNaN = 10;
+const int kErrorSubCode_RayHitObject_OriginFinite = 11;
+const int kErrorSubCode_RayHitObject_DirectionFinite = 12;
+const int kErrorSubCode_RayHitObject_SkipTrianglesWithPipelineSkipAABBs = 13;
+const int kErrorSubCode_RayHitObject_SkipAABBsWithPipelineSkipTriangles = 14;
+const int kErrorSubCode_RayHitObject_TimeOutOfRange = 15;
+const int kErrorSubCode_RayHitObject_SBTIndexExceedsLimit = 16;
 
 // MeshShading
 //
@@ -131,27 +131,27 @@ const int kErrorSubCode_IndexedDraw_OOBInstanceIndex = 2;
 
 // Sanitizer
 //
-const int kErrorSubCodeSanitizerEmpty = 0;  // reserved to mean no error was set
-const int kErrorSubCodeSanitizerDivideZero = 1;
-const int kErrorSubCodeSanitizerImageGather = 2;
-const int kErrorSubCodeSanitizerPow = 3;
-const int kErrorSubCodeSanitizerAtan2 = 4;
-const int kErrorSubCodeSanitizerFminmax = 5;
-const int kErrorSubCodeSanitizerCount = 6;  // update when adding new item
+const int kErrorSubCode_Sanitizer_Empty = 0;  // reserved to mean no error was set
+const int kErrorSubCode_Sanitizer_DivideZero = 1;
+const int kErrorSubCode_Sanitizer_ImageGather = 2;
+const int kErrorSubCode_Sanitizer_Pow = 3;
+const int kErrorSubCode_Sanitizer_Atan2 = 4;
+const int kErrorSubCode_Sanitizer_Fminmax = 5;
+const int kErrorSubCode_Sanitizer_Count = 6;  // update when adding new item
 
 // Pre Draw
 //
 // The draw count exceeded the draw buffer size
-const int kErrorSubCodePreDraw_DrawBufferSize = 1;
+const int kErrorSubCode_PreDraw_DrawBufferSize = 1;
 // The draw count exceeded the maxDrawCount parameter to the command
-const int kErrorSubCodePreDraw_DrawCountLimit = 2;
+const int kErrorSubCode_PreDraw_DrawCountLimit = 2;
 // A firstInstance field was non-zero
-const int kErrorSubCodePreDrawFirstInstance = 3;
+const int kErrorSubCode_PreDraw_FirstInstance = 3;
 // Mesh limit checks
-const int kErrorSubCodePreDrawGroupCountX = 4;
-const int kErrorSubCodePreDrawGroupCountY = 5;
-const int kErrorSubCodePreDrawGroupCountZ = 6;
-const int kErrorSubCodePreDrawGroupCountTotal = 7;
+const int kErrorSubCode_PreDraw_GroupCountX = 4;
+const int kErrorSubCode_PreDraw_GroupCountY = 5;
+const int kErrorSubCode_PreDraw_GroupCountZ = 6;
+const int kErrorSubCode_PreDraw_GroupCountTotal = 7;
 // The index count exceeded the index buffer size
 const int kErrorSubCode_OobIndexBuffer = 8;
 // An index in the index buffer exceeded the vertex buffer size
@@ -159,31 +159,31 @@ const int kErrorSubCode_OobVertexBuffer = 9;
 
 // Pre Dispatch
 //
-const int kErrorSubCodePreDispatchCountLimitX = 1;
-const int kErrorSubCodePreDispatchCountLimitY = 2;
-const int kErrorSubCodePreDispatchCountLimitZ = 3;
+const int kErrorSubCode_PreDispatch_CountLimitX = 1;
+const int kErrorSubCode_PreDispatch_CountLimitY = 2;
+const int kErrorSubCode_PreDispatch_CountLimitZ = 3;
 
 // Pre Trace Rays
 //
-const int kErrorSubCodePreTraceRaysLimitWidth = 1;
-const int kErrorSubCodePreTraceRaysLimitHeight = 2;
-const int kErrorSubCodePreTraceRaysLimitDepth = 3;
-const int kErrorSubCodePreTraceRaysLimitVolume = 4;
+const int kErrorSubCode_PreTraceRays_LimitWidth = 1;
+const int kErrorSubCode_PreTraceRays_LimitHeight = 2;
+const int kErrorSubCode_PreTraceRays_LimitDepth = 3;
+const int kErrorSubCode_PreTraceRays_LimitVolume = 4;
 // Pre Copy Buffer To Image
 //
 const int kErrorSubCodePreCopyBufferToImageBufferTexel = 1;
 
 // Pre Copy Memory Indirect
 //
-const int kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned = 1;
-const int kErrorSubCodePreCopyMemoryIndirectDstAddressAligned = 2;
-const int kErrorSubCodePreCopyMemoryIndirectSizeAligned = 3;
-const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned = 4;
-const int kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength = 5;
-const int kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight = 6;
-const int kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid = 7;
-const int kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid = 8;
-const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid = 9;
+const int kErrorSubCode_PreCopyMemoryIndirect_SrcAddressAligned = 1;
+const int kErrorSubCode_PreCopyMemoryIndirect_DstAddressAligned = 2;
+const int kErrorSubCode_PreCopyMemoryIndirect_SizeAligned = 3;
+const int kErrorSubCode_PreCopyMemoryToImageIndirect_SrcAddressAligned = 4;
+const int kErrorSubCode_PreCopyMemoryToImageIndirect_BufferRowLength = 5;
+const int kErrorSubCode_PreCopyMemoryToImageIndirect_BufferImageHeight = 6;
+const int kErrorSubCode_PreCopyMemoryIndirect_SrcAddressInvalid = 7;
+const int kErrorSubCode_PreCopyMemoryIndirect_DstAddressInvalid = 8;
+const int kErrorSubCode_PreCopyMemoryToImageIndirect_SrcAddressInvalid = 9;
 
 // Pre Build Acceleration Structures
 //

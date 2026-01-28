@@ -344,12 +344,12 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                 error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
 
             uint32_t *error_record_ptr = error_records_start;
-            uint32_t record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
+            uint32_t record_size = error_record_ptr[glsl::kHeader_ErrorRecordSizeOffset];
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
                 const uint32_t error_logger_i =
-                    error_record_ptr[glsl::kHeaderActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerIdMask;
+                    error_record_ptr[glsl::kHeader_ActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerId_Mask;
 
                 assert(error_logger_i < cst::indices_count);
                 if (error_logger_i == cst::invalid_index_command) {
@@ -371,7 +371,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
 
                 // Next record
                 error_record_ptr += record_size;
-                record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
+                record_size = error_record_ptr[glsl::kHeader_ErrorRecordSizeOffset];
             }
 
             VVL_TracyPlot("GPU-AV errors count", int64_t(total_words / glsl::kErrorRecordSize));

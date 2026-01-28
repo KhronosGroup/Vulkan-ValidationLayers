@@ -53,10 +53,10 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
     uint32_t access_type_value = 0;
     if (opcode == spv::OpStore) {
-        access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsWrite;
+        access_type_value |= 1 << glsl::kInst_BuffAddrAccess_PayloadShiftIsWrite;
     }
     if (meta.type_is_struct) {
-        access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsStruct;
+        access_type_value |= 1 << glsl::kInst_BuffAddrAccess_PayloadShiftIsStruct;
     }
     const Constant& access_type = type_manager_.GetConstantUInt32(access_type_value);
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
