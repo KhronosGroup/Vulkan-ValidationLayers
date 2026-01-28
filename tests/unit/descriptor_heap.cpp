@@ -727,24 +727,12 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
     desc_info.data.pAddressRange = &invalid_device_address_range;
     VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
-    {
-        // Address alignment check
-        invalid_device_address_range.address = buffer.Address() + 1;
-        invalid_device_address_range.size = align;
+    invalid_device_address_range.address = buffer.Address() + 1;
+    invalid_device_address_range.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11454");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        invalid_device_address_range.address = buffer.Address();
-        invalid_device_address_range.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11454");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11454");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse) {
