@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,17 +63,17 @@ void main() {
     const uint y = draw_buffer[ draw_mesh_task_indirect_cmd_i + kGroupCountY ];
     const uint z = draw_buffer[ draw_mesh_task_indirect_cmd_i + kGroupCountZ ];
     if (x > pc.max_workgroup_count_x) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountX, x, draw_i);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_GroupCountX, x, draw_i);
     }
     if (y > pc.max_workgroup_count_y) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountY, y, draw_i);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_GroupCountY, y, draw_i);
     }
     if (z > pc.max_workgroup_count_z) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountZ, z, draw_i);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_GroupCountZ, z, draw_i);
     }
 
     const uint total = x * y * z;
     if (total > pc.max_workgroup_total_count) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawGroupCountTotal, total, draw_i);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_GroupCountTotal, total, draw_i);
     }
 }

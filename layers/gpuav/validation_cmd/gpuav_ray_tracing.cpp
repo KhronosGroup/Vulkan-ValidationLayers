@@ -109,14 +109,14 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         bool skip = false;
         using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroupGpuPreTraceRays) {
+        if (GetErrorGroup(error_record) != kErrorGroup_GpuPreTraceRays) {
             return skip;
         }
 
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
-            case kErrorSubCodePreTraceRaysLimitWidth: {
-                const uint32_t width = error_record[kValCmdErrorPayloadDword_0];
+            case kErrorSubCode_PreTraceRays_LimitWidth: {
+                const uint32_t width = error_record[kValCmd_ErrorPayloadDword_0];
                 skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::width of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] * "
@@ -126,8 +126,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                                            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[0]));
                 break;
             }
-            case kErrorSubCodePreTraceRaysLimitHeight: {
-                const uint32_t height = error_record[kValCmdErrorPayloadDword_0];
+            case kErrorSubCode_PreTraceRays_LimitHeight: {
+                const uint32_t height = error_record[kValCmd_ErrorPayloadDword_0];
                 skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] * "
@@ -137,8 +137,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                                            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[1]));
                 break;
             }
-            case kErrorSubCodePreTraceRaysLimitDepth: {
-                const uint32_t depth = error_record[kValCmdErrorPayloadDword_0];
+            case kErrorSubCode_PreTraceRays_LimitDepth: {
+                const uint32_t depth = error_record[kValCmd_ErrorPayloadDword_0];
                 skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
@@ -148,10 +148,10 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                                            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]));
                 break;
             }
-            case kErrorSubCodePreTraceRaysLimitVolume: {
-                const VkExtent3D trace_rays_extent = {error_record[kValCmdErrorPayloadDword_0],
-                                                      error_record[kValCmdErrorPayloadDword_1],
-                                                      error_record[kValCmdErrorPayloadDword_2]};
+            case kErrorSubCode_PreTraceRays_LimitVolume: {
+                const VkExtent3D trace_rays_extent = {error_record[kValCmd_ErrorPayloadDword_0],
+                                                      error_record[kValCmd_ErrorPayloadDword_1],
+                                                      error_record[kValCmd_ErrorPayloadDword_2]};
                 const uint64_t rays_volume = trace_rays_extent.width * trace_rays_extent.height * trace_rays_extent.depth;
                 skip |= gpuav.LogError(
                     "VUID-VkTraceRaysIndirectCommandKHR-width-03641", objlist, loc_with_debug_region,
@@ -586,13 +586,13 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         bool skip = false;
         using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroupGpuPreBuildAccelerationStructures) {
+        if (GetErrorGroup(error_record) != kErrorGroup_GpuPreBuildAccelerationStructures) {
             return skip;
         }
 
-        const uint64_t blas_in_tlas_addr = glsl::GetUint64(error_record + kValCmdErrorPayloadDword_0);
-        const uint32_t as_instance_i = error_record[kValCmdErrorPayloadDword_2];
-        const uint32_t blas_array_i = error_record[kValCmdErrorPayloadDword_3];
+        const uint64_t blas_in_tlas_addr = glsl::GetUint64(error_record + kValCmd_ErrorPayloadDword_0);
+        const uint32_t as_instance_i = error_record[kValCmd_ErrorPayloadDword_2];
+        const uint32_t blas_array_i = error_record[kValCmd_ErrorPayloadDword_3];
 
         // Gather error info
         // ---
@@ -665,7 +665,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap: {
-                const uint32_t blas_built_in_cmd_i = error_record[kValCmdErrorPayloadDword_4];
+                const uint32_t blas_built_in_cmd_i = error_record[kValCmd_ErrorPayloadDword_4];
                 const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
                 std::stringstream error_ss;
                 if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {

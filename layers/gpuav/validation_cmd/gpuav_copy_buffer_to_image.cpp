@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,14 +219,14 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         bool skip = false;
         using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroupGpuCopyBufferToImage) {
+        if (GetErrorGroup(error_record) != kErrorGroup_GpuCopyBufferToImage) {
             return skip;
         }
 
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-                const uint32_t texel_offset = error_record[kValCmdErrorPayloadDword_0];
+                const uint32_t texel_offset = error_record[kValCmd_ErrorPayloadDword_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
                 const char *vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage

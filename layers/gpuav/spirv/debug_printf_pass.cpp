@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -320,8 +320,8 @@ uint32_t DebugPrintfPass::CreateDescriptorSet() {
     new_struct_inst->Fill({struct_type_id, uint32_type.Id(), runtime_array_type_id});
     const Type& struct_type = type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
     module_.AddDecoration(struct_type_id, spv::DecorationBlock, {});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferDWordsCount, spv::DecorationOffset, {0});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferData, spv::DecorationOffset, {4});
+    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintf_OutputBuffer_DWordsCount, spv::DecorationOffset, {0});
+    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintf_OutputBuffer_Data, spv::DecorationOffset, {4});
 
     // create a storage buffer interface variable
     const Type& pointer_type = type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, struct_type);

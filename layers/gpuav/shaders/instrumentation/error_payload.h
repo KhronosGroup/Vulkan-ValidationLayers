@@ -1,6 +1,6 @@
-// Copyright (c) 2025 The Khronos Group Inc.
-// Copyright (c) 2025 Valve Corporation
-// Copyright (c) 2025 LunarG, Inc.
+// Copyright (c) 2025-2026 The Khronos Group Inc.
+// Copyright (c) 2025-2026 Valve Corporation
+// Copyright (c) 2025-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
 
 // TODO - Would be nice to get this down to a only 16 bytes as per-thread memory is VERY precious for runtime perf
 struct ErrorPayload {
-    uint inst_offset;
-    uint shader_error_encoding;
-    uint parameter_0;
-    uint parameter_1;
-    uint parameter_2;
+    uint inst_offset;            // kHeader_StageInstructionIdOffset
+    uint shader_error_encoding;  // kHeader_ShaderIdErrorOffset
+    uint parameter_0;            // kInst_LogError_ParameterOffset_0
+    uint parameter_1;            // kInst_LogError_ParameterOffset_1
+    uint parameter_2;            // kInst_LogError_ParameterOffset_2
 } error_payload;

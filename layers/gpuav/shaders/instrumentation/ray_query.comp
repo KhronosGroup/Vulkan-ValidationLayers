@@ -1,6 +1,6 @@
-// Copyright (c) 2024-2025 The Khronos Group Inc.
-// Copyright (c) 2024-2025 Valve Corporation
-// Copyright (c) 2024-2025 LunarG, Inc.
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,23 +27,23 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
     uint param_0 = 0u;
 
     if (isnan(ray_tmin)) {
-        error = kErrorSubCodeRayQueryMinNaN;
+        error = kErrorSubCode_RayQuery_MinNaN;
     } else if (isnan(ray_tmax)) {
-        error = kErrorSubCodeRayQueryMaxNaN;
+        error = kErrorSubCode_RayQuery_MaxNaN;
     } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
-        error = kErrorSubCodeRayQueryOriginNaN;
+        error = kErrorSubCode_RayQuery_OriginNaN;
     } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
-        error = kErrorSubCodeRayQueryDirectionNaN;
+        error = kErrorSubCode_RayQuery_DirectionNaN;
     } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
-        error = kErrorSubCodeRayQueryOriginFinite;
+        error = kErrorSubCode_RayQuery_OriginFinite;
     } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
-        error = kErrorSubCodeRayQueryDirectionFinite;
+        error = kErrorSubCode_RayQuery_DirectionFinite;
     } else if (ray_tmin < 0.0f) {
-        error = kErrorSubCodeRayQueryNegativeMin;
+        error = kErrorSubCode_RayQuery_NegativeMin;
     } else if (ray_tmax < 0.0f) {
-        error = kErrorSubCodeRayQueryNegativeMax;
+        error = kErrorSubCode_RayQuery_NegativeMax;
     } else if (ray_tmax < ray_tmin) {
-        error = kErrorSubCodeRayQueryMinMax;
+        error = kErrorSubCode_RayQuery_MinMax;
     } else {
         // From SPIRV-Headers
         const uint OpaqueKHR = 0x00000001;
@@ -60,13 +60,13 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
         uint opaque_mask = ray_flags &(OpaqueKHR | NoOpaqueKHR | CullOpaqueKHR | CullNoOpaqueKHR);
 
         if ((ray_flags & both_skip) == both_skip) {
-            error = kErrorSubCodeRayQueryBothSkip;
+            error = kErrorSubCode_RayQuery_BothSkip;
             param_0 = ray_flags;
         } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayQuerySkipCull;
+            error = kErrorSubCode_RayQuery_SkipCull;
             param_0 = ray_flags;
         } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayQueryOpaque;
+            error = kErrorSubCode_RayQuery_Opaque;
             param_0 = ray_flags;
         }
     }
@@ -74,7 +74,7 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
     if (0u != error) {
          error_payload = ErrorPayload(
                             inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroupInstRayQuery << kErrorGroupShift) | (error << kErrorSubCodeShift),
+                            SpecConstantLinkShaderId | (kErrorGroup_InstRayQuery << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             param_0,
                             0,
                             0

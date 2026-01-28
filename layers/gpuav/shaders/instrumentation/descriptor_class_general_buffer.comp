@@ -1,6 +1,6 @@
-// Copyright (c) 2024-2025 The Khronos Group Inc.
-// Copyright (c) 2024-2025 Valve Corporation
-// Copyright (c) 2024-2025 LunarG, Inc.
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,8 +60,8 @@ void inst_descriptor_class_general_buffer(const uint inst_offset, const uint des
     if (byte_offset >= resource_size) {
         error_payload = ErrorPayload(
                             inst_offset,
-                            SpecConstantLinkShaderId | (kErrorGroupInstDescriptorClass << kErrorGroupShift) | (kErrorSubCodeDescriptorClassGeneralBufferBounds << kErrorSubCodeShift),
-                            (desc_set << kInstDescriptorIndexingSetShift) | global_descriptor_index,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorClass << kErrorGroup_Shift) | (kErrorSubCode_DescriptorClass_GeneralBufferBounds << kErrorSubCode_Shift),
+                            (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index,
                             byte_offset,
                             resource_size
                         );
@@ -80,8 +80,8 @@ void inst_descriptor_class_general_buffer_coop_mat(const uint inst_offset, const
         if (byte_offset >= resource_size) {
             error_payload = ErrorPayload(
                                 inst_offset,
-                                SpecConstantLinkShaderId | (kErrorGroupInstDescriptorClass << kErrorGroupShift) | (kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds << kErrorSubCodeShift),
-                                (desc_set << kInstDescriptorIndexingSetShift) | global_descriptor_index,
+                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorClass << kErrorGroup_Shift) | (kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds << kErrorSubCode_Shift),
+                                (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index,
                                 byte_offset,
                                 resource_size
                             );

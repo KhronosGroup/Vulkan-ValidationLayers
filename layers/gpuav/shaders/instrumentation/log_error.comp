@@ -1,6 +1,6 @@
-// Copyright (c) 2024-2025 The Khronos Group Inc.
-// Copyright (c) 2024-2025 Valve Corporation
-// Copyright (c) 2024-2025 LunarG, Inc.
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,18 +32,18 @@ void inst_log_error(const uvec4 stage_info) {
             const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
 
             if (errors_buffer_not_filled) {
-                inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-                inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = error_payload.shader_error_encoding;
-                inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = error_payload.inst_offset | (stage_info.x << kStageIdShift);
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+                inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
+                inst_errors_buffer.data[write_pos + kHeader_ShaderIdErrorOffset] = error_payload.shader_error_encoding;
+                inst_errors_buffer.data[write_pos + kHeader_StageInstructionIdOffset] = error_payload.inst_offset | (stage_info.x << kStageId_Shift);
+                inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_0] = stage_info.y;
+                inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_1] = stage_info.z;
+                inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_2] = stage_info.w;
 
-                inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_error_logger_index_buffer.index[0];
+                inst_errors_buffer.data[write_pos + kHeader_ActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionId_Shift) | inst_error_logger_index_buffer.index[0];
 
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_0] = error_payload.parameter_0;
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_1] = error_payload.parameter_1;
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_2] = error_payload.parameter_2;
+                inst_errors_buffer.data[write_pos + kInst_LogError_ParameterOffset_0] = error_payload.parameter_0;
+                inst_errors_buffer.data[write_pos + kInst_LogError_ParameterOffset_1] = error_payload.parameter_1;
+                inst_errors_buffer.data[write_pos + kInst_LogError_ParameterOffset_2] = error_payload.parameter_2;
             }
         }
     }

@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ void main() {
 
     const uint64_t draw_buffer_max_read_offset = pc.api_stride * (draw_count - 1) + pc.api_offset + pc.api_struct_size_byte;
     if (draw_buffer_max_read_offset > pc.draw_buffer_size) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDraw_DrawBufferSize, draw_count, 0);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_DrawBufferSize, draw_count, 0);
     } else if (draw_count > pc.device_limit_max_draw_indirect_count) {
-        GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDraw_DrawCountLimit, draw_count, 0);
+        GpuavLogError2(kErrorGroup_GpuPreDraw, kErrorSubCode_PreDraw_DrawCountLimit, draw_count, 0);
     }
 }

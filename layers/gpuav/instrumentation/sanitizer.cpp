@@ -42,7 +42,7 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                                                                                  std::string &out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            if (GetErrorGroup(error_record) != kErrorGroupInstSanitizer) {
+            if (GetErrorGroup(error_record) != kErrorGroup_InstSanitizer) {
                 return error_found;
             }
             error_found = true;
@@ -51,9 +51,9 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
 
             const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
-                case kErrorSubCodeSanitizerDivideZero: {
-                    const uint32_t opcode = error_record[kInstLogErrorParameterOffset_0];
-                    const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_1];
+                case kErrorSubCode_Sanitizer_DivideZero: {
+                    const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_0];
+                    const uint32_t vector_size = error_record[kInst_LogError_ParameterOffset_1];
                     const bool is_float = opcode == spv::OpFMod || opcode == spv::OpFRem;
                     strm << (is_float ? "Float" : "Integer") << " divide by zero. Operand 2 of " << string_SpvOpcode(opcode)
                          << " is ";
@@ -68,8 +68,8 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                     strm << GetSpirvSpecLink(opcode);
                     out_vuid_msg = "SPIRV-Sanitizer-Divide-By-Zero";
                 } break;
-                case kErrorSubCodeSanitizerImageGather: {
-                    const uint32_t component_value = error_record[kInstLogErrorParameterOffset_0];
+                case kErrorSubCode_Sanitizer_ImageGather: {
+                    const uint32_t component_value = error_record[kInst_LogError_ParameterOffset_0];
                     const int32_t signed_value = (int32_t)component_value;
                     strm << "OpImageGather has a component value of ";
                     if (signed_value > 0) {
@@ -80,14 +80,14 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                     strm << ", but it must be 0, 1, 2, or 3" << GetSpirvSpecLink(spv::OpImageGather);
                     out_vuid_msg = "SPIRV-Sanitizer-Image-Gather";
                 } break;
-                case kErrorSubCodeSanitizerPow: {
+                case kErrorSubCode_Sanitizer_Pow: {
                     // Pow is only valid with a scalar/vector of 16/32-bit float
-                    const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_0];
+                    const uint32_t vector_size = error_record[kInst_LogError_ParameterOffset_0];
                     // Casting produces artifacts in float value, need to memcpy
                     float x_value = 0.0f;
                     float y_value = 0.0f;
-                    memcpy(&x_value, &error_record[kInstLogErrorParameterOffset_1], sizeof(float));
-                    memcpy(&y_value, &error_record[kInstLogErrorParameterOffset_2], sizeof(float));
+                    memcpy(&x_value, &error_record[kInst_LogError_ParameterOffset_1], sizeof(float));
+                    memcpy(&y_value, &error_record[kInst_LogError_ParameterOffset_2], sizeof(float));
                     strm << "Pow (from GLSL.std.450) has an undefined result because operand (x < 0) or (x == 0 && y <= 0)\n  ";
                     if (vector_size > 0) {
                         // Would need a new way to print more than 2 bytes out to get this to work
@@ -97,18 +97,18 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                     }
                     out_vuid_msg = "SPIRV-Sanitizer-Pow";
                 } break;
-                case kErrorSubCodeSanitizerAtan2: {
+                case kErrorSubCode_Sanitizer_Atan2: {
                     // Atan is only valid with a scalar/vector of 16/32-bit float
                     strm << "Atan2 (from GLSL.std.450) has an undefined result because both values used are zero.";
                     out_vuid_msg = "SPIRV-Sanitizer-Atan2";
                 } break;
-                case kErrorSubCodeSanitizerFminmax: {
+                case kErrorSubCode_Sanitizer_Fminmax: {
                     // simple encoding done in inst_sanitizer_fminman (sanitizer.comp)
-                    const uint32_t invalid_encode = error_record[kInstLogErrorParameterOffset_0];
+                    const uint32_t invalid_encode = error_record[kInst_LogError_ParameterOffset_0];
                     const bool x_is_invalid = (invalid_encode & 0x1) != 0;
                     const bool y_is_invalid = (invalid_encode & 0x2) != 0;
-                    const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_1];
-                    const uint32_t glsl_opcode = error_record[kInstLogErrorParameterOffset_2];
+                    const uint32_t vector_size = error_record[kInst_LogError_ParameterOffset_1];
+                    const uint32_t glsl_opcode = error_record[kInst_LogError_ParameterOffset_2];
                     strm << (glsl_opcode == GLSLstd450FMin ? "FMin" : "FMax")
                          << " (from GLSL.std.450) has an undefined result because ";
                     if (x_is_invalid && y_is_invalid) {
