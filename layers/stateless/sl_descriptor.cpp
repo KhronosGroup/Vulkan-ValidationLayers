@@ -1685,11 +1685,6 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                                          data_loc.dot(Field::pAddressRange).dot(Field::address),
                                          "(0x%" PRIx64 ") is not aligned to 256", resource.data.pAddressRange->address);
                     }
-                    if (!IsIntegerMultipleOf(resource.data.pAddressRange->size, 256)) {
-                        skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11454", device,
-                                         data_loc.dot(Field::pAddressRange).dot(Field::size),
-                                         "(%" PRIu64 ") must be a multiple of 256", resource.data.pAddressRange->size);
-                    }
                 }
             }
         } else {
