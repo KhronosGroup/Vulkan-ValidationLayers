@@ -2942,3 +2942,124 @@ TEST_F(PositiveWsi, PresentTimings) {
         vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
     }
 }
+
+TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11399
+    TEST_DESCRIPTION("Test that present id wait makes acquire semaphore available");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId);
+    AddRequiredFeature(vkt::Feature::presentWait);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    std::vector<vkt::Semaphore> submit_done_semaphores(swapchain_images.size());
+    for (size_t i = 0; i < submit_done_semaphores.size(); i++) {
+        submit_done_semaphores[i] = vkt::Semaphore(*m_device);
+    }
+
+    vkt::Semaphore acquire_semaphore_a(*m_device);
+    vkt::Semaphore acquire_semaphore_b(*m_device);
+
+    uint64_t present_id_value{};
+
+    VkPresentIdKHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1;
+    present_id.pPresentIds = &present_id_value;
+
+    // Frame 0
+    const uint32_t frame0_image_index = m_swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
+    const vkt::Semaphore &frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_a), vkt::Signal(frame0_submit_done_semaphore));
+
+    present_id_value = 1;
+    m_default_queue->Present(m_swapchain, frame0_image_index, frame0_submit_done_semaphore, &present_id);
+
+    // Frame 1
+    const uint32_t frame1_image_index = m_swapchain.AcquireNextImage(acquire_semaphore_b, kWaitTimeout);
+    const vkt::Semaphore &frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_b), vkt::Signal(frame1_submit_done_semaphore));
+
+    present_id_value = 2;
+    m_default_queue->Present(m_swapchain, frame1_image_index, frame1_submit_done_semaphore, &present_id);
+
+    // Frame 2.
+    const uint64_t present_id_value_to_wait_for = 1;
+    vk::WaitForPresentKHR(*m_device, m_swapchain, present_id_value_to_wait_for, kWaitTimeout);
+
+    // After waiting for frame 0 present id, the acquire_semaphore_a should not be in-use anymore
+    [[maybe_unused]] const uint32_t frame2_image_index = m_swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse2) {
+    TEST_DESCRIPTION("Test that present id wait makes acquire semaphore available");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId2);
+    AddRequiredFeature(vkt::Feature::presentWait2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci =
+        GetDefaultSwapchainCreateInfo(m_surface, surface_info, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR | VK_SWAPCHAIN_CREATE_PRESENT_WAIT_2_BIT_KHR;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    const auto swapchain_images = swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    std::vector<vkt::Semaphore> submit_done_semaphores(swapchain_images.size());
+    for (size_t i = 0; i < submit_done_semaphores.size(); i++) {
+        submit_done_semaphores[i] = vkt::Semaphore(*m_device);
+    }
+
+    vkt::Semaphore acquire_semaphore_a(*m_device);
+    vkt::Semaphore acquire_semaphore_b(*m_device);
+
+    uint64_t present_id_value{};
+
+    VkPresentId2KHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1;
+    present_id.pPresentIds = &present_id_value;
+
+    // Frame 0
+    const uint32_t frame0_image_index = swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
+    const vkt::Semaphore &frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_a), vkt::Signal(frame0_submit_done_semaphore));
+
+    present_id_value = 1;
+    m_default_queue->Present(swapchain, frame0_image_index, frame0_submit_done_semaphore, &present_id);
+
+    // Frame 1
+    const uint32_t frame1_image_index = swapchain.AcquireNextImage(acquire_semaphore_b, kWaitTimeout);
+    const vkt::Semaphore &frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_b), vkt::Signal(frame1_submit_done_semaphore));
+
+    present_id_value = 2;
+    m_default_queue->Present(swapchain, frame1_image_index, frame1_submit_done_semaphore, &present_id);
+
+    // Frame 2
+    const uint64_t present_id_value_to_wait_for = 1;
+
+    VkPresentWait2InfoKHR wait_info = vku::InitStructHelper();
+    wait_info.presentId = present_id_value_to_wait_for;
+    wait_info.timeout = kWaitTimeout;
+
+    vk::WaitForPresent2KHR(*m_device, swapchain, &wait_info);
+    // After waiting for frame 0 present id the acquire_semaphore_a should not be in-use anymore
+    [[maybe_unused]] const uint32_t frame2_image_index = swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
+
+    m_default_queue->Wait();
+}
