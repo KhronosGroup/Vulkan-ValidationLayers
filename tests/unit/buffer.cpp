@@ -147,8 +147,8 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
     RETURN_IF_SKIP(Init());
     const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
-    const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
-    if (minTexelBufferOffsetAlignment == 1) {
+    const VkDeviceSize min_alignment = dev_limits.minTexelBufferOffsetAlignment;
+    if (min_alignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }
 
@@ -176,11 +176,11 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00925");
 
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
-    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
-    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-02749");
+    buff_view_ci.offset = min_alignment + 1;
+    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-buffer-02751");
 
     // Set offset to acceptable value for range tests
-    buff_view_ci.offset = minTexelBufferOffsetAlignment;
+    buff_view_ci.offset = min_alignment;
     // Setting range equal to 0 will cause an error to occur
     buff_view_ci.range = 0;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-range-00928");
@@ -195,7 +195,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.range = 2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-range-00930");
 
-    buff_view_ci.offset = minTexelBufferOffsetAlignment;
+    buff_view_ci.offset = min_alignment;
     buff_view_ci.range = buffer_size;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00931");
 }
@@ -221,8 +221,8 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoFeatures) {
     RETURN_IF_SKIP(Init());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
-    const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
-    if (minTexelBufferOffsetAlignment == 1) {
+    const VkDeviceSize min_alignment = dev_limits.minTexelBufferOffsetAlignment;
+    if (min_alignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }
 
@@ -293,8 +293,8 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
         GTEST_SKIP() << "Vulkan version 1.2 or less is required";
     }
 
-    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->Physical().limits_.minTexelBufferOffsetAlignment;
-    if (minTexelBufferOffsetAlignment == 1) {
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minTexelBufferOffsetAlignment;
+    if (min_alignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }
     if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
@@ -307,8 +307,8 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
     buff_view_ci.buffer = buffer;
-    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
-    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-02749");
+    buff_view_ci.offset = min_alignment + 1;
+    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-buffer-02751");
 }
 
 TEST_F(NegativeBuffer, TexelBufferAlignment) {

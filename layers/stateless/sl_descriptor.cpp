@@ -1528,6 +1528,83 @@ bool Device::manual_PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer comman
     return skip;
 }
 
+bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoEXT& info, const VkDescriptorType type,
+                                              const Location& loc) const {
+    bool skip = false;
+    if (enabled_features.texelBufferAlignment) {
+        VkDeviceSize texel_block_size = GetTexelBufferFormatSize(info.format);
+        bool texel_size_of_three = false;
+        if ((texel_block_size % 3) == 0) {
+            texel_size_of_three = true;
+            texel_block_size /= 3;
+        }
+
+        if (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+            VkDeviceSize alignment_requirement = phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
+            if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
+                alignment_requirement = std::min(alignment_requirement, texel_block_size);
+            }
+            if (!IsPointerAligned(info.addressRange.address, alignment_requirement)) {
+                std::ostringstream ss;
+                ss << "(0x" << std::hex << info.addressRange.address << std::dec << ") must be a aligned to "
+                   << alignment_requirement << "\n";
+                if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
+                    ss << "uniformTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
+                          "min(uniformTexelBufferOffsetAlignmentBytes, texelBlockSize("
+                       << string_VkFormat(info.format) << ")) which is min("
+                       << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes << ", " << texel_block_size << ")";
+                    if (texel_size_of_three) {
+                        ss << "\nThe size of a texel " << (texel_block_size * 3)
+                           << " was a multiple of three bytes, so the size of a single component of "
+                           << string_VkFormat(info.format) << " was used instead";
+                    }
+                } else {
+                    ss << "uniformTexelBufferOffsetSingleTexelAlignment is VK_FALSE and uniformTexelBufferOffsetAlignmentBytes is "
+                       << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
+                }
+
+                // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
+                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11214", device,
+                                 loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
+            }
+        } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+            VkDeviceSize alignment_requirement = phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
+            if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
+                alignment_requirement = std::min(alignment_requirement, texel_block_size);
+            }
+            if (!IsPointerAligned(info.addressRange.address, alignment_requirement)) {
+                std::ostringstream ss;
+                ss << "(0x" << std::hex << info.addressRange.address << std::dec << ") must be aligned to " << alignment_requirement
+                   << "\n";
+                if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
+                    ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
+                          "min(storageTexelBufferOffsetAlignmentBytes, texelBlockSize("
+                       << string_VkFormat(info.format) << ")) which is min("
+                       << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes << ", " << texel_block_size << ")";
+                    if (texel_size_of_three) {
+                        ss << "\nThe size of a texel " << (texel_block_size * 3)
+                           << " was a multiple of three bytes, so the size of a single component of "
+                           << string_VkFormat(info.format) << " was used instead";
+                    }
+                } else {
+                    ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_FALSE and storageTexelBufferOffsetAlignmentBytes is "
+                       << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
+                }
+
+                // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
+                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11215", device,
+                                 loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
+            }
+        }
+    } else if (!IsPointerAligned(info.addressRange.address, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
+        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
+        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218", device, loc.dot(Field::addressRange).dot(Field::address),
+                         "(0x%" PRIx64 ") is not aligned to minTexelBufferOffsetAlignment (%" PRIu64 ")", info.addressRange.address,
+                         phys_dev_props.limits.minTexelBufferOffsetAlignment);
+    }
+    return skip;
+}
+
 bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceCount,
                                                                const VkResourceDescriptorInfoEXT* pResources,
                                                                const VkHostAddressRangeEXT* pDescriptors,
@@ -1567,49 +1644,7 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
         } else if (IsDescriptorHeapTexelBuffer(resource.type)) {
             if (resource.data.pTexelBuffer) {
                 const VkTexelBufferDescriptorInfoEXT& texel_buffer = *resource.data.pTexelBuffer;
-                if (enabled_features.texelBufferAlignment) {
-                    const char* vuid = nullptr;
-                    VkDeviceSize alignment = 0;
-                    const uint32_t format_size = GetTexelBufferFormatSize(texel_buffer.format);
-                    VkDeviceSize texel_block_size = VkDeviceSize(GetSmallestGreaterOrEquallPowerOfTwo(format_size));
-
-                    if (resource.type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-                        alignment = phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment
-                                        ? std::min(phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes, texel_block_size)
-                                        : phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
-                        vuid = phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment
-                                   ? "VUID-VkResourceDescriptorInfoEXT-type-11216"
-                                   : "VUID-VkResourceDescriptorInfoEXT-type-11214";
-                    } else if (resource.type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-                        alignment = phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment
-                                        ? std::min(phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes, texel_block_size)
-                                        : phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
-                        vuid = phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment
-                                   ? "VUID-VkResourceDescriptorInfoEXT-type-11217"
-                                   : "VUID-VkResourceDescriptorInfoEXT-type-11215";
-                    }
-                    if (!IsIntegerMultipleOf(texel_buffer.addressRange.size, alignment)) {
-                        skip |= LogError(vuid, device, data_loc.dot(Field::pTexelBuffer).dot(Field::addressRange).dot(Field::size),
-                                         "(%" PRIu64 ") must be multiples of %" PRIu64, texel_buffer.addressRange.size, alignment);
-                    } else if (!IsPointerAligned(texel_buffer.addressRange.address, alignment)) {
-                        skip |= LogError(
-                            vuid, device, data_loc.dot(Field::pTexelBuffer).dot(Field::addressRange).dot(Field::address),
-                            "(0x%" PRIx64 ") is not aligned to %" PRIu64 " bytes.", texel_buffer.addressRange.address, alignment);
-                    }
-                } else {
-                    if (!IsIntegerMultipleOf(texel_buffer.addressRange.size, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
-                        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218", device,
-                                         data_loc.dot(Field::pTexelBuffer).dot(Field::addressRange).dot(Field::size),
-                                         "(%" PRIu64 ") must be multiples of minTexelBufferOffsetAlignment (%" PRIu64 ")",
-                                         texel_buffer.addressRange.size, phys_dev_props.limits.minTexelBufferOffsetAlignment);
-                    } else if (!IsPointerAligned(texel_buffer.addressRange.address,
-                                                 phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
-                        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218", device,
-                                         data_loc.dot(Field::pTexelBuffer).dot(Field::addressRange).dot(Field::address),
-                                         "(0x%" PRIx64 ") is not aligned to minTexelBufferOffsetAlignment (%" PRIu64 ")",
-                                         texel_buffer.addressRange.address, phys_dev_props.limits.minTexelBufferOffsetAlignment);
-                    }
-                }
+                skip |= ValidateHeapTexelBufferAlignment(texel_buffer, resource.type, data_loc.dot(Field::pTexelBuffer));
             } else if (!enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkResourceDescriptorInfoEXT-None-11212", device, data_loc.dot(Field::pTexelBuffer),
                                  "is NULL, but nullDescriptor feature is not enabled. (type is %s)",
@@ -1625,34 +1660,22 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                 if (resource.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                     if (!IsPointerAligned(resource.data.pAddressRange->address,
                                           phys_dev_props.limits.minUniformBufferOffsetAlignment)) {
+                        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
                         skip |=
                             LogError("VUID-VkResourceDescriptorInfoEXT-type-11452", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::address),
                                      "(0x%" PRIx64 ") is not aligned to minUniformBufferOffsetAlignment (%" PRIu64 ")",
                                      resource.data.pAddressRange->address, phys_dev_props.limits.minUniformBufferOffsetAlignment);
                     }
-                    if (!IsIntegerMultipleOf(resource.data.pAddressRange->size,
-                                             phys_dev_props.limits.minUniformBufferOffsetAlignment)) {
-                        skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11452", device,
-                                         data_loc.dot(Field::pAddressRange).dot(Field::size),
-                                         "(%" PRIu64 ") must be a multiple of minUniformBufferOffsetAlignment (%" PRIu64 ")",
-                                         resource.data.pAddressRange->size, phys_dev_props.limits.minUniformBufferOffsetAlignment);
-                    }
                 } else if (resource.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
                     if (!IsPointerAligned(resource.data.pAddressRange->address,
                                           phys_dev_props.limits.minStorageBufferOffsetAlignment)) {
+                        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
                         skip |=
                             LogError("VUID-VkResourceDescriptorInfoEXT-type-11453", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::address),
                                      "(0x%" PRIx64 ") is not aligned to minStorageBufferOffsetAlignment (%" PRIu64 ")",
                                      resource.data.pAddressRange->address, phys_dev_props.limits.minStorageBufferOffsetAlignment);
-                    }
-                    if (!IsIntegerMultipleOf(resource.data.pAddressRange->size,
-                                             phys_dev_props.limits.minStorageBufferOffsetAlignment)) {
-                        skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11453", device,
-                                         data_loc.dot(Field::pAddressRange).dot(Field::size),
-                                         "(%" PRIu64 ") must be a multiple of minStorageBufferOffsetAlignment (%" PRIu64 ")",
-                                         resource.data.pAddressRange->size, phys_dev_props.limits.minStorageBufferOffsetAlignment);
                     }
                 } else if (IsValueIn(resource.type,
                                      {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,

@@ -2158,7 +2158,7 @@ TEST_F(NegativeDescriptorBuffer, GetDescriptorAlignment) {
         vkt::DescriptorGetInfo get_info_u(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, u_buffer, 4, VK_FORMAT_R32_UINT);
         get_info_u.address_info.address += 1;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12267");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12269");
         vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, host_descriptor);
         m_errorMonitor->VerifyFound();
 
@@ -2166,7 +2166,7 @@ TEST_F(NegativeDescriptorBuffer, GetDescriptorAlignment) {
         vkt::DescriptorGetInfo get_info_s(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, s_buffer, 4, VK_FORMAT_R32_UINT);
         get_info_s.address_info.address += 1;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12268");
+        m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12270");
         vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageTexelBufferDescriptorSize, host_descriptor);
         m_errorMonitor->VerifyFound();
     }

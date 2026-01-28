@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -320,7 +320,10 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             }
         }
     } else if (!IsIntegerMultipleOf(pCreateInfo->offset, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", pCreateInfo->buffer, create_info_loc.dot(Field::offset),
+        const char* vuid = (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)
+                               ? " VUID-VkBufferViewCreateInfo-buffer-02750"
+                               : " VUID-VkBufferViewCreateInfo-buffer-02751";
+        skip |= LogError(vuid, pCreateInfo->buffer, create_info_loc.dot(Field::offset),
                          "(%" PRIuLEAST64
                          ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
                          pCreateInfo->offset, phys_dev_props.limits.minTexelBufferOffsetAlignment);

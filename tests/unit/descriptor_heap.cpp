@@ -637,24 +637,12 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
     desc_info.data.pAddressRange = &invalid_device_address_range;
     VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
-    {
-        // Address alignment check
-        invalid_device_address_range.address = buffer.Address() + 1;
-        invalid_device_address_range.size = align;
+    invalid_device_address_range.address = buffer.Address() + 1;
+    invalid_device_address_range.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11452");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        invalid_device_address_range.address = buffer.Address();
-        invalid_device_address_range.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11452");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11452");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
@@ -665,7 +653,6 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
 
     const VkDeviceSize align = m_device->Physical().limits_.minStorageBufferOffsetAlignment;
     const VkDeviceSize bdsize = heap_props.bufferDescriptorSize;
-    const auto type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
     EXPECT_GT(align, 0u);
     if (align == 1) {
@@ -674,33 +661,21 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
 
     vkt::Buffer buffer(*m_device, 2 * std::max(align, bdsize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
+    const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     std::vector<uint8_t> data(static_cast<size_t>(size));
 
     VkDeviceAddressRangeEXT invalid_device_address_range = {0, 0};
     VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
-    desc_info.type = type;
+    desc_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     desc_info.data.pAddressRange = &invalid_device_address_range;
     VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
-    {
-        // Address alignment check
-        invalid_device_address_range.address = buffer.Address() + 1;
-        invalid_device_address_range.size = align;
+    invalid_device_address_range.address = buffer.Address() + 1;
+    invalid_device_address_range.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11453");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        invalid_device_address_range.address = buffer.Address();
-        invalid_device_address_range.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11453");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11453");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
@@ -713,17 +688,16 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
 
     const VkDeviceSize align = 256;
     const VkDeviceSize bdsize = heap_props.bufferDescriptorSize;
-    const auto type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 
     vkt::Buffer buffer(*m_device, 2 * std::max(align, bdsize), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                        vkt::device_address);
 
-    const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
+    const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
     std::vector<uint8_t> data(static_cast<size_t>(size));
 
     VkDeviceAddressRangeEXT invalid_device_address_range = {0, 0};
     VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
-    desc_info.type = type;
+    desc_info.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     desc_info.data.pAddressRange = &invalid_device_address_range;
     VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
@@ -780,24 +754,12 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse
     auto data = std::vector<uint8_t>(static_cast<size_t>(bdsize));
     VkHostAddressRangeEXT descriptors = {&data[0], data.size()};
 
-    {
-        // Address alignment check
-        texel_buffer_info.addressRange.address = buffer.Address() + 1;
-        texel_buffer_info.addressRange.size = align;
+    texel_buffer_info.addressRange.address = buffer.Address() + 1;
+    texel_buffer_info.addressRange.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        texel_buffer_info.addressRange.address = buffer.Address();
-        texel_buffer_info.addressRange.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue) {
@@ -835,24 +797,12 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue)
     auto data = std::vector<uint8_t>(static_cast<size_t>(bdsize));
     VkHostAddressRangeEXT descriptors = {&data[0], data.size()};
 
-    {
-        // Address alignment check
-        texel_buffer_info.addressRange.address = buffer.Address() + 1;
-        texel_buffer_info.addressRange.size = align;
+    texel_buffer_info.addressRange.address = buffer.Address() + 1;
+    texel_buffer_info.addressRange.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11216");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        texel_buffer_info.addressRange.address = buffer.Address();
-        texel_buffer_info.addressRange.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11216");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse) {
@@ -868,7 +818,6 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
         GTEST_SKIP() << "storageTexelBufferOffsetSingleTexelAlignment required to be VK_FALSE";
     }
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkDeviceSize align = align_props.storageTexelBufferOffsetAlignmentBytes;
     const VkDeviceSize bdsize = heap_props.bufferDescriptorSize;
 
@@ -880,7 +829,7 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
     vkt::Buffer buffer(*m_device, 2 * std::max(align, bdsize), VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, vkt::device_address);
 
     VkTexelBufferDescriptorInfoEXT texel_buffer_info = vku::InitStructHelper();
-    texel_buffer_info.format = format;
+    texel_buffer_info.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
     desc_info.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
@@ -889,24 +838,12 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
     auto data = std::vector<uint8_t>(static_cast<size_t>(bdsize));
     VkHostAddressRangeEXT descriptors = {&data[0], data.size()};
 
-    {
-        // Address alignment check
-        texel_buffer_info.addressRange.address = buffer.Address() + 1;
-        texel_buffer_info.addressRange.size = align;
+    texel_buffer_info.addressRange.address = buffer.Address() + 1;
+    texel_buffer_info.addressRange.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        texel_buffer_info.addressRange.address = buffer.Address();
-        texel_buffer_info.addressRange.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue) {
@@ -944,24 +881,12 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue)
     auto data = std::vector<uint8_t>(static_cast<size_t>(bdsize));
     VkHostAddressRangeEXT descriptors = {&data[0], data.size()};
 
-    {
-        // Address alignment check
-        texel_buffer_info.addressRange.address = buffer.Address() + 1;
-        texel_buffer_info.addressRange.size = align;
+    texel_buffer_info.addressRange.address = buffer.Address() + 1;
+    texel_buffer_info.addressRange.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11217");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        texel_buffer_info.addressRange.address = buffer.Address();
-        texel_buffer_info.addressRange.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11217");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
@@ -975,7 +900,6 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
 
     GetPhysicalDeviceProperties2(heap_props);
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkDeviceSize align = m_device->Physical().limits_.minTexelBufferOffsetAlignment;
     const VkDeviceSize bdsize = heap_props.bufferDescriptorSize;
 
@@ -987,7 +911,7 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     vkt::Buffer buffer(*m_device, 2 * std::max(align, bdsize), VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, vkt::device_address);
 
     VkTexelBufferDescriptorInfoEXT texel_buffer_info = vku::InitStructHelper();
-    texel_buffer_info.format = format;
+    texel_buffer_info.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkResourceDescriptorInfoEXT desc_info = vku::InitStructHelper();
     desc_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
@@ -996,24 +920,12 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     auto data = std::vector<uint8_t>(static_cast<size_t>(bdsize));
     VkHostAddressRangeEXT descriptors = {&data[0], data.size()};
 
-    {
-        // Address alignment check
-        texel_buffer_info.addressRange.address = buffer.Address() + 1;
-        texel_buffer_info.addressRange.size = align;
+    texel_buffer_info.addressRange.address = buffer.Address() + 1;
+    texel_buffer_info.addressRange.size = align;
 
-        m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
-    {
-        // Size alignment check
-        texel_buffer_info.addressRange.address = buffer.Address();
-        texel_buffer_info.addressRange.size = align + 1;
-
-        m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218");
-        vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterYCbCr) {
@@ -1338,19 +1250,16 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapAlign) {
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    {
-        // Address alignment check
-        VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address() + 1, heap_size - 1};
-        bind_info.reservedRangeOffset = 0;
-        bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
+    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
+    bind_info.heapRange = {heap.Address() + 1, heap_size - 1};
+    bind_info.reservedRangeOffset = 0;
+    bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
-        m_command_buffer.Begin();
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11226");
-        vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
-        m_errorMonitor->VerifyFound();
-        m_command_buffer.End();
-    }
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11226");
+    vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
@@ -1588,19 +1497,16 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapAlign) {
     const VkDeviceSize heap_size = heap_props.minResourceHeapReservedRange * 2;
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    {
-        // Address alignment check
-        VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address() + 1, heap_size - 1};
-        bind_info.reservedRangeOffset = 0;
-        bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
+    bind_info.heapRange = {heap.Address() + 1, heap_size - 1};
+    bind_info.reservedRangeOffset = 0;
+    bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
-        m_command_buffer.Begin();
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11235");
-        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
-        m_errorMonitor->VerifyFound();
-        m_command_buffer.End();
-    }
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11235");
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
