@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -304,51 +304,58 @@ TEST_F(PositiveYcbcr, ImageLayout) {
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
 
-    auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&conversion_info);
-    ivci.image = image;
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vkt::ImageView view(*m_device, ivci);
+    // VUID-VkSamplerYcbcrConversionCreateInfo-format-01650
+    if (FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                   VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) ||
+        FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                   VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM);
+        auto conversion_info = conversion.ConversionInfo();
+        vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
 
-    OneOffDescriptorSet descriptor_set(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-                  });
+        auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&conversion_info);
+        ivci.image = image;
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
+        ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkt::ImageView view(*m_device, ivci);
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
-    descriptor_set.UpdateDescriptorSets();
+        OneOffDescriptorSet descriptor_set(
+            m_device, {
+                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+                      });
 
-    CreatePipelineHelper pipe(*this);
-    pipe.CreateGraphicsPipeline();
+        const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+        descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+        descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.Begin();
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    img_barrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    img_barrier.image = image;
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        CreatePipelineHelper pipe(*this);
+        pipe.CreateGraphicsPipeline();
 
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+        m_command_buffer.Begin();
+        VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
+        img_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        img_barrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
+        img_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        img_barrier.image = image;
+        img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
+
+        vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+    }
 }
 
 TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
