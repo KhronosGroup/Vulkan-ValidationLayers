@@ -70,8 +70,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         }
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
             !phys_dev_ext_props.descriptor_heap_props.protectedDescriptorHeaps) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4646
-            skip |= LogError("UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkBufferCreateInfo-flags-11277", device, create_info_loc.dot(Field::flags),
                              "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage is %s.",
                              string_VkBufferUsageFlags2(usage).c_str());
         }
@@ -87,8 +86,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         }
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
             !phys_dev_ext_props.descriptor_heap_props.sparseDescriptorHeaps) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4646
-            skip |= LogError("UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkBufferCreateInfo-flags-11279", device, create_info_loc.dot(Field::flags),
                              "(%s) includes sparse flags, and usage is %s, but sparseDescriptorHeaps is VK_FALSE.",
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str(), string_VkBufferUsageFlags2(usage).c_str());
         }

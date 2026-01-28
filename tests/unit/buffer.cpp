@@ -926,7 +926,7 @@ TEST_F(NegativeBuffer, DescriptorHeapSparse) {
         // We must allow next, because we do not add DescriptorHeap extention, to force sparseDescriptorHeaps == VK_FALSE,
         // that is required vuid 11277 to trigger
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-None-09499");
-        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-11279");
     }
     {
         VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
@@ -939,7 +939,7 @@ TEST_F(NegativeBuffer, DescriptorHeapSparse) {
         // We must allow next vuid, because we do not add DescriptorHeap extention, to force sparseDescriptorHeaps == VK_FALSE,
         // that is required vuid 11278 to trigger
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferUsageFlags2CreateInfo-usage-parameter");
-        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-sparseDescriptorHeaps");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-11279");
     }
 }
 
@@ -957,7 +957,7 @@ TEST_F(NegativeBuffer, DescriptorHeapProtected) {
         // We must allow next, because we do not add DescriptorHeap extention, to force protectedDescriptorHeaps == VK_FALSE,
         // that is required vuid 11279 to trigger
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-None-09499");
-        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-11277");
     }
     {
         VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
@@ -970,6 +970,6 @@ TEST_F(NegativeBuffer, DescriptorHeapProtected) {
         // We must allow next vuid, because we do not add DescriptorHeap extention, to force protectedDescriptorHeaps == VK_FALSE,
         // that is required vuid 11280 to trigger
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferUsageFlags2CreateInfo-usage-parameter");
-        CreateBufferTest(buffer_create_info, "UNASSIGNED-VkBufferCreateInfo-protectedDescriptorHeaps");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-11277");
     }
 }
