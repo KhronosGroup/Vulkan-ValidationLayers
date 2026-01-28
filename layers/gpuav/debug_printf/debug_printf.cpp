@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,10 +206,10 @@ struct DebugPrintfCbState {
 
 void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer, DebugPrintfBufferInfo &buffer_info,
                                uint32_t *const debug_output_buffer, const Location &loc) {
-    uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount];
+    uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount];
     if (!output_buffer_dwords_counts) return;
 
-    uint32_t output_record_i = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
+    uint32_t output_record_i = gpuav::kDebugPrintf_OutputBuffer_Data;  // get first OutputRecord index
     while (debug_output_buffer[output_record_i]) {
         std::ostringstream shader_message;
 
@@ -380,7 +380,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         }
         output_record_i += debug_record->size;
     }
-    if ((output_record_i - gpuav::kDebugPrintfOutputBufferData) < output_buffer_dwords_counts) {
+    if ((output_record_i - gpuav::kDebugPrintf_OutputBuffer_Data) < output_buffer_dwords_counts) {
         // Originally we had this to log a warning, but if using the default settings, warnings are hidden.
         // We report this information the same we report the "real" debug printf message so we know it is seen
         std::ostringstream message;
@@ -398,8 +398,8 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
     // Only memset what is needed, in case we are only using a small portion of a large buffer_size.
     // At the same time we want to make sure we don't memset past the actual VkBuffer allocation
-    uint32_t clear_size =
-        sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount] + gpuav::kDebugPrintfOutputBufferData);
+    uint32_t clear_size = sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount] +
+                                              gpuav::kDebugPrintf_OutputBuffer_Data);
     clear_size = std::min(gpuav.gpuav_settings.debug_printf_buffer_size, clear_size);
     memset(debug_output_buffer, 0, clear_size);
 }

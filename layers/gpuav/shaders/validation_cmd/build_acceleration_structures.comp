@@ -122,6 +122,6 @@ void main() {
         const uint error_dword_2 = as_instance_i;
         const uint error_dword_3 = pc.blas_array_i;// #ARNO_TODO swap dwords 2 and 3
         const uint error_dword_4 = blas_built_in_cmd_i;
-        GpuavLogError5(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, error_dword_0, error_dword_1, error_dword_2, error_dword_3, error_dword_4);
+        GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures, error_subcode, error_dword_0, error_dword_1, error_dword_2, error_dword_3, error_dword_4);
     }
 }

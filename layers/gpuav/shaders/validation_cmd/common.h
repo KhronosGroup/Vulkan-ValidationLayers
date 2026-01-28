@@ -1,6 +1,6 @@
-// Copyright (c) 2023-2025 The Khronos Group Inc.
-// Copyright (c) 2023-2025 Valve Corporation
-// Copyright (c) 2023-2025 LunarG, Inc.
+// Copyright (c) 2023-2026 The Khronos Group Inc.
+// Copyright (c) 2023-2026 Valve Corporation
+// Copyright (c) 2023-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,15 +50,16 @@ void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dw
     const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
     if (errors_buffer_filled) return;
 
-    errors_buffer[vo_idx + kHeaderShaderIdErrorOffset] = (error_group << kErrorGroupShift) | (error_sub_code << kErrorSubCodeShift);
-    errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-    errors_buffer[vo_idx + kHeaderActionIdErrorLoggerIdOffset] = (action_index[0] << kActionIdShift) | resource_index[0];
+    errors_buffer[vo_idx + kHeader_ShaderIdErrorOffset] =
+        (error_group << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift);
+    errors_buffer[vo_idx + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
+    errors_buffer[vo_idx + kHeader_ActionIdErrorLoggerIdOffset] = (action_index[0] << kActionId_Shift) | resource_index[0];
 
-    errors_buffer[vo_idx + kValCmdErrorPayloadDword_0] = dword_0;
-    errors_buffer[vo_idx + kValCmdErrorPayloadDword_1] = dword_1;
-    errors_buffer[vo_idx + kValCmdErrorPayloadDword_2] = dword_2;
-    errors_buffer[vo_idx + kValCmdErrorPayloadDword_3] = dword_3;
-    errors_buffer[vo_idx + kValCmdErrorPayloadDword_4] = dword_4;
+    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_0] = dword_0;
+    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_1] = dword_1;
+    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_2] = dword_2;
+    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_3] = dword_3;
+    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_4] = dword_4;
 }
 
 void GpuavLogError2(uint error_group, uint error_sub_code, uint dword_0, uint dword_1) {

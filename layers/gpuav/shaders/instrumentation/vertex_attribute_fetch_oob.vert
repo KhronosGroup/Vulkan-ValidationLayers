@@ -1,6 +1,6 @@
-// Copyright (c) 2024-2025 The Khronos Group Inc.
-// Copyright (c) 2024-2025 Valve Corporation
-// Copyright (c) 2024-2025 LunarG, Inc.
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,15 +57,15 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
         if (errors_buffer_not_filled) {
             const uint error = valid_vertex_attribute_fetch_vertex_input_rate ? kErrorSubCode_IndexedDraw_OOBInstanceIndex : kErrorSubCode_IndexedDraw_OOBVertexIndex;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-            inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstIndexedDraw << kErrorGroupShift) | (error << kErrorSubCodeShift);
+            inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
+            inst_errors_buffer.data[write_pos + kHeader_ShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroup_InstIndexedDraw << kErrorGroup_Shift) | (error << kErrorSubCode_Shift);
             // The shader stage is irrelevant because we know it is a vertex shader
-            inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = stage_info[0] << kStageIdShift;
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info[1];
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info[2];
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info[3];
+            inst_errors_buffer.data[write_pos + kHeader_StageInstructionIdOffset] = stage_info[0] << kStageId_Shift;
+            inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_0] = stage_info[1];
+            inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_1] = stage_info[2];
+            inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_2] = stage_info[3];
 
-            inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_error_logger_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeader_ActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionId_Shift) | inst_error_logger_index_buffer.index[0];
         }
     }
 }

@@ -48,7 +48,7 @@ class SanitizerPass : public Pass {
         const Type* result_type = nullptr;
         const Instruction* target_instruction = nullptr;
 
-        uint32_t sub_code = glsl::kErrorSubCodeSanitizerEmpty;
+        uint32_t sub_code = glsl::kErrorSubCode_Sanitizer_Empty;
         uint32_t glsl_opcode = 0;
 
         // There are cases where it is easier to just adjust the bad code than if/else wrap it
@@ -71,7 +71,7 @@ class SanitizerPass : public Pass {
     bool IsConstantZero(const Constant& constant) const;
 
     // Function IDs to link in
-    uint32_t link_function_ids_[glsl::kErrorSubCodeSanitizerCount];
+    uint32_t link_function_ids_[glsl::kErrorSubCode_Sanitizer_Count];
 
     uint32_t glsl_std450_id_ = 0;  // GLSL.std.450
 };

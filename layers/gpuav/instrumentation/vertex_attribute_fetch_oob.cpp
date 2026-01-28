@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,11 +165,11 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
         auto local_error_info = std::make_shared<ErrorInfo>();
         *local_error_info = *error_info;
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [local_error_info = std::move(local_error_info)](
-                                                                                  Validator &gpuav, const Location &loc,
-                                                                                  const uint32_t *error_record,
-                                                                                  std::string &out_error_msg,
-                                                                                  std::string &out_vuid_msg) {
-            if (GetErrorGroup(error_record) != glsl::kErrorGroupInstIndexedDraw) {
+                                                                                  Validator& gpuav, const Location& loc,
+                                                                                  const uint32_t* error_record,
+                                                                                  std::string& out_error_msg,
+                                                                                  std::string& out_vuid_msg) {
+            if (GetErrorGroup(error_record) != glsl::kErrorGroup_InstIndexedDraw) {
                 return false;
             }
 
@@ -248,11 +248,11 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
                 out_error_msg += "Vertex index ";
-                const uint32_t oob_vertex_index = error_record[glsl::kHeaderStageInfoOffset_0];
+                const uint32_t oob_vertex_index = error_record[glsl::kHeader_StageInfoOffset_0];
                 out_error_msg += std::to_string(oob_vertex_index);
             } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
                 out_error_msg += "Instance index ";
-                const uint32_t oob_instance_index = error_record[glsl::kHeaderStageInfoOffset_1];
+                const uint32_t oob_instance_index = error_record[glsl::kHeader_StageInfoOffset_1];
                 out_error_msg += std::to_string(oob_instance_index);
                 const uint32_t instance_rate_divisor =
                     local_error_info->vertex_attribute_fetch_limit_instance_input_rate->instance_rate_divisor;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             using namespace glsl;
 
             bool error_found = false;
-            if (GetErrorGroup(error_record) != kErrorGroupInstDescriptorIndexingOOB) {
+            if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorIndexingOOB) {
                 return error_found;
             }
             error_found = true;
@@ -152,25 +152,25 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                 desc_set_bindings.descriptor_set_binding_commands[descriptor_binding_index].bound_descriptor_sets;
 
             // Currently we only encode the descriptor index here and save the binding in a parameter slot
-            // The issue becomes if the user has kErrorSubCodeDescriptorIndexingBounds then we can't back track to the exact binding
-            // because they have gone over it
-            const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
-            const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
-            const uint32_t descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
-            const uint32_t binding_num = error_record[kInstDescriptorIndexingParamOffset_1];
+            // The issue becomes if the user has kErrorSubCode_DescriptorIndexing_Bounds then we can't back track to the exact
+            // binding because they have gone over it
+            const uint32_t encoded_set_index = error_record[kInst_LogError_ParameterOffset_0];
+            const uint32_t set_num = encoded_set_index >> kInst_DescriptorIndexing_SetShift;
+            const uint32_t descriptor_index = encoded_set_index & kInst_DescriptorIndexing_IndexMask;
+            const uint32_t binding_num = error_record[kInst_LogError_ParameterOffset_2];
 
-            const uint32_t array_length = error_record[kInstDescriptorIndexingParamOffset_0];
+            const uint32_t array_length = error_record[kInst_LogError_ParameterOffset_1];
 
             const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
-                case kErrorSubCodeDescriptorIndexingBounds: {
+                case kErrorSubCode_DescriptorIndexing_Bounds: {
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
                          << " used to index descriptor array of length " << array_length << ".";
                     out_vuid_msg = vuid.descriptor_index_oob_10068;
                     error_found = true;
                 } break;
 
-                case kErrorSubCodeDescriptorIndexingUninitialized: {
+                case kErrorSubCode_DescriptorIndexing_Uninitialized: {
                     const auto& dsl = descriptor_sets[set_num]->Layout();
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << descriptor_index
                          << " is uninitialized.";
@@ -194,7 +194,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     error_found = true;
                 } break;
 
-                case kErrorSubCodeDescriptorIndexingDestroyed: {
+                case kErrorSubCode_DescriptorIndexing_Destroyed: {
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << descriptor_index
                          << " references a resource that was destroyed.";
 
@@ -233,7 +233,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                                                                                   std::string& out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            if (GetErrorGroup(error_record) != kErrorGroupInstDescriptorClass) {
+            if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorClass) {
                 return error_found;
             }
             error_found = true;
@@ -248,9 +248,9 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             const auto& descriptor_sets =
                 desc_set_bindings.descriptor_set_binding_commands[descriptor_binding_index].bound_descriptor_sets;
 
-            const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
-            const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
-            const uint32_t global_descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
+            const uint32_t encoded_set_index = error_record[kInst_LogError_ParameterOffset_0];
+            const uint32_t set_num = encoded_set_index >> kInst_DescriptorIndexing_SetShift;
+            const uint32_t global_descriptor_index = encoded_set_index & kInst_DescriptorIndexing_IndexMask;
 
             const auto descriptor_set_state = descriptor_sets[set_num];
             auto [binding_num, desc_index] = descriptor_set_state->GetBindingAndIndex(global_descriptor_index);
@@ -261,8 +261,8 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
 
             const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
-                case kErrorSubCodeDescriptorClassGeneralBufferBounds:
-                case kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds: {
+                case kErrorSubCode_DescriptorClass_GeneralBufferBounds:
+                case kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds: {
                     if (binding_state->descriptor_class != vvl::DescriptorClass::GeneralBuffer) {
                         assert(false);
                         return false;
@@ -270,8 +270,8 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     const vvl::Buffer* buffer_state =
                         static_cast<const vvl::BufferBinding*>(binding_state)->descriptors[desc_index].GetBufferState();
                     if (buffer_state) {
-                        const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
-                        const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
+                        const uint32_t byte_offset = error_record[kInst_LogError_ParameterOffset_1];
+                        const uint32_t resource_size = error_record[kInst_LogError_ParameterOffset_2];
                         strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle())
                              << ") size is " << buffer_state->create_info.size << " bytes, " << resource_size
                              << " bytes were bound, and the highest out of bounds access was at [" << byte_offset << "] bytes";
@@ -281,7 +281,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                                 "for "
                                 "this descriptor. ";
                     }
-                    if (error_sub_code == kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds) {
+                    if (error_sub_code == kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds) {
                         strm << "\nFor VK_KHR_cooperative_matrix this is invalid unless cooperativeMatrixRobustBufferAccess is "
                                 "enabled.";
                     }
@@ -294,7 +294,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     }
                 } break;
 
-                case kErrorSubCodeDescriptorClassTexelBufferBounds: {
+                case kErrorSubCode_DescriptorClass_TexelBufferBounds: {
                     if (binding_state->descriptor_class != vvl::DescriptorClass::TexelBuffer) {
                         assert(false);
                         return false;
@@ -303,8 +303,8 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     const vvl::BufferView* buffer_view_state =
                         static_cast<const vvl::TexelBinding*>(binding_state)->descriptors[desc_index].GetBufferViewState();
                     if (buffer_view_state) {
-                        const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
-                        const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
+                        const uint32_t byte_offset = error_record[kInst_LogError_ParameterOffset_1];
+                        const uint32_t resource_size = error_record[kInst_LogError_ParameterOffset_2];
 
                         strm << " access out of bounds. The descriptor texel buffer ("
                              << gpuav.FormatHandle(buffer_view_state->Handle()) << ") size is " << resource_size
