@@ -3546,7 +3546,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             if (!(enabled_features.nullDescriptor && as_address == 0)) {
                 if (auto as_array = GetAccelerationStructuresByAddress(as_address); as_array.empty()) {
                     std::stringstream ss;
-                    ss << "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but accelerationStructure (0x%" << std::hex
+                    ss << "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but accelerationStructure (0x" << std::hex
                        << as_address
                        << ") is not an address obtained from a currently existing VkAccelerationStructureKHR after a call to "
                           "vkGetAccelerationStructureDeviceAddressKHR.";
@@ -5480,7 +5480,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 // TODO - not sure what this covers that VUID-VkResourceDescriptorInfoEXT-type-11484 doesn't
                 if (auto as_array = GetAccelerationStructuresByAddress(address_range.address); as_array.empty()) {
                     std::stringstream ss;
-                    ss << "is 0x%" << std::hex << address_range.address
+                    ss << "is 0x" << std::hex << address_range.address
                        << " which is not an address obtained from a currently existing VkAccelerationStructureKHR after a call to "
                           "vkGetAccelerationStructureDeviceAddressKHR.";
 
