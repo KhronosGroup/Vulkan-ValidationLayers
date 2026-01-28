@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -3461,9 +3461,7 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     if (!ds_supports_copy_on_transfer_queue && !is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-11779");
     }
-    if (!(depth_format_properties2.formatProperties.optimalTilingFeatures &
-          VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR) &&
-        is_compute_queue) {
+    if (!ds_supports_copy_on_compute_queue && is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-11778");
     }
     vk::CmdCopyImageToBuffer(command_buffer, src_ds_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1u, &buffer_image_copy);
@@ -3477,10 +3475,10 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     image_copy.extent = extent;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-10218");
-    if (!ds_supports_copy_on_compute_queue && !is_compute_queue) {
+    if (!ds_supports_copy_on_transfer_queue && !is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11787");
     }
-    if (is_compute_queue) {
+    if (!ds_supports_copy_on_compute_queue && is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11786");
     }
     vk::CmdCopyImage(command_buffer, src_ds_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_color_image,
@@ -3494,7 +3492,7 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     if (!ds_supports_copy_on_compute_queue && !is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11783");
     }
-    if (is_compute_queue) {
+    if (!ds_supports_copy_on_compute_queue && is_compute_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11782");
     }
     vk::CmdCopyImage(command_buffer, src_color_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_ds_image,
@@ -4985,12 +4983,27 @@ TEST_F(NegativeCopyBufferImage, CopyDepthOnComputeQueue) {
     if (!compute_without_graphics_queue_i.has_value()) {
         GTEST_SKIP() << "Need a queue that supports compute but not graphics";
     }
+    std::vector<VkFormat> depth_formats = {VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32,
+                                           VK_FORMAT_D32_SFLOAT,        VK_FORMAT_D16_UNORM_S8_UINT,
+                                           VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+    for (const auto& format : depth_formats) {
+        if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR) &&
+            FormatIsSupported(gpu_, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+            depth_format = format;
+            break;
+        }
+    }
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Suitable format not found";
+    }
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.format = depth_format;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
@@ -5034,16 +5047,33 @@ TEST_F(NegativeCopyBufferImage, CopyDepthToBufferOnTransferQueue) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    auto compute_without_graphics_queue_i = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT);
+    auto compute_without_graphics_queue_i =
+        m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
     if (!compute_without_graphics_queue_i.has_value()) {
         GTEST_SKIP() << "Need a queue that supports compute but not graphics";
     }
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
+    std::vector<VkFormat> depth_formats = {VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32,
+                                           VK_FORMAT_D32_SFLOAT,        VK_FORMAT_D16_UNORM_S8_UINT,
+                                           VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+    for (const auto& format : depth_formats) {
+        if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR) &&
+            FormatIsSupported(gpu_, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+            depth_format = format;
+            break;
+        }
+    }
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Suitable format not found";
+    }
+
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.format = depth_format;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
@@ -5091,18 +5121,33 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToDepthOnComputeQueue) {
     if (!compute_without_graphics_queue_i.has_value()) {
         GTEST_SKIP() << "Need a queue that supports compute but not graphics";
     }
+    std::vector<VkFormat> depth_formats = {VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32,
+                                           VK_FORMAT_D32_SFLOAT,        VK_FORMAT_D16_UNORM_S8_UINT,
+                                           VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+    for (const auto& format : depth_formats) {
+        if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR) &&
+            FormatIsSupported(gpu_, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+            depth_format = format;
+            break;
+        }
+    }
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Suitable format not found";
+    }
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.format = depth_format;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.flags = 0;
 
@@ -5144,16 +5189,31 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToDepthOnTransferQueue) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    auto compute_without_graphics_queue_i = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (!compute_without_graphics_queue_i.has_value()) {
-        GTEST_SKIP() << "Need a queue that supports compute but not graphics";
+    auto transfer_queue = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (!transfer_queue.has_value()) {
+        GTEST_SKIP() << "Need a queue that supports transfer but not graphics or compute";
     }
-    vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
+    std::vector<VkFormat> depth_formats = {VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32,
+                                           VK_FORMAT_D32_SFLOAT,        VK_FORMAT_D16_UNORM_S8_UINT,
+                                           VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
+    for (const auto& format : depth_formats) {
+        if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR) &&
+            FormatIsSupported(gpu_, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+            depth_format = format;
+            break;
+        }
+    }
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Suitable format not found";
+    }
+    vkt::CommandPool pool(*m_device, *transfer_queue);
     vkt::CommandBuffer cb(*m_device, pool);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.format = depth_format;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
