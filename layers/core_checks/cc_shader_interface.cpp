@@ -379,10 +379,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                         const LogObjectList objlist(producer.handle(), consumer.handle());
                         std::ostringstream ss;
                         ss << "(SPIR-V Interface) at Location " << location << " Component " << component
-                           << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not")
-                           << " decorated with PerPrimitiveEXT while the Fragment stage is "
+                           << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not ")
+                           << "decorated with PerPrimitiveEXT while the Fragment stage is "
                            << (input_var->is_per_primitive_ext ? "" : "not") << ".";
-                        if (consumer.static_data_.source_language == spv::SourceLanguageHLSL) {
+                        if (consumer.static_data_.source_language == spv::SourceLanguageGLSL) {
+                            ss << "\nMake sure to use the 'perprimitiveEXT' attribute on your interface variables. The '#extension "
+                                  "GL_EXT_mesh_shader' is also required, even in the fragment shader.";
+                        } else if (consumer.static_data_.source_language == spv::SourceLanguageHLSL) {
                             ss << "\nThis currently is a known limitation in HLSL, but has a workaroud, see "
                                   "https://github.com/microsoft/DirectXShaderCompiler/issues/6862";
                         } else if (consumer.static_data_.source_language == spv::SourceLanguageSlang) {
