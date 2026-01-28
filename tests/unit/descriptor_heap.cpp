@@ -465,6 +465,8 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterSize) {
 
 TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer");
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const struct {
@@ -483,7 +485,10 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
         {"VUID-VkResourceDescriptorInfoEXT-None-11213",
          std::vector<VkDescriptorType>{// checked in separate test VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
                                        // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
-                                       VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER}}};
+                                       VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER}},
+        {"VUID-VkResourceDescriptorInfoEXT-None-11457",
+         std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_TENSOR_ARM}},
+    };
     for (const auto& s : subtests) {
         for (auto type : s.types) {
             const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
