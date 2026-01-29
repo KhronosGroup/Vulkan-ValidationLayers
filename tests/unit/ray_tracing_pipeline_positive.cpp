@@ -672,3 +672,77 @@ TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptor) {
 
     vk::UpdateDescriptorSets(device(), 1, &as_descriptor_write, 0, nullptr);
 }
+
+TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptorWithShader) {
+    TEST_DESCRIPTION(
+        "Test creating ray tracing pipeline with shader using VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::clusterAccelerationStructure);
+    AddRequiredFeature(vkt::Feature::partitionedAccelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    const char* rgen_src = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : enable
+        #extension GL_NV_cluster_acceleration_structure : enable
+        #extension GL_EXT_ray_query : enable
+        layout(set = 0, binding = 1) uniform accelerationStructureEXT topLevelAS;
+        layout(set = 0, binding = 0, std430) buffer OutputBuffer {
+            uint data[];
+        } outputBuffer;
+
+        layout(location = 0) rayPayloadEXT vec3 hitValue;
+
+        void main() {
+            vec3 origin = vec3(0.0, 0.0, 0.0);
+            vec3 direction = vec3(0.0, 0.0, 1.0);
+            float tMin = 0.001;
+            float tMax = 1000.0;
+
+            traceRayEXT(topLevelAS, 0, 0xFF, 0, 0, 0, origin, tMin, direction, tMax, 0);
+            rayQueryEXT rayQuery;
+            rayQueryInitializeEXT(rayQuery, topLevelAS, gl_RayFlagsNoneEXT, 0xFF, origin, tMin, direction, tMax);
+            int clusterId = rayQueryGetIntersectionClusterIdNV(rayQuery, true);
+            outputBuffer.data[0] = clusterId >= 0 ? 1 : 0;
+        }
+    )glsl";
+
+    VkShaderObj rgen_shader(*m_device, rgen_src, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
+                    {1, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader.handle();
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+    pipeline_ci.stageCount = 1;
+    pipeline_ci.pStages = &stage_create_info;
+    pipeline_ci.groupCount = 1;
+    pipeline_ci.pGroups = &group_create_info;
+    pipeline_ci.layout = pipeline_layout.handle();
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+
+    vk::DestroyPipeline(*m_device, pipeline, nullptr);
+}
