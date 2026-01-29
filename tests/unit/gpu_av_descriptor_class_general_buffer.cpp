@@ -25,7 +25,7 @@ class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGen
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidationLimit) {
     TEST_DESCRIPTION(
-        "Within a single command buffer, add a number of draws that goes above the cst::indices_count GPU-AV limit. "
+        "Within a single command buffer, add a number of draws that goes above the GpuAVSettings::indices_count GPU-AV limit. "
         "Expect a warning, and no self validation error due to GPU-AV stopping part of its CPU work.");
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -107,7 +107,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidati
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidationLimit2) {
     TEST_DESCRIPTION(
-        "Within a single command buffer, add a number of draws that goes above the cst::indices_count GPU-AV limit. "
+        "Within a single command buffer, add a number of draws that goes above the GpuAVSettings::indices_count GPU-AV limit. "
         "Expect an error.");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);

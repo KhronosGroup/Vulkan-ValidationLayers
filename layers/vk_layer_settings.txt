@@ -115,6 +115,11 @@ khronos_validation.gpuav_indirect_draws_buffers = true
 # Validate buffers containing ray tracing parameters used in indirect ray tracing commands
 khronos_validation.gpuav_indirect_trace_rays_buffers = true
 
+# Maximum Indices
+# =====================
+# Number of indices held in the buffer used to index commands and validation resources.
+khronos_validation.gpuav_max_indices_count = 8192
+
 # Mesh Shading SPIR-V instructions
 # =====================
 # Enable shader instrumentation on VK_EXT_mesh_shader

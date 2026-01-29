@@ -64,6 +64,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
+        else if (strcmp(VK_LAYER_GPUAV_MAX_INDICES_COUNT, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_MESH_SHADING, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_SAFE_MODE, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }

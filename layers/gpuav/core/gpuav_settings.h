@@ -45,6 +45,9 @@ struct GpuAVSettings {
     bool debug_dump_instrumented_shaders = false;
     uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
+    // Number of indices held in the buffer used to index commands and validation resources
+    // 8k is the default, but can be raised if app sets it higher
+    uint32_t max_indices_count = 1u << 13;
 
     bool descriptor_buffer_override = false;
 
@@ -64,6 +67,7 @@ struct GpuAVSettings {
 
     bool IsShaderInstrumentationEnabled() const;
     bool IsSpirvModified() const;
+    uint32_t GetInvalidIndexCommand() const;
 
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions();
