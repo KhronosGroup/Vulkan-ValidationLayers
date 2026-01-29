@@ -822,6 +822,25 @@
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_max_indices_count",
+                                            "label": "Maximum Indices",
+                                            "description": "Number of indices held in the buffer used to index commands and validation resources (Max number of draws/dispatches in a command buffer that can be tracked).",
+                                            "type": "INT",
+                                            "view": "DEBUG",
+                                            "default": 8192,
+                                            "range": {
+                                                "min": 0,
+                                                "max": 65535
+                                            },
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            }
                                         }
                                     ]
                                 },

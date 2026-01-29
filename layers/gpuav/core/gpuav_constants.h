@@ -23,12 +23,6 @@ namespace gpuav {
 // constant
 namespace cst {
 
-// Number of indices held in the buffer used to index commands and validation resources
-inline constexpr uint32_t indices_count = 1u << 13;  // 8192
-// If we hit our limit, we will use this to signal to the app what they are seeing is likely garbage.
-// This is required because we still need to bind our descriptors regardless.
-inline constexpr uint32_t invalid_index_command = indices_count - 1;
-
 // TODO - Need to develop a proper way to gather ALL binding between shader instrumentation and command validation
 // For now we get enough for DebugPrintf
 inline constexpr uint32_t total_internal_descriptors = 64;

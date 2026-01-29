@@ -113,7 +113,7 @@ const int kInstructionId_Mask = 0x7FFFFFF;
 // This dword is split up as
 // | 31 ..... 16 | 15 ................. 0 |
 // | Error Group | Instrumented Shader Id |
-// Note we have a limit (cst::indices_count) but for simplicity, divide in half until find need to adjust.
+// Note we have a limit (GpuAVSettings::indices_count) but for simplicity, divide in half until find need to adjust.
 const int kActionId_Shift = 16;
 const int kActionId_Mask = 0xFFFF << kActionId_Shift;  // 64k slot
 const int kErrorLoggerId_Mask = 0xFFFF;
