@@ -2956,14 +2956,10 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
-    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
-    color_blend_state_create_info.attachmentCount = 1;
-    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
-
     CreatePipelineHelper lib(*this);
-    lib.cb_ci_ = color_blend_state_create_info;
-    lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib.CreateGraphicsPipeline();
 
@@ -2975,11 +2971,12 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentLibInfo(&fs_stage.stage_ci, &library_create_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.ds_ci_ = ds_ci;
 
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895");  // spec bug
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -3023,6 +3020,13 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
+    CreatePipelineHelper lib1(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    lib1.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    lib1.gp_ci_.renderPass = VK_NULL_HANDLE;
+    lib1.CreateGraphicsPipeline();
+
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -3033,12 +3037,6 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
     color_blend_state_create_info.attachmentCount = 1;
     color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
-
-    CreatePipelineHelper lib1(*this);
-    lib1.cb_ci_ = color_blend_state_create_info;
-    lib1.InitFragmentOutputLibInfo(&pipeline_rendering_info);
-    lib1.gp_ci_.renderPass = VK_NULL_HANDLE;
-    lib1.CreateGraphicsPipeline();
 
     pipeline_rendering_info.viewMask = 0x1;
 
