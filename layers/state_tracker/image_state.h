@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -317,6 +317,12 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
 
     static VkImageSubresourceRange NormalizeImageViewSubresourceRange(const Image &image_state,
                                                                       const VkImageViewCreateInfo &image_view_ci);
+
+    // The range that defines indexing space of all possible image layouts for this image view.
+    // It is used by the RangeGenerator and the image layout maps.
+    // In the general case, it is different than the number of subresources (described by
+    // normalized_subresource_range), so when dealing with image layouts this function should
+    // always be used instead
     VkImageSubresourceRange GetRangeGeneratorRange(const DeviceExtensions &extensions) const;
 
     std::string DescribeImageUsage(const Logger& logger) const;

@@ -1798,11 +1798,10 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const V
     }
 }
 
-// Set image layout for all slices of an image view
 void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const vvl::Image *image_state = view_state.image_state.get();
 
-    VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
+    VkImageSubresourceRange sub_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
 
     if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) && layoutStencil != kInvalidLayout) {
         sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
