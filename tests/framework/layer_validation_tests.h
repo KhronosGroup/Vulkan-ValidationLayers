@@ -470,6 +470,35 @@ class DataGraphTest : public VkLayerTest {
     static const VkTensorDescriptionARM defaultConstantTensorDesc;
 };
 
+class DataGraphModelTest : public VkLayerTest {
+  public:
+    struct DGModelTensorInfo {
+        std::shared_ptr<vkt::Tensor> tensor_arm = nullptr;
+        std::shared_ptr<vkt::TensorView> tensor_view_arm = nullptr;
+    };
+    struct DGModelPipelineLayoutInfo {
+        std::shared_ptr<vkt::DescriptorSetLayout> descriptor_set_layout = nullptr;
+        std::shared_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
+    };
+
+    static constexpr uint32_t kInputBindingPoint = 0;
+    static constexpr uint32_t kOutputBindingPoint = 1;
+
+    void InitBasicDataGraphModel();
+    static uint32_t FindMemoryType(const VkPhysicalDevice& physical_device, uint32_t type_bits, VkMemoryPropertyFlags property_flags);
+    static DGModelTensorInfo BuildTensor(const VkLayerTest& layer_test, const VkTensorDescriptionARM& tensor_description);
+    static DGModelPipelineLayoutInfo BuildGeneralPipelineLayout(const VkLayerTest& layer_test);
+    static void TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test, const vkt::PipelineCache& pipeline_cache);
+    static void TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test,
+                                                  const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& builtin_model_ci);
+    static std::shared_ptr<vkt::PipelineCache> BuildValidPipelineCache(const VkLayerTest& layer_test);
+    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidHeaderSize(const VkLayerTest& layer_test);
+    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidGreaterHeaderSize(const VkLayerTest& layer_test);
+    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithUnsupportedHeaderVersion(const VkLayerTest& layer_test);
+    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidHeaderVersion(const VkLayerTest& layer_test);
+    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidCacheType(const VkLayerTest& layer_test);
+};
+
 class WsiTest : public VkLayerTest {
   protected:
     // Find physical device group that contains physical device selected by the test framework

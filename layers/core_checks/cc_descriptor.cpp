@@ -3712,6 +3712,23 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    ASSERT_AND_RETURN_SKIP(pCreateInfo);
+
+    if (const auto* processing_engine_info =
+        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
+        const Location processing_engine_ci_loc = error_obj.location.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+        skip |= ValidateDataGraphProcessingEngineForDescriptorPool(*processing_engine_info, processing_engine_ci_loc);
+        skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     VkDescriptorPoolResetFlags flags, const ErrorObject &error_obj) const {
     // Make sure sets being destroyed are not currently in-use

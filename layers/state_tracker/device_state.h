@@ -69,6 +69,9 @@ class PhysicalDevice : public StateObject {
     bool WasUncalled(vvl::Func func) const;
     bool WasCalled(vvl::Func func) const;
 
+    // Query VkQueueFamilyDataGraphPropertiesARM via queue family index
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> GetQueueFamilyDataGraphPropsARM(uint32_t queue_family_index) const;
+
   private:
     // Multiple threads can be querying GetPhysicalDevice type functions
     // We, as VVL, use this time to update things on the first query, so we need to make sure things are thread safe
