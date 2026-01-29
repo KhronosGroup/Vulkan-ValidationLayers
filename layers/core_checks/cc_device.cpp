@@ -58,6 +58,254 @@ bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location
     return skip;
 }
 
+bool CoreChecks::ValidateDataGraphProcessingEngineForDescriptorPool(const VkDataGraphProcessingEngineCreateInfoARM& processing_engine_info,
+                                                                    const Location& loc) const {
+    bool skip = false;
+
+    ASSERT_AND_RETURN_SKIP(processing_engine_info.pProcessingEngines);
+
+    std::vector<uint32_t> data_graph_queue_families{};
+    for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) {
+            data_graph_queue_families.push_back(static_cast<uint32_t>(family_index));
+        }
+    }
+
+    using EngineKey = std::pair<uint32_t, uint32_t>;
+    vvl::unordered_set<EngineKey> retrieved_engine_set{};
+    for (size_t index = 0; index < data_graph_queue_families.size(); ++index) {
+        const auto data_graph_properties_arms =
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(data_graph_queue_families[index]);
+
+        for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
+            const auto& retrieved_engine = data_graph_properties_arms[prop_index].engine;
+            retrieved_engine_set.insert(EngineKey{ static_cast<uint32_t>(retrieved_engine.type),
+                                                   static_cast<uint32_t>(retrieved_engine.isForeign) });
+        }
+    }
+
+    for (uint32_t engine_index = 0; engine_index < processing_engine_info.processingEngineCount; ++engine_index) {
+        const auto& processing_engine = processing_engine_info.pProcessingEngines[engine_index];
+        const EngineKey input_engine_key{
+            static_cast<uint32_t>(processing_engine.type), static_cast<uint32_t>(processing_engine.isForeign)
+        };
+
+        if (!retrieved_engine_set.contains(input_engine_key)) {
+            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pNext-09946",
+                              device,
+                             loc,
+                             "for VkDataGraphProcessingEngineCreateInfoARM in the pNext chain, "
+                             "pProcessingEngines[%" PRIu32 "]::type = %s, pProcessingEngines[%" PRIu32 "]::isForeign = %u, "
+                             "failed to find any identical VkQueueFamilyDataGraphPropertiesARM::engine element from "
+                             "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM.",
+                             engine_index,
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type),
+                             engine_index,
+                             processing_engine.isForeign);
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDataGraphProcessingEngineCreateInfoARM(const VkDataGraphProcessingEngineCreateInfoARM& processing_engine_info,
+                                                                const Location& loc) const {
+    using EngineKey = std::pair<uint32_t, uint32_t>;
+    auto is_qcom_dg_processing_engine = [] (VkPhysicalDeviceDataGraphProcessingEngineTypeARM engine_type) {
+        switch (engine_type) {
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM:
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM:
+                return true;
+            default:
+                return false;
+        }
+    };
+    auto is_valid_dg_processing_engine = [] (VkPhysicalDeviceDataGraphProcessingEngineTypeARM engine_type) {
+        switch (engine_type) {
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM:
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM:
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM:
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    bool skip = false;
+    vvl::unordered_set<EngineKey> unique_engine_set{};
+
+    if (processing_engine_info.processingEngineCount > 0) {
+        unique_engine_set.reserve(processing_engine_info.processingEngineCount);
+    }
+
+    if (!enabled_features.dataGraph) {
+        skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-dataGraph-09953",
+                         device,
+                         loc,
+                         "required to enable VkPhysicalDeviceDataGraphFeaturesARM::dataGraph feature.");
+    }
+
+    for (uint32_t engine_index = 0; engine_index < processing_engine_info.processingEngineCount; ++engine_index) {
+        const auto& processing_engine = processing_engine_info.pProcessingEngines[engine_index];
+        const auto is_qcom_engine_type = is_qcom_dg_processing_engine(processing_engine.type);
+        const EngineKey input_engine_key{ static_cast<uint32_t>(processing_engine.type),
+                                          static_cast<uint32_t>(processing_engine.isForeign) };
+
+        if (!unique_engine_set.insert(input_engine_key).second) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-09918",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element is duplicate, VkDataGraphProcessingEngineCreateInfoARM::pProcessingEngines "
+                             "contains two or more identical VkPhysicalDeviceDataGraphProcessingEngineARM structures.");
+        }
+
+        if (!is_valid_dg_processing_engine(processing_engine.type)) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-09956",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element has a type of %s, which is invalid.",
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type));
+        }
+
+        if ((is_qcom_engine_type) && (processing_engine_info.processingEngineCount != 1) && (processing_engine.isForeign)) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843",
+                              device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element with isForeign = %u and type = %s; "
+                             "while actual VkDataGraphProcessingEngineCreateInfoARM::processingEngineCount == %" PRIu32 ", "
+                             "which must be equal to 1 according to Vulkan Spec.",
+                             static_cast<uint32_t>(processing_engine.isForeign),
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type),
+                             processing_engine_info.processingEngineCount);
+        }
+
+        if ((is_qcom_engine_type) && (!enabled_features.dataGraphModel)) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element has a type of %s, while VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel "
+                             "feature in the VkDeviceCreateInfo pNext chain is disabled.",
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type));
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& dg_model_ci,
+                                                                     const Location& loc, const void* next_struct) const {
+    bool skip = false;
+    bool has_identical_paired_op_engine = false;
+    const auto* processing_engine_info = vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(next_struct);
+
+    std::vector<uint32_t> data_graph_queue_families{};
+    for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) {
+            data_graph_queue_families.push_back(static_cast<uint32_t>(family_index));
+        }
+    }
+
+    for (size_t index = 0; index < data_graph_queue_families.size(); ++index) {
+        const auto data_graph_properties_arms =
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(data_graph_queue_families[index]);
+
+        for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
+            const auto& retrieved_operation = data_graph_properties_arms[prop_index].operation;
+            const auto& retrieved_engine = data_graph_properties_arms[prop_index].engine;
+
+            ASSERT_AND_CONTINUE(dg_model_ci.pOperation);
+
+            // Check whether the operations are identical or not
+            if (dg_model_ci.pOperation->version != retrieved_operation.version) {
+                continue;
+            }
+            if (dg_model_ci.pOperation->operationType != retrieved_operation.operationType) {
+                continue;
+            }
+            if (strcmp(dg_model_ci.pOperation->name, retrieved_operation.name) != 0) {
+                continue;
+            }
+
+            ASSERT_AND_CONTINUE(processing_engine_info);
+
+            // Check whether the engines are identical or not
+            for (uint32_t engine_index = 0; engine_index < processing_engine_info->processingEngineCount; ++engine_index) {
+                const auto& processing_engine = processing_engine_info->pProcessingEngines[engine_index];
+                if ((processing_engine.isForeign == retrieved_engine.isForeign) &&
+                    (processing_engine.type == retrieved_engine.type)) {
+                    has_identical_paired_op_engine = true;
+                }
+            }
+        }
+    }
+
+    if (!has_identical_paired_op_engine) {
+        skip |= LogError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842",
+                         device,
+                         loc.dot(Field::pOperation),
+                         "failed to find any identical operation in all VkQueueFamilyDataGraphPropertiesARM::operation "
+                         "elements retrieved from vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM with the physicalDevice that "
+                         "was used to create device, or the paired VkQueueFamilyDataGraphPropertiesARM::engine isn't identical "
+                         "to any element of VkDataGraphProcessingEngineCreateInfoARM::pProcessingEngines in the pNext chain.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDataGraphQueuePropsForCommandPool(uint32_t queue_family, const Location& loc,
+                                                           const char* vuid, const void* next_struct) const {
+    bool skip = false;
+
+    if (queue_family >= physical_device_state->queue_family_known_count) {
+        return skip;
+    }
+
+    const auto requested_queue_family_props = physical_device_state->queue_family_properties[queue_family];
+
+    if (((requested_queue_family_props.queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) &&
+        (vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(next_struct) == nullptr)) {
+        return skip;
+    }
+
+    const auto data_graph_properties_arms = physical_device_state->GetQueueFamilyDataGraphPropsARM(queue_family);
+    for (size_t index = 0; index < data_graph_properties_arms.size(); ++index) {
+        const auto data_graph_engine_type = data_graph_properties_arms[index].engine.type;
+
+        if (data_graph_engine_type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM) {
+            continue;
+        }
+
+        const auto *data_graph_processing_engine_info =
+                vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(next_struct);
+        if (data_graph_processing_engine_info) {
+            for (uint32_t engine_index = 0; engine_index < data_graph_processing_engine_info->processingEngineCount;
+                 ++engine_index) {
+                const auto& processing_engine = data_graph_processing_engine_info->pProcessingEngines[engine_index];
+
+                if (!processing_engine.isForeign) {
+                    skip |= LogError(vuid, device, loc.dot(Field::pProcessingEngines, engine_index),
+                                     "element with isForeign = VK_FALSE in the pNext chain, "
+                                     "but queueFamilyIndex (%" PRIu32 ") enumerates an engine with %s type, "
+                                     "Vulkan Spec says VkDataGraphProcessingEngineCreateInfoARM with "
+                                     "VkPhysicalDeviceDataGraphProcessingEngineARM::isForeign must set to VK_TRUE "
+                                     "for all elements of pProcessingEngines ",
+                                     queue_family,
+                                     string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
+                }
+            }
+        } else {
+            skip |= LogError(vuid, device, loc.dot(Field::pProcessingEngines),
+                             "queueFamilyIndex (%" PRIu32 ") enumerates an engine with %s type, "
+                             "but VkDataGraphProcessingEngineCreateInfoARM structure isn't included in the pNext chain with "
+                             "VkPhysicalDeviceDataGraphProcessingEngineARM::isForeign set to VK_TRUE.",
+                             queue_family,
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
+        }
+    }
+
+    return skip;
+}
+
 // Validate the specified queue families against the families supported by the physical device that owns this device
 bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families,
                                                      const Location &loc, const char *vuid) const {
@@ -178,18 +426,41 @@ bool core::Instance::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_stat
     return skip;
 }
 
-bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, uint32_t info_count,
-                                                    const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
+bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, const VkDeviceCreateInfo* pCreateInfo,
+                                                    const Location &loc) const {
+    auto is_qcom_dg_processing_engine = [] (VkPhysicalDeviceDataGraphProcessingEngineTypeARM engine_type) {
+        switch (engine_type) {
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM:
+            case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM:
+                return true;
+            default:
+                return false;
+        }
+    };
+
     bool skip = false;
+    bool need_data_graph_model_feature = false;
 
     vvl::unordered_map<uint32_t, std::pair<uint32_t, VkDeviceQueueCreateFlags>> queue_family_map;
     vvl::unordered_map<uint32_t, VkQueueGlobalPriority> global_priorities;
-
     std::vector<uint32_t> queue_counts;
-    for (uint32_t i = 0; i < info_count; ++i) {
+    const uint32_t queue_info_count = pCreateInfo->queueCreateInfoCount;
+    const VkDeviceQueueCreateInfo* queue_infos = pCreateInfo->pQueueCreateInfos;
+
+    // Check data graph model extension name
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        const char* extension_name = pCreateInfo->ppEnabledExtensionNames[i];
+
+        if (strcmp(extension_name, VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME) == 0) {
+            need_data_graph_model_feature = true;
+            break;
+        }
+    }
+
+    for (uint32_t i = 0; i < queue_info_count; ++i) {
         const Location info_loc = loc.dot(Field::pQueueCreateInfos, i);
-        const uint32_t requested_queue_family = infos[i].queueFamilyIndex;
-        const VkDeviceQueueCreateFlags flags = infos[i].flags;
+        const uint32_t requested_queue_family = queue_infos[i].queueFamilyIndex;
+        const VkDeviceQueueCreateFlags flags = queue_infos[i].flags;
 
         skip |= ValidateQueueFamilyIndex(pd_state, requested_queue_family, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
                                          info_loc.dot(Field::queueFamilyIndex));
@@ -212,21 +483,21 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
         }
 
         VkQueueGlobalPriority global_priority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;  // Implicit default value
-        const auto *global_priority_ci = vku::FindStructInPNextChain<VkDeviceQueueGlobalPriorityCreateInfo>(infos[i].pNext);
+        const auto *global_priority_ci = vku::FindStructInPNextChain<VkDeviceQueueGlobalPriorityCreateInfo>(queue_infos[i].pNext);
         if (global_priority_ci) {
             global_priority = global_priority_ci->globalPriority;
         }
-        const auto prev_global_priority = global_priorities.find(infos[i].queueFamilyIndex);
+        const auto prev_global_priority = global_priorities.find(requested_queue_family);
         if (prev_global_priority != global_priorities.end()) {
             if (prev_global_priority->second != global_priority) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654", pd_state.Handle(), info_loc,
                                  "Multiple queues are created with queueFamilyIndex %" PRIu32
                                  ", but one has global priority %s and another %s.",
-                                 infos[i].queueFamilyIndex, string_VkQueueGlobalPriority(prev_global_priority->second),
+                                 requested_queue_family, string_VkQueueGlobalPriority(prev_global_priority->second),
                                  string_VkQueueGlobalPriority(global_priority));
             }
         } else {
-            global_priorities.insert({infos[i].queueFamilyIndex, global_priority});
+            global_priorities.insert({requested_queue_family, global_priority});
         }
 
         const VkQueueFamilyProperties requested_queue_family_props = pd_state.queue_family_properties[requested_queue_family];
@@ -239,9 +510,45 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                              requested_queue_family, i);
         }
 
+        // Validate data graph model feature
+        if (((requested_queue_family_props.queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) && (need_data_graph_model_feature)) {
+            const auto data_graph_properties_arms = pd_state.GetQueueFamilyDataGraphPropsARM(requested_queue_family);
+            for (size_t index = 0; index < data_graph_properties_arms.size(); ++index) {
+                const auto data_graph_engine_type = data_graph_properties_arms[index].engine.type;
+                const char* conditional_ext_cmd = "";
+                bool enable_data_graph_model = false;
+
+                if (!is_qcom_dg_processing_engine(data_graph_engine_type)) {
+                    continue;
+                }
+
+                const auto* data_graph_model_features =
+                    vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphModelFeaturesQCOM>(pCreateInfo->pNext);
+                if (data_graph_model_features) {
+                    enable_data_graph_model = data_graph_model_features->dataGraphModel;
+                    if (!enable_data_graph_model) {
+                        conditional_ext_cmd = "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is VK_FALSE.";
+                    }
+                } else {
+                    conditional_ext_cmd = "VkPhysicalDeviceDataGraphModelFeaturesQCOM structure isn't included in "
+                                          "the pNext chain of VkDeviceCreateInfo with dataGraphModel set to VK_TRUE.";
+                }
+
+                if (!enable_data_graph_model) {
+                    skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831",
+                                     pd_state.Handle(),
+                                     info_loc.dot(Field::queueFamilyIndex),
+                                     "%" PRIu32 " enumerates an engine with %s type, but %s",
+                                     requested_queue_family,
+                                     string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type),
+                                     conditional_ext_cmd);
+                }
+            }
+        }
+
         // Verify that requested queue count of queue family is known to be valid at this point in time
         if (requested_queue_family < pd_state.queue_family_known_count) {
-            const auto requested_queue_count = infos[i].queueCount;
+            const auto requested_queue_count = queue_infos[i].queueCount;
             const bool queue_family_has_props = requested_queue_family < pd_state.queue_family_properties.size();
             // spec guarantees at least one queue for each queue family
             const uint32_t available_queue_count = queue_family_has_props ? requested_queue_family_props.queueCount : 1;
@@ -264,7 +571,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                 if (requested_queue_family >= queue_counts.size()) {
                     queue_counts.resize(requested_queue_family + 1);
                 }
-                queue_counts[requested_queue_family] += infos[i].queueCount;
+                queue_counts[requested_queue_family] += queue_infos[i].queueCount;
             }
         }
     }
@@ -300,8 +607,7 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
         return skip;
     }
 
-    skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
-                                           error_obj.location.dot(Field::pCreateInfo));
+    skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
@@ -612,6 +918,16 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
         skip |= LogError("VUID-VkCommandPoolCreateInfo-flags-02860", device, create_info_loc.dot(Field::flags),
                          "includes VK_COMMAND_POOL_CREATE_PROTECTED_BIT, but the protectedMemory feature was not enabled.");
     }
+
+    if (const auto* processing_engine_info =
+        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
+        const Location processing_engine_ci_loc = create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+        skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);
+    }
+
+    skip |= ValidateDataGraphQueuePropsForCommandPool(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
+                                                       "VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830",
+                                                      pCreateInfo->pNext);
 
     return skip;
 }

@@ -152,6 +152,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                             chassis::CreateDataGraphPipelinesARM& chassis_state) const {
     bool skip = ValidateDeviceQueueSupport(error_obj.location);
+    bool use_dg_pipeline_identifier = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const VkDataGraphPipelineCreateInfoARM& create_info = pCreateInfos[i];
@@ -164,6 +165,14 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
         const auto* dg_pipeline_identifier_ci =
             vku::FindStructInPNextChain<VkDataGraphPipelineIdentifierCreateInfoARM>(create_info.pNext);
         const auto* qcom_model_ci = vku::FindStructInPNextChain<VkDataGraphPipelineBuiltinModelCreateInfoQCOM>(create_info.pNext);
+
+        // Retrieve and validate data graph processing engine information
+        if (const auto* processing_engine_info =
+            vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext); processing_engine_info) {
+            const Location processing_engine_ci_loc = create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+            skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info,
+                                                                   processing_engine_ci_loc);
+        }
 
         // 1 and ONLY 1 of them MUST be present
         uint32_t defined_structs = (qcom_model_ci ? 1 : 0) + (dg_pipeline_identifier_ci ? 1 : 0) + (dg_shader_ci ? 1 : 0);
@@ -228,13 +237,20 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, *dg_shader_ci, dg_shader_ci_loc, *pipeline);
             skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *dg_shader_ci, *pipeline);
         } else if (dg_pipeline_identifier_ci) {
-            // TODO: add here validation for datagraph defined as cache object
+            use_dg_pipeline_identifier = true;
         } else if (qcom_model_ci) {
-            // TODO: add here validation for datagraph defined as QCOM model object
+            const Location built_in_model_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM);
+            skip |= ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(*qcom_model_ci, built_in_model_loc, create_info.pNext);
         }
 
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
+    }
+
+    // Defer validate VkPipelineCacheHeaderVersionDataGraphQCOM of VkPipelineCache
+    // TODO: may exist potential issues
+    if ((use_dg_pipeline_identifier) && (pipelineCache)) {
+        skip |= ValidatePipelineCacheHeaderVersionDataGraphQCOM(pipelineCache, error_obj.location.dot(Field::pipelineCache));
     }
 
     return skip;
