@@ -541,7 +541,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
             break;
         }
 
-        // VkWriteDescriptorSetPartitionedAccelerationStructureNV contains no VkObjects to validate
+        // PTLAS uses VkDeviceAddress values, not VkAccelerationStructureKHR handles - no objects to validate
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         // Inline has no objects, so nothing to validate
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:

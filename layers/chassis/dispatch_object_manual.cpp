@@ -1609,6 +1609,12 @@ void *BuildUnwrappedUpdateTemplateBuffer(Device *layer_data, uint64_t descriptor
                     template_entries.emplace_back(offset, kVulkanObjectTypeAccelerationStructureKHR, CastToUint64(wrapped_entry),
                                                   0);
                 } break;
+                case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV: {
+                    // PTLAS uses VkDeviceAddress directly, not an opaque handle - no unwrapping needed
+                    allocation_size = std::max(allocation_size, offset + sizeof(VkDeviceAddress));
+                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, CastToUint64(update_entry),
+                                                  sizeof(VkDeviceAddress));
+                } break;
                 default:
                     assert(false);
                     break;
@@ -2287,6 +2293,7 @@ void Device::GetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDe
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
             local_pDescriptorInfo.data.accelerationStructure = pDescriptorInfo->data.accelerationStructure;
             break;
         default:

@@ -384,13 +384,13 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
 
         // The OpType are alias, but the Descriptor Types are different
         case spv::OpTypeAccelerationStructureKHR:
-            // Only KHR or NV base accelleration structure is selected
+            // Only KHR or NV base acceleration structure is selected
             if (module_state.HasCapability(spv::CapabilityRayTracingNV)) {
                 out_data.descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
             } else {
                 out_data.descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
             }
-
+            // Additionally allow PTLAS if shader uses cluster acceleration structure features
             if (module_state.HasCapability(spv::CapabilityRayTracingClusterAccelerationStructureNV)) {
                 out_data.descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
             }

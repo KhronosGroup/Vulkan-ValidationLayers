@@ -1504,6 +1504,7 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
     inline_infos_nv.resize(create_info.descriptorUpdateEntryCount);
+    inline_infos_ptlas.resize(create_info.descriptorUpdateEntryCount);
     desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
@@ -1594,6 +1595,17 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
                     write_entry.descriptorCount = inline_info_nv->accelerationStructureCount;
                     break;
                 }
+                case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV: {
+                    VkWriteDescriptorSetPartitionedAccelerationStructureNV *inline_info_ptlas = &inline_infos_ptlas[i];
+                    inline_info_ptlas->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+                    inline_info_ptlas->pNext = nullptr;
+                    inline_info_ptlas->accelerationStructureCount = descriptor_update_entry.descriptorCount;
+                    inline_info_ptlas->pAccelerationStructures = reinterpret_cast<const VkDeviceAddress *>(update_entry);
+                    write_entry.pNext = inline_info_ptlas;
+                    // descriptorCount must match the accelerationStructureCount
+                    write_entry.descriptorCount = inline_info_ptlas->accelerationStructureCount;
+                    break;
+                }
                 default:
                     assert(false);
                     break;
@@ -1603,7 +1615,8 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
             // If acceleration structure, we only create a single VkWriteDescriptorSet and map the actually AS into
             // VkWriteDescriptorSetAccelerationStructureKHR
             if (descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-                descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+                descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV ||
+                descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
                 break;
             }
         }
@@ -5475,8 +5488,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 skip |=
                     ValidateDeviceAddressRange(address_range.address, address_range.size, false, data_loc.dot(Field::pAddressRange),
                                                LogObjectList(device), buffer_usage, usage_vuid);
-            } else if (resource.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-                       resource.type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
+            } else if (resource.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
                 // TODO - not sure what this covers that VUID-VkResourceDescriptorInfoEXT-type-11484 doesn't
                 if (auto as_array = GetAccelerationStructuresByAddress(address_range.address); as_array.empty()) {
                     std::stringstream ss;
@@ -5496,6 +5508,13 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                     skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11483", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::address), "%s", ss.str().c_str());
                 }
+            } else if (resource.type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
+                // PTLAS uses buffer addresses directly, not VkAccelerationStructureKHR objects
+                // Validate that the address points to a buffer with ACCELERATION_STRUCTURE_STORAGE_BIT
+                skip |= ValidateDeviceAddressRange(address_range.address, address_range.size, false,
+                                                   data_loc.dot(Field::pAddressRange), LogObjectList(device),
+                                                   VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+                                                   "VUID-VkResourceDescriptorInfoEXT-type-11483");
             } else if (resource.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
                 if (address_range.size != 0) {
                     skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11468", device,

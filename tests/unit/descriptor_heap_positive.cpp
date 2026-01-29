@@ -3576,3 +3576,32 @@ TEST_F(PositiveDescriptorHeap, SingleElementNoArray) {
         ASSERT_EQ(data[0], src_data);
     }
 }
+
+TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
+    TEST_DESCRIPTION("Test WriteResourceDescriptorsEXT with PTLAS descriptor type");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::partitionedAccelerationStructure);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize descriptor_size =
+        vk::GetPhysicalDeviceDescriptorSizeEXT(gpu_, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
+    std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
+
+    // Create buffer with required usage flags for PTLAS
+    vkt::Buffer ptlas_buffer(*m_device, 4096,
+                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                             vkt::device_address);
+
+    VkDeviceAddressRangeEXT device_address_range = {ptlas_buffer.Address(), descriptor_size};
+
+    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
+    resource_info.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+    resource_info.data.pAddressRange = &device_address_range;
+
+    VkHostAddressRangeEXT descriptor = {data.data(), static_cast<size_t>(descriptor_size)};
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
+}
