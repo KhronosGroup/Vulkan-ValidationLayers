@@ -683,14 +683,7 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
     std::vector<StageInterfaceVariable> variables;
 
     // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
-    uint32_t word = 3;  // operand Name operand starts
-    // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out
-    // the rest of the word - so we only need to look at the last byte in the word to determine which word contains the
-    // terminator.
-    while (entrypoint.entrypoint_insn.Word(word) & 0xff000000u) {
-        ++word;
-    }
-    ++word;
+    uint32_t word = entrypoint.entrypoint_insn.GetEntryPointInterfaceStart();
 
     vvl::unordered_set<uint32_t> unique_interface_id;
     for (; word < entrypoint.entrypoint_insn.Length(); word++) {
@@ -700,7 +693,7 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
         };
         // guaranteed by spirv-val to be a OpVariable
         const Instruction& insn = *module_state.FindDef(interface_id);
-        const spv::StorageClass storage_class = (spv::StorageClass)insn.Word(3);
+        const spv::StorageClass storage_class = insn.StorageClass();
 
         if (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput) {
             variables.emplace_back(module_state, insn, entrypoint.stage, parsed);
