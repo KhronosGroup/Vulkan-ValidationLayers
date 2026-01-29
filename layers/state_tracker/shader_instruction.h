@@ -92,6 +92,8 @@ class Instruction {
     bool operator==(Instruction const& other) const { return words_ == other.words_; }
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }
 
+    uint32_t GetEntryPointInterfaceStart() const;
+
     // The following is only used for GPU-AV where we need to possibly update an Instruction
     Instruction(spirv_iterator it, uint32_t position_offset);
     // Assumes caller will fill remaining words

@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,30 @@ bool VertexAttributeFetchOobPass::Instrument() {
         const uint32_t execution_model = entry_point_inst->Word(1);
         if (execution_model != spv::ExecutionModelVertex) {
             continue;
+        }
+
+        // Handle edge case where there is no vertex input actually
+        // the entry point must list all input variables
+        {
+            bool found_input = false;
+
+            uint32_t word = entry_point_inst->GetEntryPointInterfaceStart();
+            const uint32_t total_words = entry_point_inst->Length();
+            for (; word < total_words; word++) {
+                const uint32_t interface_id = entry_point_inst->Word(word);
+                const Variable* variable = type_manager_.FindVariableById(interface_id);
+                // guaranteed by spirv-val to be a OpVariable
+                assert(variable);
+                if (variable->StorageClass() == spv::StorageClassInput) {
+                    found_input = true;
+                    break;
+                }
+            }
+
+            if (!found_input) {
+                // vertex shader has no input, nothing to validate
+                return false;
+            }
         }
 
         const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
