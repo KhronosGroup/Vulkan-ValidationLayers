@@ -1410,6 +1410,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceConservativeRasterizationPropertiesEXT", 55},
     {"VkPhysicalDeviceCooperativeMatrix2FeaturesNV", 45},
     {"VkPhysicalDeviceCooperativeMatrix2PropertiesNV", 47},
+    {"VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM", 56},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesKHR", 45},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesNV", 44},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesKHR", 47},
@@ -2438,6 +2439,7 @@ const char* String(Field field) {
     {"conversion", 11},
     {"cooperativeMatrix", 18},
     {"cooperativeMatrixBlockLoads", 28},
+    {"cooperativeMatrixConversion", 28},
     {"cooperativeMatrixConversions", 29},
     {"cooperativeMatrixFlexibleDimensions", 36},
     {"cooperativeMatrixFlexibleDimensionsMaxDimension", 48},
@@ -6177,6 +6179,7 @@ const char* String(Extension extension) {
     {"VK_NV_win32_keyed_mutex", 24},
     {"VK_OHOS_external_memory", 24},
     {"VK_OHOS_surface", 16},
+    {"VK_QCOM_cooperative_matrix_conversion", 38},
     {"VK_QCOM_data_graph_model", 25},
     {"VK_QCOM_filter_cubic_clamp", 27},
     {"VK_QCOM_filter_cubic_weights", 29},
@@ -8125,6 +8128,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceImageViewImageFormatInfoEXT;
     case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
        return Struct::VkFilterCubicImageViewImageFormatPropertiesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM;
     case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT:
        return Struct::VkImportMemoryHostPointerInfoEXT;
     case VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT:

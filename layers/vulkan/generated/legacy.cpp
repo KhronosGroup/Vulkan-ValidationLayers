@@ -206,6 +206,180 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
     return false;
 }
 
+bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                             const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-resource-objects", device, error_obj.location,
+                   "vkCreateBufferView is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-resource-objects");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                                 const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCreatePipelineLayout is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
+                                          const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-resource-objects", device, error_obj.location,
+                   "vkCreateSampler is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-resource-objects");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                                      const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCreateDescriptorSetLayout is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                                 const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCreateDescriptorPool is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                                const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkResetDescriptorPool is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                   VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkAllocateDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                               const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkFreeDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                                 const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                                 const VkCopyDescriptorSet* pDescriptorCopies, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkUpdateDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                  VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                  const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                  const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdBindDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                             uint32_t offset, uint32_t size, const void* pValues,
+                                             const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdPushConstants is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                               const ErrorObject& error_obj) const {
@@ -419,6 +593,252 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
     return false;
 }
 
+bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                   const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
+                                                   const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdBindDescriptorSets2 is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
+                                              const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdPushConstants2 is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+    const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdSetDescriptorBufferOffsets2EXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT is a legacy command and this VkDevice enabled the "
+            "VK_EXT_descriptor_heap extension which contains the new feature to replace it.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
+                                                          VkDeviceSize* pLayoutSizeInBytes, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkGetDescriptorSetLayoutSizeEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
+                                                                   VkDeviceSize* pOffset, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetDescriptorSetLayoutBindingOffsetEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                             void* pDescriptor, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkGetDescriptorEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                        const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
+                                                        const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdBindDescriptorBuffersEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                             VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                             const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                             const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
+                   "vkCmdSetDescriptorBufferOffsetsEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                       VkPipelineBindPoint pipelineBindPoint,
+                                                                       VkPipelineLayout layout, uint32_t set,
+                                                                       const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkCmdBindDescriptorBufferEmbeddedSamplersEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                    const VkBufferCaptureDescriptorDataInfoEXT* pInfo, void* pData,
+                                                                    const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetBufferOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                   const VkImageCaptureDescriptorDataInfoEXT* pInfo, void* pData,
+                                                                   const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetImageOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                       const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+                                                                       void* pData, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetImageViewOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                     const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
+                                                                     void* pData, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetSamplerOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+    VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
+    const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-descriptor-sets", device, error_obj.location,
+            "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the "
+            "VK_EXT_descriptor_heap extension which contains the new feature to replace it.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
 ExtensionData GetExtensionData(vvl::Extension extension_name) {
     static const ExtensionData empty_data{Reason::Empty, vvl::Extension::Empty};
     static const vvl::unordered_map<vvl::Extension, ExtensionData> legacy_extensions = {
@@ -540,6 +960,7 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_robustness2, {Reason::Promoted, {vvl::Extension::_VK_KHR_robustness2}}},
         {vvl::Extension::_VK_EXT_private_data, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_pipeline_creation_cache_control, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_EXT_descriptor_buffer, {Reason::Superseded, {vvl::Extension::_VK_EXT_descriptor_heap}}},
         {vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_image_robustness, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_4444_formats, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},

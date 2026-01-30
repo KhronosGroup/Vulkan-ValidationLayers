@@ -537,6 +537,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM: {
+                VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *>(current);
+                if (enabling->cooperativeMatrixConversion && !supported.cooperativeMatrixConversion) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM::cooperativeMatrixConversion is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {
                 VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

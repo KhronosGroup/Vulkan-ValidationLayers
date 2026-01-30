@@ -124,6 +124,8 @@ struct DeviceFeatures {
     bool cooperativeMatrixTensorAddressing;
     // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
     bool cooperativeMatrixWorkgroupScope;
+    // VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM
+    bool cooperativeMatrixConversion;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV

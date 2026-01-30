@@ -915,6 +915,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->representativeFragmentTest |= enabled->representativeFragmentTest == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_CONVERSION_FEATURES_QCOM: {
+                const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixConversionFeaturesQCOM *>(pNext);
+                features->cooperativeMatrixConversion |= enabled->cooperativeMatrixConversion == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV: {
                 const VkPhysicalDeviceMeshShaderFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesNV *>(pNext);
