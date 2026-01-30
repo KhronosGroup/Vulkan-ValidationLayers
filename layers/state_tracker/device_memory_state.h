@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -145,16 +145,14 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
 
     const MemoryBinding *Binding() const override { return nullptr; }
 
-    unsigned CountDeviceMemory(VkDeviceMemory memory) const override { return 0; }
+    unsigned CountDeviceMemory(VkDeviceMemory) const override { return 0; }
 
     bool HasFullRangeBound() const override { return true; }
 
     void BindMemory(StateObject *, std::shared_ptr<vvl::DeviceMemory> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) override {}
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &) const override { return BoundMemoryRange{}; }
-    BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override {
-        return {};
-    }
+    BoundRanges GetBoundRanges(const BufferRange &, const std::vector<BufferRange> &) const override { return {}; }
     DeviceMemoryState GetBoundMemoryStates() const override { return DeviceMemoryState{}; }
 };
 
@@ -234,7 +232,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
     // No reason to have this function for multi planar memory
-    BoundRanges GetBoundRanges(const BufferRange &ranges_bounds, const std::vector<BufferRange> &ranges) const override {
+    BoundRanges GetBoundRanges(const BufferRange &, const std::vector<BufferRange> &) const override {
         assert(false);
         return {};
     }

@@ -92,7 +92,7 @@ class BufferSubState {
     BufferSubState &operator=(const BufferSubState &) = delete;
     virtual ~BufferSubState() {}
     virtual void Destroy() {}
-    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
 
     Buffer &base;
 };
@@ -149,7 +149,7 @@ class BufferViewSubState {
     BufferViewSubState &operator=(const BufferViewSubState &) = delete;
     virtual ~BufferViewSubState() {}
     virtual void Destroy() {}
-    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
 
     BufferView &base;
 };
