@@ -1183,6 +1183,13 @@ VkDeviceAddress Buffer::Address() const {
     }
 }
 
+VkDeviceAddressRangeEXT Buffer::AddressRange() const {
+    VkDeviceAddressRangeEXT range;
+    range.address = Address();
+    range.size = create_info_.size;
+    return range;
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
 
 void BufferView::Init(const Device &dev, const VkBufferViewCreateInfo &info) {
