@@ -3523,6 +3523,7 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
+    // Can use RenderPassState() here even GPL because we only need to check for compatible renderpasses
     const auto &pipeline_rp_state = pipeline.RenderPassState();
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
     if (rp_state.VkHandle() != pipeline_rp_state->VkHandle()) {
@@ -3546,6 +3547,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
+    // Can use RenderPassState() here even GPL because we only need to check for it being null
     const auto pipeline_rp_state = pipeline.RenderPassState();
     ASSERT_AND_RETURN_SKIP(pipeline_rp_state);
     if (pipeline_rp_state->VkHandle() != VK_NULL_HANDLE) {
@@ -3557,7 +3559,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
         return skip;
     }
 
-    const VkPipelineRenderingCreateInfo &pipeline_rendering_ci = *(pipeline_rp_state->dynamic_pipeline_rendering_create_info.ptr());
+    const VkPipelineRenderingCreateInfo& pipeline_rendering_ci = pipeline.GetRenderPassPipelineRenderingCreateInfo();
     const auto rendering_view_mask = rp_state.GetDynamicRenderingViewMask();
     // There is currently a 06031 VU that catches the viewMask at vkCmdExecuteCommands time, so seems like this is not suppose to be
     // validated with inherited render passes

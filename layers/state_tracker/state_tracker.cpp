@@ -2013,16 +2013,88 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
             render_pass = Get<RenderPass>(create_info.renderPass);
         } else if (enabled_features.dynamicRendering) {
-            auto pipeline_rendering_ci = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+            // We need VkPipelineRenderingCreateInfo for two reasons
+            //  - The viewMask (pre-raster/fragment shader)
+            //  - The formats (fragment output) (also depends on rasterization being enabled)
+            // We need generate our own, correct VkPipelineRenderingCreateInfo so we can make a safe struct in vvl::RenderPass
+            //
+            // We also need to be careful, if things like rasterization is diabled, we **need** to ignore a possible
+            // VkPipelineRenderingCreateInfo that contains bad pointers (Thanks GPL!)
 
-            // The rasterization_enabled is our way to hint to vvl::RenderPass to ignore a possible VkPipelineRenderingCreateInfo
-            // that contains bad pointers (when using GPL)
-            const bool has_fragment_output_state =
-                Pipeline::ContainsLibraryState(*this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
+            // These are simply true for the non-GPL case
+            bool has_pre_raster_state = true;
+            bool has_fragment_shader_state = true;
+            bool has_fragment_output_state = true;
+
+            // Same as OwnsLibState() but when there is no vvl::Pipeline state
+            auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+            if (link_info && link_info->libraryCount != 0) {
+                // We are linking in, so we now know this pipeline doesn't "own" some state
+                has_pre_raster_state = false;
+                has_fragment_shader_state = false;
+                has_fragment_output_state = false;
+            }
+            auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+            if (lib_info) {
+                has_pre_raster_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) != 0;
+                has_fragment_shader_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) != 0;
+                has_fragment_output_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0;
+            }
+
+            const bool uses_view_mask = has_pre_raster_state | has_fragment_shader_state;
             const bool rasterization_enabled =
                 has_fragment_output_state && Pipeline::EnablesRasterizationStates(*this, create_info);
 
-            render_pass = std::make_shared<RenderPass>(pipeline_rendering_ci, rasterization_enabled);
+            // We need VkPipelineRenderingCreateInfo for two reasons
+            //  - The viewMask (pre-raster/fragment shader)
+            //  - The formats (fragment output) (also depends on rasterization being enabled)
+            VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
+            rendering_ci.viewMask = 0;
+            rendering_ci.colorAttachmentCount = 0;
+            rendering_ci.pColorAttachmentFormats = nullptr;
+            rendering_ci.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+            rendering_ci.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+            if (auto pnext_ci = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext)) {
+                if (uses_view_mask) {
+                    rendering_ci.viewMask = pnext_ci->viewMask;
+                }
+                if (rasterization_enabled) {
+                    rendering_ci.colorAttachmentCount = pnext_ci->colorAttachmentCount;
+                    rendering_ci.pColorAttachmentFormats = pnext_ci->pColorAttachmentFormats;
+                    rendering_ci.depthAttachmentFormat = pnext_ci->depthAttachmentFormat;
+                    rendering_ci.stencilAttachmentFormat = pnext_ci->stencilAttachmentFormat;
+                }
+            }
+
+            // even if the final executable in GPL has a VkPipelineRenderingCreateInfo, we ignore it (override it)
+            if (!lib_info && link_info) {
+                // If |lib_info| is true, we might be building something like a Vertex Input library, and we can ignore
+                // VkPipelineRenderingCreateInfo now
+                //
+                // When GPL (our favorite extension) is used, this will be the final executable pipeline and here we need to fetch
+                // all the library state
+                for (VkPipeline lib : vvl::make_span(link_info->pLibraries, link_info->libraryCount)) {
+                    auto lib_state = Get<vvl::Pipeline>(lib);
+                    ASSERT_AND_CONTINUE(lib_state);
+                    if (!lib_state->rendering_create_info) {
+                        // chance there might not be VkPipelineRenderingCreateInfo when we except, means either a Vertex Input or an
+                        // error will be caught elsewhere
+                        continue;
+                    }
+                    if (lib_state->OwnsLibState(lib_state->fragment_output_state)) {
+                        rendering_ci.colorAttachmentCount = lib_state->rendering_create_info->colorAttachmentCount;
+                        rendering_ci.pColorAttachmentFormats = lib_state->rendering_create_info->pColorAttachmentFormats;
+                        rendering_ci.depthAttachmentFormat = lib_state->rendering_create_info->depthAttachmentFormat;
+                        rendering_ci.stencilAttachmentFormat = lib_state->rendering_create_info->stencilAttachmentFormat;
+                    } else if (lib_state->OwnsLibState(lib_state->pre_raster_state)) {
+                        // Could look for Fragment shader, but their viewMask must match and pre-raster is pre-raster is required
+                        rendering_ci.viewMask = lib_state->rendering_create_info->viewMask;
+                    }
+                }
+            }
+
+            render_pass = std::make_shared<RenderPass>(rendering_ci);
         }
         pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
                                                               std::move(layout_state), chassis_state.stateless_data));

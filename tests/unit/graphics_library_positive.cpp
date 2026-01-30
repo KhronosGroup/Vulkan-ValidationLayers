@@ -2598,3 +2598,95 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapUnusedPipelineLayouts) {
         vkt::Pipeline exe_pipe(*m_device, lib_ci);
     }
 }
+
+TEST_F(PositiveGraphicsLibrary, MultiViewDraw) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    VkFormat color_format = VK_FORMAT_UNDEFINED;
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.viewMask = 0x1;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
+        pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        ds_ci.stencilTestEnable = VK_TRUE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.gp_ci_.pDepthStencilState = &ds_ci;
+        frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    pipeline_rendering_info.viewMask = 0x0;  // ignored for fragment output
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib,
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = layout;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.viewMask = 0x1;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
