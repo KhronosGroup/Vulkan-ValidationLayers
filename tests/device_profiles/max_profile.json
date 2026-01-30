@@ -1154,6 +1154,11 @@
                     "descriptorBindingStorageTensorUpdateAfterBind": true,
                     "tensors": true
                 },
+                "VkPhysicalDeviceDescriptorHeapTensorPropertiesARM": {
+                    "tensorDescriptorSize": 256,
+                    "tensorDescriptorAlignment": 256,
+                    "tensorCaptureReplayOpaqueDataSize": 8
+                },
                 "VkPhysicalDevicePresentTimingFeaturesEXT": {
                     "presentTiming": true,
                     "presentAtAbsoluteTime": true,

@@ -2312,6 +2312,8 @@ VkResult Device::WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceC
     std::vector<vku::safe_VkResourceDescriptorInfoEXT> local_pResources(resourceCount);
     std::vector<vku::safe_VkImageDescriptorInfoEXT> local_image;
     local_image.reserve(resourceCount);
+    std::vector<vku::safe_VkTensorViewCreateInfoARM> local_tensor;
+    local_tensor.reserve(resourceCount);
 
     for (uint32_t i = 0; i < resourceCount; i++) {
         auto& local_pResource = local_pResources[i];
@@ -2327,6 +2329,20 @@ VkResult Device::WriteResourceDescriptorsEXT(VkDevice device, uint32_t resourceC
                     }
                     if (pResources[i].data.pImage->pView->pNext) {
                         UnwrapPnextChainHandles(local_pResources[i].data.pImage->pView->pNext);
+                    }
+                }
+            }
+        }
+
+        if (IsDescriptorHeapTensor(local_pResource.type)) {
+            if (local_pResource.data.pTensorARM) {
+                local_tensor.emplace_back(pResources[i].data.pTensorARM);
+                local_tensor.back().initialize(pResources[i].data.pTensorARM);
+                local_pResource.data.pTensorARM = local_tensor.back().ptr();
+                if (local_pResource.data.pTensorARM) {
+                    local_tensor.back().tensor = Unwrap(pResources[i].data.pTensorARM->tensor);
+                    if (pResources[i].data.pTensorARM->pNext) {
+                        UnwrapPnextChainHandles(local_pResources[i].data.pTensorARM->pNext);
                     }
                 }
             }

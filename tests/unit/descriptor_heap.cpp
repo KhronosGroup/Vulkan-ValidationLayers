@@ -21,6 +21,7 @@ void DescriptorHeapTest::InitBasicDescriptorHeap() {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
     RETURN_IF_SKIP(Init());
+    heap_props.pNext = &tensor_heap_props;
     GetPhysicalDeviceProperties2(heap_props);
 }
 
@@ -99,11 +100,8 @@ VkDeviceSize DescriptorHeapTest::AlignedAppend(VkDeviceSize& end, VkDescriptorTy
             align = heap_props.imageDescriptorAlignment;
             break;
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
-            const auto tensor_props =
-                vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapTensorPropertiesARM>(heap_props.pNext);
-            assert(tensor_props);
-            size = tensor_props->tensorDescriptorSize;
-            align = tensor_props->tensorDescriptorAlignment;
+            size = tensor_heap_props.tensorDescriptorSize;
+            align = tensor_heap_props.tensorDescriptorAlignment;
             break;
         }
         default:

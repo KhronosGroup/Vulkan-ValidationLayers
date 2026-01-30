@@ -332,6 +332,7 @@ class DescriptorHeapTest : public VkLayerTest {
     VkDeviceSize AlignSampler(VkDeviceSize offset);
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorHeapTensorPropertiesARM tensor_heap_props = vku::InitStructHelper();
 
     vkt::Buffer resource_heap_;
     uint8_t* resource_heap_data_ = nullptr;
