@@ -48,16 +48,13 @@ namespace vvl {
 class PipelineCache : public StateObject {
   public:
     const vku::safe_VkPipelineCacheCreateInfo create_info;
-    bool has_data_graph_header_version;
+    const bool has_dg_qcom_header_version;
 
     PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
-        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {
-        RetrieveDataGraphQcomHeaderVersion();
-    }
+        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo),
+          has_dg_qcom_header_version(HasDataGraphQcomHeaderVersion()) {}
 
     VkPipelineCache VkHandle() const { return handle_.Cast<VkPipelineCache>(); }
-
-    bool HasDataGraphQcomHeaderVersion() const { return has_data_graph_header_version; }
 
     virtual std::shared_ptr<const vvl::ShaderModule> GetStageModule(const vvl::Pipeline &pipe_state, size_t stage_index) const {
         // This interface enables derived versions of the pipeline cache state object to return
@@ -71,7 +68,7 @@ class PipelineCache : public StateObject {
     }
 
   private:
-    void RetrieveDataGraphQcomHeaderVersion();
+    bool HasDataGraphQcomHeaderVersion() const;
 };
 
 class PipelineSubState;

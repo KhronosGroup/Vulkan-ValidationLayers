@@ -596,6 +596,9 @@ class Device : public vvl::base::Device {
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       const Context &context) const;
 
+    bool ValidateDataGraphProcessingEngineCreateInfoARM(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                        const Location& loc) const;
+
     bool ValidateCreateDataGraphPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -664,6 +667,10 @@ class Device : public vvl::base::Device {
 
     bool manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                 const Context &context) const;
+
+    bool manual_PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                  const Context &context) const;
 
     bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,

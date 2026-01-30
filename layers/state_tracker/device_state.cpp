@@ -59,7 +59,7 @@ std::vector<VkQueueFamilyDataGraphPropertiesARM> PhysicalDevice::GetQueueFamilyD
     if (result == VK_SUCCESS) {
         data_graph_properties_arms.resize(count);
         for (uint32_t index = 0; index < count; ++index) {
-            data_graph_properties_arms[index].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+            data_graph_properties_arms[index] = vku::InitStructHelper();
         }
 
         result = DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(phys_dev, queue_family_index,

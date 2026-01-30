@@ -54,6 +54,50 @@
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
+bool CoreChecks::ValidateDataGraphProcessingEngineForDescriptorPool(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                                    const Location& loc) const {
+    bool skip = false;
+
+    ASSERT_AND_RETURN_SKIP(engine_ci.pProcessingEngines);
+
+    std::vector<uint32_t> data_graph_queue_families{};
+    for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) {
+            data_graph_queue_families.push_back(static_cast<uint32_t>(family_index));
+        }
+    }
+
+    vvl::unordered_set<VkPhysicalDeviceDataGraphProcessingEngineARM, HashCombineDataGraphProcessingEngineARMInfo> retrieved_engine_set{};
+    for (size_t index = 0; index < data_graph_queue_families.size(); ++index) {
+        const auto data_graph_properties_arms =
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(data_graph_queue_families[index]);
+
+        for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
+            retrieved_engine_set.insert(data_graph_properties_arms[prop_index].engine);
+        }
+    }
+
+    for (uint32_t engine_index = 0; engine_index < engine_ci.processingEngineCount; ++engine_index) {
+        const auto& processing_engine = engine_ci.pProcessingEngines[engine_index];
+
+        if (!retrieved_engine_set.contains(processing_engine)) {
+            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pNext-09946",
+                             device,
+                             loc,
+                             "for VkDataGraphProcessingEngineCreateInfoARM in the pNext chain, "
+                             "pProcessingEngines[%" PRIu32 "]::type = %s, pProcessingEngines[%" PRIu32 "]::isForeign = %u, "
+                             "failed to find any identical VkQueueFamilyDataGraphPropertiesARM::engine element from "
+                             "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM.",
+                             engine_index,
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type),
+                             engine_index,
+                             processing_engine.isForeign);
+        }
+    }
+
+    return skip;
+}
+
 // Check if the |reference_dsl| (from PipelineLayout) is compatibile with |to_bind_dsl|
 // For GPL this is also used, but we don't care which DSL is which
 bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout &reference_dsl,
@@ -3723,7 +3767,6 @@ bool CoreChecks::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDe
         vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
         const Location processing_engine_ci_loc = error_obj.location.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
         skip |= ValidateDataGraphProcessingEngineForDescriptorPool(*processing_engine_info, processing_engine_ci_loc);
-        skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);
     }
 
     return skip;

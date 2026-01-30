@@ -19,10 +19,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderSize
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    // Validation header size - 11836
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836");
     {
         auto pipeline_cache = BuildPipelineCacheWithInvalidHeaderSize(*this);
@@ -30,10 +26,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderSize
     }
     m_errorMonitor->VerifyFound();
 
-    // Validation header size - 11836 and 11838
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11838");
     {
@@ -49,10 +41,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderVers
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    // Validation header version - 11837
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837");
     {
         auto pipeline_cache = BuildPipelineCacheWithUnsupportedHeaderVersion(*this);
@@ -60,10 +48,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderVers
     }
     m_errorMonitor->VerifyFound();
 
-    // Validation header version - 11837 and parameter
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-parameter");
     {
@@ -79,10 +63,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidCacheType)
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    // Validation cache type
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-cacheType-parameter");
     auto pipeline_cache = BuildPipelineCacheWithInvalidCacheType(*this);
     TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
@@ -91,7 +71,7 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidCacheType)
 
 TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheButDataGraphModelFeatureNotEnabled) {
     TEST_DESCRIPTION("Try to create a data graph pipeline cache via a VkDevice with dataGraphModel feature disabled.");
-    // add all the requirements of InitBasicDataGraphModel except dataGraphModel
+    // Add all the requirements of InitBasicDataGraphModel except dataGraphModel
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
@@ -100,15 +80,11 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheButDataGraphModelFeat
     AddRequiredFeature(vkt::Feature::dataGraph);
     AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
 
-    // Note: Avoid crash due to device creation failure
+    // Avoid crash due to device creation failure
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831");
     RETURN_IF_SKIP(Init());
 
-    // Validation dataGraphModel feature
-    // Note: Firstly, according to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    //       Secondly, avoid VkDataGraphProcessingEngineCreateInfoARM check failure since we always check pProcessingEngines member.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
+    // Avoid VkDataGraphProcessingEngineCreateInfoARM check failure since we always check pProcessingEngines member.
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None-11835");
     auto pipeline_cache = BuildValidPipelineCache(*this);
@@ -137,10 +113,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineBuiltinModelButInconsisten
     builtin_model_ci.pOperation = &data_graph_operation_support;
     builtin_model_ci.pNext = &dg_processing_engine_ci;
 
-    // Validation built-in model operation - 11842
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842");
     TestDataGraphPipelineCreationOnce(*this, builtin_model_ci);
     m_errorMonitor->VerifyFound();
@@ -151,7 +123,6 @@ TEST_F(NegativeDataGraphModel, QueryPipelineCacheDataButHasDataGraphHeaderVersio
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    // Validation pipelineCache - 11834
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineCacheData-pipelineCache-11834");
     size_t data_size = 0;
     auto pipeline_cache = BuildValidPipelineCache(*this);
@@ -179,13 +150,11 @@ TEST_F(NegativeDataGraphModel, MergePipelineCacheButHasDataGraphHeaderVersion) {
     general_pipeline_cache_ci.pInitialData = general_cache_blob.data();
     vkt::PipelineCache general_pipeline_cache2{ *m_device, general_pipeline_cache_ci };
 
-    // Validation dstCache - 11832
     auto general_pipeline_cache_handle = general_pipeline_cache.handle();
     m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-dstCache-11832");
     vk::MergePipelineCaches(device(), *data_graph_pipeline_cache, 1, &general_pipeline_cache_handle);
     m_errorMonitor->VerifyFound();
 
-    // Validation headerVersion - 11833
     auto data_graph_pipeline_cache_handle = data_graph_pipeline_cache->handle();
     m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-headerVersion-11833");
     vk::MergePipelineCaches(device(), general_pipeline_cache2, 1, &data_graph_pipeline_cache_handle);
@@ -206,7 +175,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelCommandPoolWithoutProcessingE
     command_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_ci.queueFamilyIndex = dg_queue_family_index.value();
 
-    // Validation queueFamilyIndex - 11830
     m_errorMonitor->SetDesiredError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830");
     VkCommandPool command_pool = nullptr;
     vk::CreateCommandPool(device(), &command_pool_ci, nullptr, &command_pool);
@@ -236,7 +204,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelCommandPoolWithInvalidProcess
     command_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_ci.pNext = &dg_processing_engine_ci;
 
-    // Validation queueFamilyIndex - 11830
     m_errorMonitor->SetDesiredError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830");
     VkCommandPool command_pool = nullptr;
     vk::CreateCommandPool(device(), &command_pool_ci, nullptr, &command_pool);
@@ -266,7 +233,7 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelDescriptorPoolWithInvalidProc
     descriptor_pool_ci.poolSizeCount = 1;
     descriptor_pool_ci.pPoolSizes = &descriptor_pool_size;
 
-    // Some real qualcomm devices don't support compute engine, will lead to 09946 error, skip 09946 error
+    // Some real qualcomm devices don't support compute engine
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorPoolCreateInfo-pNext-09946");
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843", 2);
     VkDescriptorPool descriptor_pool = nullptr;

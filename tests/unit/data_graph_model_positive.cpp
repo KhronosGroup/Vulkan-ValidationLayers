@@ -136,6 +136,7 @@ DataGraphModelTest::DGModelPipelineLayoutInfo DataGraphModelTest::BuildGeneralPi
 void DataGraphModelTest::TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test, const vkt::PipelineCache& pipeline_cache) {
     const auto dg_queue_family_index = layer_test.DeviceObj()->QueueFamily(VK_QUEUE_DATA_GRAPH_BIT_ARM);
     assert(dg_queue_family_index.has_value());
+
     // Query and fill VkPhysicalDeviceDataGraphProcessingEngineARM and VkPhysicalDeviceDataGraphOperationSupportARM structures
     uint32_t dg_properties_count = 0;
     vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(layer_test.Gpu(), dg_queue_family_index.value(),
@@ -315,10 +316,6 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithPipelineCache) {
     RETURN_IF_SKIP(Init());
 
     auto pipeline_cache = BuildValidPipelineCache(*this);
-
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
 }
 
@@ -352,9 +349,6 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithBuiltinModelInfo) {
     builtin_model_ci.pOperation = &dg_queue_family_properties[0].operation;
     builtin_model_ci.pNext = &dg_processing_engine_ci;
 
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
     TestDataGraphPipelineCreationOnce(*this, builtin_model_ci);
 }
 
@@ -362,17 +356,13 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     TEST_DESCRIPTION("Try to create a data graph model and execute it.");
     InitBasicDataGraphModel();
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    AddOptionalExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     RETURN_IF_SKIP(Init());
-
-    // Note: According to spec, when include VkDataGraphPipelineIdentifierCreateInfoARM structure in the pNext chain of
-    //       VkDataGraphPipelineCreateInfoARM structure, resourceInfoCount must be 0 and pResourceInfos must be NULL.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
 
     // Query and fill VkPhysicalDeviceDataGraphProcessingEngineARM and VkPhysicalDeviceDataGraphOperationSupportARM structures
     const auto dg_queue_family_index = m_device->QueueFamily(VK_QUEUE_DATA_GRAPH_BIT_ARM);
@@ -515,7 +505,7 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     std::vector<VkDeviceMemory> session_memory_objects{};
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_memory_infos{};
     for (uint32_t index = 0; index < session_bind_point_req_count; ++index) {
-        session_bind_point_reqs[index].sType = VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM;
+        session_bind_point_reqs[index] = vku::InitStructHelper();
     }
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(device(), &session_bind_point_req_info,
                                                             &session_bind_point_req_count, session_bind_point_reqs.data());

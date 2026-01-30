@@ -13,6 +13,10 @@
 
 #include <array>
 
+// Note: A quick sparse representation-based network model data for super-resolution, converted by QNN SDK.
+//       Qualcomm driver will handle it while invoking vkCreatePipelineCache and vkCreateDataGraphPipelinesARM APIs.
+//       More details can be seen in: https://docs.vulkan.org/features/latest/features/proposals/VK_QCOM_data_graph_model.html
+//                                    https://www.qualcomm.com/developer/software/qualcomm-ai-engine-direct-sdk
 constexpr std::array<std::uint8_t, 156615> kDGValidPipelineCacheData = {{
     0x1C, 0x00, 0x00, 0x00, 0x08, 0x63, 0xA4, 0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x02, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x12, 0x19,
