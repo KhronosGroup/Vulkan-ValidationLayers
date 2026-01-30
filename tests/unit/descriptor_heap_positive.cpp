@@ -381,8 +381,7 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferOverlappingResource) {
     vkt::CommandBuffer cmd_buffer2(*m_device, command_pool);
 
     VkBindHeapInfoEXT bind_info1 = vku::InitStructHelper();
-    bind_info1.heapRange.address = resource_heap_.Address();
-    bind_info1.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_info1.heapRange = resource_heap_.AddressRange();
     bind_info1.reservedRangeOffset = 0;
     bind_info1.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -635,7 +634,7 @@ TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {sampler_heap_.Address(), sampler_heap_.CreateInfo().size};
+    bind_info.heapRange = sampler_heap_.AddressRange();
     bind_info.reservedRangeOffset = 0;
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -664,7 +663,7 @@ TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
     CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {resource_heap_.Address(), resource_heap_.CreateInfo().size};
+    bind_info.heapRange = resource_heap_.AddressRange();
     bind_info.reservedRangeOffset = 0;
     bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -744,7 +743,7 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkBindHeapInfoEXT sampler_bind_info = vku::InitStructHelper();
-    sampler_bind_info.heapRange = {sampler_heap.Address(), sampler_heap_size};
+    sampler_bind_info.heapRange = sampler_heap.AddressRange();
     sampler_bind_info.reservedRangeOffset = 0;
     sampler_bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -1959,7 +1958,7 @@ TEST_F(PositiveDescriptorHeap, NestedResourceInheritance) {
     vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {resource_heap_.Address(), heap_size};
+    bind_info.heapRange = resource_heap_.AddressRange();
     bind_info.reservedRangeOffset = 0;
     bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -3213,8 +3212,7 @@ TEST_F(PositiveDescriptorHeap, DISABLED_SecondaryCmdBufferCompute) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -3308,8 +3306,7 @@ TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferGraphics) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 

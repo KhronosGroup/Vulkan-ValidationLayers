@@ -53,8 +53,7 @@ void DescriptorHeapTest::CreateSamplerHeap(VkDeviceSize app_size, bool use_embed
 
 void DescriptorHeapTest::BindResourceHeap() {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
@@ -64,8 +63,7 @@ void DescriptorHeapTest::BindSamplerHeap() {
     const VkDeviceSize min_reserved_range =
         embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange;
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = sampler_heap_.Address();
-    bind_resource_info.heapRange.size = sampler_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = sampler_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = sampler_heap_.CreateInfo().size - min_reserved_range;
     bind_resource_info.reservedRangeSize = min_reserved_range;
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
@@ -1218,7 +1216,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {heap.Address(), heap_size};
+    bind_info.heapRange = heap.AddressRange();
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange - 1;
 
     m_command_buffer.Begin();
@@ -1266,7 +1264,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {heap.Address(), heap_size};
+    bind_info.heapRange = heap.AddressRange();
     bind_info.reservedRangeOffset = 1;
     bind_info.reservedRangeSize = heap_size / 2;
 
@@ -1299,7 +1297,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapSecondaryBuffer) {
     secondary.Begin(&cbbi);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {heap.Address(), heap_size};
+    bind_info.heapRange = heap.AddressRange();
     bind_info.reservedRangeOffset = heap_props.samplerDescriptorSize;
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -1326,7 +1324,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
     {
         // reservedRangeOffset check
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeOffset = app_size;
         bind_info.reservedRangeSize = heap_size;
 
@@ -1340,7 +1338,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
     if (heap_props.minResourceHeapReservedRange > 0) {
         // size check
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange - 1;
 
         m_command_buffer.Begin();
@@ -1417,7 +1415,7 @@ TEST_F(NegativeDescriptorHeap, SamplerInheritance) {
         m_command_buffer.Begin();
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeOffset = 0;
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -1460,7 +1458,7 @@ TEST_F(NegativeDescriptorHeap, ResourceInheritance) {
         m_command_buffer.Begin();
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeOffset = 0;
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -1514,7 +1512,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
 
     // reservedRangeOffset alignment check
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {heap.Address(), heap_size};
+    bind_info.heapRange = heap.AddressRange();
     bind_info.reservedRangeOffset = 1;
     bind_info.reservedRangeSize = heap_size / 2;
 
@@ -1549,7 +1547,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBuffer) {
     secondary.Begin(&cbbi);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {heap.Address(), heap_size};
+    bind_info.heapRange = heap.AddressRange();
     bind_info.reservedRangeOffset = descriptor_size;
     bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -1598,7 +1596,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
         vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeOffset = heap_props.samplerDescriptorAlignment;
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -1635,7 +1633,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
         vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeOffset = 0;
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -2766,7 +2764,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         vkt::Buffer buffer(*m_device, bdsize, 0, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {buffer.Address(), bdsize};
+        bind_info.heapRange = buffer.AddressRange();
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindSamplerHeapEXT-heapRange-11230");
@@ -2780,7 +2778,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         vkt::Buffer buffer(*m_device, bdsize, 0, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {buffer.Address(), bdsize};
+        bind_info.heapRange = buffer.AddressRange();
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-heapRange-11237");
@@ -2810,7 +2808,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
         heap.Memory().Destroy();
@@ -2841,7 +2839,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = {heap.Address(), heap_size};
+        bind_info.heapRange = heap.AddressRange();
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
         heap.Memory().Destroy();
@@ -2873,14 +2871,12 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesSampler) {
     cmd_buffer3.Begin();
 
     VkBindHeapInfoEXT bind_info1 = vku::InitStructHelper();
-    bind_info1.heapRange.address = heap.Address();
-    bind_info1.heapRange.size = heap_size;
+    bind_info1.heapRange = heap.AddressRange();
     bind_info1.reservedRangeOffset = 0;
     bind_info1.reservedRangeSize = heap_size / 2;
 
     VkBindHeapInfoEXT bind_info2 = vku::InitStructHelper();
-    bind_info2.heapRange.address = heap.Address();
-    bind_info2.heapRange.size = heap_size;
+    bind_info2.heapRange = heap.AddressRange();
     bind_info2.reservedRangeOffset = heap_size / 4;
     bind_info2.reservedRangeSize = heap_size / 2;
 
@@ -2931,14 +2927,12 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesResource) {
     cmd_buffer3.Begin();
 
     VkBindHeapInfoEXT bind_info1 = vku::InitStructHelper();
-    bind_info1.heapRange.address = heap.Address();
-    bind_info1.heapRange.size = heap_size;
+    bind_info1.heapRange = heap.AddressRange();
     bind_info1.reservedRangeOffset = 0;
     bind_info1.reservedRangeSize = heap_size / 2;
 
     VkBindHeapInfoEXT bind_info2 = vku::InitStructHelper();
-    bind_info2.heapRange.address = heap.Address();
-    bind_info2.heapRange.size = heap_size;
+    bind_info2.heapRange = heap.AddressRange();
     bind_info2.reservedRangeOffset = heap_size / 4;
     bind_info2.reservedRangeSize = heap_size / 2;
 
@@ -3894,7 +3888,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
 
     // reservedRangeOffset check
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {buffer.Address(), bdsize};
+    bind_info.heapRange = buffer.AddressRange();
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRangeWithEmbedded - 1;
 
     // Resource descriptor heap buffer
@@ -4066,7 +4060,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
 
     // reservedRangeOffset check
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = {buffer.Address(), bdsize};
+    bind_info.heapRange = buffer.AddressRange();
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRangeWithEmbedded;
     m_command_buffer.Begin();
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
@@ -4671,8 +4665,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     pipe.CreateComputePipeline(false);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = descriptor_heap.Address();
-    bind_resource_info.heapRange.size = resource_heap_size;
+    bind_resource_info.heapRange = descriptor_heap.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_size_app;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -5824,8 +5817,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferResourceHeapUnbound) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = resource_heap_.Address();
-    bind_resource_info.heapRange.size = resource_heap_.CreateInfo().size;
+    bind_resource_info.heapRange = resource_heap_.AddressRange();
     bind_resource_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
@@ -5910,7 +5902,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkBindHeapInfoEXT sampler_bind_info = vku::InitStructHelper();
-    sampler_bind_info.heapRange = {sampler_heap.Address(), sampler_heap_size};
+    sampler_bind_info.heapRange = sampler_heap.AddressRange();
     sampler_bind_info.reservedRangeOffset = 0;
     sampler_bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -5957,7 +5949,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = {resource_heap_.Address(), resource_heap_.CreateInfo().size};
+    resource_bind_info.heapRange = resource_heap_.AddressRange();
     resource_bind_info.reservedRangeOffset = resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 

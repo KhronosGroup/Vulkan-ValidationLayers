@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016, 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2025 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2025 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2026 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2026 LunarG, Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -660,6 +660,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     }
 
     [[nodiscard]] VkDeviceAddress Address() const;
+    [[nodiscard]] VkDeviceAddressRangeEXT AddressRange() const;
 
   private:
     VkBufferCreateInfo create_info_;
