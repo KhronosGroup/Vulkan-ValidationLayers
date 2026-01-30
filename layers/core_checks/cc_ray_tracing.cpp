@@ -2453,22 +2453,26 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         }
     }
 
-    if (pBuildInfo->srcAccelerationStructureData && pBuildInfo->dstAccelerationStructureData) {
+    // Check for src vs dst overlap, but only if they are different addresses (in-place update is allowed)
+    if (pBuildInfo->srcAccelerationStructureData && pBuildInfo->dstAccelerationStructureData &&
+        pBuildInfo->srcAccelerationStructureData != pBuildInfo->dstAccelerationStructureData) {
         const auto src_buffer_states = GetBuffersByAddress(pBuildInfo->srcAccelerationStructureData);
         const auto dst_buffer_states = GetBuffersByAddress(pBuildInfo->dstAccelerationStructureData);
         for (const auto &src_buffer_state : src_buffer_states) {
-            vvl::range<VkDeviceAddress> src_address_range = src_buffer_state->DeviceAddressRange();
+            const vvl::range<VkDeviceAddress> src_address_range = src_buffer_state->DeviceAddressRange();
             if (!src_address_range.empty()) {
-                for (const auto &buffer_state : dst_buffer_states) {
-                    const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
-                    if (buffer_address_range.intersects(src_address_range)) {
-                        const LogObjectList objlist(commandBuffer, buffer_state->Handle(), src_buffer_state->Handle());
-                        skip |=
-                            LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
-                                     error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
-                                     "%s address range %s intersects srcAccelerationStructureData address range %s",
-                                     FormatHandle(buffer_state->Handle()).c_str(), string_range_hex(buffer_address_range).c_str(),
-                                     string_range_hex(src_address_range).c_str());
+                for (const auto &dst_buffer_state : dst_buffer_states) {
+                    const vvl::range<VkDeviceAddress> dst_address_range = dst_buffer_state->DeviceAddressRange();
+                    if (src_address_range.intersects(dst_address_range)) {
+                        const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle());
+                        skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
+                                         error_obj.location.dot(Field::pBuildInfo),
+                                         "srcAccelerationStructureData %s address range %s intersects "
+                                         "dstAccelerationStructureData %s address range %s",
+                                         FormatHandle(src_buffer_state->Handle()).c_str(),
+                                         string_range_hex(src_address_range).c_str(),
+                                         FormatHandle(dst_buffer_state->Handle()).c_str(),
+                                         string_range_hex(dst_address_range).c_str());
                     }
                 }
             }

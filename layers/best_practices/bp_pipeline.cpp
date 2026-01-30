@@ -416,6 +416,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+                        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
                             descriptor_type_size = 8;
                             break;
                         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:

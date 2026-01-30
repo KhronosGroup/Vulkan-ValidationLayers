@@ -1,5 +1,5 @@
 /*
-** Copyright (c) 2015-2018, 2023-2025 The Khronos Group Inc.
+** Copyright (c) 2015-2018, 2023-2026 The Khronos Group Inc.
 ** Modifications Copyright (C) 2024-2026 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -2010,6 +2010,7 @@ static VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkP
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
             return 256;

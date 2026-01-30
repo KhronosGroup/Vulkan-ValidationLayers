@@ -195,7 +195,9 @@ static SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType 
     if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
         return stage_accesses.uniform_read;
     }
-    if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
+        descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV ||
+        descriptor_type == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
         return stage_accesses.acceleration_structure_read;
     }
 

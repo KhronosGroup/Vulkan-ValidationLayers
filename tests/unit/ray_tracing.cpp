@@ -4244,10 +4244,12 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     command_info.srcInfosCount = count_buffer_address;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10561");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfos-parameter");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstAccelerationStructureData = ptlas_buffer_address;
+    command_info.srcInfos = count_buffer_address;  // Use a valid address going forward
     m_command_buffer.End();
 
     // add 1 to cause aligned error
@@ -4267,7 +4269,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     command_info.scratchData = 0;
     m_command_buffer.Begin();
     // scratchData must not be NULL
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-parameter");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -4290,8 +4292,6 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10542");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10544");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10545");
-    // Add this VU to avoid dst and src addres overlap warning
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -4300,9 +4300,19 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     command_info.dstAccelerationStructureData = scratch_buffer_address;
     command_info.srcAccelerationStructureData = scratch_buffer_address;
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10548");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10547");
+    vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test src vs dst overlap when they are different addresses (in-place update src==dst is allowed)
+    // Use 256-byte aligned offset so alignment checks pass, but still within same buffer (overlapping)
+    command_info.scratchData = scratch_buffer_address;
+    command_info.dstAccelerationStructureData = correct_ptlas_buffer_address;
+    command_info.srcAccelerationStructureData = correct_ptlas_buffer_address + 256;  // Different but overlapping (same buffer)
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

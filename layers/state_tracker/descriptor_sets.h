@@ -844,6 +844,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSetInlineUniformBlock> inline_infos;
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
+    std::vector<VkWriteDescriptorSetPartitionedAccelerationStructureNV> inline_infos_ptlas;
     DecodedTemplateUpdate(const DeviceState &device_data, VkDescriptorSet descriptorSet,
                           const DescriptorUpdateTemplate &template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);

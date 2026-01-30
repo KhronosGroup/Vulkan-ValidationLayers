@@ -746,3 +746,43 @@ TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptorWit
 
     vk::DestroyPipeline(*m_device, pipeline, nullptr);
 }
+
+// Test that VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV works with descriptor update templates
+TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptorTemplate) {
+    TEST_DESCRIPTION("Test using descriptor update template with partitioned acceleration structure descriptors");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::partitionedAccelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    VkDeviceAddress as_address = tlas.GetDstAS()->GetBufferDeviceAddress();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    // Create a descriptor update template for PTLAS
+    VkDescriptorUpdateTemplateEntry template_entry = {};
+    template_entry.dstBinding = 0;
+    template_entry.dstArrayElement = 0;
+    template_entry.descriptorCount = 1;
+    template_entry.descriptorType = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+    template_entry.offset = 0;
+    template_entry.stride = sizeof(VkDeviceAddress);
+
+    VkDescriptorUpdateTemplateCreateInfo template_ci = vku::InitStructHelper();
+    template_ci.descriptorUpdateEntryCount = 1;
+    template_ci.pDescriptorUpdateEntries = &template_entry;
+    template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+
+    vkt::DescriptorUpdateTemplate update_template(*m_device, template_ci);
+
+    // Update descriptor set using template - PTLAS uses VkDeviceAddress directly
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &as_address);
+}
