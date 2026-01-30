@@ -30,6 +30,8 @@ out64/*
 *.files
 *.includes
 .vscode/
+# CLion settings cache
+.idea/
 .DS_Store
 .editorconfig
 scripts/.vs
