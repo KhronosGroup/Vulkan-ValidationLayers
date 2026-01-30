@@ -80,6 +80,6 @@ void main() {
         // In practice an invalid index does not cause a device loss, so don't bother changing its value.
         // Should someone add this back, a write barrier needs to be added on the CPU side.
         // StoreIndex(gid, 0);
-        GpuavLogError4(kErrorGroupGpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex, fetched_index, gid, pc.error_info_i, 0);
+        GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex, fetched_index, gid, pc.error_info_i, 0);
     }
 }

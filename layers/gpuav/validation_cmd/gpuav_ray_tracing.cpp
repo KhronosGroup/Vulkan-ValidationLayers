@@ -800,13 +800,13 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         bool skip = false;
         using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroupGpuPreBuildAccelerationStructures) {
+        if (GetErrorGroup(error_record) != kErrorGroup_GpuPreBuildAccelerationStructures) {
             return skip;
         }
 
-        const uint32_t index = error_record[kValCmdErrorPayloadDword_0];
-        const uint32_t gid = error_record[kValCmdErrorPayloadDword_1];
-        const uint32_t error_info_i = error_record[kValCmdErrorPayloadDword_2];
+        const uint32_t index = error_record[kValCmd_ErrorPayloadDword_0];
+        const uint32_t gid = error_record[kValCmd_ErrorPayloadDword_1];
+        const uint32_t error_info_i = error_record[kValCmd_ErrorPayloadDword_2];
         assert(error_info_i < error_infos.size());
         const ErrorInfo& error_info = error_infos[error_info_i];
 
