@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2028,4 +2028,95 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
         m_command_buffer.EndRendering();
         m_command_buffer.End();
     }
+}
+
+TEST_F(PositiveDynamicRendering, LibraryViewMask) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
+    color_blend_state_create_info.attachmentCount = 1;
+    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+
+    // Fragment output doesn't have a viewMask, so it is ignored
+    CreatePipelineHelper lib(*this);
+    lib.cb_ci_ = color_blend_state_create_info;
+    lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    lib.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.viewMask = 0x1;
+    VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper(&pipeline_rendering_info);
+    library_create_info.libraryCount = 1;
+    library_create_info.pLibraries = &lib.Handle();
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitFragmentLibInfo(&fs_stage.stage_ci, &library_create_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveDynamicRendering, LibrariesViewMask) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = vku::InitStructHelper();
+    color_blend_state_create_info.attachmentCount = 1;
+    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+
+    // Fragment output doesn't have a viewMask, so it is ignored
+    CreatePipelineHelper lib1(*this);
+    lib1.cb_ci_ = color_blend_state_create_info;
+    lib1.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    lib1.gp_ci_.renderPass = VK_NULL_HANDLE;
+    lib1.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.viewMask = 0x1;
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper lib2(*this);
+    lib2.cb_ci_ = color_blend_state_create_info;
+    lib2.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+    lib2.gp_ci_.renderPass = VK_NULL_HANDLE;
+    lib2.ds_ci_ = ds_ci;
+    lib2.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.viewMask = 0;
+    VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper();
+    library_create_info.libraryCount = 2;
+    VkPipeline libraries[2] = {lib1, lib2};
+    library_create_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&library_create_info);
+    pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    pipe_ci.layout = lib1.gp_ci_.layout;
+    vkt::Pipeline pipe(*m_device, pipe_ci);
 }

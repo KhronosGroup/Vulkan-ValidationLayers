@@ -312,13 +312,13 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
         }
 
         if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
-            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", device, library_loc, "was created with %s.",
-                             string_VkPipelineCreateFlags2(lib->create_flags).c_str());
+            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", lib->Handle(), library_loc,
+                             "was created with %s.", string_VkPipelineCreateFlags2(lib->create_flags).c_str());
         }
         for (const auto &[vuid, flag] : vuid_map) {
             if (pipeline_create_flags & flag) {
                 if ((lib->create_flags & flag) == 0) {
-                    skip |= LogError(vuid, device, library_loc, "was created with %s, which is missing %s (%s is %s).",
+                    skip |= LogError(vuid, lib->Handle(), library_loc, "was created with %s, which is missing %s (%s is %s).",
                                      string_VkPipelineCreateFlags2(lib->create_flags).c_str(),
                                      string_VkPipelineCreateFlags2(flag).c_str(), flags_loc.Fields().c_str(),
                                      string_VkPipelineCreateFlags2(pipeline_create_flags).c_str());
@@ -327,14 +327,14 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
         }
         if (pipeline.descriptor_heap_mode != lib->descriptor_heap_mode) {
             if (pipeline.descriptor_heap_mode) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11275", device, library_loc,
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11275", lib->Handle(), library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
                                  string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(),
                                  create_info_loc.dot(Field::flags).Fields().c_str(),
                                  string_VkPipelineCreateFlags2(lib->create_flags).c_str());
             } else {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11276", device, library_loc,
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11276", lib->Handle(), library_loc,
                                  "was created without %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
                                  string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(),
@@ -345,15 +345,17 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
         if (i == 0) {
             uses_descriptor_buffer = lib->descriptor_buffer_mode;
         } else if (uses_descriptor_buffer != lib->descriptor_buffer_mode) {
-            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", device, library_loc,
-                             "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT which is opposite of pLibraries[0].",
-                             lib->descriptor_buffer_mode ? "was" : "was not");
+            skip |=
+                LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", lib->Handle(), library_loc,
+                         "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT while pLibraries[0] (%s) %s.",
+                         lib->descriptor_buffer_mode ? "was" : "was not", FormatHandle(library_create_info.pLibraries[0]).c_str(),
+                         lib->descriptor_buffer_mode ? "was not" : "was");
             break;  // no point keep checking as might have many of same error
         }
 
         const auto &lib_create_info = lib->RayTracingCreateInfo();
         if (lib_create_info.maxPipelineRayRecursionDepth != pipeline_create_info.maxPipelineRayRecursionDepth) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591", device, library_loc,
+            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03591", lib->Handle(), library_loc,
                              "was created with maxPipelineRayRecursionDepth (%" PRIu32 ") which is not equal %s (%" PRIu32 ") .",
                              lib_create_info.maxPipelineRayRecursionDepth,
                              create_info_loc.dot(Field::maxPipelineRayRecursionDepth).Fields().c_str(),
@@ -365,7 +367,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
 
             if (lib_interface.maxPipelineRayHitAttributeSize != pipeline_interface.maxPipelineRayHitAttributeSize ||
                 lib_interface.maxPipelineRayPayloadSize != pipeline_interface.maxPipelineRayPayloadSize) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03593", device, library_loc,
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03593", lib->Handle(), library_loc,
                                  "was created with maxPipelineRayPayloadSize (%" PRIu32
                                  ") and "
                                  "maxPipelineRayHitAttributeSize (%" PRIu32 ") which is not equal to %s values of (%" PRIu32
@@ -376,7 +378,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
             }
             if ((pipeline_create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR) &&
                 !(lib->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594", device, library_loc,
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594", lib->Handle(), library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR included in %s (%s).",
                                  string_VkPipelineCreateFlags2(pipeline_create_flags).c_str(), flags_loc.Fields().c_str(),
