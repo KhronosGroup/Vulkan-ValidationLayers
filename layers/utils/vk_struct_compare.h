@@ -39,3 +39,6 @@ bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentS
 bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b);
 
 bool CompareDependencyInfo(const VkDependencyInfo& a, const VkDependencyInfo& b);
+
+bool CompareDataGraphOperationSupportARM(const VkPhysicalDeviceDataGraphOperationSupportARM& a,
+                                         const VkPhysicalDeviceDataGraphOperationSupportARM& b);

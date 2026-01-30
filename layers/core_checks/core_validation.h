@@ -243,15 +243,14 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateSetMemBinding(const vvl::DeviceMemory& memory_state, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
-    bool ValidateDataGraphProcessingEngineForDescriptorPool(const VkDataGraphProcessingEngineCreateInfoARM& processing_engine_info,
-                                                           const Location& loc) const;
-    bool ValidateDataGraphProcessingEngineCreateInfoARM(const VkDataGraphProcessingEngineCreateInfoARM& processing_engine_info,
-                                                        const Location& loc) const;
+    bool ValidateDataGraphProcessingEngineForDescriptorPool(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                            const Location& loc) const;
     bool ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& dg_model_ci,
-                                                             const Location& loc, const void* next_struct) const;
+                                                             const Location& loc,
+                                                             const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const;
     bool ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache pipeline_cache, const Location& loc) const;
     bool ValidateDataGraphQueuePropsForCommandPool(uint32_t queue_family, const Location& loc,
-                                                    const char* vuid, const void* next_engine_struct) const;
+                                                   const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidateGraphicsPipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
     bool ValidateComputePipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;

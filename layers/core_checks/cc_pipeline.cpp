@@ -29,6 +29,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
+#include "containers/container_utils.h"
 
 bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const {
     // If VK_KHR_driver_properties is not enabled then conformance version will not be set
@@ -780,27 +781,8 @@ void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, c
 }
 
 bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache pipelineCache, const Location& loc) const {
-    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     bool skip = false;
-
-    auto is_valid_dg_model_cache_type = [] (VkDataGraphModelCacheTypeQCOM cache_type_qcom) {
-        switch (cache_type_qcom) {
-            case VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM:
-                return true;
-            default:
-                return false;
-        }
-    };
-
-    auto is_valid_pipeline_cache_header_version = [] (VkPipelineCacheHeaderVersion header_version) {
-        switch (header_version) {
-            case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
-            case VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM:
-                return true;
-            default:
-                return false;
-        }
-    };
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
 
     if (!enabled_features.dataGraphModel) {
         skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None-11835",
@@ -815,25 +797,28 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
         std::memcpy(&pipeline_cache_header_version, pipeline_cache->create_info.pInitialData,
                     sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
-        if (!is_valid_pipeline_cache_header_version(pipeline_cache_header_version.headerVersion)) {
+        if (!IsValueIn(pipeline_cache_header_version.headerVersion,
+                       { VK_PIPELINE_CACHE_HEADER_VERSION_ONE, VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM })) {
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-parameter",
                              pipelineCache,
                              loc.dot(Field::headerVersion),
-                             "headerVersion must be a valid VkPipelineCacheHeaderVersion value.");
+                             "headerVersion %s is an invalid and unsupported VkPipelineCacheHeaderVersion value.",
+                             string_VkPipelineCacheHeaderVersion(pipeline_cache_header_version.headerVersion));
         }
 
-        if (!is_valid_dg_model_cache_type(pipeline_cache_header_version.cacheType)) {
+        if (!IsValueIn(pipeline_cache_header_version.cacheType, { VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM })) {
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-cacheType-parameter",
                              pipelineCache,
                              loc.dot(Field::cacheType),
-                             "cacheType must be a valid VkDataGraphModelCacheTypeQCOM value.");
+                             "cacheType %s is an invalid and unsupported VkDataGraphModelCacheTypeQCOM value.",
+                             string_VkDataGraphModelCacheTypeQCOM(pipeline_cache_header_version.cacheType));
         }
 
         if (pipeline_cache_header_version.headerSize != sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)) {
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836",
                              pipelineCache,
                              loc.dot(Field::headerSize),
-                             "current header size  %" PRIu32 " must be equal to sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM), "
+                             "current header size %u isn't equal to sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM), "
                              "that is %zu size in bytes.",
                              pipeline_cache_header_version.headerSize,
                              sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
@@ -850,16 +835,20 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11838",
                              pipelineCache,
                              loc.dot(Field::headerSize),
-                             "header size %" PRIu32 " must not exceed pipeline cache size %" "zu" ".",
+                             "header size %" PRIu32 " must not exceed pipeline cache size %zu.",
                              pipeline_cache_header_version.headerSize,
                              pipeline_cache->create_info.initialDataSize);
         }
     } else {
+        const char* conditional_ext_cmd = (!pipeline_cache->create_info.pInitialData) ?
+                                          "and VkPipelineCacheCreateInfo::pInitialData member is nullptr" :
+                                          "the data size isn't greater than sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)";
         skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None",
                          pipelineCache,
                          loc,
-                         "has been created with the illegal VkPipelineCacheCreateInfo::initialDataSize and "
-                         "the illegal VkPipelineCacheCreateInfo::initialDataSize member.");
+                         "is created with VkPipelineCacheCreateInfo::initialDataSize = %zu, %s, which is illegal.",
+                         pipeline_cache->create_info.initialDataSize,
+                         conditional_ext_cmd);
     }
 
     return skip;
@@ -872,7 +861,7 @@ bool CoreChecks::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipeline
 
     ASSERT_AND_RETURN_SKIP(pipeline_cache);
 
-    if (pipeline_cache->HasDataGraphQcomHeaderVersion()) {
+    if (pipeline_cache->has_dg_qcom_header_version) {
         skip |= LogError("VUID-vkGetPipelineCacheData-pipelineCache-11834",
                          pipelineCache,
                          error_obj.location.dot(Field::pipelineCache),
@@ -888,7 +877,7 @@ bool CoreChecks::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineC
     auto dst_pipeline_cache = Get<vvl::PipelineCache>(dstCache);
     bool skip = false;
 
-    if ((dst_pipeline_cache) && (dst_pipeline_cache->HasDataGraphQcomHeaderVersion())) {
+    if ((dst_pipeline_cache) && (dst_pipeline_cache->has_dg_qcom_header_version)) {
         skip |= LogError("VUID-vkMergePipelineCaches-dstCache-11832",
                          dstCache,
                          error_obj.location.dot(Field::dstCache),
@@ -901,7 +890,7 @@ bool CoreChecks::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineC
 
         ASSERT_AND_CONTINUE(src_pipeline_cache)
 
-        if (src_pipeline_cache->HasDataGraphQcomHeaderVersion()) {
+        if (src_pipeline_cache->has_dg_qcom_header_version) {
             skip |= LogError("VUID-vkMergePipelineCaches-headerVersion-11833",
                              pSrcCaches[cache_index],
                              error_obj.location.dot(Field::pSrcCaches, cache_index),

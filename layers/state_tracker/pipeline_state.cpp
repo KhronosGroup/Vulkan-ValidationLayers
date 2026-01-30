@@ -29,19 +29,20 @@
 
 namespace vvl {
 
-void PipelineCache::RetrieveDataGraphQcomHeaderVersion() {
-    has_data_graph_header_version = false;
+bool PipelineCache::HasDataGraphQcomHeaderVersion() const {
+    bool exist_dg_qcom_header_version = false;
+
     if ((create_info.initialDataSize > sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)) && (create_info.pInitialData)) {
         VkPipelineCacheHeaderVersionDataGraphQCOM pipeline_cache_header_version{};
         std::memcpy(&pipeline_cache_header_version, create_info.pInitialData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
         if ((pipeline_cache_header_version.headerSize == sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)) &&
             (pipeline_cache_header_version.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM)) {
-            has_data_graph_header_version = true;
-        } else {
-            has_data_graph_header_version = false;
+            exist_dg_qcom_header_version = true;
         }
     }
+
+    return exist_dg_qcom_header_version;
 }
 
 static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGraphicsPipelineCreateInfo &ci,

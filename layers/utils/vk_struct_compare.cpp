@@ -207,3 +207,8 @@ bool CompareDependencyInfo(const VkDependencyInfo &a, const VkDependencyInfo &b)
     }
     return true;
 }
+
+bool CompareDataGraphOperationSupportARM(const VkPhysicalDeviceDataGraphOperationSupportARM& a,
+                                         const VkPhysicalDeviceDataGraphOperationSupportARM& b) {
+    return (a.version == b.version) && (a.operationType == b.operationType) && (strcmp(a.name, b.name) == 0);
+}
