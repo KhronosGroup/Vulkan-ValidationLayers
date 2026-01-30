@@ -125,7 +125,7 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-flags-09773" :
                 kVUIDUndefined;
     }
-    return "UNASSIGNED-CoreChecks-unhandled-pipeline-create-flage";
+    return "UNASSIGNED-CoreChecks-unhandled-pipeline-create-flags";
 }
 // clang-format on
 
