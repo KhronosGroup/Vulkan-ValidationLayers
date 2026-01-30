@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -799,6 +799,78 @@ TEST_F(PositiveImageLayout, TransitionAll3dImageSlices) {
     m_command_buffer.Barrier(barrier);
 
     vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer_dst, 1, &region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveImageLayout, TransitionAll3dImageSlicesUsing2DArrayView) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11578
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t image_depth = 10;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {64, 64, image_depth};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, image_depth};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.CreateRenderPass();
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = rp;
+    framebuffer_ci.width = 64;
+    framebuffer_ci.height = 64;
+    framebuffer_ci.layers = image_depth;
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = &image_view.handle();
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+
+    // Transition image to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    m_command_buffer.Barrier(layout_transition);
+
+    // Transition image to VK_IMAGE_LAYOUT_GENERAL
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+    m_command_buffer.EndRenderPass();
+
+    // Expect GENERAL layout. The original issue reported layout mismatch
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
     m_command_buffer.End();
 }
 

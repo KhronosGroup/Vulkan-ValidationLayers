@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -835,16 +835,16 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
             vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
         if (attachment_description_stencil_layout) {
             const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
-            VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
+            VkImageSubresourceRange sub_range = view_state->GetRangeGeneratorRange(device_state->extensions);
             sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, initial_layout);
             sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
             cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, stencil_initial_layout);
         } else {
+            auto subresource_range = view_state->GetRangeGeneratorRange(device_state->extensions);
             // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
             // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
             // also be transitioned and thus must be included explicitly
-            auto subresource_range = view_state->normalized_subresource_range;
             if (const VkFormat format = view_state->create_info.format; vkuFormatIsDepthAndStencil(format)) {
                 if (subresource_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
                     subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
