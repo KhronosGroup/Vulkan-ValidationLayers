@@ -30,9 +30,12 @@ namespace valcmd {
 void TraceRaysIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound,
                        VkDeviceAddress indirect_data_address);
 
-void BuildAccelerationStructures(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
-                                 const LastBound &last_bound, uint32_t info_count,
-                                 const VkAccelerationStructureBuildGeometryInfoKHR *infos,
-                                 const VkAccelerationStructureBuildRangeInfoKHR *const *pp_build_ranges_infos);
+void TLAS(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound, uint32_t info_count,
+          const VkAccelerationStructureBuildGeometryInfoKHR *infos,
+          const VkAccelerationStructureBuildRangeInfoKHR *const *pp_build_ranges_infos);
+
+void BLAS(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound, uint32_t info_count,
+          const VkAccelerationStructureBuildGeometryInfoKHR *infos,
+          const VkAccelerationStructureBuildRangeInfoKHR *const *pp_build_ranges_infos);
 }
 }  // namespace gpuav

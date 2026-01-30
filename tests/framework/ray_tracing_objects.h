@@ -91,6 +91,7 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer, uint32_t max_vertex,
                                               VkDeviceSize stride = 3 * sizeof(float));
     GeometryKHR& SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32);
+    vkt::Buffer& GetTrianglesDeviceIndexBuffer();
     GeometryKHR& SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
     GeometryKHR& SetTrianglesIndexType(VkIndexType index_type);
     GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
@@ -152,7 +153,8 @@ class GeometryKHR {
     GeometryKHR& SetLSSpheresVertexAddressZero();
     GeometryKHR& SetLSSpheresRadiusAddressZero();
 
-    const auto& GetVkObj() const { return vk_obj_; }
+    VkAccelerationStructureGeometryKHR& GetVkObj() { return vk_obj_; }
+    const VkAccelerationStructureGeometryKHR& GetVkObj() const { return vk_obj_; }
     VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
     const auto& GetTriangles() const { return triangles_; }
     const auto& GetAABBs() const { return aabbs_; }
@@ -227,6 +229,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& AddFlags(VkBuildAccelerationStructureFlagsKHR flags);
     BuildGeometryInfoKHR& SetGeometries(std::vector<GeometryKHR>&& geometries);
     BuildGeometryInfoKHR& SetBuildRanges(std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos);
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR>& GetBuildRanges() { return build_range_infos_; }
     // Using the same pointers for src and dst is supported
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);

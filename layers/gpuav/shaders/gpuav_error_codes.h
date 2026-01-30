@@ -193,6 +193,7 @@ const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer = 3;
 const int kErrorSubCode_PreBuildAccelerationStructures_InvalidASType = 4;
 const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory = 5;
 const int kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap = 6;
+const int kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex = 7;
 
 #ifdef __cplusplus
 }  // namespace glsl

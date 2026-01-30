@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature = vku::InitStructHelper();
     VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper(&supported_coop_mat_feature);
     VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
-    VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_8bit_feature);
+    VkPhysicalDevice16BitStorageFeatures supported_16bit_feature = vku::InitStructHelper(&supported_8bit_feature);
+    VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_16bit_feature);
     VkPhysicalDeviceScalarBlockLayoutFeatures supported_scalar_feature = vku::InitStructHelper(&supported_bda_feature);
     VkPhysicalDeviceVulkanMemoryModelFeatures supported_memory_model_feature = vku::InitStructHelper(&supported_scalar_feature);
     VkPhysicalDeviceTimelineSemaphoreFeatures supported_timeline_feature = vku::InitStructHelper(&supported_memory_model_feature);
@@ -294,6 +295,42 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             // Only adds if not found already
             vku::AddExtension(*modified_create_info, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
             add_8bit_access();
+        }
+    }
+
+    if (supported_16bit_feature.storageBuffer16BitAccess) {
+        auto add_16bit_access = [modified_create_info, &adjustment_warnings]() {
+            // Add storageBuffer16BitAccess feature
+            if (auto *sixteen_bit_access_feature = const_cast<VkPhysicalDevice16BitStorageFeatures *>(
+                    vku::FindStructInPNextChain<VkPhysicalDevice16BitStorageFeatures>(modified_create_info))) {
+                if (!sixteen_bit_access_feature->storageBuffer16BitAccess) {
+                    adjustment_warnings += "\tForcing VkPhysicalDevice16BitStorageFeatures::storageBuffer16BitAccess to VK_TRUE\n";
+                    sixteen_bit_access_feature->storageBuffer16BitAccess = VK_TRUE;
+                }
+            } else {
+                adjustment_warnings +=
+                    "\tAdding a VkPhysicalDevice16BitStorageFeatures to pNext with storageBuffer16BitAccess "
+                    "set to VK_TRUE\n";
+                VkPhysicalDevice16BitStorageFeatures new_16bit_features = vku::InitStructHelper();
+                new_16bit_features.storageBuffer16BitAccess = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_16bit_features);
+            }
+        };
+
+        if (api_version >= VK_API_VERSION_1_2) {
+            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan11Features *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(modified_create_info->pNext))) {
+                if (!features12->storageBuffer16BitAccess) {
+                    adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan11Features::storageBuffer16BitAccess to VK_TRUE\n";
+                    features12->storageBuffer16BitAccess = VK_TRUE;
+                }
+            } else {
+                add_16bit_access();
+            }
+        } else if (IsExtensionAvailable(VK_KHR_16BIT_STORAGE_EXTENSION_NAME, available_extensions)) {
+            // Only adds if not found already
+            vku::AddExtension(*modified_create_info, VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+            add_16bit_access();
         }
     }
 

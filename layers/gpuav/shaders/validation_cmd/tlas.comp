@@ -23,7 +23,7 @@
 
 layout(push_constant, scalar)
 uniform PushConstants {
-    AccelerationStructureReferencePushData pc;
+    TLASValidationShaderPushData pc;
 };
 
 bool RangesInclude(Range r1, Range r2) {
