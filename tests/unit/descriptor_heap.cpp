@@ -643,7 +643,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
     invalid_device_address_range.address = buffer.Address() + 1;
     invalid_device_address_range.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11452");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12350");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -676,7 +676,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
     invalid_device_address_range.address = buffer.Address() + 1;
     invalid_device_address_range.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11453");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12351");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -748,7 +748,7 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -791,7 +791,7 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue)
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11214");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -832,7 +832,7 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -875,7 +875,7 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue)
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11215");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
@@ -914,7 +914,7 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218");
+    m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
