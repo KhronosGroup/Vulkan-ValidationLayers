@@ -1270,7 +1270,7 @@ class Tensor : public internal::NonDispHandle<VkTensorARM> {
     void InitNoMem(const Device &dev, const VkTensorCreateInfoARM &info);
 
     const VkMemoryRequirements2 &GetMemoryReqs();
-    void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0);
+    void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0, const void* next_in_allocate_info = nullptr);
     VkFormat Format() const { return description_.format; }
     uint32_t DimensionCount() const { return description_.dimensionCount; }
     const VkTensorDescriptionARM &Description() const { return description_; }

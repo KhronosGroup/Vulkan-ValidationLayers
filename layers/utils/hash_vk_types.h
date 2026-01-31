@@ -184,3 +184,18 @@ struct hash<VkShaderModuleIdentifierEXT> {
     }
 };
 }  // namespace std
+
+// VkDataGraphProcessingEngineCreateInfoARM
+static inline bool operator==(const VkPhysicalDeviceDataGraphProcessingEngineARM& left_engine_info,
+                              const VkPhysicalDeviceDataGraphProcessingEngineARM& right_engine_info) noexcept {
+    return (left_engine_info.isForeign == right_engine_info.isForeign) &&
+           (left_engine_info.type == right_engine_info.type);
+}
+
+struct HashCombineDataGraphProcessingEngineARMInfo {
+    size_t operator()(const VkPhysicalDeviceDataGraphProcessingEngineARM& value) const noexcept {
+        hash_util::HashCombiner hc;
+        hc << value.isForeign << value.type;
+        return hc.Value();
+    }
+};

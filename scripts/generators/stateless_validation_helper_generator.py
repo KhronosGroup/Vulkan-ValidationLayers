@@ -74,6 +74,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateTensorARM',
             'vkFreeDescriptorSets',
             'vkUpdateDescriptorSets',
+            'vkCreateCommandPool',
             'vkBeginCommandBuffer',
             'vkFreeCommandBuffers',
             'vkCmdDecompressMemoryEXT',

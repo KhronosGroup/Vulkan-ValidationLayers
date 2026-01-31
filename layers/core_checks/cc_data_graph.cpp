@@ -25,6 +25,78 @@
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
 
+bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& dg_model_ci,
+                                                                     const Location& loc,
+                                                                     const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const {
+    bool skip = false;
+    bool has_identical_op = false;
+    bool has_identical_paired_op_engine = false;
+
+    std::vector<uint32_t> data_graph_queue_families{};
+    for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) {
+            data_graph_queue_families.push_back(static_cast<uint32_t>(family_index));
+        }
+    }
+
+    for (size_t index = 0; index < data_graph_queue_families.size(); ++index) {
+        const auto data_graph_properties_arms =
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(data_graph_queue_families[index]);
+
+        for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
+            const auto& retrieved_operation = data_graph_properties_arms[prop_index].operation;
+            const auto& retrieved_engine = data_graph_properties_arms[prop_index].engine;
+
+            ASSERT_AND_CONTINUE(dg_model_ci.pOperation);
+
+            // Check whether the operations are identical or not
+            if (!CompareDataGraphOperationSupportARM(*dg_model_ci.pOperation, retrieved_operation)) {
+                continue;
+            }
+
+            has_identical_op = true;
+
+            ASSERT_AND_CONTINUE(engine_ci);
+
+            // Check whether the engines are identical or not
+            for (uint32_t engine_index = 0; engine_index < engine_ci->processingEngineCount; ++engine_index) {
+                const auto& processing_engine = engine_ci->pProcessingEngines[engine_index];
+                if (processing_engine == retrieved_engine) {
+                    has_identical_paired_op_engine = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!has_identical_paired_op_engine) {
+        std::string conditional_string{};
+
+        if (!has_identical_op) {
+            conditional_string = (!dg_model_ci.pOperation) ?
+                                 "VkPhysicalDeviceDataGraphOperationSupportARM object is a nullptr." :
+                                 std::string{ "with input members operationType = " } +
+                                 string_VkPhysicalDeviceDataGraphOperationTypeARM(dg_model_ci.pOperation->operationType) +
+                                 ", name = " +
+                                 dg_model_ci.pOperation->name +
+                                 ", version = " + std::to_string(dg_model_ci.pOperation->version) +
+                                 ", failed to find any identical operation in all retrieved "
+                                 "VkQueueFamilyDataGraphPropertiesARM::operation results.";
+        } else {
+            conditional_string = ", found the same operation among the retrieved VkQueueFamilyDataGraphPropertiesARM::operation "
+                                 "results, but failed to found the same paired VkQueueFamilyDataGraphPropertiesARM::engine, "
+                                 "please check VkDataGraphProcessingEngineCreateInfoARM object in the pNext chain.";
+        }
+
+        skip |= LogError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842",
+                         device,
+                         loc.dot(Field::pOperation),
+                         conditional_string.c_str());
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
                                                                  const Location& dg_shader_ci_loc,
@@ -152,6 +224,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                             chassis::CreateDataGraphPipelinesARM& chassis_state) const {
     bool skip = ValidateDeviceQueueSupport(error_obj.location);
+    bool use_dg_pipeline_identifier = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const VkDataGraphPipelineCreateInfoARM& create_info = pCreateInfos[i];
@@ -228,13 +301,21 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, *dg_shader_ci, dg_shader_ci_loc, *pipeline);
             skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *dg_shader_ci, *pipeline);
         } else if (dg_pipeline_identifier_ci) {
-            // TODO: add here validation for datagraph defined as cache object
+            use_dg_pipeline_identifier = true;
         } else if (qcom_model_ci) {
-            // TODO: add here validation for datagraph defined as QCOM model object
+            const Location built_in_model_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM);
+            skip |= ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(*qcom_model_ci, built_in_model_loc,
+                                                                        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext));
         }
 
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
+    }
+
+    // Defer validate VkPipelineCacheHeaderVersionDataGraphQCOM of VkPipelineCache
+    // TODO: may exist potential issues
+    if ((use_dg_pipeline_identifier) && (pipelineCache)) {
+        skip |= ValidatePipelineCacheHeaderVersionDataGraphQCOM(pipelineCache, error_obj.location.dot(Field::pipelineCache));
     }
 
     return skip;

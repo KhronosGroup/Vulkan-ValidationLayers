@@ -48,9 +48,11 @@ namespace vvl {
 class PipelineCache : public StateObject {
   public:
     const vku::safe_VkPipelineCacheCreateInfo create_info;
+    const bool has_dg_qcom_header_version;
 
     PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
-        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
+        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo),
+          has_dg_qcom_header_version(HasDataGraphQcomHeaderVersion()) {}
 
     VkPipelineCache VkHandle() const { return handle_.Cast<VkPipelineCache>(); }
 
@@ -64,6 +66,9 @@ class PipelineCache : public StateObject {
         (void)stage_index;
         return nullptr;
     }
+
+  private:
+    bool HasDataGraphQcomHeaderVersion() const;
 };
 
 class PipelineSubState;
