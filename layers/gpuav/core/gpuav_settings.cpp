@@ -36,6 +36,7 @@ bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
            shader_instrumentation.sanitizer;
 }
 bool GpuAVSettings::IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
+uint32_t GpuAVSettings::GetInvalidIndexCommand() const { return indices_count - 1; }
 
 // Also disables shader caching and select shader instrumentation
 void GpuAVSettings::DisableShaderInstrumentationAndOptions() {

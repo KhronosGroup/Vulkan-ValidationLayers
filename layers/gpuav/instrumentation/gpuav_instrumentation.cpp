@@ -393,8 +393,8 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
 
     const uint32_t error_logger_index = cb_state.GetErrorLoggerIndex();
 
-    assert(error_logger_index < cst::indices_count);
-    assert(error_info.action_command_index < cst::indices_count);
+    assert(error_logger_index < gpuav.gpuav_settings.indices_count);
+    assert(error_info.action_command_index < gpuav.gpuav_settings.indices_count);
     const std::array<uint32_t, 2> dynamic_offsets = {
         {error_info.action_command_index * gpuav.indices_buffer_alignment_, error_logger_index * gpuav.indices_buffer_alignment_}};
 

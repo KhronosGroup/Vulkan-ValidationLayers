@@ -820,31 +820,30 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
             return;
         }
 
-        deferred_op_post_checks.emplace_back(
-            [this, held_chassis_state = chassis_state](std::pair<uint32_t, VkPipeline *> pipelines) mutable {
-                for (const auto [pipe_i, pipe] : vvl::enumerate(pipelines.second, pipelines.first)) {
-                    std::shared_ptr<vvl::Pipeline> pipeline_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(pipe);
-                    ASSERT_AND_CONTINUE(pipeline_state);
-                    if (pipeline_state->ray_tracing_library_ci) {
-                        for (VkPipeline lib : vvl::make_span(pipeline_state->ray_tracing_library_ci->pLibraries,
-                                                             pipeline_state->ray_tracing_library_ci->libraryCount)) {
-                            auto lib_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(lib);
-                            ASSERT_AND_CONTINUE(lib_state);
-                            pipeline_state->instrumentation_data.was_instrumented |=
-                                lib_state->instrumentation_data.was_instrumented;
-                        }
+        deferred_op_post_checks.emplace_back([this, held_chassis_state =
+                                                        chassis_state](std::pair<uint32_t, VkPipeline *> pipelines) mutable {
+            for (const auto [pipe_i, pipe] : vvl::enumerate(pipelines.second, pipelines.first)) {
+                std::shared_ptr<vvl::Pipeline> pipeline_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(pipe);
+                ASSERT_AND_CONTINUE(pipeline_state);
+                if (pipeline_state->ray_tracing_library_ci) {
+                    for (VkPipeline lib : vvl::make_span(pipeline_state->ray_tracing_library_ci->pLibraries,
+                                                         pipeline_state->ray_tracing_library_ci->libraryCount)) {
+                        auto lib_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(lib);
+                        ASSERT_AND_CONTINUE(lib_state);
+                        pipeline_state->instrumentation_data.was_instrumented |= lib_state->instrumentation_data.was_instrumented;
                     }
-                    auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[pipe_i];
-                    // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
-                    // to final link time, and done at ray tracing library creation time.
-                    // => No need to iterate over shader stages coming from libraries,
-                    // stop at VkRayTracingPipelineCreateInfoKHR::stageCount
-                    // Note: This code implicitly relies on the fact that in pipeline_state->stage_states,
-                    // stages coming from libraries are added last.
-                    PostCallRecordPipelineCreationShaderInstrumentation(
-                        *pipeline_state, pipeline_state->RayTracingCreateInfo().stageCount, shader_instrumentation_metadata);
                 }
-            });
+                auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[pipe_i];
+                // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
+                // to final link time, and done at ray tracing library creation time.
+                // => No need to iterate over shader stages coming from libraries,
+                // stop at VkRayTracingPipelineCreateInfoKHR::stageCount
+                // Note: This code implicitly relies on the fact that in pipeline_state->stage_states,
+                // stages coming from libraries are added last.
+                PostCallRecordPipelineCreationShaderInstrumentation(
+                    *pipeline_state, pipeline_state->RayTracingCreateInfo().stageCount, shader_instrumentation_metadata);
+            }
+        });
         dispatch_device_->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
     } else {
         for (uint32_t i = 0; i < count; ++i) {
@@ -1129,7 +1128,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(stage_state.module_state);
         ASSERT_AND_CONTINUE(modified_module_state);
         if (!modified_module_state->spirv) {
-            continue; // Hit when using VK_KHR_pipeline_binary
+            continue;  // Hit when using VK_KHR_pipeline_binary
         }
         std::unique_lock<std::mutex> module_lock(modified_module_state->module_mutex_);
 
@@ -1818,8 +1817,9 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
             ss << "Unknown Pipeline Operation ";
         }
 
-        if (action_command_index == cst::invalid_index_command) {
-            ss << "Index Unknown (After " << cst::invalid_index_command << " commands, we stop tracking) \n";
+        uint32_t invalid_index_command = dispatch_instance_->settings.gpuav_settings.GetInvalidIndexCommand();
+        if (action_command_index == invalid_index_command) {
+            ss << "Index Unknown (After " << invalid_index_command << " commands, we stop tracking) \n";
         } else {
             ss << "Index " << action_command_index << '\n';
         }

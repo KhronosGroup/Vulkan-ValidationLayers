@@ -285,7 +285,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        buffer_info.size = cst::indices_count * indices_buffer_alignment_;
+        buffer_info.size = gpuav_settings.indices_count * indices_buffer_alignment_;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -296,7 +296,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
         uint32_t stride = indices_buffer_alignment_ / sizeof(uint32_t);
         uint32_t *indices_ptr = (uint32_t *)global_indices_buffer_.GetMappedPtr();
-        for (uint32_t i = 0; i < cst::indices_count; ++i) {
+        for (uint32_t i = 0; i < gpuav_settings.indices_count; ++i) {
             const uint32_t offset = i * stride;
             indices_ptr[offset] = i;
         }
