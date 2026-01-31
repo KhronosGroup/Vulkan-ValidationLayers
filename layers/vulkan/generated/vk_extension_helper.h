@@ -347,6 +347,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_representative_fragment_test{kNotSupported};
     ExtEnabled vk_ext_filter_cubic{kNotSupported};
     ExtEnabled vk_qcom_render_pass_shader_resolve{kNotSupported};
+    ExtEnabled vk_qcom_cooperative_matrix_conversion{kNotSupported};
     ExtEnabled vk_ext_global_priority{kNotSupported};
     ExtEnabled vk_ext_external_memory_host{kNotSupported};
     ExtEnabled vk_amd_buffer_marker{kNotSupported};
@@ -827,6 +828,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_representative_fragment_test:
         case vvl::Extension::_VK_EXT_filter_cubic:
         case vvl::Extension::_VK_QCOM_render_pass_shader_resolve:
+        case vvl::Extension::_VK_QCOM_cooperative_matrix_conversion:
         case vvl::Extension::_VK_EXT_global_priority:
         case vvl::Extension::_VK_EXT_external_memory_host:
         case vvl::Extension::_VK_AMD_buffer_marker:
