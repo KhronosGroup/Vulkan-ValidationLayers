@@ -1563,8 +1563,7 @@ bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoE
                        << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
                 }
 
-                // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
-                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11214", device,
+                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12349", device,
                                  loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
             }
         } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
@@ -1591,14 +1590,12 @@ bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoE
                        << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
                 }
 
-                // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
-                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11215", device,
+                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12349", device,
                                  loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
             }
         }
     } else if (!IsPointerAligned(info.addressRange.address, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
-        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
-        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-11218", device, loc.dot(Field::addressRange).dot(Field::address),
+        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-12349", device, loc.dot(Field::addressRange).dot(Field::address),
                          "(0x%" PRIx64 ") is not aligned to minTexelBufferOffsetAlignment (%" PRIu64 ")", info.addressRange.address,
                          phys_dev_props.limits.minTexelBufferOffsetAlignment);
     }
@@ -1660,9 +1657,8 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                 if (resource.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                     if (!IsPointerAligned(resource.data.pAddressRange->address,
                                           phys_dev_props.limits.minUniformBufferOffsetAlignment)) {
-                        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
                         skip |=
-                            LogError("VUID-VkResourceDescriptorInfoEXT-type-11452", device,
+                            LogError("VUID-VkResourceDescriptorInfoEXT-type-12350", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::address),
                                      "(0x%" PRIx64 ") is not aligned to minUniformBufferOffsetAlignment (%" PRIu64 ")",
                                      resource.data.pAddressRange->address, phys_dev_props.limits.minUniformBufferOffsetAlignment);
@@ -1670,9 +1666,8 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                 } else if (resource.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
                     if (!IsPointerAligned(resource.data.pAddressRange->address,
                                           phys_dev_props.limits.minStorageBufferOffsetAlignment)) {
-                        // NEW VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8019
                         skip |=
-                            LogError("VUID-VkResourceDescriptorInfoEXT-type-11453", device,
+                            LogError("VUID-VkResourceDescriptorInfoEXT-type-12351", device,
                                      data_loc.dot(Field::pAddressRange).dot(Field::address),
                                      "(0x%" PRIx64 ") is not aligned to minStorageBufferOffsetAlignment (%" PRIu64 ")",
                                      resource.data.pAddressRange->address, phys_dev_props.limits.minStorageBufferOffsetAlignment);
