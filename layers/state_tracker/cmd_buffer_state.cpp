@@ -867,7 +867,7 @@ static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment &
 
 void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {
     RecordCommand(loc);
-    active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
+    active_render_pass = std::make_shared<vvl::RenderPass>(rendering_info);
     render_area = rendering_info.renderArea;
     render_pass_queries.clear();
 

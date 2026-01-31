@@ -839,6 +839,11 @@ std::vector<std::shared_ptr<const vvl::PipelineLayout>> Pipeline::PipelineLayout
     return {merged_graphics_layout};
 }
 
+// See DeviceState::PreCallValidateCreateGraphicsPipelines() why we need this awful function
+const VkPipelineRenderingCreateInfo& Pipeline::GetRenderPassPipelineRenderingCreateInfo() const {
+    return *(rp_state->dynamic_pipeline_rendering_create_info.ptr());
+}
+
 // Currently will return vvl::ShaderModule with no SPIR-V
 std::shared_ptr<const vvl::ShaderModule> Pipeline::GetGraphicsLibraryStateShader(VkShaderStageFlagBits state) const {
     switch (state) {

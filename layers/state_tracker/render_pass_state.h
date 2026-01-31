@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,9 +79,9 @@ class RenderPass : public StateObject {
 
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
-    const bool rasterization_enabled;
 
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
+    // Note, this is not the exact VkPipelineRenderingCreateInfo passed in, instead it will handle fields being ignored
     const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     // when a secondary command buffer is recorded with VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
@@ -112,12 +112,12 @@ class RenderPass : public StateObject {
     RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo);
 
     // vkCmdBeginRendering
-    RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
+    explicit RenderPass(const VkRenderingInfo& rendering_info);
     // vkBeginCommandBuffer (dynamic rendering in secondary commadn buffer)
     explicit RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
 
     // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
-    RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
+    explicit RenderPass(const VkPipelineRenderingCreateInfo& rendering_ci);
 
     VkRenderPass VkHandle() const { return handle_.Cast<VkRenderPass>(); }
 

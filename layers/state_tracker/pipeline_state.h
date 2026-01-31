@@ -243,19 +243,19 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     // Used to know if the pipeline library is being created (as opposed to being linked)
     // Important as some pipeline checks need pipeline state that won't be there if the library is from linking
-    // Many VUs say "the pipeline require" which means "not being linked in as a library"
+    // Many VUs say "the pipeline requires" which means "not being linked in as a library"
     // If the VUs says "created with" then you should NOT use this function
     // TODO - This could probably just be a check to VkGraphicsPipelineLibraryCreateInfoEXT::flags
     bool OwnsLibState(const std::shared_ptr<PipelineLibraryState> lib_state) const {
         return lib_state && (&lib_state->parent == this);
     }
 
-    // This grabs the render pass at pipeline creation time, if you are inside a command buffer, use the vvl::RenderPass inside the
-    // command buffer! (The render pass can be different as they just have to be compatible, see
-    // vkspec.html#renderpass-compatibility)
+    // If you are inside a command buffer, use the vvl::RenderPass inside the command buffer!!
+    // - This grabs the render pass at pipeline creation time
+    // - The render pass can be different as they just have to be compatible, see vkspec.html#renderpass-compatibility
+    // - The issue is for something like VkPipelineRenderingCreateInfo we want executable version... so why this is ONLY suppose to
+    // be used when we don't have the command buffer scope
     const std::shared_ptr<const vvl::RenderPass> RenderPassState() const {
-        // TODO A render pass object is required for all of these library states. Which one should be used for an "executable
-        // pipeline"?
         if (fragment_output_state && fragment_output_state->rp_state) {
             return fragment_output_state->rp_state;
         } else if (fragment_shader_state && fragment_shader_state->rp_state) {
@@ -265,6 +265,8 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         }
         return rp_state;
     }
+
+    const VkPipelineRenderingCreateInfo& GetRenderPassPipelineRenderingCreateInfo() const;
 
     // A pipeline does not "require" state that is specified in a library.
     bool IsRenderPassStateRequired() const {
@@ -515,59 +517,6 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         return EnablesRasterizationStates(create_info);
     }
 
-    template <typename CreateInfo>
-    static bool ContainsLibraryState(const vvl::DeviceState &device_state, const CreateInfo &create_info,
-                                     VkGraphicsPipelineLibraryFlagsEXT lib_flags) {
-        constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
-        VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
-
-        // Check linked libraries
-        auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-        if (link_info) {
-            const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
-            for (const auto handle : libs) {
-                auto lib = device_state.Get<vvl::Pipeline>(handle);
-                current_state |= lib->graphics_lib_type;
-            }
-        }
-
-        // Check if this is a graphics library
-        auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
-        if (lib_info) {
-            current_state |= lib_info->flags;
-        }
-
-        if (!link_info && !lib_info) {
-            // This is not a graphics pipeline library, and therefore contains all necessary state
-            return true;
-        }
-
-        return (current_state & lib_flags) != null_lib;
-    }
-
-    // Version used at dispatch time for stateless VOs
-    template <typename CreateInfo>
-    static bool ContainsLibraryState(const CreateInfo &create_info, VkGraphicsPipelineLibraryFlagsEXT lib_flags) {
-        constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
-        VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
-
-        auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-        // Cannot check linked library state in stateless VO
-
-        // Check if this is a graphics library
-        auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
-        if (lib_info) {
-            current_state |= lib_info->flags;
-        }
-
-        if (!link_info && !lib_info) {
-            // This is not a graphics pipeline library, and therefore (should) contains all necessary state
-            return true;
-        }
-
-        return (current_state & lib_flags) != null_lib;
-    }
-
     // This is a helper that is meant to be used during safe_VkPipelineRenderingCreateInfo construction to determine whether or not
     // certain fields should be ignored based on graphics pipeline state
     static bool PnextRenderingInfoCustomCopy(const DeviceState &device_state, const VkGraphicsPipelineCreateInfo &graphics_info,
@@ -575,9 +524,24 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         // "safe_struct" is assumed to be non-null as it should be the "this" member of calling class instance
         assert(safe_struct);
         if (safe_struct->sType == VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO) {
-            const bool has_fo_state = Pipeline::ContainsLibraryState(
-                device_state, graphics_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
-            if (!has_fo_state) {
+            // If using normal, non-GPL pipline, this is simply true
+            bool has_fragment_output_state = true;
+
+            {
+                // Same as OwnsLibState() but when there is no vvl::Pipeline state
+                auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(graphics_info.pNext);
+                if (lib_info) {
+                    has_fragment_output_state =
+                        (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0;
+                } else if (auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(graphics_info.pNext)) {
+                    if (link_info->libraryCount != 0) {
+                        // We are linking in, so we now know this pipeline doesn't "own" FragmentOuptut
+                        has_fragment_output_state = false;
+                    }
+                }
+            }
+
+            if (!has_fragment_output_state) {
                 // Clear out all pointers except for viewMask. Since viewMask is a scalar, it has already been copied at this point
                 // in vku::safe_VkPipelineRenderingCreateInfo construction.
                 auto pri = reinterpret_cast<vku::safe_VkPipelineRenderingCreateInfo *>(safe_struct);
