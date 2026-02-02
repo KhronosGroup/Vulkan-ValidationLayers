@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3080,6 +3080,59 @@ TEST_F(NegativeShaderSpirv, ShaderUniformBufferUnsizedArray) {
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderUniformBufferUnsizedArray-11806");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, LongVectorDotProductSpecConstant) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8035");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredFeature(vkt::Feature::shaderReplicatedComposites);
+    AddRequiredFeature(vkt::Feature::shaderIntegerDotProduct);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* cs_source = R"(
+        OpCapability Shader
+        OpCapability LongVectorEXT
+        OpCapability DotProduct
+        OpCapability DotProductInputAll
+        OpCapability ReplicatedCompositesEXT
+        OpExtension "SPV_EXT_long_vector"
+        OpExtension "SPV_KHR_integer_dot_product"
+        OpExtension "SPV_EXT_replicated_composites"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %spec_a SpecId 0
+        OpDecorate %spec_b SpecId 1
+%void = OpTypeVoid
+  %fn = OpTypeFunction %void
+ %int = OpTypeInt 32 1
+%int_1 = OpConstant %int 1
+
+    %spec_a = OpSpecConstant %int 4
+    %spec_b = OpSpecConstant %int 5
+%spec_vec_a = OpTypeVectorIdEXT %int %spec_a
+%spec_vec_b = OpTypeVectorIdEXT %int %spec_b
+%spec_vec_a_1 = OpConstantCompositeReplicateEXT %spec_vec_a %int_1
+%spec_vec_b_1 = OpConstantCompositeReplicateEXT %spec_vec_b %int_1
+
+ %main = OpFunction %void None %fn
+%label = OpLabel
+    %x = OpSDot %int %spec_vec_a_1 %spec_vec_b_1
+         OpReturn
+         OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    // VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849
+    m_errorMonitor->SetDesiredError("'Vector 1' is 4 components but 'Vector 2' is 5 components");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
