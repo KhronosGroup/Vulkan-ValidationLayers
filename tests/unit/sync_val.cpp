@@ -449,61 +449,6 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
     }
 }
 
-TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
-    TEST_DESCRIPTION("Test for hazards when attachment is cleared inside render pass.");
-
-    // VK_EXT_load_store_op_none is needed to disable render pass load/store accesses, so clearing
-    // attachment inside a render pass can create hazards with the copy operations outside render pass.
-    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
-
-    ClearAttachmentHazardHelper helper(*this, *m_device, *m_default_queue, m_command_buffer);
-    auto attachment_without_load_store = [](VkFormat format) {
-        VkAttachmentDescription attachment = {};
-        attachment.format = format;
-        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-        attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        return attachment;
-    };
-    const VkAttachmentDescription attachments[] = {attachment_without_load_store(helper.rt_format),
-                                                   attachment_without_load_store(helper.ds_format)};
-
-    const VkImageView views[] = {helper.rt_view, helper.ds_view};
-    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkAttachmentReference depth_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_ref;
-    subpass.pDepthStencilAttachment = &depth_ref;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = size32(attachments);
-    rpci.pAttachments = attachments;
-    vkt::RenderPass render_pass(*m_device, rpci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, size32(views), views, helper.width, helper.height);
-
-    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-    rpbi.framebuffer = framebuffer;
-    rpbi.renderPass = render_pass;
-    rpbi.renderArea.extent.width = helper.width;
-    rpbi.renderArea.extent.height = helper.height;
-
-    auto begin_rendering = [&rpbi](vkt::CommandBuffer& cb) { vk::CmdBeginRenderPass(cb, &rpbi, VK_SUBPASS_CONTENTS_INLINE); };
-    auto end_rendering = [](vkt::CommandBuffer& cb) { vk::CmdEndRenderPass(cb); };
-    helper.Test(begin_rendering, end_rendering);
-}
-
 TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
     TEST_DESCRIPTION("Test for hazards when attachment is cleared inside a dynamic render pass.");
     SetTargetApiVersion(VK_API_VERSION_1_3);

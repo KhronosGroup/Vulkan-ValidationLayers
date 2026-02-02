@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@ void RenderPassSingleSubpass::AddAttachmentDescription(VkFormat format, VkSample
     attachment_descriptions_.emplace_back(VkAttachmentDescription{0, format, samples, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                                   VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                                   VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout});
+}
+
+void RenderPassSingleSubpass::AddAttachmentDescription(const VkAttachmentDescription& attachment_description) {
+    attachment_descriptions_.emplace_back(attachment_description);
 }
 
 void RenderPassSingleSubpass::AddAttachmentReference(VkAttachmentReference reference) {
