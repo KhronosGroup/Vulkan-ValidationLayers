@@ -166,8 +166,8 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithPipelineCache) {
     RETURN_IF_SKIP(Init());
 
     VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheDataSize;
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData;
     vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
     TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
@@ -320,8 +320,8 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
 
     // Create data graph pipeline cache
     VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheDataSize;
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData;
     vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
     // Create data graph pipeline

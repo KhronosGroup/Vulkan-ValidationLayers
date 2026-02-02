@@ -25,9 +25,9 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderSize
         // Modify header size and create pipeline cache
         VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
         std::vector<uint8_t> dg_pipeline_cache_data{};
-        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
-        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheDataSize);
+        std::copy_n(kReLUOperatorPipelineCacheData, kReLUOperatorPipelineCacheDataSize, std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
         dg_header_version.headerSize = sizeof(VkPipelineCacheHeaderVersionOne);
         std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
@@ -47,10 +47,10 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderSize
         // Modify header size and create pipeline cache
         VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
         std::vector<uint8_t> dg_pipeline_cache_data{};
-        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
-        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-        dg_header_version.headerSize = 2 * kReLUOperatorPipelineCacheData.size();
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheDataSize);
+        std::copy_n(kReLUOperatorPipelineCacheData, kReLUOperatorPipelineCacheDataSize, std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_header_version.headerSize = 2 * kReLUOperatorPipelineCacheDataSize;
         std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
         VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
@@ -75,9 +75,9 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderVers
         // Modify header version and create pipeline cache
         VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
         std::vector<uint8_t> dg_pipeline_cache_data{};
-        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
-        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheDataSize);
+        std::copy_n(kReLUOperatorPipelineCacheData, kReLUOperatorPipelineCacheDataSize, std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
         dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
         std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
@@ -97,9 +97,9 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderVers
         // Modify header version and create pipeline cache
         VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
         std::vector<uint8_t> dg_pipeline_cache_data{};
-        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
-        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheDataSize);
+        std::copy_n(kReLUOperatorPipelineCacheData, kReLUOperatorPipelineCacheDataSize, std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
         dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_MAX_ENUM;
         std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
@@ -124,9 +124,9 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidCacheType)
     // Modify cache type and create pipeline cache
     VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
     std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
-    std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+    dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheDataSize);
+    std::copy_n(kReLUOperatorPipelineCacheData, kReLUOperatorPipelineCacheDataSize, std::back_inserter(dg_pipeline_cache_data));
+    std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
     dg_header_version.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_MAX_ENUM_QCOM;
     std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
 
@@ -161,8 +161,8 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheButDataGraphModelFeat
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None-11835");
     // Create pipeline cache
     VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheDataSize;
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData;
     vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
     // Create data graph pipeline with pipeline cache
@@ -227,8 +227,8 @@ TEST_F(NegativeDataGraphModel, QueryPipelineCacheDataButHasDataGraphHeaderVersio
     size_t data_size = 0;
     // Create and query pipeline cache
     VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheDataSize;
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData;
     vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
     vk::GetPipelineCacheData(*m_device, pipeline_cache, &data_size, nullptr);
     m_errorMonitor->VerifyFound();
@@ -241,8 +241,8 @@ TEST_F(NegativeDataGraphModel, MergePipelineCacheButHasDataGraphHeaderVersion) {
 
     // Create a data graph pipeline cache
     VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheDataSize;
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData;
     vkt::PipelineCache data_graph_pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
     // Create a general pipeline cache
