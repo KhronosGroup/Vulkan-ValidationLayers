@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -65,7 +65,7 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
     return false;
 }
 
-// Called from a non-queue operation, such as vkWaitForFences()|
+// Called from a non-queue operation, such as vkWaitForFences()
 void vvl::Fence::NotifyAndWait(const Location &loc) {
     std::shared_future<void> waiter;
     std::optional<SubmissionReference> present_submission_ref;
@@ -79,7 +79,10 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
                 waiter = waiter_;
             } else {
                 state_ = kRetired;
-                completed_.set_value();
+                if (!completed_already_set_) {
+                    completed_.set_value();
+                    completed_already_set_ = true;
+                }
                 queue_ = nullptr;
                 seq_ = 0;
                 // Update the swapchain image acquire state if the fence was used by the acquire operation
@@ -119,7 +122,10 @@ void vvl::Fence::Retire() {
     auto guard = WriteLock();
     if (state_ == kInflight) {
         state_ = kRetired;
-        completed_.set_value();
+        if (!completed_already_set_) {
+            completed_.set_value();
+            completed_already_set_ = true;
+        }
         queue_ = nullptr;
         seq_ = 0;
     }
@@ -138,6 +144,7 @@ void vvl::Fence::Reset() {
     }
     state_ = kUnsignaled;
     completed_ = std::promise<void>();
+    completed_already_set_ = false;
     waiter_ = std::shared_future<void>(completed_.get_future());
     present_submission_ref_.reset();
 
@@ -171,6 +178,7 @@ void vvl::Fence::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
         }
         state_ = kUnsignaled;
         completed_ = std::promise<void>();
+        completed_already_set_ = false;
         waiter_ = std::shared_future<void>(completed_.get_future());
     }
 }

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -89,6 +89,7 @@ class Fence : public RefcountedStateObject {
     enum Scope scope_{kInternal};
     std::optional<VkExternalFenceHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
     mutable std::shared_mutex lock_;
+    bool completed_already_set_{false};
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
     Logger &logger_;
