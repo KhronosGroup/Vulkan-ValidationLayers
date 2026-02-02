@@ -15,6 +15,7 @@
 #include <spirv-tools/libspirv.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_helper.h"
 
 class PositiveShaderSpirv : public VkLayerTest {};
 
@@ -2529,5 +2530,69 @@ TEST_F(PositiveShaderSpirv, ShaderFma) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, LongVectorDotProductSpecConstant) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8035");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredFeature(vkt::Feature::shaderReplicatedComposites);
+    AddRequiredFeature(vkt::Feature::shaderIntegerDotProduct);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* cs_source = R"(
+        OpCapability Shader
+        OpCapability LongVectorEXT
+        OpCapability DotProduct
+        OpCapability DotProductInputAll
+        OpCapability ReplicatedCompositesEXT
+        OpExtension "SPV_EXT_long_vector"
+        OpExtension "SPV_KHR_integer_dot_product"
+        OpExtension "SPV_EXT_replicated_composites"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %spec_a SpecId 0
+        OpDecorate %spec_b SpecId 1
+%void = OpTypeVoid
+  %fn = OpTypeFunction %void
+ %int = OpTypeInt 32 1
+%int_1 = OpConstant %int 1
+
+    %spec_a = OpSpecConstant %int 4
+    %spec_b = OpSpecConstant %int 5
+%spec_vec_a = OpTypeVectorIdEXT %int %spec_a
+%spec_vec_b = OpTypeVectorIdEXT %int %spec_b
+%spec_vec_a_1 = OpConstantCompositeReplicateEXT %spec_vec_a %int_1
+%spec_vec_b_1 = OpConstantCompositeReplicateEXT %spec_vec_b %int_1
+
+ %main = OpFunction %void None %fn
+%label = OpLabel
+    %x = OpSDot %int %spec_vec_a_1 %spec_vec_b_1
+         OpReturn
+         OpFunctionEnd
+    )";
+
+    uint32_t const data = 4;
+    // Set both spec constants to same length
+    const VkSpecializationMapEntry entries[2] = {
+        {0, 0, sizeof(uint32_t)},
+        {1, 0, sizeof(uint32_t)},
+    };
+    const VkSpecializationInfo specialization_info = {
+        2,
+        entries,
+        sizeof(uint32_t),
+        &data,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &specialization_info);
     pipe.CreateComputePipeline();
 }
