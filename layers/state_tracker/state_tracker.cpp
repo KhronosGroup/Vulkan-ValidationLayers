@@ -2888,7 +2888,8 @@ void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, 
                 const size_t i = std::distance(as_with_addresses.array.begin(), as_found_it);
                 std::swap(as_with_addresses.array[i], as_with_addresses.array[as_with_addresses.array.size() - 1]);
                 as_with_addresses.array.resize(as_with_addresses.array.size() - 1);
-                as_found_it = as_with_addresses.array.begin() + i;
+
+                as_found_it = std::find(as_with_addresses.array.begin() + i, as_with_addresses.array.end(), as_state.get());
             }
             as_state->acceleration_structure_address = 0;
         }
