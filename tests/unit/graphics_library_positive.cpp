@@ -1536,11 +1536,19 @@ TEST_F(PositiveGraphicsLibrary, PushConstant) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+    const char* const vs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x; } constants;
+        void main(){
+           gl_Position = vec4(constants.x);
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 8};
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
-        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.pipeline_layout_ci_.pushConstantRangeCount = 1;
@@ -1577,9 +1585,17 @@ TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
+    const char* const vs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x; } constants;
+        void main(){
+           gl_Position = vec4(constants.x);
+        }
+    )glsl";
+
     CreatePipelineHelper pre_raster_lib(*this);
     {
-        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         VkPushConstantRange pc_range = {VK_SHADER_STAGE_ALL, 0, 4};
