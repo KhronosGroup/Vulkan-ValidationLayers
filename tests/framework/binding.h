@@ -901,6 +901,7 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) { Init(dev, info); }
+    Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, const VkPipelineCache cache) { Init(dev, info, cache); }
     ~Pipeline() noexcept;
     void Destroy() noexcept;
 
@@ -916,6 +917,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     void InitDeferred(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info, VkDeferredOperationKHR deferred_op);
     // vkCreateDataGraphPipelinesARM
     void Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info);
+    // vkCreateDataGraphPipelinesARM with pipeline cache
+    void Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, VkPipelineCache cache);
     // vkLoadPipeline()
     void Init(const Device &dev, size_t size, const void *data);
     // vkLoadPipelineDerivative()

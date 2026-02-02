@@ -489,14 +489,6 @@ class DataGraphModelTest : public VkLayerTest {
     static DGModelTensorInfo BuildTensor(const VkLayerTest& layer_test, const VkTensorDescriptionARM& tensor_description);
     static DGModelPipelineLayoutInfo BuildGeneralPipelineLayout(const VkLayerTest& layer_test);
     static void TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test, const vkt::PipelineCache& pipeline_cache);
-    static void TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test,
-                                                  const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& builtin_model_ci);
-    static std::shared_ptr<vkt::PipelineCache> BuildValidPipelineCache(const VkLayerTest& layer_test);
-    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidHeaderSize(const VkLayerTest& layer_test);
-    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidGreaterHeaderSize(const VkLayerTest& layer_test);
-    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithUnsupportedHeaderVersion(const VkLayerTest& layer_test);
-    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidHeaderVersion(const VkLayerTest& layer_test);
-    static std::shared_ptr<vkt::PipelineCache> BuildPipelineCacheWithInvalidCacheType(const VkLayerTest& layer_test);
 };
 
 class WsiTest : public VkLayerTest {

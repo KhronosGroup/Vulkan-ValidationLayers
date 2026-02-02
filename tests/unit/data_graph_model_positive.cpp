@@ -45,31 +45,19 @@ DataGraphModelTest::DGModelTensorInfo DataGraphModelTest::BuildTensor(const VkLa
                                                                       const VkTensorDescriptionARM& tensor_description) {
     // Create tensor
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    VkExternalMemoryTensorCreateInfoARM external_memory_tensor_create_info{
-        VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM,
-        nullptr,
-        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
-    };
+    VkExternalMemoryTensorCreateInfoARM external_memory_tensor_create_info = vku::InitStructHelper();
+    external_memory_tensor_create_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-    VkTensorCreateInfoARM tensor_info{
-        VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM,
+    VkTensorCreateInfoARM tensor_info = vku::InitStructHelper();
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        &external_memory_tensor_create_info,
-#else
-        nullptr,
+    tensor_info.pNext = &external_memory_tensor_create_info,
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-        0,
-        &tensor_description,
-        VK_SHARING_MODE_EXCLUSIVE,
-        0,
-        nullptr
-    };
+    tensor_info.flags = 0;
+    tensor_info.pDescription = &tensor_description;
+    tensor_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    VkExportMemoryAllocateInfo export_memory_allocate_info{
-        VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
-        nullptr,
-        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID
-    };
+    VkExportMemoryAllocateInfo export_memory_allocate_info = vku::InitStructHelper();
+    export_memory_allocate_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     const auto* device = layer_test.DeviceObj();
     auto tensor_arm = std::make_shared<vkt::Tensor>();
@@ -81,13 +69,9 @@ DataGraphModelTest::DGModelTensorInfo DataGraphModelTest::BuildTensor(const VkLa
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     // Create tensor view
-    VkTensorViewCreateInfoARM tensor_view_info{
-        VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM,
-        nullptr,
-        0,
-        tensor_arm->handle(),
-        tensor_description.format
-    };
+    VkTensorViewCreateInfoARM tensor_view_info = vku::InitStructHelper();
+    tensor_view_info.tensor = tensor_arm->handle();
+    tensor_view_info.format = tensor_description.format;
     auto tensor_view_arm = std::make_shared<vkt::TensorView>();
     tensor_view_arm->Init(*device, tensor_view_info);
 
@@ -102,16 +86,16 @@ DataGraphModelTest::DGModelTensorInfo DataGraphModelTest::BuildTensor(const VkLa
 DataGraphModelTest::DGModelPipelineLayoutInfo DataGraphModelTest::BuildGeneralPipelineLayout(const VkLayerTest& layer_test) {
     const auto* device = layer_test.DeviceObj();
     // Create data graph pipeline layout
-    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci = vku::InitStructHelper();
     std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
-    bindings[0].binding = 0;
+    bindings[0].binding = kInputBindingPoint;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
     bindings[0].descriptorCount = 1;
     bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
-    bindings[1].binding = 1;
+    bindings[1].binding = kOutputBindingPoint;
     bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
+    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_ci = vku::InitStructHelper();
     descriptor_set_layout_ci.bindingCount = bindings.size();
     descriptor_set_layout_ci.pBindings = bindings.data();
     auto descriptor_set_layout = std::make_shared<vkt::DescriptorSetLayout>(*device, descriptor_set_layout_ci);
@@ -144,7 +128,7 @@ void DataGraphModelTest::TestDataGraphPipelineCreationOnce(const VkLayerTest& la
     assert(dg_properties_count >= 1);
     std::vector<VkQueueFamilyDataGraphPropertiesARM> dg_queue_family_properties(dg_properties_count);
     for (uint32_t index = 0; index < dg_properties_count; ++index) {
-        dg_queue_family_properties[index].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+        dg_queue_family_properties[index] = vku::InitStructHelper();
     }
     vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(layer_test.Gpu(), dg_queue_family_index.value(),
                                                            &dg_properties_count, dg_queue_family_properties.data());
@@ -171,141 +155,7 @@ void DataGraphModelTest::TestDataGraphPipelineCreationOnce(const VkLayerTest& la
     data_graph_pipeline_ci.pResourceInfos = nullptr;
 
     // Build data graph pipeline
-    VkPipeline data_graph_pipeline = nullptr;
-    vk::CreateDataGraphPipelinesARM(layer_test.device(), nullptr, pipeline_cache, 1,
-                                    &data_graph_pipeline_ci, nullptr, &data_graph_pipeline);
-
-    vk::DestroyPipeline(layer_test.device(), data_graph_pipeline, nullptr);
-}
-
-void DataGraphModelTest::TestDataGraphPipelineCreationOnce(const VkLayerTest& layer_test,
-                                                           const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& builtin_model_ci) {
-    // Create data graph pipeline layout
-    DGModelPipelineLayoutInfo dg_pipeline_layout_info = BuildGeneralPipelineLayout(layer_test);
-
-    // Create data graph pipeline with builtin model information
-    VkDataGraphPipelineCreateInfoARM data_graph_pipeline_ci = vku::InitStructHelper();
-    data_graph_pipeline_ci.pNext = &builtin_model_ci;
-    data_graph_pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
-    data_graph_pipeline_ci.layout = dg_pipeline_layout_info.pipeline_layout->handle();
-    data_graph_pipeline_ci.resourceInfoCount = 0;
-    data_graph_pipeline_ci.pResourceInfos = nullptr;
-
-    VkPipeline data_graph_pipeline = nullptr;
-    vk::CreateDataGraphPipelinesARM(layer_test.device(), nullptr, nullptr, 1,
-                                    &data_graph_pipeline_ci, nullptr, &data_graph_pipeline);
-
-    vk::DestroyPipeline(layer_test.device(), data_graph_pipeline, nullptr);
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildValidPipelineCache(const VkLayerTest& layer_test) {
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = kDGValidPipelineCacheData.size();
-    pipeline_cache_ci.pInitialData = kDGValidPipelineCacheData.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildPipelineCacheWithInvalidHeaderSize(const VkLayerTest& layer_test) {
-    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
-    std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kDGValidPipelineCacheData.size());
-    std::copy(kDGValidPipelineCacheData.begin(), kDGValidPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    memcpy(&dg_header_version, kDGValidPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    // Modify header size
-    dg_header_version.headerSize = sizeof(VkPipelineCacheHeaderVersionOne);
-    memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
-    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildPipelineCacheWithInvalidGreaterHeaderSize(const VkLayerTest& layer_test) {
-    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
-    std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kDGValidPipelineCacheData.size());
-    std::copy(kDGValidPipelineCacheData.begin(), kDGValidPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    memcpy(&dg_header_version, kDGValidPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    // Modify header size
-    dg_header_version.headerSize = 2 * kDGValidPipelineCacheData.size();
-    memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
-    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildPipelineCacheWithUnsupportedHeaderVersion(const VkLayerTest& layer_test) {
-    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
-    std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kDGValidPipelineCacheData.size());
-    std::copy(kDGValidPipelineCacheData.begin(), kDGValidPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    memcpy(&dg_header_version, kDGValidPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    // Modify header version
-    dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
-    memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
-    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildPipelineCacheWithInvalidHeaderVersion(const VkLayerTest& layer_test) {
-    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
-    std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kDGValidPipelineCacheData.size());
-    std::copy(kDGValidPipelineCacheData.begin(), kDGValidPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    memcpy(&dg_header_version, kDGValidPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    // Modify header version
-    dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_MAX_ENUM;
-    memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
-    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
-}
-
-std::shared_ptr<vkt::PipelineCache> DataGraphModelTest::BuildPipelineCacheWithInvalidCacheType(const VkLayerTest& layer_test) {
-    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
-    std::vector<uint8_t> dg_pipeline_cache_data{};
-    dg_pipeline_cache_data.reserve(kDGValidPipelineCacheData.size());
-    std::copy(kDGValidPipelineCacheData.begin(), kDGValidPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
-    memcpy(&dg_header_version, kDGValidPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    // Modify cache type
-    dg_header_version.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_MAX_ENUM_QCOM;
-    memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
-
-    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
-    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
-    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
-    const auto* device = layer_test.DeviceObj();
-    auto pipeline_cache = std::make_shared<vkt::PipelineCache>(*device, pipeline_cache_ci);
-
-    return pipeline_cache;
+    vkt::Pipeline data_graph_pipeline{ *layer_test.DeviceObj(), data_graph_pipeline_ci, pipeline_cache };
 }
 
 class PositiveDataGraphModel : public DataGraphModelTest {};
@@ -315,8 +165,12 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithPipelineCache) {
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    auto pipeline_cache = BuildValidPipelineCache(*this);
-    TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+    TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
 }
 
 TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithBuiltinModelInfo) {
@@ -334,7 +188,7 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithBuiltinModelInfo) {
     assert(dg_properties_count >= 1);
     std::vector<VkQueueFamilyDataGraphPropertiesARM> dg_queue_family_properties(dg_properties_count);
     for (uint32_t index = 0; index < dg_properties_count; ++index) {
-        dg_queue_family_properties[index].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+        dg_queue_family_properties[index] = vku::InitStructHelper();
     }
     vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), dg_queue_family_index.value(),
                                                            &dg_properties_count, dg_queue_family_properties.data());
@@ -349,7 +203,18 @@ TEST_F(PositiveDataGraphModel, CreateDataGraphPipelineWithBuiltinModelInfo) {
     builtin_model_ci.pOperation = &dg_queue_family_properties[0].operation;
     builtin_model_ci.pNext = &dg_processing_engine_ci;
 
-    TestDataGraphPipelineCreationOnce(*this, builtin_model_ci);
+    // Create general data graph pipeline layout
+    DGModelPipelineLayoutInfo dg_pipeline_layout_info = BuildGeneralPipelineLayout(*this);
+
+    // Create data graph pipeline with builtin model information
+    VkDataGraphPipelineCreateInfoARM data_graph_pipeline_ci = vku::InitStructHelper();
+    data_graph_pipeline_ci.pNext = &builtin_model_ci;
+    data_graph_pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    data_graph_pipeline_ci.layout = dg_pipeline_layout_info.pipeline_layout->handle();
+    data_graph_pipeline_ci.resourceInfoCount = 0;
+    data_graph_pipeline_ci.pResourceInfos = nullptr;
+
+    vkt::Pipeline data_graph_pipeline{ *DeviceObj(), data_graph_pipeline_ci };
 }
 
 TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
@@ -373,7 +238,7 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     assert(dg_properties_count >= 1);
     std::vector<VkQueueFamilyDataGraphPropertiesARM> dg_queue_family_properties(dg_properties_count);
     for (uint32_t index = 0; index < dg_properties_count; ++index) {
-        dg_queue_family_properties[index].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
+        dg_queue_family_properties[index] = vku::InitStructHelper();
     }
     vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), dg_queue_family_index.value(),
                                                            &dg_properties_count, dg_queue_family_properties.data());
@@ -382,18 +247,15 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     dg_processing_engine_ci.pProcessingEngines = &dg_queue_family_properties[0].engine;
 
     // Create two general tensors
-    constexpr std::array<int64_t, 3> input_dimensions{ 960, 540, 4 };
-    constexpr std::array<int64_t, 3> output_dimensions{ 1920, 1080, 4 };
-    VkTensorDescriptionARM input_tensor_description{
-        VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM,
-        nullptr,
-        VK_TENSOR_TILING_LINEAR_ARM,
-        VK_FORMAT_R8_UNORM,
-        input_dimensions.size(),
-        input_dimensions.data(),
-        nullptr,
-        VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM
-    };
+    constexpr std::array<int64_t, 2> input_dimensions{ 64, 64 };
+    constexpr std::array<int64_t, 2> output_dimensions{ 64, 64 };
+    VkTensorDescriptionARM input_tensor_description = vku::InitStructHelper();
+    input_tensor_description.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    input_tensor_description.format = VK_FORMAT_R8_UNORM;
+    input_tensor_description.dimensionCount = input_dimensions.size();
+    input_tensor_description.pDimensions = input_dimensions.data();
+    input_tensor_description.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM |
+                                     VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM;
     VkTensorDescriptionARM output_tensor_description = input_tensor_description;
     output_tensor_description.pDimensions = output_dimensions.data();
     DGModelTensorInfo input_tensor_info = BuildTensor(*this, input_tensor_description);
@@ -439,32 +301,30 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     auto input_tensor_view_handle = input_tensor_info.tensor_view_arm->handle();
     auto output_tensor_view_handle = output_tensor_info.tensor_view_arm->handle();
     std::array<VkWriteDescriptorSetTensorARM, 2> write_descriptor_set_tensors = {};
-    write_descriptor_set_tensors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM;
-    write_descriptor_set_tensors[0].pNext = nullptr;
+    write_descriptor_set_tensors[0] = vku::InitStructHelper();
     write_descriptor_set_tensors[0].tensorViewCount = 1;
     write_descriptor_set_tensors[0].pTensorViews = &input_tensor_view_handle;
     write_descriptor_set_tensors[1] = write_descriptor_set_tensors[0];
     write_descriptor_set_tensors[1].pTensorViews = &output_tensor_view_handle;
     std::array<VkWriteDescriptorSet, 2> write_descriptor_sets = {};
-    write_descriptor_sets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_descriptor_sets[0] = vku::InitStructHelper();
     write_descriptor_sets[0].pNext = &write_descriptor_set_tensors[0];
     write_descriptor_sets[0].dstBinding = kInputBindingPoint;
     write_descriptor_sets[0].descriptorCount = 1;
     write_descriptor_sets[0].descriptorType = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
     write_descriptor_sets[0].dstSet = descriptor_set;
-    write_descriptor_sets[0].dstArrayElement = 0;
-    write_descriptor_sets[0].pBufferInfo = nullptr;
-    write_descriptor_sets[0].pImageInfo = nullptr;
-    write_descriptor_sets[0].pTexelBufferView = nullptr;
     write_descriptor_sets[1] = write_descriptor_sets[0];
     write_descriptor_sets[1].pNext = &write_descriptor_set_tensors[1];
     write_descriptor_sets[1].dstBinding = kOutputBindingPoint;
     vk::UpdateDescriptorSets(device(), 2, write_descriptor_sets.data(), 0, nullptr);
 
     // Create data graph pipeline cache
-    auto pipeline_cache = BuildValidPipelineCache(*this);
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
-    // Create data graph pipeline - do not care identifier currently
+    // Create data graph pipeline
     constexpr std::array<uint8_t, 4> qnn_graph_id{ 0, 0, 0, 0 };
     VkDataGraphPipelineIdentifierCreateInfoARM identifier_ci = vku::InitStructHelper();
     identifier_ci.pNext = &dg_processing_engine_ci;
@@ -474,31 +334,19 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     data_graph_pipeline_ci.pNext = &identifier_ci;
     data_graph_pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     data_graph_pipeline_ci.layout = dg_pipeline_layout_info.pipeline_layout->handle();
-    data_graph_pipeline_ci.resourceInfoCount = 0;
-    data_graph_pipeline_ci.pResourceInfos = nullptr;
-    VkPipeline data_graph_pipeline = nullptr;
-    vk::CreateDataGraphPipelinesARM(device(), nullptr, *pipeline_cache, 1,
-                                    &data_graph_pipeline_ci, nullptr, &data_graph_pipeline);
-    assert(data_graph_pipeline != nullptr);
+    vkt::Pipeline data_graph_pipeline{ *DeviceObj(), data_graph_pipeline_ci, pipeline_cache };
 
     // Create data graph pipeline session
-    VkDataGraphPipelineSessionCreateInfoARM session_ci{
-        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_CREATE_INFO_ARM,
-        nullptr,
-        0,
-        data_graph_pipeline
-    };
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = data_graph_pipeline;
     VkDataGraphPipelineSessionARM data_graph_pipeline_session = nullptr;
     vk::CreateDataGraphPipelineSessionARM(device(), &session_ci, nullptr, &data_graph_pipeline_session);
     assert(data_graph_pipeline_session != nullptr);
 
     // Allocate and bind data graph session memory objects
     uint32_t session_bind_point_req_count = 0;
-    VkDataGraphPipelineSessionBindPointRequirementsInfoARM session_bind_point_req_info{
-        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENTS_INFO_ARM,
-        nullptr,
-        data_graph_pipeline_session
-    };
+    VkDataGraphPipelineSessionBindPointRequirementsInfoARM session_bind_point_req_info = vku::InitStructHelper();
+    session_bind_point_req_info.session = data_graph_pipeline_session;
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(device(), &session_bind_point_req_info,
                                                             &session_bind_point_req_count, nullptr);
     std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> session_bind_point_reqs(session_bind_point_req_count);
@@ -520,26 +368,19 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
         session_memory_objects.resize(session_memory_objects.size() + cur_session_bind_point_req.numObjects);
         session_memory_infos.resize(session_memory_infos.size() + cur_session_bind_point_req.numObjects);
         for (uint32_t obj_index = 0; obj_index < cur_session_bind_point_req.numObjects; ++obj_index) {
-            VkDataGraphPipelineSessionMemoryRequirementsInfoARM mem_req_info{
-                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_MEMORY_REQUIREMENTS_INFO_ARM,
-                nullptr,
-                data_graph_pipeline_session,
-                cur_session_bind_point_req.bindPoint,
-                obj_index
-            };
+            VkDataGraphPipelineSessionMemoryRequirementsInfoARM mem_req_info = vku::InitStructHelper();
+            mem_req_info.session = data_graph_pipeline_session;
+            mem_req_info.bindPoint = cur_session_bind_point_req.bindPoint;
+            mem_req_info.objectIndex = obj_index;
             VkMemoryRequirements2 memory_requirements2 = vku::InitStructHelper();
             vk::GetDataGraphPipelineSessionMemoryRequirementsARM(device(), &mem_req_info, &memory_requirements2);
             uint32_t mem_index = FindMemoryType(Gpu(), memory_requirements2.memoryRequirements.memoryTypeBits,
                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            VkMemoryAllocateInfo mem_alloc_info{
-                VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-                nullptr,
-                memory_requirements2.memoryRequirements.size,
-                mem_index
-            };
+            VkMemoryAllocateInfo mem_alloc_info = vku::InitStructHelper();
+            mem_alloc_info.allocationSize = memory_requirements2.memoryRequirements.size;
+            mem_alloc_info.memoryTypeIndex = mem_index;
             vk::AllocateMemory(device(), &mem_alloc_info, nullptr, &session_memory_objects[session_mem_count]);
-            session_memory_infos[session_mem_count].sType = VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM;
-            session_memory_infos[session_mem_count].pNext = nullptr;
+            session_memory_infos[session_mem_count] = vku::InitStructHelper();
             session_memory_infos[session_mem_count].session = data_graph_pipeline_session;
             session_memory_infos[session_mem_count].bindPoint = cur_session_bind_point_req.bindPoint;
             session_memory_infos[session_mem_count].objectIndex = obj_index;
@@ -556,11 +397,7 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     }
 
     // Record and execute command packets
-    VkDataGraphPipelineDispatchInfoARM data_graph_pipeline_dispatch_info{
-        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_DISPATCH_INFO_ARM,
-        nullptr,
-        0
-    };
+    VkDataGraphPipelineDispatchInfoARM data_graph_pipeline_dispatch_info = vku::InitStructHelper();
     VkQueue data_graph_queue_handle = nullptr;
     vk::GetDeviceQueue(device(), dg_queue_family_index.value(), 0, &data_graph_queue_handle);
     assert(data_graph_queue_handle != nullptr);
@@ -575,7 +412,6 @@ TEST_F(PositiveDataGraphModel, ExecuteDataGraphModel) {
     data_graph_queue.SubmitAndWait(command_buffer);
 
     // Destroy resources
-    vk::DestroyPipeline(device(), data_graph_pipeline, nullptr);
     vk::DestroyDataGraphPipelineSessionARM(device(), data_graph_pipeline_session, nullptr);
     for (size_t index = 0; index < session_memory_objects.size(); ++index) {
         vk::FreeMemory(device(), session_memory_objects[index], nullptr);

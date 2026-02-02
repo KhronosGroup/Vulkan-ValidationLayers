@@ -26,22 +26,20 @@
 #include "utils/math_utils.h"
 
 bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& dg_model_ci,
-                                                                     const Location& loc,
-                                                                     const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const {
+                                                                     const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                                     const Location& loc) const {
     bool skip = false;
     bool has_identical_op = false;
     bool has_identical_paired_op_engine = false;
+    VkPhysicalDeviceDataGraphProcessingEngineARM expected_engine{};
 
-    std::vector<uint32_t> data_graph_queue_families{};
     for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
-        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) {
-            data_graph_queue_families.push_back(static_cast<uint32_t>(family_index));
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) {
+            continue;
         }
-    }
 
-    for (size_t index = 0; index < data_graph_queue_families.size(); ++index) {
         const auto data_graph_properties_arms =
-                physical_device_state->GetQueueFamilyDataGraphPropsARM(data_graph_queue_families[index]);
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(static_cast<uint32_t>(family_index));
 
         for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
             const auto& retrieved_operation = data_graph_properties_arms[prop_index].operation;
@@ -55,12 +53,11 @@ bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDat
             }
 
             has_identical_op = true;
-
-            ASSERT_AND_CONTINUE(engine_ci);
+            expected_engine = retrieved_engine;
 
             // Check whether the engines are identical or not
-            for (uint32_t engine_index = 0; engine_index < engine_ci->processingEngineCount; ++engine_index) {
-                const auto& processing_engine = engine_ci->pProcessingEngines[engine_index];
+            for (uint32_t engine_index = 0; engine_index < engine_ci.processingEngineCount; ++engine_index) {
+                const auto& processing_engine = engine_ci.pProcessingEngines[engine_index];
                 if (processing_engine == retrieved_engine) {
                     has_identical_paired_op_engine = true;
                     break;
@@ -70,28 +67,36 @@ bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDat
     }
 
     if (!has_identical_paired_op_engine) {
-        std::string conditional_string{};
+        std::stringstream conditional_ss{};
 
         if (!has_identical_op) {
-            conditional_string = (!dg_model_ci.pOperation) ?
-                                 "VkPhysicalDeviceDataGraphOperationSupportARM object is a nullptr." :
-                                 std::string{ "with input members operationType = " } +
-                                 string_VkPhysicalDeviceDataGraphOperationTypeARM(dg_model_ci.pOperation->operationType) +
-                                 ", name = " +
-                                 dg_model_ci.pOperation->name +
-                                 ", version = " + std::to_string(dg_model_ci.pOperation->version) +
-                                 ", failed to find any identical operation in all retrieved "
-                                 "VkQueueFamilyDataGraphPropertiesARM::operation results.";
+            if (!dg_model_ci.pOperation) {
+                conditional_ss << "member pOperation is null.";
+            } else {
+                conditional_ss << "with input members operationType = "
+                               << string_VkPhysicalDeviceDataGraphOperationTypeARM(dg_model_ci.pOperation->operationType)
+                               << ", name = "
+                               << dg_model_ci.pOperation->name
+                               << ", version = "
+                               << dg_model_ci.pOperation->version
+                               << ", failed to find any identical operation in all retrieved "
+                                  "VkQueueFamilyDataGraphPropertiesARM::operation results.";
+            }
         } else {
-            conditional_string = ", found the same operation among the retrieved VkQueueFamilyDataGraphPropertiesARM::operation "
-                                 "results, but failed to found the same paired VkQueueFamilyDataGraphPropertiesARM::engine, "
-                                 "please check VkDataGraphProcessingEngineCreateInfoARM object in the pNext chain.";
+            conditional_ss << ", found the same operation among the retrieved VkQueueFamilyDataGraphPropertiesARM::operation "
+                              "results, but failed to found the same paired VkQueueFamilyDataGraphPropertiesARM::engine; "
+                           << "expected VkPhysicalDeviceDataGraphProcessingEngineARM::type = "
+                           << string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(expected_engine.type)
+                           << ", expected VkPhysicalDeviceDataGraphProcessingEngineARM::isForeign = "
+                           << expected_engine.isForeign
+                           << ", please check VkDataGraphProcessingEngineCreateInfoARM structure in "
+                              "VkDataGraphPipelineCreateInfoARM::pNext chain.";
         }
 
         skip |= LogError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842",
                          device,
                          loc.dot(Field::pOperation),
-                         conditional_string.c_str());
+                         conditional_ss.str().c_str());
     }
 
     return skip;
@@ -304,16 +309,18 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             use_dg_pipeline_identifier = true;
         } else if (qcom_model_ci) {
             const Location built_in_model_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM);
-            skip |= ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(*qcom_model_ci, built_in_model_loc,
-                                                                        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext));
+            const auto* engine_ci = vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext);
+
+            ASSERT_AND_CONTINUE(engine_ci);
+
+            skip |= ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(*qcom_model_ci, *engine_ci, built_in_model_loc);
         }
 
         // common checks
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
     }
 
-    // Defer validate VkPipelineCacheHeaderVersionDataGraphQCOM of VkPipelineCache
-    // TODO: may exist potential issues
+    // Only need to validate the pipeline cache once even if multiple pipelines are being created
     if ((use_dg_pipeline_identifier) && (pipelineCache)) {
         skip |= ValidatePipelineCacheHeaderVersionDataGraphQCOM(pipelineCache, error_obj.location.dot(Field::pipelineCache));
     }

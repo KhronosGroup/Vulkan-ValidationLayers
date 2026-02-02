@@ -58,8 +58,8 @@ bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location
     return skip;
 }
 
-bool CoreChecks::ValidateDataGraphQueuePropsForCommandPool(uint32_t queue_family, const Location& loc,
-                                                           const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const {
+bool CoreChecks::ValidateCreateCommandPoolDataGraph(uint32_t queue_family, const Location& loc,
+                                                    const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const {
     bool skip = false;
 
     if (queue_family >= physical_device_state->queue_family_known_count) {
@@ -313,8 +313,6 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                 const bool is_qcom_engine = IsValueIn(data_graph_engine_type,
                                                       { VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM,
                                                         VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM });
-                const char* conditional_ext_cmd = "";
-                bool enable_data_graph_model = false;
 
                 if (!is_qcom_engine) {
                     continue;
@@ -322,24 +320,23 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
 
                 const auto* data_graph_model_features =
                     vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphModelFeaturesQCOM>(pCreateInfo->pNext);
-                if (data_graph_model_features) {
-                    enable_data_graph_model = data_graph_model_features->dataGraphModel;
-                    if (!enable_data_graph_model) {
-                        conditional_ext_cmd = "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is VK_FALSE.";
-                    }
-                } else {
-                    conditional_ext_cmd = "VkPhysicalDeviceDataGraphModelFeaturesQCOM structure isn't included in "
-                                          "the pNext chain of VkDeviceCreateInfo with dataGraphModel set to VK_TRUE.";
-                }
-
-                if (!enable_data_graph_model) {
+                if ((data_graph_model_features) && (!data_graph_model_features->dataGraphModel)) {
                     skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831",
                                      pd_state.Handle(),
                                      info_loc.dot(Field::queueFamilyIndex),
-                                     "%" PRIu32 " enumerates an engine with %s type, but %s",
+                                     "%" PRIu32 " enumerates an engine with %s type, but "
+                                     "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is VK_FALSE.",
                                      requested_queue_family,
-                                     string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type),
-                                     conditional_ext_cmd);
+                                     string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
+                } else {
+                    skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831",
+                                     pd_state.Handle(),
+                                     info_loc.dot(Field::queueFamilyIndex),
+                                     "%" PRIu32 " enumerates an engine with %s type, but "
+                                     "VkPhysicalDeviceDataGraphModelFeaturesQCOM structure isn't included in "
+                                     "the pNext chain with dataGraphModel set to VK_TRUE.",
+                                     requested_queue_family,
+                                     string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
                 }
             }
         }
@@ -717,8 +714,8 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
                          "includes VK_COMMAND_POOL_CREATE_PROTECTED_BIT, but the protectedMemory feature was not enabled.");
     }
 
-    skip |= ValidateDataGraphQueuePropsForCommandPool(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
-                                                      vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext));
+    skip |= ValidateCreateCommandPoolDataGraph(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
+                                               vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext));
 
     return skip;
 }

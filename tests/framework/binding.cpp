@@ -1902,6 +1902,10 @@ void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &i
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelinesARM, dev, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info);
 }
 
+void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, VkPipelineCache cache) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelinesARM, dev, VK_NULL_HANDLE, cache, 1, &info);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
 
 void PipelineLayout::Init(const Device &dev, VkPipelineLayoutCreateInfo &info,

@@ -802,7 +802,7 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-parameter",
                              pipelineCache,
                              loc.dot(Field::headerVersion),
-                             "headerVersion %s is an invalid and unsupported VkPipelineCacheHeaderVersion value.",
+                             "(%s) is an invalid and unsupported VkPipelineCacheHeaderVersion value.",
                              string_VkPipelineCacheHeaderVersion(pipeline_cache_header_version.headerVersion));
         }
 
@@ -810,7 +810,7 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-cacheType-parameter",
                              pipelineCache,
                              loc.dot(Field::cacheType),
-                             "cacheType %s is an invalid and unsupported VkDataGraphModelCacheTypeQCOM value.",
+                             "(%s) is an invalid and unsupported VkDataGraphModelCacheTypeQCOM value.",
                              string_VkDataGraphModelCacheTypeQCOM(pipeline_cache_header_version.cacheType));
         }
 
@@ -818,8 +818,7 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836",
                              pipelineCache,
                              loc.dot(Field::headerSize),
-                             "current header size %u isn't equal to sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM), "
-                             "that is %zu size in bytes.",
+                             "(%" PRIu32 ") isn't equal to sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM) (%zu).",
                              pipeline_cache_header_version.headerSize,
                              sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
         }
@@ -828,27 +827,43 @@ bool CoreChecks::ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837",
                              pipelineCache,
                              loc.dot(Field::headerVersion),
-                             "headerVersion must be VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM.");
+                             "(%s) must be VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM.",
+                             string_VkPipelineCacheHeaderVersion(pipeline_cache_header_version.headerVersion));
         }
 
         if (pipeline_cache_header_version.headerSize > pipeline_cache->create_info.initialDataSize) {
             skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11838",
                              pipelineCache,
                              loc.dot(Field::headerSize),
-                             "header size %" PRIu32 " must not exceed pipeline cache size %zu.",
+                             "(%" PRIu32 ") must not exceed pipeline cache size (%zu).",
                              pipeline_cache_header_version.headerSize,
                              pipeline_cache->create_info.initialDataSize);
         }
     } else {
-        const char* conditional_ext_cmd = (!pipeline_cache->create_info.pInitialData) ?
-                                          "and VkPipelineCacheCreateInfo::pInitialData member is nullptr" :
-                                          "the data size isn't greater than sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)";
+        std::stringstream conditional_ss{};
+
+        if (!pipeline_cache->create_info.pInitialData) {
+            conditional_ss << "is created with VkPipelineCacheCreateInfo::initialDataSize = "
+                           << pipeline_cache->create_info.initialDataSize
+                           << ", and VkPipelineCacheCreateInfo::pInitialData = nullptr; "
+                           << "However, VkPipelineCacheCreateInfo::initialDataSize must greater than "
+                           << "sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM) = "
+                           << sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)
+                           << ", and VkPipelineCacheCreateInfo::pInitialData member can't be null.";
+        } else {
+            conditional_ss << "is created with VkPipelineCacheCreateInfo::initialDataSize = "
+                           << pipeline_cache->create_info.initialDataSize
+                           << ", and VkPipelineCacheCreateInfo::pInitialData != nullptr; "
+                           << "However, VkPipelineCacheCreateInfo::initialDataSize must greater than "
+                           << "sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM) = "
+                           << sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM)
+                           << ".";
+        }
+
         skip |= LogError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None",
                          pipelineCache,
                          loc,
-                         "is created with VkPipelineCacheCreateInfo::initialDataSize = %zu, %s, which is illegal.",
-                         pipeline_cache->create_info.initialDataSize,
-                         conditional_ext_cmd);
+                         conditional_ss.str().c_str());
     }
 
     return skip;
@@ -866,7 +881,7 @@ bool CoreChecks::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipeline
                          pipelineCache,
                          error_obj.location.dot(Field::pipelineCache),
                          "has been created with the headerVersion member of VkPipelineCacheCreateInfo::pInitialData "
-                         "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM, it is illegal.");
+                         "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM.");
     }
 
     return skip;
@@ -882,7 +897,7 @@ bool CoreChecks::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineC
                          dstCache,
                          error_obj.location.dot(Field::dstCache),
                          "has been created with the headerVersion member of VkPipelineCacheCreateInfo::pInitialData "
-                         "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM, it is illegal.");
+                         "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM.");
     }
 
     for (uint32_t cache_index = 0; cache_index < srcCacheCount; ++cache_index) {
@@ -895,7 +910,7 @@ bool CoreChecks::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineC
                              pSrcCaches[cache_index],
                              error_obj.location.dot(Field::pSrcCaches, cache_index),
                              "has been created with the headerVersion member of VkPipelineCacheCreateInfo::pInitialData "
-                             "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM, it is illegal.");
+                             "equal to VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM.");
         }
     }
 

@@ -10,6 +10,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "data_graph_model_pipeline_cache.h"
 
 class NegativeDataGraphModel : public DataGraphModelTest {};
 
@@ -21,16 +22,44 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderSize
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836");
     {
-        auto pipeline_cache = BuildPipelineCacheWithInvalidHeaderSize(*this);
-        TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+        // Modify header size and create pipeline cache
+        VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
+        std::vector<uint8_t> dg_pipeline_cache_data{};
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
+        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_header_version.headerSize = sizeof(VkPipelineCacheHeaderVersionOne);
+        std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+
+        VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+        pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
+        pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
+        vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+        // Create data graph pipeline with pipeline cache
+        TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
     }
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11838");
     {
-        auto pipeline_cache = BuildPipelineCacheWithInvalidGreaterHeaderSize(*this);
-        TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+        // Modify header size and create pipeline cache
+        VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
+        std::vector<uint8_t> dg_pipeline_cache_data{};
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
+        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_header_version.headerSize = 2 * kReLUOperatorPipelineCacheData.size();
+        std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+
+        VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+        pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
+        pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
+        vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+        // Create data graph pipeline with pipeline cache
+        TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
     }
     m_errorMonitor->VerifyFound();
 }
@@ -43,16 +72,44 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidHeaderVers
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837");
     {
-        auto pipeline_cache = BuildPipelineCacheWithUnsupportedHeaderVersion(*this);
-        TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+        // Modify header version and create pipeline cache
+        VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
+        std::vector<uint8_t> dg_pipeline_cache_data{};
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
+        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
+        std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+
+        VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+        pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
+        pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
+        vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+        // Create data graph pipeline with pipeline cache
+        TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
     }
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-parameter");
     {
-        auto pipeline_cache = BuildPipelineCacheWithInvalidHeaderVersion(*this);
-        TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+        // Modify header version and create pipeline cache
+        VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
+        std::vector<uint8_t> dg_pipeline_cache_data{};
+        dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
+        std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
+        std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+        dg_header_version.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_MAX_ENUM;
+        std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+
+        VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+        pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
+        pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
+        vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+        // Create data graph pipeline with pipeline cache
+        TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
     }
     m_errorMonitor->VerifyFound();
 }
@@ -64,8 +121,23 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheWithInvalidCacheType)
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-cacheType-parameter");
-    auto pipeline_cache = BuildPipelineCacheWithInvalidCacheType(*this);
-    TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+    // Modify cache type and create pipeline cache
+    VkPipelineCacheHeaderVersionDataGraphQCOM dg_header_version{};
+    std::vector<uint8_t> dg_pipeline_cache_data{};
+    dg_pipeline_cache_data.reserve(kReLUOperatorPipelineCacheData.size());
+    std::copy(kReLUOperatorPipelineCacheData.begin(), kReLUOperatorPipelineCacheData.end(), std::back_inserter(dg_pipeline_cache_data));
+    std::memcpy(&dg_header_version, kReLUOperatorPipelineCacheData.data(), sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+    dg_header_version.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_MAX_ENUM_QCOM;
+    std::memcpy(dg_pipeline_cache_data.data(), &dg_header_version, sizeof(VkPipelineCacheHeaderVersionDataGraphQCOM));
+
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = dg_pipeline_cache_data.size();
+    pipeline_cache_ci.pInitialData = dg_pipeline_cache_data.data();
+    vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+    // Create data graph pipeline with pipeline cache
+    TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
+
     m_errorMonitor->VerifyFound();
 }
 
@@ -87,8 +159,15 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineCacheButDataGraphModelFeat
     // Avoid VkDataGraphProcessingEngineCreateInfoARM check failure since we always check pProcessingEngines member.
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None-11835");
-    auto pipeline_cache = BuildValidPipelineCache(*this);
-    TestDataGraphPipelineCreationOnce(*this, *pipeline_cache);
+    // Create pipeline cache
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+
+    // Create data graph pipeline with pipeline cache
+    TestDataGraphPipelineCreationOnce(*this, pipeline_cache);
+
     m_errorMonitor->VerifyFound();
 }
 
@@ -98,13 +177,23 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineBuiltinModelButInconsisten
     InitBasicDataGraphModel();
     RETURN_IF_SKIP(Init());
 
-    // Data graph processing engine create information
+    const auto dg_queue_family_index = DeviceObj()->QueueFamily(VK_QUEUE_DATA_GRAPH_BIT_ARM);
+    assert(dg_queue_family_index.has_value());
+
+    // Query and fill VkPhysicalDeviceDataGraphProcessingEngineARM and VkPhysicalDeviceDataGraphOperationSupportARM structures
+    uint32_t dg_properties_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), dg_queue_family_index.value(),
+                                                           &dg_properties_count, nullptr);
+    assert(dg_properties_count >= 1);
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> dg_queue_family_properties(dg_properties_count);
+    for (uint32_t index = 0; index < dg_properties_count; ++index) {
+        dg_queue_family_properties[index] = vku::InitStructHelper();
+    }
+    vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), dg_queue_family_index.value(),
+                                                           &dg_properties_count, dg_queue_family_properties.data());
     VkDataGraphProcessingEngineCreateInfoARM dg_processing_engine_ci = vku::InitStructHelper();
-    VkPhysicalDeviceDataGraphProcessingEngineARM dg_processing_engine{};
-    dg_processing_engine.type = VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM;
-    dg_processing_engine.isForeign = VK_TRUE;
     dg_processing_engine_ci.processingEngineCount = 1;
-    dg_processing_engine_ci.pProcessingEngines = &dg_processing_engine;
+    dg_processing_engine_ci.pProcessingEngines = &dg_queue_family_properties[0].engine;
 
     // Data graph pipeline builtin model creation information
     VkDataGraphPipelineBuiltinModelCreateInfoQCOM builtin_model_ci = vku::InitStructHelper();
@@ -113,8 +202,19 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphPipelineBuiltinModelButInconsisten
     builtin_model_ci.pOperation = &data_graph_operation_support;
     builtin_model_ci.pNext = &dg_processing_engine_ci;
 
+    // Create general data graph pipeline layout
+    DGModelPipelineLayoutInfo dg_pipeline_layout_info = BuildGeneralPipelineLayout(*this);
+
+    // Create data graph pipeline with builtin model information
+    VkDataGraphPipelineCreateInfoARM data_graph_pipeline_ci = vku::InitStructHelper();
+    data_graph_pipeline_ci.pNext = &builtin_model_ci;
+    data_graph_pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    data_graph_pipeline_ci.layout = dg_pipeline_layout_info.pipeline_layout->handle();
+    data_graph_pipeline_ci.resourceInfoCount = 0;
+    data_graph_pipeline_ci.pResourceInfos = nullptr;
+
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842");
-    TestDataGraphPipelineCreationOnce(*this, builtin_model_ci);
+    vkt::Pipeline data_graph_pipeline{ *DeviceObj(), data_graph_pipeline_ci };
     m_errorMonitor->VerifyFound();
 }
 
@@ -125,8 +225,12 @@ TEST_F(NegativeDataGraphModel, QueryPipelineCacheDataButHasDataGraphHeaderVersio
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineCacheData-pipelineCache-11834");
     size_t data_size = 0;
-    auto pipeline_cache = BuildValidPipelineCache(*this);
-    vk::GetPipelineCacheData(*m_device, *pipeline_cache, &data_size, nullptr);
+    // Create and query pipeline cache
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    vkt::PipelineCache pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
+    vk::GetPipelineCacheData(*m_device, pipeline_cache, &data_size, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -136,12 +240,13 @@ TEST_F(NegativeDataGraphModel, MergePipelineCacheButHasDataGraphHeaderVersion) {
     RETURN_IF_SKIP(Init());
 
     // Create a data graph pipeline cache
-    auto data_graph_pipeline_cache = BuildValidPipelineCache(*this);
+    VkPipelineCacheCreateInfo pipeline_cache_ci = vku::InitStructHelper();
+    pipeline_cache_ci.initialDataSize = kReLUOperatorPipelineCacheData.size();
+    pipeline_cache_ci.pInitialData = kReLUOperatorPipelineCacheData.data();
+    vkt::PipelineCache data_graph_pipeline_cache{ *DeviceObj(), pipeline_cache_ci };
 
     // Create a general pipeline cache
     VkPipelineCacheCreateInfo general_pipeline_cache_ci = vku::InitStructHelper();
-    general_pipeline_cache_ci.initialDataSize = 0;
-    general_pipeline_cache_ci.pInitialData = nullptr;
     vkt::PipelineCache general_pipeline_cache{ *m_device, general_pipeline_cache_ci };
 
     // Create another general pipeline cache
@@ -152,10 +257,10 @@ TEST_F(NegativeDataGraphModel, MergePipelineCacheButHasDataGraphHeaderVersion) {
 
     auto general_pipeline_cache_handle = general_pipeline_cache.handle();
     m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-dstCache-11832");
-    vk::MergePipelineCaches(device(), *data_graph_pipeline_cache, 1, &general_pipeline_cache_handle);
+    vk::MergePipelineCaches(device(), data_graph_pipeline_cache, 1, &general_pipeline_cache_handle);
     m_errorMonitor->VerifyFound();
 
-    auto data_graph_pipeline_cache_handle = data_graph_pipeline_cache->handle();
+    auto data_graph_pipeline_cache_handle = data_graph_pipeline_cache.handle();
     m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-headerVersion-11833");
     vk::MergePipelineCaches(device(), general_pipeline_cache2, 1, &data_graph_pipeline_cache_handle);
     m_errorMonitor->VerifyFound();
@@ -171,15 +276,12 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelCommandPoolWithoutProcessingE
     assert(dg_queue_family_index.has_value());
 
     VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper();
-    command_pool_ci.pNext = nullptr;
     command_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_ci.queueFamilyIndex = dg_queue_family_index.value();
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830");
-    VkCommandPool command_pool = nullptr;
-    vk::CreateCommandPool(device(), &command_pool_ci, nullptr, &command_pool);
+    vkt::CommandPool command_pool{ *DeviceObj(), command_pool_ci };
     m_errorMonitor->VerifyFound();
-    vk::DestroyCommandPool(device(), command_pool, nullptr);
 }
 
 TEST_F(NegativeDataGraphModel, CreateDataGraphModelCommandPoolWithInvalidProcessingEngineInfoParameter) {
@@ -205,10 +307,8 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelCommandPoolWithInvalidProcess
     command_pool_ci.pNext = &dg_processing_engine_ci;
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830");
-    VkCommandPool command_pool = nullptr;
-    vk::CreateCommandPool(device(), &command_pool_ci, nullptr, &command_pool);
+    vkt::CommandPool command_pool{ *DeviceObj(), command_pool_ci };
     m_errorMonitor->VerifyFound();
-    vk::DestroyCommandPool(device(), command_pool, nullptr);
 }
 
 TEST_F(NegativeDataGraphModel, CreateDataGraphModelDescriptorPoolWithInvalidProcessingEngineInfo) {
@@ -236,10 +336,8 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelDescriptorPoolWithInvalidProc
     // Some real qualcomm devices don't support compute engine
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorPoolCreateInfo-pNext-09946");
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843", 2);
-    VkDescriptorPool descriptor_pool = nullptr;
-    vk::CreateDescriptorPool(device(), &descriptor_pool_ci, nullptr, &descriptor_pool);
+    vkt::DescriptorPool descriptor_pool{ *DeviceObj(), descriptor_pool_ci };
     m_errorMonitor->VerifyFound();
-    vk::DestroyDescriptorPool(device(), descriptor_pool, nullptr);
 }
 
 TEST_F(NegativeDataGraphModel, CreateDataGraphModelDescriptorPoolButDataGraphModelFeatureNotEnabled) {
@@ -272,8 +370,6 @@ TEST_F(NegativeDataGraphModel, CreateDataGraphModelDescriptorPoolButDataGraphMod
     descriptor_pool_ci.pPoolSizes = &descriptor_pool_size;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844");
-    VkDescriptorPool descriptor_pool = nullptr;
-    vk::CreateDescriptorPool(device(), &descriptor_pool_ci, nullptr, &descriptor_pool);
+    vkt::DescriptorPool descriptor_pool{ *DeviceObj(), descriptor_pool_ci };
     m_errorMonitor->VerifyFound();
-    vk::DestroyDescriptorPool(device(), descriptor_pool, nullptr);
 }

@@ -25,7 +25,7 @@ bool Device::manual_PreCallValidateCreateCommandPool(VkDevice device, const VkCo
     const auto &error_obj = context.error_obj;
 
     if (const auto* processing_engine_info =
-        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
+        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext)) {
         const Location processing_engine_ci_loc =
                             error_obj.location.dot(Field::pCreateInfo).pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
         skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);

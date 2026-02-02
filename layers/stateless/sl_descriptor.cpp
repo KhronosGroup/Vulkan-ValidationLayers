@@ -990,7 +990,7 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
     }
 
     if (const auto* processing_engine_info =
-        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
+        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext)) {
         const Location processing_engine_ci_loc = create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
         skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);
     }
