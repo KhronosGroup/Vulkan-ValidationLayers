@@ -234,23 +234,11 @@ bool core::Instance::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_stat
 bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, const VkDeviceCreateInfo* pCreateInfo,
                                                     const Location &loc) const {
     bool skip = false;
-    bool need_data_graph_model_feature = false;
-
     vvl::unordered_map<uint32_t, std::pair<uint32_t, VkDeviceQueueCreateFlags>> queue_family_map;
     vvl::unordered_map<uint32_t, VkQueueGlobalPriority> global_priorities;
     std::vector<uint32_t> queue_counts;
     const uint32_t queue_info_count = pCreateInfo->queueCreateInfoCount;
     const VkDeviceQueueCreateInfo* queue_infos = pCreateInfo->pQueueCreateInfos;
-
-    // Check data graph model extension name
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        const char* extension_name = pCreateInfo->ppEnabledExtensionNames[i];
-
-        if (strcmp(extension_name, VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME) == 0) {
-            need_data_graph_model_feature = true;
-            break;
-        }
-    }
 
     for (uint32_t i = 0; i < queue_info_count; ++i) {
         const Location info_loc = loc.dot(Field::pQueueCreateInfos, i);
@@ -306,20 +294,13 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
         }
 
         // Validate data graph model feature
-        if (((requested_queue_family_props.queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) && (need_data_graph_model_feature)) {
+        if (((requested_queue_family_props.queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) != 0) && (pd_state.vk_qcom_data_graph_model)) {
             const auto data_graph_properties_arms = pd_state.GetQueueFamilyDataGraphPropsARM(requested_queue_family);
+            const auto* data_graph_model_features =
+                        vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphModelFeaturesQCOM>(pCreateInfo->pNext);
             for (size_t index = 0; index < data_graph_properties_arms.size(); ++index) {
                 const auto data_graph_engine_type = data_graph_properties_arms[index].engine.type;
-                const bool is_qcom_engine = IsValueIn(data_graph_engine_type,
-                                                      { VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM,
-                                                        VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM });
 
-                if (!is_qcom_engine) {
-                    continue;
-                }
-
-                const auto* data_graph_model_features =
-                    vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphModelFeaturesQCOM>(pCreateInfo->pNext);
                 if ((data_graph_model_features) && (!data_graph_model_features->dataGraphModel)) {
                     skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831",
                                      pd_state.Handle(),
@@ -328,13 +309,13 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                                      "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is VK_FALSE.",
                                      requested_queue_family,
                                      string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
-                } else {
+                } else if (!data_graph_model_features) {
                     skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-11831",
                                      pd_state.Handle(),
                                      info_loc.dot(Field::queueFamilyIndex),
                                      "%" PRIu32 " enumerates an engine with %s type, but "
                                      "VkPhysicalDeviceDataGraphModelFeaturesQCOM structure isn't included in "
-                                     "the pNext chain with dataGraphModel set to VK_TRUE.",
+                                     "the pNext chain with dataGraphModel member set to VK_TRUE.",
                                      requested_queue_family,
                                      string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(data_graph_engine_type));
                 }

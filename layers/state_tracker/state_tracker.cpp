@@ -61,6 +61,7 @@ DeviceState::DeviceState(vvl::dispatch::Device *dev, InstanceState *instance)
       special_supported(dev->stateless_device_data.special_supported) {
     physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
     physical_device_state->has_maintenance9 = dev->stateless_device_data.special_supported.has_maintenance9;
+    physical_device_state->vk_qcom_data_graph_model = dev->stateless_device_data.special_supported.vk_qcom_data_graph_model;
 }
 
 DeviceState::~DeviceState() { DestroyObjectMaps(); }
