@@ -70,9 +70,19 @@ class SyncValidationOutputGenerator(BaseGenerator):
         self.stageAccessCombo = []
 
         # fake stages and accesses for acquire present support
-        self.pipelineStagePresentEngine = Flag('VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL', [], 0, False, False, None, None, [])
-        self.accessAcquireRead = Flag('VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL', [], 0, False, False, None, None, [])
-        self.accessPresented = Flag('VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL', [], 0, False, False, None, None, [])
+        def make_flag(name):
+            return Flag(name = name,
+                        aliases = [],
+                        protect = None,
+                        value = 0,
+                        valueStr = "",
+                        bitpos = None,
+                        multiBit = False,
+                        zero = False,
+                        extensions = [])
+        self.pipelineStagePresentEngine = make_flag('VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL')
+        self.accessAcquireRead = make_flag('VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL')
+        self.accessPresented = make_flag('VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL')
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***

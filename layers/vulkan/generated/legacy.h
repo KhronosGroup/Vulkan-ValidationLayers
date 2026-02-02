@@ -96,6 +96,38 @@ class Device : public vvl::base::Device {
     ~Device() {}
     Instance* instance;
 
+    bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
+                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                                  const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                            const ErrorObject& error_obj) const override;
+    bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                               VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const override;
+    bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                           const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const override;
+    bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                             const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                             const VkCopyDescriptorSet* pDescriptorCopies,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                              const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                              const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                         uint32_t offset, uint32_t size, const void* pValues,
+                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                           const ErrorObject& error_obj) const override;
@@ -119,6 +151,48 @@ class Device : public vvl::base::Device {
                                         const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                               const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
+                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
+                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
+        VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+        const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
+        VkCommandBuffer commandBuffer,
+        const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+        const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
+                                                      VkDeviceSize* pLayoutSizeInBytes,
+                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
+                                                               VkDeviceSize* pOffset, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                         void* pDescriptor, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                    const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
+                                                    const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                         VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                         const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                   VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                   uint32_t set, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
+                                                                void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkImageCaptureDescriptorDataInfoEXT* pInfo,
+                                                               void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                   const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+                                                                   void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                 const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData,
+                                                                 const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+        VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
+        const ErrorObject& error_obj) const override;
 };
 }  // namespace legacy
 // NOLINTEND
