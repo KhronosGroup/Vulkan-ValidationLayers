@@ -3891,3 +3891,45 @@ TEST_F(NegativeGraphicsLibrary, MultiViewDraw) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGraphicsLibrary, PushConstantNotInPipelineLayout) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    const char* const vs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x[8]; } constants;
+        void main(){
+           gl_Position = vec4(constants.x[0]);
+        }
+    )glsl";
+
+    const char* const fs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x[4]; } constants;
+        layout(location=0) out vec4 o;
+        void main(){
+           o = vec4(constants.x[0]);
+        }
+    )glsl";
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
+        pre_raster_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
+        frag_shader_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
