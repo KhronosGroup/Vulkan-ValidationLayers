@@ -216,7 +216,7 @@ std::string ErrorMessages::AccelerationStructureDescriptorError(
 
 std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 vvl::Func command, const std::string& resource_description,
-                                                VkImageAspectFlagBits aspect, uint32_t clear_rect_index,
+                                                VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
                                                 const VkClearRect& clear_rect) const {
     std::ostringstream ss;
     ss << "\nClear region: {\n";
@@ -227,7 +227,7 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     ss << "}\n";
 
     AdditionalMessageInfo additional_info;
-    additional_info.properties.Add(kPropertyImageAspect, string_VkImageAspectFlagBits(aspect));
+    additional_info.properties.Add(kPropertyImageAspects, string_VkImageAspectFlags(clear_aspects));
     additional_info.access_action = "clears";
     additional_info.message_end_text = ss.str();
 

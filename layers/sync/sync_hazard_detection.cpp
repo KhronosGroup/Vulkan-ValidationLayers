@@ -313,11 +313,16 @@ HazardResult AccessContext::DetectHazard(const vvl::Buffer &buffer, SyncAccessIn
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
-HazardResult AccessContext::DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
-                                         const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const {
-    HazardDetector detector(current_usage, *this);
+HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                                         bool is_depth_sliced, SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
     ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
-    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
+    if (ordering_rule == SyncOrdering::kOrderingNone) {
+        HazardDetector detector(current_usage, *this);
+        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
+    } else {
+        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0, false);
+        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
+    }
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,

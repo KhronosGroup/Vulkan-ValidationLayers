@@ -298,11 +298,10 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     struct ClearAttachmentInfo {
         const vvl::ImageView &attachment_view;
-        VkImageAspectFlags aspects_to_clear = 0;
         VkImageSubresourceRange subresource_range{};
     };
-    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment &clear_attachment,
-                                                              const VkClearRect &rect) const;
+    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, uint32_t clear_first_layer,
+                                                              uint32_t clear_layer_count) const;
 
     void CheckCommandTagDebugCheckpoint();
 
