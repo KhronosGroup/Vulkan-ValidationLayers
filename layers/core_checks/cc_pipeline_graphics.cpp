@@ -691,7 +691,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     if (pipeline.HasFullState()) {
         if (is_create_library) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, flags_loc,
-                             "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but defines a complete set of state.",
+                             "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but defines a complete set of state. (Did you "
+                             "forget to add VkGraphicsPipelineLibraryCreateInfoEXT with the library stages to create?)",
                              string_VkPipelineCreateFlags2(pipeline_flags).c_str());
         }
 

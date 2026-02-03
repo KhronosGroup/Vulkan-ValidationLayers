@@ -2021,33 +2021,31 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
             // We also need to be careful, if things like rasterization is diabled, we **need** to ignore a possible
             // VkPipelineRenderingCreateInfo that contains bad pointers (Thanks GPL!)
 
-            // These are simply true for the non-GPL case
+            VkPipelineCreateFlags2 flags = create_info.flags;
+            if (auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext)) {
+                flags = flags2->flags;
+            }
+            const bool is_library = (flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
+
+            // These are simply true for the non-GPL case (or when we are creating the final GPL pipeline)
             bool has_pre_raster_state = true;
             bool has_fragment_shader_state = true;
             bool has_fragment_output_state = true;
-
-            // Same as OwnsLibState() but when there is no vvl::Pipeline state
-            auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-            if (link_info && link_info->libraryCount != 0) {
-                // We are linking in, so we now know this pipeline doesn't "own" some state
-                has_pre_raster_state = false;
-                has_fragment_shader_state = false;
-                has_fragment_output_state = false;
-            }
-            auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
-            if (lib_info) {
-                has_pre_raster_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) != 0;
-                has_fragment_shader_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) != 0;
-                has_fragment_output_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0;
+            if (is_library) {
+                // Same as OwnsLibState() but when there is no vvl::Pipeline state
+                if (auto lib_type = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext)) {
+                    has_pre_raster_state = (lib_type->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) != 0;
+                    has_fragment_shader_state = (lib_type->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) != 0;
+                    has_fragment_output_state =
+                        (lib_type->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0;
+                }
             }
 
             const bool uses_view_mask = has_pre_raster_state | has_fragment_shader_state;
             const bool rasterization_enabled =
                 has_fragment_output_state && Pipeline::EnablesRasterizationStates(*this, create_info);
 
-            // We need VkPipelineRenderingCreateInfo for two reasons
-            //  - The viewMask (pre-raster/fragment shader)
-            //  - The formats (fragment output) (also depends on rasterization being enabled)
+            // Start with empty struct, fill in what is not ignored
             VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
             rendering_ci.viewMask = 0;
             rendering_ci.colorAttachmentCount = 0;
@@ -2067,14 +2065,12 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
                 }
             }
 
-            // even if the final executable in GPL has a VkPipelineRenderingCreateInfo, we ignore it (override it)
-            if (!lib_info && link_info) {
-                // If |lib_info| is true, we might be building something like a Vertex Input library, and we can ignore
-                // VkPipelineRenderingCreateInfo now
-                //
-                // When GPL (our favorite extension) is used, this will be the final executable pipeline and here we need to fetch
-                // all the library state
-                for (VkPipeline lib : vvl::make_span(link_info->pLibraries, link_info->libraryCount)) {
+            auto lib_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+            // When GPL (our favorite extension) is used, this will be the final executable pipeline and here we need to fetch all
+            // the library state
+            if (lib_info && lib_info->libraryCount != 0) {
+                // Even if the final executable in GPL has a VkPipelineRenderingCreateInfo, we ignore (override) it
+                for (VkPipeline lib : vvl::make_span(lib_info->pLibraries, lib_info->libraryCount)) {
                     auto lib_state = Get<vvl::Pipeline>(lib);
                     ASSERT_AND_CONTINUE(lib_state);
                     if (!lib_state->rendering_create_info) {
