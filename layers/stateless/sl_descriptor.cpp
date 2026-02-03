@@ -1595,7 +1595,7 @@ bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoE
             }
         }
     } else if (!IsPointerAligned(info.addressRange.address, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
-        skip |= LogError("VUID-VkTexelBufferDescriptorInfoEXT-None-12349", device, loc.dot(Field::addressRange).dot(Field::address),
+        skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12349", device, loc.dot(Field::addressRange).dot(Field::address),
                          "(0x%" PRIx64 ") is not aligned to minTexelBufferOffsetAlignment (%" PRIu64 ")", info.addressRange.address,
                          phys_dev_props.limits.minTexelBufferOffsetAlignment);
     }
