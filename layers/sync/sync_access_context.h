@@ -361,8 +361,8 @@ class AccessContext {
     //
     HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const;
 
-    HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
+                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                               const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;

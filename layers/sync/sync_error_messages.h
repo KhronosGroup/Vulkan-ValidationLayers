@@ -87,7 +87,7 @@ class ErrorMessages {
                                                      VkShaderStageFlagBits shader_stage) const;
 
     std::string ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                     const std::string& resource_description, VkImageAspectFlagBits aspect,
+                                     const std::string& resource_description, VkImageAspectFlags clear_aspects,
                                      uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
 
     std::string RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,

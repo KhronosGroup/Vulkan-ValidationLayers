@@ -1558,7 +1558,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
+            auto hazard = context->DetectHazard(*image_state, range, false, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kOrderingNone);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
                 const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,
@@ -1587,7 +1587,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
+            auto hazard = context->DetectHazard(*image_state, range, false, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kOrderingNone);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
                 const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,

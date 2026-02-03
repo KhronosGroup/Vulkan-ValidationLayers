@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ inline constexpr const char *kPropertyDescriptorType = "descriptor_type";
 inline constexpr const char *kPropertyDescriptorBinding = "descriptor_binding";
 inline constexpr const char *kPropertyDescriptorArrayElement = "descriptor_array_element";
 inline constexpr const char *kPropertyImageLayout = "image_layout";
-inline constexpr const char *kPropertyImageAspect = "image_aspect";
+inline constexpr const char *kPropertyImageAspects = "image_aspects";
 inline constexpr const char *kPropertySubmitIndex = "submit_index";
 inline constexpr const char *kPropertyBatchIndex = "batch_index";
 inline constexpr const char *kPropertyCommandBufferIndex = "command_buffer_index";
