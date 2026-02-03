@@ -348,8 +348,8 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const InstrumentedShader *instrumented_shader = nullptr;
-        const uint32_t shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
-        auto it = gpuav.instrumented_shaders_map_.find(shader_id);
+        const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
+        auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
         if (it != gpuav.instrumented_shaders_map_.end()) {
             instrumented_shader = &it->second;
         }
@@ -362,7 +362,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
                                                              error_record[glsl::kHeader_StageInfoOffset_1],
                                                              error_record[glsl::kHeader_StageInfoOffset_2],
                                                              instruction_position_offset,
-                                                             shader_id};
+                                                             unique_shader_id};
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
             cb_state.VkHandle(), shader_info, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
 

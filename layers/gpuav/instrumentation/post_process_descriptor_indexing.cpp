@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "state_tracker/pipeline_state.h"
@@ -163,10 +164,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
                         const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
                         if (slot.meta_data & glsl::kPostProcessMetaMaskAccessed) {
-                            const uint32_t shader_id = slot.meta_data & glsl::kShaderIdMask;
+                            const uint32_t unique_shader_id = slot.meta_data & glsl::kShaderIdMask;
                             const uint32_t error_logger_i = (slot.meta_data & glsl::kPostProcessMetaMaskErrorLoggerIndex) >>
                                                             glsl::kPostProcessMetaShiftErrorLoggerIndex;
-                            descriptor_access_map[shader_id].emplace_back(DescriptorAccess{
+                            descriptor_access_map[unique_shader_id].emplace_back(DescriptorAccess{
                                 binding, descriptor_i, slot.variable_id, slot.instruction_position_offset, error_logger_i});
                         }
                     }
@@ -174,8 +175,8 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
             }
 
             // For each shader ID we can do the state object lookup once, then validate all the accesses inside of it
-            for (const auto& [shader_id, descriptor_accesses] : descriptor_access_map) {
-                auto it = gpuav.instrumented_shaders_map_.find(shader_id);
+            for (const auto& [unique_shader_id, descriptor_accesses] : descriptor_access_map) {
+                auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
                 if (it == gpuav.instrumented_shaders_map_.end()) {
                     assert(false);
                     continue;

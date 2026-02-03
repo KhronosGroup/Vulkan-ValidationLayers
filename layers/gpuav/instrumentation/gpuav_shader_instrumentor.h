@@ -199,8 +199,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     void PostCallRecordPipelineCreationShaderInstrumentationGPL(
         vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
 
-    // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
-    // Returns if shader was instrumented successfully or not
+    // Function that will hook into the SPIR-V instrumentation passes.
+    // Returns if shader was instrumented successfully or not.
     bool InstrumentShader(const vvl::span<const uint32_t>& input_spirv, const spirv::InstrumentationInterface& interface,
                           std::vector<uint32_t>& out_instrumented_spirv);
 

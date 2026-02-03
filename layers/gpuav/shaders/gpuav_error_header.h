@@ -94,6 +94,8 @@ const int kErrorSubCode_Shift = 18;
 const int kErrorSubCode_Mask = 0x3F << kErrorSubCode_Shift;  // 32 slot
 const int kErrorGroup_Shift = 24;
 const int kErrorGroup_Mask = 0xFF << kErrorGroup_Shift;  // 256 slots
+const uint kMaxInstrumentedShaders = 1u << kErrorSubCode_Shift;  // 256k
+const uint kShaderIdMask = 0x3FFFF;                              // Used to get unique_shader_id
 
 // kHeader_StageInstructionIdOffset
 // ---
