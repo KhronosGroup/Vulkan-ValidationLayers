@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2025 The Khronos Group Inc.
-// Copyright (c) 2021-2025 Valve Corporation
-// Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2021-2026 The Khronos Group Inc.
+// Copyright (c) 2021-2026 Valve Corporation
+// Copyright (c) 2021-2026 LunarG, Inc.
 // Copyright (c) 2025 Arm Limited.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -129,10 +129,6 @@ const int kDebugInputBuffAddrPtrOffset = 1;
 // The length associated with the 0xffffffffffffffff address is zero. If
 // not a valid buffer, the length associated with the 0x0 address is zero.
 const int kDebugInputBuffAddrLengthOffset = 0;
-
-// This is used various places trying to compress the Shader ID
-const uint kMaxInstrumentedShaders = 1u << 18;  // 256k
-const uint kShaderIdMask = 0x3FFFF;
 
 // Current layout for the meta_data dword
 // |     31      | 30 .......... 18 | 17 ................. 0 |

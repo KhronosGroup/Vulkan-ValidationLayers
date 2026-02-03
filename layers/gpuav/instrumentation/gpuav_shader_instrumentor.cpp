@@ -1501,7 +1501,6 @@ static bool GpuValidateShader(const std::vector<uint32_t> &input, spv_target_env
     return (result == SPV_SUCCESS);
 }
 
-// The function all code paths lead to invoke the various GPU-AV instrumentation passes on the shader.
 bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& input_spirv,
                                              const spirv::InstrumentationInterface& interface,
                                              std::vector<uint32_t>& out_instrumented_spirv) {

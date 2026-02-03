@@ -70,7 +70,8 @@ struct InstrumentationDescriptorSetLayouts {
 
 // Top level struct to hold all the things we want to pass in from the Vulkan GPU-AV code into the SPIR-V instrumentation passes
 struct InstrumentationInterface {
-    // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
+    // Used to do a look up the corresponding shader handle GpuShaderInstrumentor::instrumented_shaders_map_
+    // (Embedded into the GLSL at linking time with SpecConstantLinkShaderId)
     uint32_t unique_shader_id = 0;
 
     // We only need to instrument the functions in the entry point
@@ -85,7 +86,7 @@ struct InstrumentationInterface {
 };
 
 // Global settings we would know at vkCreateDevice
-// All setting must be set in FinishDeviceSetup, wher defaults are decided
+// All setting must be set in FinishDeviceSetup, where defaults values are set
 struct DeviceSettings {
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
