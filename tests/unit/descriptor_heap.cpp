@@ -914,7 +914,7 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     texel_buffer_info.addressRange.address = buffer.Address() + 1;
     texel_buffer_info.addressRange.size = align;
 
-    m_errorMonitor->SetDesiredError("VUID-VkTexelBufferDescriptorInfoEXT-None-12349");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-12349");
     vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
     m_errorMonitor->VerifyFound();
 }
