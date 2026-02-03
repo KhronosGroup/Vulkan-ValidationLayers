@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
 #include "error_message/log_message_type.h"
+#include "error_message/error_location.h"
 
 #include <iostream>
 
@@ -31,15 +32,14 @@ namespace spirv {
 
 static constexpr uint32_t kLinkedInstruction = vvl::kNoIndex32;
 
-Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-               const DeviceFeatures& enabled_features,
-               const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
+Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
+               const InstrumentationInterface& interface, const DeviceFeatures& enabled_features)
     : type_manager_(*this),
       settings_(settings),
+      interface_(interface),
       enabled_features_(enabled_features),
-      has_bindless_descriptors_(settings.has_bindless_descriptors),
-      debug_report_(debug_report),
-      set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
+      has_bindless_descriptors_(interface.instrumentation_dsl.has_bindless_descriptors),
+      debug_report_(debug_report) {
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
     header_.version = *it++;
@@ -538,7 +538,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 new_op_constant[1] = new_inst->Word(1);
                 new_op_constant[2] = new_inst->Word(2);
                 if (new_inst->Word(3) == glsl::kLinkShaderId) {
-                    new_op_constant[3] = settings_.shader_id;
+                    new_op_constant[3] = interface_.unique_shader_id;
                 }
                 new_inst.reset(new Instruction(new_op_constant, kLinkedInstruction));
             } else if (opcode == spv::OpSpecConstantOp) {
@@ -792,7 +792,7 @@ void Module::PostProcess() {
 
 void Module::InternalWarning(const char* tag, const std::string& message) {
     if (debug_report_) {
-        debug_report_->LogMessage(kWarningBit, tag, {}, settings_.loc, message);
+        debug_report_->LogMessage(kWarningBit, tag, {}, interface_.loc, message);
     } else {
         std::cout << "[" << tag << "] " << message << '\n';
     }
@@ -800,7 +800,7 @@ void Module::InternalWarning(const char* tag, const std::string& message) {
 
 void Module::InternalError(const char* tag, const std::string& message) {
     if (debug_report_) {
-        debug_report_->LogMessage(kErrorBit, tag, {}, settings_.loc, message);
+        debug_report_->LogMessage(kErrorBit, tag, {}, interface_.loc, message);
     } else {
         std::cerr << "[" << tag << "] " << message << '\n';
     }

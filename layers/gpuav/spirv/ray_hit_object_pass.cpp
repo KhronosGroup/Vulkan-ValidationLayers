@@ -64,9 +64,8 @@ uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* 
 
     const uint32_t opcode_type_id = type_manager_.CreateConstantUInt32(opcode).Id();
 
-    const uint32_t pipeline_flags =
-        (module_.settings_.pipeline_has_skip_aabbs_flag ? 1u : 0u) |
-        (module_.settings_.pipeline_has_skip_triangles_flag ? 2u : 0u);
+    const uint32_t pipeline_flags = (module_.interface_.instrumentation_dsl.pipeline_has_skip_aabbs_flag ? 1u : 0u) |
+                                    (module_.interface_.instrumentation_dsl.pipeline_has_skip_triangles_flag ? 2u : 0u);
     const uint32_t pipeline_flags_id = type_manager_.CreateConstantUInt32(pipeline_flags).Id();
 
     // For non-motion opcodes, pass 0.0 as time (valid value, won't trigger error)
@@ -93,7 +92,9 @@ uint32_t RayHitObjectPass::CreateSBTIndexCheckFunctionCall(BasicBlock& block, In
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    const uint32_t max_sbt_index_id = type_manager_.CreateConstantUInt32(module_.settings_.max_shader_binding_table_record_index).Id();
+    // maxShaderBindingTableRecordIndex
+    const uint32_t max_sbt_index = module_.interface_.instrumentation_dsl.max_shader_binding_table_record_index;
+    const uint32_t max_sbt_index_id = type_manager_.CreateConstantUInt32(max_sbt_index).Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, inst_position_id, sbt_index_id, max_sbt_index_id},

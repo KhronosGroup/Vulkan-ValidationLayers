@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
+#include <cstring>
 
 #include "generated/gpuav_offline_spirv.h"
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,8 @@ void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, Instr
     // TODO - This assumes no depth/arrayed/ms from RequiresInstrumentation
     const uint32_t descriptor_offset_id = CastToUint32(meta.target_instruction->Operand(1), block, inst_it);
 
-    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
+    const auto& layout_lut = module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut;
+    BindingLayout binding_layout = layout_lut[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -169,7 +170,7 @@ void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassTexelBufferPass::Instrument() {
-    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+    if (module_.interface_.instrumentation_dsl.set_index_to_bindings_layout_lut.empty()) {
         return false;  // If there is no bindings, nothing to instrument
     }
 

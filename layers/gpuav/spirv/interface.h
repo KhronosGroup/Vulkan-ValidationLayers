@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,14 @@
 
 #pragma once
 #include <stdint.h>
+#include <vulkan/vulkan_core.h>
 #include <string>
+#include <vector>
 
-// The goal is to keep instrumentation a standalone executable for testing, but it will need runtime information interfaced with it.
-// We declare all types that either the running instance of GPU-AV or the standalone executable testing will need.
+// The goal is to keep instrumentation a seperate library to draw a strong line where the GPU-AV SPIR-V logic is.
+// This header is designed as the interface that can be shared between the instrumentation passes and the rest of GPU-AV
+
+struct Location;
 
 namespace gpuav {
 namespace spirv {
@@ -45,6 +49,55 @@ namespace spirv {
 struct BindingLayout {
     uint32_t start;
     uint32_t count;
+};
+
+// When instrumenting, we need information about the array of VkDescriptorSetLayouts. The core issue is that for pipelines, we
+// might have to merge 2 pipeline layouts together (because of GPL) and therefore both ShaderObject and PipelineLayout state
+// objects don't have a single way to describe their VkDescriptorSetLayouts. If there are multiple shaders, we also want to only
+// build this information once.
+// This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down to the SPIR-V Instrumentation,
+// and afterwards we don't need to save it.
+struct InstrumentationDescriptorSetLayouts {
+    bool has_bindless_descriptors = false;
+    // < set , [ bindings ] >
+    std::vector<std::vector<spirv::BindingLayout>> set_index_to_bindings_layout_lut;
+
+    // Pipeline flags for ray tracing validation hit objects
+    bool pipeline_has_skip_aabbs_flag = false;
+    bool pipeline_has_skip_triangles_flag = false;
+    uint32_t max_shader_binding_table_record_index = 0;
+};
+
+// Top level struct to hold all the things we want to pass in from the Vulkan GPU-AV code into the SPIR-V instrumentation passes
+struct InstrumentationInterface {
+    // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
+    uint32_t unique_shader_id = 0;
+
+    // We only need to instrument the functions in the entry point
+    const char* entry_point_name = nullptr;
+    VkShaderStageFlagBits entry_point_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+
+    InstrumentationDescriptorSetLayouts instrumentation_dsl;
+
+    const Location& loc;
+
+    explicit InstrumentationInterface(const Location& loc) : loc(loc) {}
+};
+
+// Global settings we would know at vkCreateDevice
+// All setting must be set in FinishDeviceSetup, wher defaults are decided
+struct DeviceSettings {
+    // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
+    // This allows anything to be set in the GLSL for the set value, as we change it at runtime
+    uint32_t output_buffer_descriptor_set;
+    // When off (unsafe mode) reduce amount of work so compiling the pipeline/shader is quicker
+    // This is a global setting for all passes
+    bool safe_mode;
+    // Used to help debug
+    bool print_debug_info;
+    // zero is same as "unlimited"
+    uint32_t max_instrumentations_count;
+    bool support_non_semantic_info;
 };
 
 // When running the DebugPrintf pass, if we detect an instrumented shader has a printf call (for debugging) we can hold them until

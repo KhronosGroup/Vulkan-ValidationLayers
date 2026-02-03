@@ -451,7 +451,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         store_block.CreateInstruction(spv::OpAccessChain,
                                       {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
 
-        const uint32_t shader_id = type_manager_.GetConstantUInt32(module_.settings_.shader_id).Id();
+        const uint32_t shader_id = type_manager_.GetConstantUInt32(module_.interface_.unique_shader_id).Id();
         store_block.CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
     }
 
@@ -513,8 +513,8 @@ bool DebugPrintfPass::Instrument() {
                     for (const auto& debug_inst : module_.debug_source_) {
                         const uint32_t string_id = (*inst_it)->Word(5);
                         if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {
-                            internal_only_debug_printf_.emplace_back(
-                                InternalOnlyDebugPrintf{module_.settings_.shader_id, string_id, debug_inst->GetAsString(2)});
+                            internal_only_debug_printf_.emplace_back(InternalOnlyDebugPrintf{
+                                module_.interface_.unique_shader_id, string_id, debug_inst->GetAsString(2)});
                         }
                     }
                 }
