@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <vector>
 #include "containers/custom_containers.h"
-#include "error_message/error_location.h"
 #include "link.h"
 #include "interface.h"
 #include "function_basic_block.h"
@@ -38,43 +37,13 @@ struct ModuleHeader {
     uint32_t schema;
 };
 
-struct Settings {
-    // provides a way to map back and know which original SPIR-V this was from
-    uint32_t shader_id;
-    // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
-    // This allows anything to be set in the GLSL for the set value, as we change it at runtime
-    uint32_t output_buffer_descriptor_set;
-    // When off (unsafe mode) reduce amount of work so compiling the pipeline/shader is quicker
-    // This is a global setting for all passes
-    bool safe_mode;
-    // Used to help debug
-    bool print_debug_info;
-    // zero is same as "unlimited"
-    uint32_t max_instrumentations_count;
-    bool support_non_semantic_info;
-    bool has_bindless_descriptors;
-
-    // For ray tracing pipelines, stores relevant pipeline create flags for validation
-    // Used to check VUIDs 11886/11887 (SkipTriangles vs SKIP_AABBS pipeline flag, etc.)
-    bool pipeline_has_skip_aabbs_flag = false;
-    bool pipeline_has_skip_triangles_flag = false;
-
-    // For VUID 11888 - maxShaderBindingTableRecordIndex limit check
-    uint32_t max_shader_binding_table_record_index = 0;
-
-    // Used if need to report error/warning
-    const Location& loc;
-
-    explicit Settings(const Location& loc) : loc(loc) {}
-};
-
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
 // There are other helper classes that are charge of handling the various parts of the module.
 // The Module takes SPIR-V, has each pass modify it, then dumps it out into the instrumented SPIR-V
 class Module {
   public:
-    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-           const DeviceFeatures& enabled_features, const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut);
+    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
+           const InstrumentationInterface& interface, const DeviceFeatures& enabled_features);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -119,7 +88,10 @@ class Module {
     void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
     void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
 
-    const Settings& settings_;
+    // Global settings we would know at vkCreateDevice
+    const DeviceSettings& settings_;
+    // Per-pipeline/shaderObject information
+    const InstrumentationInterface& interface_;
 
     bool use_bda_ = false;
 
@@ -134,11 +106,9 @@ class Module {
     // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to allow for
     // warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)
     DebugReport* debug_report_ = nullptr;
+    // Used if need to report error/warning
     void InternalWarning(const char* tag, const std::string& message);
     void InternalError(const char* tag, const std::string& message);
-
-    // < set, [ bindings ] >
-    const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut_;
 
     // Prevent adding function if nothing was instrumented
     bool need_log_error_ = false;

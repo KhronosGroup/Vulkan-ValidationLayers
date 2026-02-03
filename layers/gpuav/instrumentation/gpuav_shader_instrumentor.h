@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,27 +175,12 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
   protected:
     bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc);
 
-    // When instrumenting, we need information about the array of VkDescriptorSetLayouts. The core issue is that for pipelines, we
-    // might have to merge 2 pipeline layouts together (because of GPL) and therefore both ShaderObject and PipelineLayout state
-    // objects don't have a single way to describe their VkDescriptorSetLayouts. If there are multiple shaders, we also want to only
-    // build this information once. This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down
-    // to the SPIR-V Instrumentation, and afterwards we don't need to save it.
-    struct InstrumentationDescriptorSetLayouts {
-        bool has_bindless_descriptors = false;
-        // < set , [ bindings ] >
-        std::vector<std::vector<spirv::BindingLayout>> set_index_to_bindings_layout_lut;
-        // Pipeline flags for ray tracing validation (VUIDs 11886/11887)
-        bool pipeline_has_skip_aabbs_flag = false;
-        bool pipeline_has_skip_triangles_flag = false;
-        // For VUID 11888 - maxShaderBindingTableRecordIndex limit check
-        uint32_t max_shader_binding_table_record_index = 0;
-    };
-    void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
-                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
-    void BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT &modified_create_info,
-                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
-    void BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout &set_layout_state, const uint32_t set_layout_index,
-                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
+    void BuildDescriptorSetLayoutInfo(const vvl::Pipeline& pipeline_state,
+                                      spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl);
+    void BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT& modified_create_info,
+                                      spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl);
+    void BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout& set_layout_state, const uint32_t set_layout_index,
+                                      spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl);
 
     template <typename SafeCreateInfo>
     [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentation(
@@ -216,9 +201,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
-    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id,
-                          const InstrumentationDescriptorSetLayouts &instrumentation_dsl, const Location &loc,
-                          std::vector<uint32_t> &out_instrumented_spirv);
+    bool InstrumentShader(const vvl::span<const uint32_t>& input_spirv, const spirv::InstrumentationInterface& interface,
+                          std::vector<uint32_t>& out_instrumented_spirv);
 
   public:
     void SetupClassicDescriptor(const Location &loc);
@@ -245,6 +229,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     VkDescriptorSetLayout dummy_desc_layout_[vvl::DescriptorModeCount];
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
+    spirv::DeviceSettings instrumentation_device_settings_;
 
     std::vector<spirv::InternalOnlyDebugPrintf> internal_only_debug_printf_;
 

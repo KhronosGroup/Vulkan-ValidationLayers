@@ -24,6 +24,7 @@
 #include "generated/dispatch_functions.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav_constants.h"
+#include "gpuav/spirv/interface.h"
 #include "utils/shader_utils.h"
 #include "utils/spirv_tools_utils.h"
 
@@ -250,6 +251,14 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
 
     SetupClassicDescriptor(loc);
     SetupDescriptorBuffers(loc);
+
+    // Settings we will want for every SPIR-V instrumention pass
+    instrumentation_device_settings_.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
+    instrumentation_device_settings_.safe_mode = gpuav_settings.safe_mode;
+    instrumentation_device_settings_.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
+    instrumentation_device_settings_.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
+    instrumentation_device_settings_.support_non_semantic_info =
+        IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
 }
 
 void GpuShaderInstrumentor::Cleanup() {
@@ -434,14 +443,18 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
         return false;
     }
 
-    std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
-    InstrumentationDescriptorSetLayouts instrumentation_dsl;
-    BuildDescriptorSetLayoutInfo(modified_create_info, instrumentation_dsl);
-
     const uint32_t unique_shader_id = unique_shader_module_id_++;
+
+    std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
+    spirv::InstrumentationInterface interface(create_info_loc);
+    interface.unique_shader_id = unique_shader_id;
+    interface.entry_point_name = modified_create_info.pName;
+    interface.entry_point_stage = modified_create_info.stage;
+    BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
+
     const bool is_shader_instrumented = InstrumentShader(
-        vvl::make_span(static_cast<const uint32_t *>(modified_create_info.pCode), modified_create_info.codeSize / sizeof(uint32_t)),
-        unique_shader_id, instrumentation_dsl, create_info_loc, instrumented_spirv);
+        vvl::make_span(static_cast<const uint32_t*>(modified_create_info.pCode), modified_create_info.codeSize / sizeof(uint32_t)),
+        interface, instrumented_spirv);
 
     if (is_shader_instrumented) {
         instrumentation_data.unique_shader_id = unique_shader_id;
@@ -989,8 +1002,8 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
     return true;
 }
 
-void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
-                                                         InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
+void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline& pipeline_state,
+                                                         spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl) {
     const auto pipeline_layout = pipeline_state.PipelineLayoutState();
     if (!pipeline_layout) {
         return;
@@ -1003,18 +1016,17 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pi
         }
     }
 
-    // Set ray tracing pipeline flags for VUIDs 11886/11887
+    // Set ray tracing pipeline flags for hit objects
     out_instrumentation_dsl.pipeline_has_skip_aabbs_flag =
         (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0;
     out_instrumentation_dsl.pipeline_has_skip_triangles_flag =
         (pipeline_state.create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0;
-    // For VUID 11888 - maxShaderBindingTableRecordIndex limit
     out_instrumentation_dsl.max_shader_binding_table_record_index =
         phys_dev_ext_props.ray_tracing_invocation_reorder_props.maxShaderBindingTableRecordIndex;
 }
 
-void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT &modified_create_info,
-                                                         InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
+void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT& modified_create_info,
+                                                         spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl) {
     out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(modified_create_info.setLayoutCount);
     for (const auto [set_layout_index, set_layout] :
          vvl::enumerate(modified_create_info.pSetLayouts, modified_create_info.setLayoutCount)) {
@@ -1024,9 +1036,9 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vku::safe_VkShade
     }
 }
 
-void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout &set_layout_state,
+void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout& set_layout_state,
                                                          const uint32_t set_layout_index,
-                                                         InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
+                                                         spirv::InstrumentationDescriptorSetLayouts& out_instrumentation_dsl) {
     if (set_layout_state.GetBindingCount() == 0) return;
     const uint32_t binding_count = set_layout_state.GetMaxBinding() + 1;
 
@@ -1121,8 +1133,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     // Init here instead of in chassis so we don't pay cost when GPU-AV is not used
     shader_instrumentation_metadata.resize(stages_count);
 
-    InstrumentationDescriptorSetLayouts instrumentation_dsl;
-    BuildDescriptorSetLayoutInfo(pipeline_state, instrumentation_dsl);
+    spirv::InstrumentationInterface interface(loc);
+    // Can set this once for all shaders in the pipeline
+    BuildDescriptorSetLayoutInfo(pipeline_state, interface.instrumentation_dsl);
 
     for (uint32_t stage_state_i = 0; stage_state_i < stages_count; ++stage_state_i) {
         const auto &stage_state = pipeline_state.stage_states[stage_state_i];
@@ -1153,8 +1166,11 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         }
         std::vector<uint32_t> instrumented_spirv;
         const uint32_t unique_shader_id = unique_shader_module_id_++;
-        const bool is_shader_instrumented =
-            InstrumentShader(modified_module_state->spirv->words_, unique_shader_id, instrumentation_dsl, loc, instrumented_spirv);
+
+        interface.unique_shader_id = unique_shader_id;
+        interface.entry_point_name = stage_state.GetPName();
+        interface.entry_point_stage = stage_state.GetStage();
+        const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
             if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
@@ -1242,8 +1258,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
     const size_t total_stages = linked_pipeline_state.stage_states.size();
     shader_instrumentation_metadata.resize(total_stages);
 
-    InstrumentationDescriptorSetLayouts instrumentation_dsl;
-    BuildDescriptorSetLayoutInfo(linked_pipeline_state, instrumentation_dsl);
+    spirv::InstrumentationInterface interface(loc);
+    // Can set this once for all shaders in the pipeline
+    BuildDescriptorSetLayoutInfo(linked_pipeline_state, interface.instrumentation_dsl);
 
     auto modified_library_ci = const_cast<VkPipelineLibraryCreateInfoKHR *>(
         vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(modified_pipeline_ci.pNext));
@@ -1334,8 +1351,12 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             // ---
             std::vector<uint32_t> instrumented_spirv;
             const uint32_t unique_shader_id = unique_shader_module_id_++;
-            const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
-                                                                 instrumentation_dsl, loc, instrumented_spirv);
+
+            interface.unique_shader_id = unique_shader_id;
+            interface.entry_point_name = modified_stage_state.GetPName();
+            interface.entry_point_stage = modified_stage_state.GetStage();
+            const bool is_shader_instrumented =
+                InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 
             if (is_shader_instrumented) {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1480,48 +1501,31 @@ static bool GpuValidateShader(const std::vector<uint32_t> &input, spv_target_env
     return (result == SPV_SUCCESS);
 }
 
-// Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id,
-                                             const InstrumentationDescriptorSetLayouts &instrumentation_dsl, const Location &loc,
-                                             std::vector<uint32_t> &out_instrumented_spirv) {
+// The function all code paths lead to invoke the various GPU-AV instrumentation passes on the shader.
+bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& input_spirv,
+                                             const spirv::InstrumentationInterface& interface,
+                                             std::vector<uint32_t>& out_instrumented_spirv) {
     if (input_spirv[0] != spv::MagicNumber) {
         return false;
     }
 
-    if (unique_shader_id >= glsl::kMaxInstrumentedShaders) {
-        InternalWarning(device, loc, "kMaxInstrumentedShaders limit has been hit, no shaders can be instrumented.");
+    if (interface.unique_shader_id >= glsl::kMaxInstrumentedShaders) {
+        InternalWarning(device, interface.loc, "kMaxInstrumentedShaders limit has been hit, no shaders can be instrumented.");
         return false;
     } else if ((input_spirv.size() * sizeof(uint32_t)) > (1 << glsl::kStageId_Shift)) {
         // If we are hitting this, will need to rethink limit (if someone hits this, please raise an issue!)
         InternalWarning(
-            device, loc,
+            device, interface.loc,
             "The shader is larger than 128MB and there are only 27 bits to store the offset into the spirv where an error occurs.");
         return false;
     }
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+        const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_before.spv");
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
-    spirv::Settings module_settings(loc);
-    // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
-    module_settings.shader_id = unique_shader_id;
-    module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
-    module_settings.safe_mode = gpuav_settings.safe_mode;
-    module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
-    module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
-    module_settings.support_non_semantic_info =
-        IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
-    module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
-    // Ray tracing pipeline flags for VUIDs 11886/11887
-    module_settings.pipeline_has_skip_aabbs_flag = instrumentation_dsl.pipeline_has_skip_aabbs_flag;
-    module_settings.pipeline_has_skip_triangles_flag = instrumentation_dsl.pipeline_has_skip_triangles_flag;
-    // For VUID 11888 - maxShaderBindingTableRecordIndex limit
-    module_settings.max_shader_binding_table_record_index = instrumentation_dsl.max_shader_binding_table_record_index;
-
-    spirv::Module module(input_spirv, debug_report, module_settings, modified_features,
-                         instrumentation_dsl.set_index_to_bindings_layout_lut);
+    spirv::Module module(input_spirv, debug_report, instrumentation_device_settings_, interface, modified_features);
 
     bool modified = false;
 
@@ -1628,24 +1632,26 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         is_instrumented_spirv_valid = GpuValidateShader(out_instrumented_spirv, target_env, spirv_val_error);
         if (!is_instrumented_spirv_valid) {
             if (!gpuav_settings.debug_dump_instrumented_shaders) {
-                const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+                const auto non_instrumented_spirv_file =
+                    fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_before.spv");
                 DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
             }
 
-            const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv");
+            const auto instrumented_spirv_file =
+                fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_after_invalid.spv");
             DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
 
             std::ostringstream strm;
             const auto invalid_file_path = std::filesystem::absolute(instrumented_spirv_file);
-            strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
+            strm << "Instrumented shader (id " << interface.unique_shader_id << ") is invalid, spirv-val error:\n"
                  << spirv_val_error << "\nInvalid spirv dumped to " << invalid_file_path
                  << "\nProceeding with non instrumented shader.";
-            InternalError(device, loc, strm.str().c_str());
+            InternalError(device, interface.loc, strm.str().c_str());
             return false;
         }
     }
     if (is_instrumented_spirv_valid && gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after.spv");
+        const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_after.spv");
         DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
     }
 
