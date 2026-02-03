@@ -250,242 +250,263 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     }
 }
 
-struct ClearAttachmentHazardHelper {
-    static constexpr VkImageUsageFlags kTransferUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+TEST_F(NegativeSyncVal, ClearColorAttachmentWAW) {
+    TEST_DESCRIPTION("WAW hazard when color attachment is cleared inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
 
     const uint32_t width = 256;
     const uint32_t height = 128;
-    const VkFormat rt_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const VkImageUsageFlags transfer_usage = kTransferUsage;
-    const VkImageUsageFlags rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | kTransferUsage;
-    const VkImageUsageFlags ds_usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | kTransferUsage;
-    VkLayerTest& test;
-    vkt::Device& device;
-    vkt::Queue& queue;
-    vkt::CommandBuffer& command_buffer;
-    const VkFormat ds_format;
-    vkt::Image image;
-    vkt::Image image_ds;
-    vkt::Image rt;
-    vkt::Image ds;
-    vkt::ImageView rt_view;
-    vkt::ImageView ds_view;
+    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
 
-    ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::Queue& queue_, vkt::CommandBuffer& cb_)
-        : test(test_),
-          device(device_),
-          queue(queue_),
-          command_buffer(cb_),
-          ds_format(FindSupportedDepthStencilFormat(test_.Gpu())),
-          image(),
-          image_ds(),
-          rt(),
-          ds() {
-        auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, rt_format, transfer_usage);
-
-        image.Init(device, image_ci);
-        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-        image_ci.format = ds_format;
-        image_ds.Init(device, image_ci);
-        image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-        image_ci.format = rt_format;
-        image_ci.usage = rt_usage;
-        rt.Init(device, image_ci);
-        rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-        rt_view = rt.CreateView();
-
-        image_ci.format = ds_format;
-        image_ci.usage = ds_usage;
-        ds.Init(device, image_ci);
-        ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-        ds_view = ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    }
-
-    template <typename BeginRenderFn, typename EndRenderFn>
-    void Test(BeginRenderFn& begin_render, EndRenderFn& end_render);
-};
-template <typename BeginRenderFn, typename EndRenderFn>
-void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn& end_render) {
-    struct AspectInfo {
-        VkImageAspectFlagBits aspect;
-        VkImage src_image;
-        VkImage dst_image;
-    };
-    const AspectInfo aspect_infos[] = {{VK_IMAGE_ASPECT_COLOR_BIT, image, rt},
-                                       {VK_IMAGE_ASPECT_DEPTH_BIT, image_ds, ds},
-                                       {VK_IMAGE_ASPECT_STENCIL_BIT, image_ds, ds}};
-
-    // WAW hazard: copy to render target then clear it. Test each aspect (color/depth/stencil).
-    for (const auto& info : aspect_infos) {
-        const VkClearAttachment clear_attachment = {VkImageAspectFlags(info.aspect)};
-
-        VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {width / 2, height / 2};
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 1;
-
-        VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
-        copy_region.dstSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
-        copy_region.extent = {width, height, 1};
-
-        command_buffer.Begin();
-        // Write 1
-        vk::CmdCopyImage(command_buffer, info.src_image, VK_IMAGE_LAYOUT_GENERAL, info.dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
-                         &copy_region);
-        begin_render(command_buffer);
-
-        test.SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-        // Write 2
-        vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
-        test.VerifyFound();
-
-        end_render(command_buffer);
-        command_buffer.End();
-        queue.Submit(command_buffer);
-        queue.Wait();
-        test.DefaultQueue()->Wait();
-    }
-
-    // RAW hazard: clear render target then copy from it.
-    // This tests that vkCmdClearAttachments correctly updates access state, so vkCmdCopyImage can detect hazard.
-    {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
-
-        VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {width, height};
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 1;
-
-        VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-        copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-        copy_region.extent = {width, height, 1};
-
-        command_buffer.Begin();
-        begin_render(command_buffer);
-        // Write
-        vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
-        end_render(command_buffer);
-
-        test.SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
-        // Read
-        vk::CmdCopyImage(command_buffer, ds, VK_IMAGE_LAYOUT_GENERAL, image_ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-        test.VerifyFound();
-
-        command_buffer.End();
-        queue.Submit(command_buffer);
-        queue.Wait();
-        test.DefaultQueue()->Wait();
-    }
-
-    // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
-    {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT};
-
-        VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {32, 32};
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 1;
-
-        VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_region.srcOffset = {31, 31, 0};
-        copy_region.dstOffset = {31, 31, 0};
-        copy_region.extent = {64, 64, 1};
-
-        command_buffer.Begin();
-        begin_render(command_buffer);
-        // Write
-        vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
-        end_render(command_buffer);
-
-        test.SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
-        // Read
-        vk::CmdCopyImage(command_buffer, rt, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-        test.VerifyFound();
-
-        command_buffer.End();
-        queue.Submit(command_buffer);
-        queue.Wait();
-        test.DefaultQueue()->Wait();
-    }
-
-    // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
-    // Copy to the first region, clear the second region.
-    {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
-
-        VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {32, 32};
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 1;
-
-        VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
-        copy_region.dstSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
-        copy_region.srcOffset = {32, 32, 0};
-        copy_region.dstOffset = {32, 32, 0};
-        copy_region.extent = {64, 64, 1};
-
-        command_buffer.Begin();
-        // Write 1
-        vk::CmdCopyImage(command_buffer, image_ds, VK_IMAGE_LAYOUT_GENERAL, ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-        begin_render(command_buffer);
-        // Write 2
-        vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
-        end_render(command_buffer);
-        command_buffer.End();
-        queue.Submit(command_buffer);
-        queue.Wait();
-        test.DefaultQueue()->Wait();
-    }
-}
-
-TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
-    TEST_DESCRIPTION("Test for hazards when attachment is cleared inside a dynamic render pass.");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-
-    // VK_EXT_load_store_op_none is needed to disable render pass load/store accesses, so clearing
-    // attachment inside a render pass can create hazards with the copy operations outside render pass.
-    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
-
-    ClearAttachmentHazardHelper helper(*this, *m_device, *m_default_queue, m_command_buffer);
+    vkt::Image src_image(*m_device, width, height, color_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, width, height, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = helper.rt_view;
+    color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-    color_attachment.clearValue.color = m_clear_color;
-
-    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
-    depth_attachment.imageView = helper.ds_view;
-    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-    depth_attachment.clearValue.color = m_clear_color;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {helper.width, helper.height};
+    rendering_info.renderArea.extent = {width, height};
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
+
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.extent = {width, height, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.BeginRendering(rendering_info);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, ClearDepthAspectOfAttachmentWAW) {
+    TEST_DESCRIPTION("WAW hazard when depth aspect of attachment is cleared inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t width = 256;
+    const uint32_t height = 128;
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image src_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, width, height, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
     rendering_info.pDepthAttachment = &depth_attachment;
 
-    auto begin_rendering = [&rendering_info](vkt::CommandBuffer& cb) { vk::CmdBeginRendering(cb, &rendering_info); };
-    auto end_rendering = [](vkt::CommandBuffer& cb) { vk::CmdEndRendering(cb); };
-    helper.Test(begin_rendering, end_rendering);
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy_region.extent = {width, height, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.BeginRendering(rendering_info);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, ClearStencilAspectOfAttachmentWAW) {
+    TEST_DESCRIPTION("WAW hazard when stencil aspect of attachment is cleared inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t width = 256;
+    const uint32_t height = 128;
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image src_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, width, height, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.extent = {width, height, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.BeginRendering(rendering_info);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, ClearAttachmentRAW) {
+    TEST_DESCRIPTION("Tests that vkCmdClearAttachments correctly updates access state, so vkCmdCopyImage can detect hazard");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t width = 256;
+    const uint32_t height = 128;
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image dst_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, width, height, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.extent = {width, height, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRendering();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, AttachmentClearAndCopyRegionOverlap) {
+    TEST_DESCRIPTION("RAW hazard: two regions with a single pixel overlap");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t width = 256;
+    const uint32_t height = 128;
+    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+
+    vkt::Image src_image(*m_device, width, height, color_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, width, height, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {width, height};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
+
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {31, 31, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstOffset = {31, 31, 0};
+    copy_region.extent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    m_command_buffer.BeginRendering(rendering_info);
+
+    // Clear and copy regions overlap at a single pixel (x=31, y=31) but that's enough to cause a hazard
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
