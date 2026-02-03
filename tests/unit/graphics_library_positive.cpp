@@ -2706,3 +2706,55 @@ TEST_F(PositiveGraphicsLibrary, MultiViewDraw) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveGraphicsLibrary, MultiViewDraw2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11600");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.viewMask = 0x1;
+
+    VkGraphicsPipelineLibraryCreateInfoEXT lib_info = vku::InitStructHelper(&pipeline_rendering_info);
+    lib_info.flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    CreatePipelineHelper lib(*this, &lib_info);
+    lib.ds_ci_ = vku::InitStructHelper();
+    lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    lib.CreateGraphicsPipeline();
+
+    lib_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                     VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&lib_info);
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &lib.Handle();
+
+    CreatePipelineHelper exe_pipe(*this, &link_info);
+    exe_pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    exe_pipe.gp_ci_.stageCount = 0;
+    exe_pipe.shader_stages_.clear();
+    exe_pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.viewMask = 0x1;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
