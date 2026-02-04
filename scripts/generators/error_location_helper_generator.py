@@ -114,7 +114,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
 
         out.append('\n')
         out.append('enum class Field {\n')
-        out.append('    Empty = 0,\n')
+        out.append('    Empty = 0,  // Field::Empty (if something tries to print it, it will be empty)\n')
         # Already alpha-sorted
         for field in self.fields:
             out.append(f'    {field},\n')
@@ -221,7 +221,7 @@ const char* String(Struct structure) {
 
 const char* String(Field field) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Field::Empty
+    {"", 1}, // Field::Empty
 ''')
         for field in self.fields:
             out.append(f'    {{"{field}", {len(field) + 1}}},\n')

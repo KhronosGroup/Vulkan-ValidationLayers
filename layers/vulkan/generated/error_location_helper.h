@@ -2174,7 +2174,7 @@ enum class Struct {
 };
 
 enum class Field {
-    Empty = 0,
+    Empty = 0,  // Field::Empty (if something tries to print it, it will be empty)
     AType,
     BType,
     CType,

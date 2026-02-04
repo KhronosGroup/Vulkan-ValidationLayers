@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2025 The Khronos Group Inc.
- * Copyright (c) 2021-2025 Valve Corporation
- * Copyright (c) 2021-2025 LunarG, Inc.
+/* Copyright (c) 2021-2026 The Khronos Group Inc.
+ * Copyright (c) 2021-2026 Valve Corporation
+ * Copyright (c) 2021-2026 LunarG, Inc.
  * Copyright (C) 2021-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,22 +24,25 @@ void Location::AppendFields(std::ostream& out) const {
         // Instead of dealing with partial non-const Location, just do the check here
         const Location& prev_loc = (prev->field == field && prev->index == vvl::kNoIndex32 && prev->prev) ? *prev->prev : *prev;
 
-        // Work back and print for Locaiton first
+        // Work back and print for Location first
         prev_loc.AppendFields(out);
 
         // check if need connector from last item
-        if (prev_loc.structure != vvl::Struct::Empty || prev_loc.field != vvl::Field::Empty) {
+        const bool prev_loc_struct_not_empty = prev_loc.structure != vvl::Struct::Empty;
+        const bool prev_loc_has_unindexed_field = prev_loc.field != vvl::Field::Empty && prev_loc.index == vvl::kNoIndex32;
+        const bool loc_is_array_element_field =
+            prev_loc.index != vvl::kNoIndex32 && field != vvl::Field::Empty;  // eg: this->Fields() would yield "pInfos[42].mode"
+        if (prev_loc_struct_not_empty || prev_loc_has_unindexed_field || loc_is_array_element_field) {
             out << ((prev_loc.index == vvl::kNoIndex32 && IsFieldPointer(prev_loc.field)) ? "->" : ".");
         }
     }
     if (isPNext && structure != vvl::Struct::Empty) {
         out << "pNext<" << vvl::String(structure) << (field != vvl::Field::Empty ? ">." : ">");
     }
-    if (field != vvl::Field::Empty) {
-        out << vvl::String(field);
-        if (index != vvl::kNoIndex32) {
-            out << "[" << index << "]";
-        }
+
+    out << vvl::String(field);
+    if (index != vvl::kNoIndex32) {
+        out << "[" << index << "]";
     }
 }
 

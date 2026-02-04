@@ -2183,7 +2183,7 @@ const char* String(Struct structure) {
 
 const char* String(Field field) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Field::Empty
+    {"", 1}, // Field::Empty
     {"AType", 6},
     {"BType", 6},
     {"CType", 6},
