@@ -1421,8 +1421,6 @@ TEST_F(PositiveGpuAVRayTracing, OutOfBoundsIndex2) {
 
     vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
 
-    cube_blas.GetBuildRanges()[0].primitiveOffset = 35 * sizeof(uint32_t);
-
     m_command_buffer.Begin();
     cube_blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();

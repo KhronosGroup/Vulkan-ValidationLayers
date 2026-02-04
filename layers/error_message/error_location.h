@@ -77,6 +77,11 @@ struct Location {
         Location result(*this, this->structure, this->field, sub_index, false);
         return result;
     }
+    // Use this for 2D arrays, to obtain a Location string that looks like "ppBuildRangeInfos[42][14]"
+    Location brackets(uint32_t sub_index) const {
+        Location result(*this, vvl::Struct::Empty, vvl::Field::Empty, sub_index, false);
+        return result;
+    }
 
     // same as dot() but will mark these were part of a pNext struct
     Location pNext(vvl::Struct s, vvl::Field sub_field = vvl::Field::Empty, uint32_t sub_index = vvl::kNoIndex32) const {

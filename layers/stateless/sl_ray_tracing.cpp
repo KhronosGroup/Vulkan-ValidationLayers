@@ -18,6 +18,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "containers/container_utils.h"
 #include "containers/span.h"
 #include "error_message/error_location.h"
@@ -1251,27 +1252,37 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
             const VkAccelerationStructureGeometryKHR &as_geometry = rt::GetGeometry(info, geom_i);
             const Location p_geom_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
             const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
+            const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
             if (as_geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                 const auto &triangles = as_geometry.geometry.triangles;
                 const VkDeviceSize index_buffer_alignment = GetIndexAlignment(triangles.indexType);
-                if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR &&
-                    !IsIntegerMultipleOf(triangles.indexData.deviceAddress, index_buffer_alignment)) {
-                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
+                if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                    if (!IsIntegerMultipleOf(triangles.indexData.deviceAddress, index_buffer_alignment)) {
+                        skip |=
+                            LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
                                      p_geom_geom_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
                                      "(0x%" PRIx64 ") is not aligned to the size in bytes of its corresponding index type (%s).",
                                      triangles.indexData.deviceAddress, string_VkIndexType(triangles.indexType));
-                }
+                    }
 
-                if (!IsIntegerMultipleOf(triangles.transformData.deviceAddress, 16)) {
-                    skip |=
-                        LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810", commandBuffer,
-                                 p_geom_geom_loc.dot(Field::triangles).dot(Field::transformData).dot(Field::deviceAddress),
-                                 "(%" PRIu64 ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR.",
-                                 triangles.transformData.deviceAddress);
-                }
+                    if (!IsIntegerMultipleOf(triangles.transformData.deviceAddress, 16)) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810", commandBuffer,
+                                         p_geom_geom_loc.dot(Field::triangles).dot(Field::transformData).dot(Field::deviceAddress),
+                                         "(%" PRIu64
+                                         ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR.",
+                                         triangles.transformData.deviceAddress);
+                    }
 
-                if (triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
-                    const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
+                    const uint32_t index_type_byte_size = GetIndexBitsSize(triangles.indexType) / 8u;
+                    if (!IsIntegerMultipleOf(build_range.primitiveOffset, index_type_byte_size)) {
+                        skip |= LogError(
+                            "VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03656", commandBuffer,
+                            error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::primitiveOffset),
+                            "(%" PRIu32 ") is not a multiple of its corresponding geometry's VkIndexType (%s) size (%" PRIu32
+                            " bytes).",
+                            build_range.primitiveOffset, string_VkIndexType(triangles.indexType), index_type_byte_size);
+                    }
+                } else {
                     if (build_range.primitiveCount > 0) {
                         const uint64_t build_range_max_vertex =
                             uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
@@ -1285,6 +1296,24 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                              build_range.firstVertex, build_range.primitiveCount, build_range_max_vertex);
                         }
                     }
+
+                    const uint32_t vertex_format_size = vkuFormatTexelBlockSize(triangles.vertexFormat);
+                    if (!IsIntegerMultipleOf(build_range.primitiveOffset, vertex_format_size)) {
+                        skip |= LogError(
+                            "VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03657", commandBuffer,
+                            error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::primitiveOffset),
+                            "(%" PRIu32
+                            ") is not a multiple of its corresponding geometry's triangles vertexFormat (%s) size (%" PRIu32
+                            " bytes).",
+                            build_range.primitiveOffset, string_VkFormat(triangles.vertexFormat), vertex_format_size);
+                    }
+                }
+
+                if (!IsIntegerMultipleOf(build_range.transformOffset, 16u)) {
+                    skip |= LogError(
+                        "VUID-VkAccelerationStructureBuildRangeInfoKHR-transformOffset-03658", commandBuffer,
+                        error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::transformOffset),
+                        "(%" PRIu32 ") is not a multiple of 16.", build_range.transformOffset);
                 }
 
             } else if (as_geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
@@ -1294,6 +1323,13 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                      p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
                                      "(0x%" PRIx64 ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_AABBS_KHR.",
                                      aabbs.data.deviceAddress);
+                }
+
+                if (!IsIntegerMultipleOf(build_range.primitiveOffset, 8u)) {
+                    skip |= LogError(
+                        "VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03659", commandBuffer,
+                        error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::primitiveOffset),
+                        "(%" PRIu32 ") is not a multiple of 8.", build_range.primitiveOffset);
                 }
             } else if (as_geometry.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                 const auto &instances = as_geometry.geometry.instances;
@@ -1318,13 +1354,19 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                     }
                 }
                 const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
                 if (build_range.primitiveCount > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
                     skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03801", commandBuffer, p_build_range_loc,
                                      "[%" PRIu32 "].primitiveCount (%" PRIu32
                                      ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
                                      "(%" PRIu64 ").",
                                      geom_i, build_range.primitiveCount, phys_dev_ext_props.acc_structure_props.maxInstanceCount);
+                }
+
+                if (!IsIntegerMultipleOf(build_range.primitiveOffset, 16u)) {
+                    skip |= LogError(
+                        "VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03660", commandBuffer,
+                        error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::primitiveOffset),
+                        "(%" PRIu32 ") is not a multiple of 16.", build_range.primitiveOffset);
                 }
             }
         }

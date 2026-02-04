@@ -5704,3 +5704,115 @@ TEST_F(NegativeRayTracing, DescriptorHeapUsingWrongBuffer) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+
+    auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].primitiveOffset = 1;
+    cube_blas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03656");
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].primitiveOffset = 1;
+    blas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03657");
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset3) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+
+    auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].transformOffset = 1;
+    cube_blas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-transformOffset-03658");
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset4) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetGeometries()[0] = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
+
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].primitiveOffset = 1;
+    blas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03659");
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset5) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
+    auto build_range_infos = tlas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].primitiveOffset = 1;
+    tlas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03660");
+    tlas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
