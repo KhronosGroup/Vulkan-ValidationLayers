@@ -1168,26 +1168,6 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     GetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
     uint32_t num_bools = 0;  // Count number of VkBool32s in extension structs
     VkBool32* feat_bools = nullptr;
-    auto vk_1_1_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pFeatures->pNext);
-    if (vk_1_1_features) {
-        vk_1_1_features->protectedMemory = VK_TRUE;
-    }
-    auto vk_1_3_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(pFeatures->pNext);
-    if (vk_1_3_features) {
-        vk_1_3_features->synchronization2 = VK_TRUE;
-    }
-    auto prot_features = vku::FindStructInPNextChain<VkPhysicalDeviceProtectedMemoryFeatures>(pFeatures->pNext);
-    if (prot_features) {
-        prot_features->protectedMemory = VK_TRUE;
-    }
-    auto sync2_features = vku::FindStructInPNextChain<VkPhysicalDeviceSynchronization2FeaturesKHR>(pFeatures->pNext);
-    if (sync2_features) {
-        sync2_features->synchronization2 = VK_TRUE;
-    }
-    auto descriptor_heap_feature = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapFeaturesEXT>(pFeatures->pNext);
-    if (descriptor_heap_feature) {
-        descriptor_heap_feature->descriptorHeap = VK_TRUE;
-    }
     auto video_maintenance1_features = vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>(pFeatures->pNext);
     if (video_maintenance1_features) {
         video_maintenance1_features->videoMaintenance1 = VK_TRUE;
@@ -1195,12 +1175,6 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     auto video_maintenance2_features = vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance2FeaturesKHR>(pFeatures->pNext);
     if (video_maintenance2_features) {
         video_maintenance2_features->videoMaintenance2 = VK_TRUE;
-    }
-    auto device_generated_commands_features =
-        vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT>(pFeatures->pNext);
-    if (device_generated_commands_features) {
-        device_generated_commands_features->deviceGeneratedCommands = VK_TRUE;
-        device_generated_commands_features->dynamicGeneratedPipelineLayout = VK_TRUE;
     }
     const auto* desc_idx_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>(pFeatures->pNext);
     if (desc_idx_features) {
