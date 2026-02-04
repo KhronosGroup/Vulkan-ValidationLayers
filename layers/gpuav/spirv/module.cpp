@@ -178,9 +178,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
         if (opcode == spv::OpFunction) {
             const bool is_entry_point = entry_point_functions.find(new_inst->ResultId()) != entry_point_functions.end();
-            auto new_function = std::make_unique<Function>(*this, std::move(new_inst), is_entry_point);
-            auto& added_function = functions_.emplace_back(std::move(new_function));
-            current_function = &(*added_function);
+            Function& new_function = functions_.emplace_back(*this, std::move(new_inst), is_entry_point);
+            current_function = &new_function;
             block_found = false;
             function_end_found = false;
             it += length;
@@ -321,7 +320,7 @@ uint32_t Module::TakeNextId() {
 }
 
 // walk through each list and append the buffer
-void Module::ToBinary(std::vector<uint32_t>& out) {
+void Module::ToBinary(std::vector<uint32_t>& out) const {
     out.clear();
     out.push_back(header_.magic_number);
     out.push_back(header_.version);
@@ -362,8 +361,8 @@ void Module::ToBinary(std::vector<uint32_t>& out) {
     for (const auto& inst : types_values_constants_) {
         inst->ToBinary(out);
     }
-    for (const auto& function : functions_) {
-        function->ToBinary(out);
+    for (const Function& function : functions_) {
+        function.ToBinary(out);
     }
 }
 
@@ -660,7 +659,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
         AddDebugName(link_function.offline.opname, link_function.id);
 
         // Add function and copy all instructions to it, while adjusting any IDs
-        auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
+        Function& new_function = functions_.emplace_back(*this);
         // We make things simpler by just putting everything in the first BasicBlock
         // (We need it in a block incase we want to alter this function later with something like DebugPrintf)
         BasicBlock* link_basic_block = nullptr;
@@ -687,8 +686,8 @@ void Module::LinkFunctions(const LinkInfo& info) {
 
                 // Only do on first label at top of function
                 if (!link_basic_block) {
-                    auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *new_function);
-                    auto& added_block = new_function->blocks_.emplace_back(std::move(new_block));
+                    auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), new_function);
+                    auto& added_block = new_function.blocks_.emplace_back(std::move(new_block));
                     link_basic_block = &(*added_block);
                     offset += length;
                     continue;  // prevent adding a null new_inst below
@@ -706,14 +705,14 @@ void Module::LinkFunctions(const LinkInfo& info) {
             // For a future FindInstruction() make sure everything is added to the inst_map
             const uint32_t result_id = new_inst->ResultId();
             if (result_id != 0) {
-                new_function->inst_map_[result_id] = new_inst.get();
+                new_function.inst_map_[result_id] = new_inst.get();
             }
 
             if (link_basic_block) {
                 // Need for a possible FindInstruction() lookup
                 link_basic_block->instructions_.emplace_back(std::move(new_inst));
             } else {
-                new_function->pre_block_inst_.emplace_back(std::move(new_inst));
+                new_function.pre_block_inst_.emplace_back(std::move(new_inst));
             }
 
             if (opcode == spv::OpFunctionEnd) {

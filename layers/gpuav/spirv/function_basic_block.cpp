@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@
 namespace gpuav {
 namespace spirv {
 
-void BasicBlock::ToBinary(std::vector<uint32_t>& out) {
+void BasicBlock::ToBinary(std::vector<uint32_t>& out) const {
     for (const auto& inst : instructions_) {
         inst->ToBinary(out);
     }
 }
 
-void Function::ToBinary(std::vector<uint32_t>& out) {
+void Function::ToBinary(std::vector<uint32_t>& out) const {
     for (const auto& inst : pre_block_inst_) {
         inst->ToBinary(out);
     }

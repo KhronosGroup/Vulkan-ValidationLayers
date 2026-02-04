@@ -175,11 +175,11 @@ bool DescriptorClassTexelBufferPass::Instrument() {
     }
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (function.instrumentation_added_) {
             continue;
         }
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -191,7 +191,7 @@ bool DescriptorClassTexelBufferPass::Instrument() {
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     continue;
                 }
 

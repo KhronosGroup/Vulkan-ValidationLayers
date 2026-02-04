@@ -68,19 +68,19 @@ bool VertexAttributeFetchOobPass::Instrument() {
         }
 
         const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
-        for (const auto& function : module_.functions_) {
-            if (function->instrumentation_added_) {
+        for (Function& function : module_.functions_) {
+            if (function.instrumentation_added_) {
                 continue;
             }
-            const uint32_t function_id = function->GetDef().ResultId();
+            const uint32_t function_id = function.GetDef().ResultId();
             if (vertex_shader_entry_point_id != function_id) {
                 continue;
             }
 
-            BasicBlock& first_block = function->GetFirstBlock();
+            BasicBlock& first_block = function.GetFirstBlock();
             InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();
 
-            const uint32_t stage_info_id = GetStageInfo(*function, first_block, first_injectable_instruction);
+            const uint32_t stage_info_id = GetStageInfo(function, first_block, first_injectable_instruction);
 
             InstructionIt stage_info_inst_it;
             for (auto inst_it = first_block.instructions_.begin(); inst_it != first_block.instructions_.end(); ++inst_it) {

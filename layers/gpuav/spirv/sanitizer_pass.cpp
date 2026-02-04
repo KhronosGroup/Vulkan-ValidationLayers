@@ -361,11 +361,11 @@ bool SanitizerPass::Instrument() {
     }
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (function.instrumentation_added_) {
             continue;
         }
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -393,7 +393,7 @@ bool SanitizerPass::Instrument() {
                 if (!module_.settings_.safe_mode || meta.skip_safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block

@@ -298,7 +298,7 @@ void Instruction::AppendWord(uint32_t word) {
     UpdateDebugInfo();
 }
 
-void Instruction::ToBinary(std::vector<uint32_t>& out) {
+void Instruction::ToBinary(std::vector<uint32_t>& out) const {
     for (auto word : words_) {
         out.push_back(word);
     }

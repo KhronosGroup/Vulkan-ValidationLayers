@@ -387,14 +387,14 @@ bool DescriptorIndexingOOBPass::Instrument() {
     bool is_original_new_block = true;
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (function.instrumentation_added_) {
             continue;
         }
 
         FunctionDuplicateTracker function_duplicate_tracker;
 
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -424,7 +424,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
 
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler
@@ -438,7 +438,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
                         const uint32_t result_id = (*inst_it)->ResultId();
                         const uint32_t type_id = (*inst_it)->TypeId();
                         const uint32_t copy_id = module_.TakeNextId();
-                        function->ReplaceAllUsesWith(result_id, copy_id);
+                        function.ReplaceAllUsesWith(result_id, copy_id);
                         inst_it++;
                         current_block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
                         inst_it--;
@@ -465,7 +465,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block

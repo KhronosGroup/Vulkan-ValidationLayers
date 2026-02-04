@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ struct BasicBlock {
     BasicBlock(std::unique_ptr<Instruction> label, Function& function);
     BasicBlock(Module& module, Function& function);
 
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
 
     uint32_t GetLabelId() const;
 
@@ -80,9 +80,9 @@ struct Function {
     // Used to add functions building up SPIR-V the first time
     Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point);
     // Used to link in new functions
-    Function(Module& module) : module_(module), is_entry_point_(false), instrumentation_added_(true) {}
+    explicit Function(Module& module) : module_(module), is_entry_point_(false), instrumentation_added_(true) {}
 
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
 
     const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
     BasicBlock& GetFirstBlock() { return *blocks_.front(); }
@@ -124,7 +124,11 @@ struct Function {
     const bool instrumentation_added_;
 };
 
-using FunctionList = std::vector<std::unique_ptr<Function>>;
+// We can keep a list of Structs because we only grow the function
+// 1. When we first create the Module and find them all
+// 2. When we link them in
+// We shouldn't need to store pointers and can loop the list if we need to find a function quickly
+using FunctionList = std::vector<Function>;
 using FunctionIt = FunctionList::iterator;
 
 }  // namespace spirv

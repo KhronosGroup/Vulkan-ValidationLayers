@@ -122,11 +122,11 @@ bool RayHitObjectPass::RequiresInstrumentation(const Instruction& inst, Instruct
 
 bool RayHitObjectPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (function.instrumentation_added_) {
             continue;
         }
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -158,7 +158,7 @@ bool RayHitObjectPass::Instrument() {
                         CreateFunctionCall(current_block, &inst_it, meta);
                     }
                 } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     if (meta.is_sbt_index_check) {
                         ic_data.function_result_id = CreateSBTIndexCheckFunctionCall(current_block, nullptr, meta);
                     } else {

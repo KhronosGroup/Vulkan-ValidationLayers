@@ -74,7 +74,7 @@ class Module {
     void PostProcess();
 
     // The class is designed to be written out to a binary file.
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
 
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
     vvl::unordered_set<uint32_t> added_interface_variables_;
