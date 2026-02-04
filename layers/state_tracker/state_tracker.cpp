@@ -6252,6 +6252,7 @@ small_vector<const vvl::AccelerationStructureKHR *, 2> DeviceState::GetAccelerat
     if (address == 0) {
         return as_vector;
     }
+    as_vector.reserve(static_cast<uint32_t>(as_with_addresses.array.size()));
 
     ReadLockGuard lock(as_with_addresses.array_mutex);
     auto as_found_it =
