@@ -455,57 +455,6 @@ TEST_F(PositiveSyncVal, SubpassWithBarrier2) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncVal, AttachmentClearRegionTouchesCopyRegion) {
-    // This test is similar to NegativeSyncVal.AttachmentClearAndCopyRegionOverlap
-    // but the regions do not overlap but only touch
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    RETURN_IF_SKIP(InitSyncVal());
-
-    const uint32_t width = 256;
-    const uint32_t height = 128;
-    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-
-    vkt::Image src_image(*m_device, width, height, color_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image(*m_device, width, height, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::ImageView image_view = image.CreateView();
-
-    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = image_view;
-    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {width, height};
-    rendering_info.layerCount = 1;
-    rendering_info.colorAttachmentCount = 1;
-    rendering_info.pColorAttachments = &color_attachment;
-
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
-
-    VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {32, 32}};
-    clear_rect.baseArrayLayer = 0;
-    clear_rect.layerCount = 1;
-
-    VkImageCopy copy_region = {};
-    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.srcOffset = {32, 32, 0};
-    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.dstOffset = {32, 32, 0};
-    copy_region.extent = {64, 64, 1};
-
-    // Clear and copy regions touch at (x=31, y=31) but do not overlap
-    m_command_buffer.Begin();
-    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_command_buffer.BeginRendering(rendering_info);
-    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
-}
-
 TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier) {
     TEST_DESCRIPTION("The first draw writes to attachment, the second reads it as input attachment");
     SetTargetApiVersion(VK_API_VERSION_1_3);

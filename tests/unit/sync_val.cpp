@@ -277,31 +277,36 @@ TEST_F(NegativeSyncVal, ClearColorAttachmentWAW) {
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
 
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
-
-    VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
-    clear_rect.baseArrayLayer = 0;
-    clear_rect.layerCount = 1;
-
+    // Copy to the left half
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.extent = {width, height, 1};
+    copy_region.extent = {width / 2, height, 1};
+
+    // Clear the right half
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{width / 2, 0}, {width / 2, height}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    // loadOp/storeOp=NONE, so no hazard can be detected at this point
     m_command_buffer.BeginRendering(rendering_info);
 
+    // Clear operation hazards with the previous copy.
+    // The copy region and the clear region do not overlap but the clear operation can
+    // access the entire attachment, so it can race with copy accesses and makes result
+    // of the copy operation undefined. Note, that storeOp=NONE works as DONT_CARE here
+    // (due to write) and the clear results are discarded.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncVal, ClearDepthAspectOfAttachmentWAW) {
+TEST_F(NegativeSyncVal, ClearAttachmentDepthAspectWAW) {
     TEST_DESCRIPTION("WAW hazard when depth aspect of attachment is cleared inside render pass instance");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
@@ -328,31 +333,36 @@ TEST_F(NegativeSyncVal, ClearDepthAspectOfAttachmentWAW) {
     rendering_info.layerCount = 1;
     rendering_info.pDepthAttachment = &depth_attachment;
 
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
-
-    VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
-    clear_rect.baseArrayLayer = 0;
-    clear_rect.layerCount = 1;
-
+    // Copy to the left half
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
-    copy_region.extent = {width, height, 1};
+    copy_region.extent = {width / 2, height, 1};
+
+    // Clear the right half
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT, 0};
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{width / 2, 0}, {width / 2, height}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    // loadOp/storeOp=NONE, so no hazard can be detected at this point
     m_command_buffer.BeginRendering(rendering_info);
 
+    // Clear operation hazards with the previous copy.
+    // The copy region and the clear region do not overlap but the clear operation can
+    // access the entire attachment, so it can race with copy accesses and makes result
+    // of the copy operation undefined. Note, that storeOp=NONE works as DONT_CARE here
+    // (due to write) and the clear results are discarded.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncVal, ClearStencilAspectOfAttachmentWAW) {
+TEST_F(NegativeSyncVal, ClearAttachmentStencilAspectWAW) {
     TEST_DESCRIPTION("WAW hazard when stencil aspect of attachment is cleared inside render pass instance");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
@@ -379,34 +389,39 @@ TEST_F(NegativeSyncVal, ClearStencilAspectOfAttachmentWAW) {
     rendering_info.layerCount = 1;
     rendering_info.pStencilAttachment = &stencil_attachment;
 
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
-
-    VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
-    clear_rect.baseArrayLayer = 0;
-    clear_rect.layerCount = 1;
-
+    // Copy to the left half
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-    copy_region.extent = {width, height, 1};
+    copy_region.extent = {width / 2, height, 1};
+
+    // Clear the right half
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
+    VkClearRect clear_rect = {};
+    clear_rect.rect = {{width / 2, 0}, {width / 2, height}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    // loadOp/storeOp=NONE, so no hazard can be detected at this point
     m_command_buffer.BeginRendering(rendering_info);
 
+    // Clear operation hazards with the previous copy.
+    // The copy region and the clear region do not overlap but the clear operation can
+    // access the entire attachment, so it can race with copy accesses and makes result
+    // of the copy operation undefined. Note, that storeOp=NONE works as DONT_CARE here
+    // (due to write) and the clear results are discarded.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncVal, ClearAttachmentRAW) {
-    TEST_DESCRIPTION("Tests that vkCmdClearAttachments correctly updates access state, so vkCmdCopyImage can detect hazard");
+TEST_F(NegativeSyncVal, ClearDepthCopyStencilWAW) {
+    TEST_DESCRIPTION("Clearing depth and copying to stencil causes hazard because depth and stencil can interleave");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -414,99 +429,44 @@ TEST_F(NegativeSyncVal, ClearAttachmentRAW) {
     const uint32_t height = 128;
     const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
 
-    vkt::Image dst_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image src_image(*m_device, width, height, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, width, height, depth_stencil_format,
-                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
-    stencil_attachment.imageView = image_view;
-    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea.extent = {width, height};
     rendering_info.layerCount = 1;
-    rendering_info.pStencilAttachment = &stencil_attachment;
+    rendering_info.pDepthAttachment = &depth_attachment;
 
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
-
-    VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {width / 2, height / 2}};
-    clear_rect.baseArrayLayer = 0;
-    clear_rect.layerCount = 1;
-
+    // Copy to stencil
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     copy_region.extent = {width, height, 1};
 
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRendering(rendering_info);
-    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
-    m_command_buffer.EndRendering();
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeSyncVal, AttachmentClearAndCopyRegionOverlap) {
-    TEST_DESCRIPTION("RAW hazard: two regions with a single pixel overlap");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    RETURN_IF_SKIP(InitSyncVal());
-
-    const uint32_t width = 256;
-    const uint32_t height = 128;
-    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-
-    vkt::Image src_image(*m_device, width, height, color_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image(*m_device, width, height, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::ImageView image_view = image.CreateView();
-
-    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = image_view;
-    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {width, height};
-    rendering_info.layerCount = 1;
-    rendering_info.colorAttachmentCount = 1;
-    rendering_info.pColorAttachments = &color_attachment;
-
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0};
-
+    // Clear depth
+    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
     VkClearRect clear_rect = {};
-    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.rect = {{0, 0}, {width, height}};
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 1;
-
-    VkImageCopy copy_region = {};
-    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.srcOffset = {31, 31, 0};
-    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.dstOffset = {31, 31, 0};
-    copy_region.extent = {64, 64, 1};
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
+    // loadOp/storeOp=NONE, so no hazard can be detected at this point
     m_command_buffer.BeginRendering(rendering_info);
 
-    // Clear and copy regions overlap at a single pixel (x=31, y=31) but that's enough to cause a hazard
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
