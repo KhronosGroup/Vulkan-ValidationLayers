@@ -705,6 +705,11 @@ const char* unimplementable_validation[] = {
     // RT pipeline stack size is dynamic, allocated at runtime
     // how rays behaves in the scene
     "VUID-vkCmdSetRayTracingPipelineStackSizeKHR-pipelineStackSize-03610",
+
+    // Would need to track AS state outside of the application, impossible
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488",
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489",
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490",
 };
 
 // These are things that "could be done" but require a crazy amount of work, for no real usecase
