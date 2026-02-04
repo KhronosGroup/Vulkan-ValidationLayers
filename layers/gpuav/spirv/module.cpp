@@ -22,6 +22,7 @@
 #include "error_message/logging.h"
 #include "error_message/log_message_type.h"
 #include "error_message/error_location.h"
+#include "utils/shader_utils.h"
 
 #include <iostream>
 
@@ -46,7 +47,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     header_.generator = *it++;
     header_.bound = *it++;
     header_.schema = *it++;
-    vvl::unordered_set<uint32_t> entry_point_functions;
     // Parse everything up until the first function and sort into seperate lists
     while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
@@ -72,7 +72,11 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 memory_model_.emplace_back(std::move(new_inst));
                 break;
             case spv::OpEntryPoint:
-                entry_point_functions.insert(new_inst->Word(2));
+                if (interface.entry_point_stage == ExecutionModelToShaderStageFlagBits(new_inst->Word(1))) {
+                    if (strcmp(interface.entry_point_name, new_inst->GetAsString(3)) == 0) {
+                        target_entry_point_id_ = new_inst->Word(2);
+                    }
+                }
                 entry_points_.emplace_back(std::move(new_inst));
                 break;
             case spv::OpExecutionMode:
@@ -165,6 +169,19 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         it += length;
     }
 
+    // From a dump of 400k production shaders found
+    //   - the most OpFunction created was 135, the mean was 2.4
+    //   - the most Instruction count was 125k, the mean was 1500
+    //
+    // The Function struct is only ~150 bytes so it should be better to just expand it (if needed) and loop through the function
+    // list if we need to find a certain function
+    //
+    // We reserve a few extra to account for future linked functions
+    functions_.reserve(8);
+
+    // < function id, [ OpFunctionCall ids ]
+    vvl::unordered_map<uint32_t, vvl::unordered_set<uint32_t>> function_call_map;
+
     // each function is broken up to 3 stage, pre/during/post basic_blocks
     BasicBlock* current_block = nullptr;
     Function* current_function = nullptr;
@@ -176,9 +193,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         const uint32_t position_offset = static_cast<uint32_t>(it - words.begin());
         auto new_inst = std::make_unique<Instruction>(it, position_offset);
 
+        const uint32_t result_id = new_inst->ResultId();
         if (opcode == spv::OpFunction) {
-            const bool is_entry_point = entry_point_functions.find(new_inst->ResultId()) != entry_point_functions.end();
-            Function& new_function = functions_.emplace_back(*this, std::move(new_inst), is_entry_point);
+            Function& new_function = functions_.emplace_back(*this, std::move(new_inst));
             current_function = &new_function;
             block_found = false;
             function_end_found = false;
@@ -186,9 +203,12 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             continue;
         }
 
-        const uint32_t result_id = new_inst->ResultId();
         if (result_id != 0) {
             current_function->inst_map_[result_id] = new_inst.get();
+        }
+
+        if (opcode == spv::OpFunctionCall) {
+            function_call_map[current_function->id_].insert(new_inst->Word(3));
         }
 
         if (opcode == spv::OpFunctionEnd) {
@@ -229,6 +249,40 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         }
 
         it += length;
+    }
+
+    // Quick lookup map to avoid the nested loop
+    // (Can only be done after we know the |functions_| is done growing
+    vvl::unordered_map<uint32_t, Function*> id_to_func;
+    for (Function& func : functions_) {
+        id_to_func[func.id_] = &func;
+    }
+
+    // Go through all the function calls and mark which are seen (statically) from the target entry point
+    // (Note - recursion isn't allowed, but still watch out for it)
+    std::vector<uint32_t> worklist;
+    worklist.push_back(target_entry_point_id_);
+    assert(target_entry_point_id_ != 0);
+
+    vvl::unordered_set<uint32_t> seen_functions;
+
+    while (!worklist.empty()) {
+        uint32_t current_id = worklist.back();
+        worklist.pop_back();
+
+        if (seen_functions.insert(current_id).second) {
+            Function* next_function = id_to_func[current_id];
+            next_function->called_from_target_ = true;
+
+            auto it = function_call_map.find(current_id);
+            if (it != function_call_map.end()) {
+                for (uint32_t callee_id : it->second) {
+                    if (seen_functions.find(callee_id) == seen_functions.end()) {
+                        worklist.push_back(callee_id);
+                    }
+                }
+            }
+        }
     }
 }
 

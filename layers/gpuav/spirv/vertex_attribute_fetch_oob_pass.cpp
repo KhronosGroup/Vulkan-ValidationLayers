@@ -41,6 +41,8 @@ bool VertexAttributeFetchOobPass::Instrument() {
         const uint32_t execution_model = entry_point_inst->Word(1);
         if (execution_model != spv::ExecutionModelVertex) {
             continue;
+        } else if (module_.target_entry_point_id_ != entry_point_inst->Word(2)) {
+            continue;  // If there are multiple vertex shaders in the module
         }
 
         // Handle edge case where there is no vertex input actually
@@ -67,13 +69,8 @@ bool VertexAttributeFetchOobPass::Instrument() {
             }
         }
 
-        const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
         for (Function& function : module_.functions_) {
-            if (function.instrumentation_added_) {
-                continue;
-            }
-            const uint32_t function_id = function.GetDef().ResultId();
-            if (vertex_shader_entry_point_id != function_id) {
+            if (function.id_ != module_.target_entry_point_id_) {
                 continue;
             }
 

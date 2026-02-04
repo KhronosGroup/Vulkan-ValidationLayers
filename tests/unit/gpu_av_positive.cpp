@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/buffer_helper.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
 #include "../framework/external_memory_sync.h"
@@ -2399,6 +2400,90 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
             vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[i], nullptr);
         }
     }
+}
+
+TEST_F(PositiveGpuAV, IgnoreFunctionsNoCalled) {
+    TEST_DESCRIPTION("Check no instrumentation is done on functions never called");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main1 "main1" %_
+               OpEntryPoint GLCompute %main2 "main2" %_
+               OpEntryPoint GLCompute %main3 "main3" %_
+               OpExecutionMode %main1 LocalSize 1 1 1
+               OpExecutionMode %main2 LocalSize 1 1 1
+               OpExecutionMode %main3 LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpMemberDecorate %SSBO 2 Offset 8
+               OpMemberDecorate %SSBO 3 Offset 12
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+       %SSBO = OpTypeStruct %uint %uint %uint %uint
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+
+       %main1 = OpFunction %void None %4
+      %label1 = OpLabel
+         %24 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_2
+               OpStore %24 %uint_0
+         %25 = OpFunctionCall %void %Bar_
+               OpReturn
+               OpFunctionEnd
+
+       %Bar_ = OpFunction %void None %4
+         %10 = OpLabel
+         %21 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_1
+               OpStore %21 %uint_0
+         %22 = OpFunctionCall %void %Foo_
+               OpReturn
+               OpFunctionEnd
+
+       %Foo_ = OpFunction %void None %4
+          %8 = OpLabel
+         %19 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0
+               OpStore %19 %uint_0
+               OpReturn
+               OpFunctionEnd
+
+       %main2 = OpFunction %void None %4
+      %label2 = OpLabel
+         %34 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_2
+               OpStore %34 %uint_0
+         %35 = OpFunctionCall %void %Bar_
+               OpReturn
+               OpFunctionEnd
+
+      ; Does nothing
+       %main3 = OpFunction %void None %4
+      %label3 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, "main3");
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveGpuAV, SafeBuffers) {

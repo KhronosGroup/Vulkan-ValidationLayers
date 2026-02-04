@@ -78,13 +78,12 @@ using BasicBlockIt = BasicBlockList::iterator;
 
 struct Function {
     // Used to add functions building up SPIR-V the first time
-    Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point);
+    Function(Module& module, std::unique_ptr<Instruction> function_inst);
     // Used to link in new functions
-    explicit Function(Module& module) : module_(module), is_entry_point_(false), instrumentation_added_(true) {}
+    explicit Function(Module& module) : id_(0), module_(module) {}
 
     void ToBinary(std::vector<uint32_t>& out) const;
 
-    const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
     BasicBlock& GetFirstBlock() { return *blocks_.front(); }
 
     // Adds a new block after and returns reference to it
@@ -92,6 +91,10 @@ struct Function {
     BasicBlock& InsertNewBlockEnd();
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
+
+    // Result ID of OpFunction (zero if injected function from GPU-AV as we shouldn't need it)
+    const uint32_t id_;
+    bool AddedFromInstrumentation() const { return id_ == 0; }
 
     Module& module_;
     // OpFunction and parameters
@@ -117,11 +120,9 @@ struct Function {
     uint32_t stage_info_z_id_ = 0;
     uint32_t stage_info_w_id_ = 0;
 
-    // Lets us know if the function on OpReturn will exit the shader or nor
-    const bool is_entry_point_;
-
-    // The main usage of this is for things like DebugPrintf that might want to actually run over previously instrumented functions
-    const bool instrumentation_added_;
+    // Will be updated once all functions are made and know if called.
+    // Lets us know if the function is never going to be called, therefor skipping instrumentation.
+    bool called_from_target_ = false;
 };
 
 // We can keep a list of Structs because we only grow the function

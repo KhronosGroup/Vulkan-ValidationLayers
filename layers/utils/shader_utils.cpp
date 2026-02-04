@@ -114,6 +114,47 @@ void ValidationCache::Merge(ValidationCache const *other) {
     for (auto h : other->good_shader_hashes_) good_shader_hashes_.insert(h);
 }
 
+VkShaderStageFlagBits ExecutionModelToShaderStageFlagBits(uint32_t mode) {
+    switch (mode) {
+        case spv::ExecutionModelVertex:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case spv::ExecutionModelTessellationControl:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        case spv::ExecutionModelTessellationEvaluation:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        case spv::ExecutionModelGeometry:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case spv::ExecutionModelFragment:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case spv::ExecutionModelGLCompute:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+        case spv::ExecutionModelRayGenerationKHR:
+            return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        case spv::ExecutionModelAnyHitKHR:
+            return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+        case spv::ExecutionModelClosestHitKHR:
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        case spv::ExecutionModelMissKHR:
+            return VK_SHADER_STAGE_MISS_BIT_KHR;
+        case spv::ExecutionModelIntersectionKHR:
+            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+        case spv::ExecutionModelCallableKHR:
+            return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+        case spv::ExecutionModelTaskNV:
+            return VK_SHADER_STAGE_TASK_BIT_NV;
+        case spv::ExecutionModelMeshNV:
+            return VK_SHADER_STAGE_MESH_BIT_NV;
+        case spv::ExecutionModelTaskEXT:
+            return VK_SHADER_STAGE_TASK_BIT_EXT;
+        case spv::ExecutionModelMeshEXT:
+            return VK_SHADER_STAGE_MESH_BIT_EXT;
+        case spv::ExecutionModelKernel:
+        case spv::ExecutionModelMax:
+            break;
+    }
+    return VK_SHADER_STAGE_ALL;
+}
+
 // This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
 void DumpSpirvToFile(const std::string &file_path, const uint32_t *spirv, size_t spirv_dwords_count) {
     std::ofstream debug_file(file_path, std::ios::out | std::ios::binary);

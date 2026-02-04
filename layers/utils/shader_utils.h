@@ -67,6 +67,8 @@ inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits 
     return ShaderObjectStage::LAST;
 }
 
+VkShaderStageFlagBits ExecutionModelToShaderStageFlagBits(uint32_t mode);
+
 class ValidationCache {
   public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo, uint32_t spirv_val_option_hash) {

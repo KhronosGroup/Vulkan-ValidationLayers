@@ -93,11 +93,8 @@ bool LogErrorPass::IsShaderExiting(const Instruction& inst) const {
 
 bool LogErrorPass::Instrument() {
     for (Function& function : module_.functions_) {
-        if (function.instrumentation_added_) {
-            continue;
-        }
         // Only need to clear when we know we are starting a new entry into the shader
-        if (!function.is_entry_point_) {
+        if (function.id_ != module_.target_entry_point_id_) {
             continue;
         }
 

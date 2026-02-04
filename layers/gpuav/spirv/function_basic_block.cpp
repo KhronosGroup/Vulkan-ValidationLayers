@@ -104,8 +104,7 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
     }
 }
 
-Function::Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point)
-    : module_(module), is_entry_point_(is_entry_point), instrumentation_added_(false) {
+Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : id_(function_inst->ResultId()), module_(module) {
     // Used when loading initial SPIR-V
     pre_block_inst_.emplace_back(std::move(function_inst));  // OpFunction
 }

@@ -509,7 +509,7 @@ bool DebugPrintfPass::Instrument() {
                 instrumentations_count_++;
 
                 // Save the OpString here so we can use it later
-                if (function.instrumentation_added_) {
+                if (function.AddedFromInstrumentation()) {
                     for (const auto& debug_inst : module_.debug_source_) {
                         const uint32_t string_id = (*inst_it)->Word(5);
                         if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {

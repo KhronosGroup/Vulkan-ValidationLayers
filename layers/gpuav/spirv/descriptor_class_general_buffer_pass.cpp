@@ -195,7 +195,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
-        if (function.instrumentation_added_) {
+        if (!function.called_from_target_) {
             continue;
         }
 

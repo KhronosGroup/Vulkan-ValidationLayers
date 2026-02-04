@@ -97,6 +97,10 @@ class Module {
 
     const DeviceFeatures& enabled_features_;
 
+    // We only care about the entrypoint the pipeline shader stage / shader object is targeting
+    // This is the ID both found in OpEntryPoint and the result ID of OpFunction
+    uint32_t target_entry_point_id_ = 0;
+
     // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
     // system to pass in the information from the descriptor set layout to build a LUT of which OpVariable point to bindless
     // descriptors. This will require special consideration as it will break a simple way to test standalone version of the
