@@ -1308,6 +1308,14 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         descriptor_heap_props->protectedDescriptorHeaps = 0;
     }
 
+    auto* tensor_descriptor_heap_props =
+        vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapTensorPropertiesARM>(pProperties->pNext);
+    if (tensor_descriptor_heap_props) {
+        tensor_descriptor_heap_props->tensorDescriptorSize = 256;
+        tensor_descriptor_heap_props->tensorDescriptorAlignment = 256;
+        tensor_descriptor_heap_props->tensorCaptureReplayOpaqueDataSize = 8;
+    }
+
     auto* fragment_density_map2_props =
         vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>(pProperties->pNext);
     if (fragment_density_map2_props) {

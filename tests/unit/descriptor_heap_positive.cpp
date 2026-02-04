@@ -3605,3 +3605,108 @@ TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
     VkHostAddressRangeEXT descriptor = {data.data(), static_cast<size_t>(descriptor_size)};
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
 }
+
+TEST_F(PositiveDescriptorHeap, ComputeTensor) {
+    TEST_DESCRIPTION("Create and execute a shader using a tensor via descriptor heap");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    // the shader uses 1 tensor and 1 buffer
+
+    VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
+    static std::vector<int64_t> dimensions{2};
+    tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    tensor_desc.format = VK_FORMAT_R32_SINT;
+    tensor_desc.dimensionCount = dimensions.size();
+    tensor_desc.pDimensions = dimensions.data();
+    tensor_desc.pStrides = nullptr;
+    tensor_desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM tensor_info = vku::InitStructHelper();
+    tensor_info.pDescription = &tensor_desc;
+    tensor_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkt::Tensor tensor;
+    tensor.InitNoMem(*m_device, tensor_info);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_ci = vku::InitStructHelper();
+    tensor_view_ci.tensor = tensor;
+    tensor_view_ci.format = tensor.Format();
+    vkt::TensorView tensor_view;
+    tensor_view.Init(*m_device, tensor_view_ci);
+
+    // the buffer is used to copy the tensor data: allocate the same size
+    const VkDeviceSize data_buffer_size = tensor.GetMemoryReqs().memoryRequirements.size;
+    vkt::Buffer buffer(*m_device, data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    // allocate the descriptor heap. The tensor goes first, then the buffer
+
+    VkDeviceSize resource_heap_tracker = 0u;
+    const VkDeviceSize tensor_desc_offset = AlignedAppend(resource_heap_tracker, VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+    const VkDeviceSize tensor_desc_size = resource_heap_tracker - tensor_desc_offset;
+    const VkDeviceSize buffer_desc_offset = AlignedAppend(resource_heap_tracker, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    const VkDeviceSize buffer_desc_size = resource_heap_tracker - buffer_desc_offset;
+    const VkDeviceSize resource_heap_size = resource_heap_tracker;
+    CreateResourceHeap(resource_heap_size);
+
+    // populate the descriptors
+
+    constexpr uint32_t n_resources = 2;
+    VkHostAddressRangeEXT descriptor_ranges[n_resources];
+    VkResourceDescriptorInfoEXT descriptor_infos[n_resources];
+    VkDescriptorSetAndBindingMappingEXT mappings[n_resources];
+
+    // tensor
+    descriptor_ranges[0] = {resource_heap_data_, static_cast<size_t>(tensor_desc_size)};
+    descriptor_infos[0] = vku::InitStructHelper();
+    descriptor_infos[0].type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    descriptor_infos[0].data.pTensorARM = &tensor_view_ci;
+    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(tensor_desc_offset);
+    mappings[0].sourceData.constantOffset.heapArrayStride = 0;
+
+    // buffer
+    descriptor_ranges[1] = {resource_heap_data_ + buffer_desc_offset, static_cast<size_t>(buffer_desc_size)};
+    VkDeviceAddressRangeEXT buffer_address_range = { buffer.Address(), buffer.CreateInfo().size };
+    descriptor_infos[1] = vku::InitStructHelper();
+    descriptor_infos[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_infos[1].data.pAddressRange = &buffer_address_range;
+    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(buffer_desc_offset);
+    mappings[1].sourceData.constantOffset.heapArrayStride = 0;
+
+    vk::WriteResourceDescriptorsEXT(*m_device, n_resources, descriptor_infos, descriptor_ranges);
+
+    // create the pipeline
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = n_resources;
+    mapping_info.pMappings = mappings;
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkShaderObj cs_module = VkShaderObj(*m_device, kMinimalTensorGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    CreateComputePipelineHelper pipe(*m_device, &pipeline_create_flags_2_create_info);
+    pipe.cp_ci_.layout = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage = cs_module.GetStageCreateInfo();
+    pipe.cp_ci_.stage.pNext = &mapping_info;
+    pipe.CreateComputePipeline(false);
+
+    // create command buffer, bind everything, dispatch and execute
+
+    m_command_buffer.Begin();
+    BindResourceHeap();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

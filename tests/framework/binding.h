@@ -1295,6 +1295,7 @@ class TensorView : public internal::NonDispHandle<VkTensorViewARM> {
 
     // vkCreateTensorViewARM
     void Init(const Device &dev, const VkTensorViewCreateInfoARM &info);
+    const VkTensorViewCreateInfoARM &CreateInfo() const { return create_info_; };
 
   private:
     const Device *device_ = nullptr;
