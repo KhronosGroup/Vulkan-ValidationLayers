@@ -94,8 +94,8 @@ class Instance : public vvl::InstanceProxy {
                                      const ErrorObject& error_obj) const override;
     bool ValidateQueueFamilyIndex(const vvl::PhysicalDevice& pd_state, uint32_t requested_queue_family, const char* vuid,
                                   const Location& loc) const;
-    bool ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, uint32_t info_count,
-                                        const VkDeviceQueueCreateInfo* infos, const Location& loc) const;
+    bool ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, const VkDeviceCreateInfo* pCreateInfo,
+                                        const Location& loc) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice gpu,
                                                          const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                          VkImageFormatProperties2* pImageFormatProperties,
@@ -243,6 +243,14 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateSetMemBinding(const vvl::DeviceMemory& memory_state, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
+    bool ValidateCreateDescriptorPoolDataGraphEngine(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                     const Location& loc) const;
+    bool ValidateDataGraphPipelineBuiltinModelCreateInfoQCOM(const VkDataGraphPipelineBuiltinModelCreateInfoQCOM& dg_model_ci,
+                                                             const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                             const Location& loc) const;
+    bool ValidatePipelineCacheHeaderVersionDataGraphQCOM(VkPipelineCache pipeline_cache, const Location& loc) const;
+    bool ValidateCreateCommandPoolDataGraph(uint32_t queue_family, const Location& loc,
+                                            const VkDataGraphProcessingEngineCreateInfoARM* engine_ci) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidateGraphicsPipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
     bool ValidateComputePipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
@@ -1443,6 +1451,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const Location& loc) const;
     bool ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkTensorARM tensor,
                                              const Location &loc) const;
+    bool PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                            const VkPipelineCache* pSrcCaches, const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1628,6 +1640,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                               const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const override;
     bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,

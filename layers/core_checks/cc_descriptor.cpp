@@ -54,6 +54,56 @@
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
+bool CoreChecks::ValidateCreateDescriptorPoolDataGraphEngine(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                             const Location& loc) const {
+    bool skip = false;
+
+    // Note: This container can't be empty if device supports VK_QCOM_data_graph_model extension and
+    //       user enables data graph model feature; otherwise, the validation error will be reported before creating device.
+    vvl::unordered_set<VkPhysicalDeviceDataGraphProcessingEngineARM, HashCombineDataGraphProcessingEngineARMInfo> retrieved_engine_set{};
+    for (size_t family_index = 0; family_index < physical_device_state->queue_family_properties.size(); ++family_index) {
+        if ((physical_device_state->queue_family_properties[family_index].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) == 0) {
+            continue;
+        }
+
+        const auto data_graph_properties_arms =
+                physical_device_state->GetQueueFamilyDataGraphPropsARM(static_cast<uint32_t>(family_index));
+
+        for (size_t prop_index = 0; prop_index < data_graph_properties_arms.size(); ++prop_index) {
+            retrieved_engine_set.insert(data_graph_properties_arms[prop_index].engine);
+        }
+    }
+
+    for (uint32_t engine_index = 0; engine_index < engine_ci.processingEngineCount; ++engine_index) {
+        ASSERT_AND_CONTINUE(engine_ci.pProcessingEngines);
+
+        const auto& processing_engine = engine_ci.pProcessingEngines[engine_index];
+
+        if (!retrieved_engine_set.contains(processing_engine)) {
+            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pNext-09946",
+                             device,
+                             loc,
+                             "pProcessingEngines[%" PRIu32 "]::type = %s, pProcessingEngines[%" PRIu32 "]::isForeign = %u, "
+                             "failed to find any identical VkQueueFamilyDataGraphPropertiesARM::engine element from "
+                             "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM.",
+                             engine_index,
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type),
+                             engine_index,
+                             processing_engine.isForeign);
+        }
+    }
+
+    if ((engine_ci.processingEngineCount == 0) || (!engine_ci.pProcessingEngines)) {
+        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pNext-09946",
+                         device,
+                         loc,
+                         "members are null, failed to find any identical VkQueueFamilyDataGraphPropertiesARM::engine "
+                         "element from vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM.");
+    }
+
+    return skip;
+}
+
 // Check if the |reference_dsl| (from PipelineLayout) is compatibile with |to_bind_dsl|
 // For GPL this is also used, but we don't care which DSL is which
 bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout &reference_dsl,
@@ -3708,6 +3758,22 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     }
 
     skip |= ValidateGetDescriptorDataSize(*pDescriptorInfo, dataSize, descriptor_info_loc);
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    ASSERT_AND_RETURN_SKIP(pCreateInfo);
+
+    if (const auto* processing_engine_info =
+        vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext); processing_engine_info) {
+        const Location processing_engine_ci_loc = error_obj.location.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+        skip |= ValidateCreateDescriptorPoolDataGraphEngine(*processing_engine_info, processing_engine_ci_loc);
+    }
 
     return skip;
 }

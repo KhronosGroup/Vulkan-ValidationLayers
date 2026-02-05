@@ -50,8 +50,9 @@ class PhysicalDevice : public StateObject {
     const VkQueueFlags supported_queues;
     uint32_t display_plane_property_count = 0;
     uint32_t surface_formats_count = 0;
-    // This is a special case not to use SpecialSupported because it is required at an instance level
+    // Special cases not to use SpecialSupported because they are required at an instance level
     bool has_maintenance9 = false;
+    bool vk_qcom_data_graph_model = false;
 
     // Map of queue family index to QueueFamilyPerfCounters
     vvl::unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
@@ -68,6 +69,9 @@ class PhysicalDevice : public StateObject {
     CallState GetCallState(vvl::Func func) const;
     bool WasUncalled(vvl::Func func) const;
     bool WasCalled(vvl::Func func) const;
+
+    // Query VkQueueFamilyDataGraphPropertiesARM via queue family index
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> GetQueueFamilyDataGraphPropsARM(uint32_t queue_family_index) const;
 
   private:
     // Multiple threads can be querying GetPhysicalDevice type functions

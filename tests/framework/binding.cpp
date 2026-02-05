@@ -1251,10 +1251,11 @@ Tensor::Tensor(const Device &dev, const VkTensorCreateInfoARM &info) {
     InitNoMem(dev, info);
 }
 
-void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags) {
+void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags, const void* next_in_allocate_info) {
     VkMemoryRequirements2 mem_reqs = this->GetMemoryReqs();
 
     VkMemoryAllocateInfo tensor_alloc_info = vku::InitStructHelper();
+    tensor_alloc_info.pNext = next_in_allocate_info;
     tensor_alloc_info.allocationSize = mem_reqs.memoryRequirements.size;
     device_->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &tensor_alloc_info, required_flags, forbidden_flags);
     memory_ = vkt::DeviceMemory(*device_, tensor_alloc_info);
@@ -1899,6 +1900,10 @@ void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateI
 
 void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelinesARM, dev, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info);
+}
+
+void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, VkPipelineCache cache) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelinesARM, dev, VK_NULL_HANDLE, cache, 1, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)

@@ -45,6 +45,31 @@ bool PhysicalDevice::WasUncalled(Func func) const { return GetCallState(func) ==
 
 bool PhysicalDevice::WasCalled(Func func) const { return GetCallState(func) != vvl::CallState::Uncalled; }
 
+std::vector<VkQueueFamilyDataGraphPropertiesARM> PhysicalDevice::GetQueueFamilyDataGraphPropsARM(
+    uint32_t queue_family_index) const {
+    ReadLockGuard guard(call_state_lock_);
+    VkPhysicalDevice phys_dev = VkHandle();
+    uint32_t count = 0;
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> data_graph_properties_arms{};
+
+    VkResult result = DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(phys_dev, queue_family_index,
+                                                                                 &count, nullptr);
+    assert(result == VK_SUCCESS);
+
+    if (result == VK_SUCCESS) {
+        data_graph_properties_arms.resize(count);
+        for (uint32_t index = 0; index < count; ++index) {
+            data_graph_properties_arms[index] = vku::InitStructHelper();
+        }
+
+        result = DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(phys_dev, queue_family_index,
+                                                                            &count, data_graph_properties_arms.data());
+        assert(result == VK_SUCCESS);
+    }
+
+    return data_graph_properties_arms;
+}
+
 const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
     std::vector<VkQueueFamilyProperties> result;
     uint32_t count;

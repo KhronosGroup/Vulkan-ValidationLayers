@@ -420,6 +420,7 @@ target_sources(vvl PRIVATE
     state_tracker/wsi_state.h
     stateless/sl_buffer.cpp
     stateless/sl_cmd_buffer_dynamic.cpp
+    stateless/sl_command_pool.cpp
     stateless/sl_cmd_buffer.cpp
     stateless/sl_data_graph.cpp
     stateless/sl_descriptor.cpp
