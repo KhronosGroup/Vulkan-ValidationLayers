@@ -42,13 +42,13 @@ const uint VK_INDEX_TYPE_NONE_KHR = 1000165000;
 
 uint LoadIndex(uint i) {
     if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.index_data + pc.primitive_offset);
+        ArrayU16 array_u16 = ArrayU16(pc.address + pc.primitive_offset);
         return uint(array_u16.array[i]);
     } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.index_data + pc.primitive_offset);
+        ArrayU32 array_u32 = ArrayU32(pc.address + pc.primitive_offset);
         return array_u32.array[i];
     } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.index_data + pc.primitive_offset);
+        ArrayU8 array_u8 = ArrayU8(pc.address + pc.primitive_offset);
         return uint(array_u8.array[i]);
     } else {
         return 0;
@@ -57,29 +57,58 @@ uint LoadIndex(uint i) {
 
 void StoreIndex(uint i, uint value) {
     if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.index_data + pc.primitive_offset);
+        ArrayU16 array_u16 = ArrayU16(pc.address + pc.primitive_offset);
         array_u16.array[i] = uint16_t(value);
     } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.index_data + pc.primitive_offset);
+        ArrayU32 array_u32 = ArrayU32(pc.address + pc.primitive_offset);
         array_u32.array[i] = value;
     } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.index_data + pc.primitive_offset);
+        ArrayU8 array_u8 = ArrayU8(pc.address + pc.primitive_offset);
         array_u8.array[i] = uint8_t(value);
     }
 }
 
+struct VkAabbPositionsKHR {
+    float minX;
+    float minY;
+    float minZ;
+    float maxX;
+    float maxY;
+    float maxZ;
+};
+layout(buffer_reference, scalar) buffer AabbsPtr { VkAabbPositionsKHR coords; };
 
 void main() {
     const uint gid = gl_GlobalInvocationID.x;
 
-    if (gid >= (3 * pc.primitive_count)) {
-        return;
-    }
-    const uint fetched_index = LoadIndex(gid);
-    if (pc.max_vertex < (pc.first_vertex + fetched_index)) {
-        // In practice an invalid index does not cause a device loss, so don't bother changing its value.
-        // Should someone add this back, a write barrier needs to be added on the CPU side.
-        // StoreIndex(gid, 0);
-        GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex, fetched_index, gid, pc.error_info_i, 0);
+    if (pc.validation_mode == kBLASValidationMode_triangles_indices) {
+        if (gid >= (3 * pc.primitive_count)) {
+            return;
+        }
+
+        const uint fetched_index = LoadIndex(gid);
+        if (pc.max_vertex < (pc.first_vertex + fetched_index)) {
+            // In practice an invalid index does not cause a device loss, so don't bother changing its value.
+            // Should someone add this back, a write barrier needs to be added on the CPU side.
+            // StoreIndex(gid, 0);
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex, pc.error_info_i, gid, fetched_index, 0);
+        }
+    } else if (pc.validation_mode == kBLASValidationMode_aabbs) {
+        if (gid >= pc.primitive_count) {
+            return;
+        }
+
+        const uint64_t aabb_i = gid;
+        AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.primitive_offset) + aabb_i * pc.stride);
+        if (aabb.coords.minX > aabb.coords.maxX) {
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minX), floatBitsToUint(aabb.coords.maxX));
+        }
+
+        if (aabb.coords.minY > aabb.coords.maxY) {
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minY), floatBitsToUint(aabb.coords.maxY));
+        }
+        if (aabb.coords.minZ > aabb.coords.maxZ) {
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minZ), floatBitsToUint(aabb.coords.maxZ));
+        }
     }
 }

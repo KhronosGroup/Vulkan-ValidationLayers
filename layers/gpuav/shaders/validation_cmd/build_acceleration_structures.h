@@ -124,8 +124,14 @@ struct TLASValidationShaderPushData {
     uint blas_built_in_cmd_array_size;
 };
 
+const uint kBLASValidationMode_triangles_indices = 0;
+const uint kBLASValidationMode_aabbs = 1;
+
+// Caution, I think Vulkan only guarantes 16 bytes of push constants
 struct BLASValidationShaderPushData {
-    uint64_t index_data;  // Cast it appropriately according to index_type
+    uint64_t address;  // Cast it appropriately according to index_type
+    uint64_t stride;
+    uint validation_mode;
     uint index_type;
     uint max_vertex;
     uint first_vertex;

@@ -2421,8 +2421,6 @@ TEST_F(NegativeGpuAVRayTracing, TLASinBLASlist) {
 TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex) {
     TEST_DESCRIPTION("In the geometry specifying a cube and used to create an AS, have an out of bounds index.");
 
-    RETURN_IF_SKIP(CheckSlangSupport());
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -2438,7 +2436,6 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
 
@@ -2470,8 +2467,6 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex2) {
         "In the geometry specifying a cube and used to create an AS, have an out of bounds index. Set maxVertex to something other "
         "than 7");
 
-    RETURN_IF_SKIP(CheckSlangSupport());
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -2487,7 +2482,6 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex2) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
 
@@ -2510,8 +2504,6 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
     TEST_DESCRIPTION(
         "In the geometry specifying a cube and used to create an AS, have an out of bounds index. Play with primitiveOffset");
 
-    RETURN_IF_SKIP(CheckSlangSupport());
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -2527,7 +2519,6 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
 
@@ -2541,9 +2532,8 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
@@ -2563,6 +2553,69 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
 
     m_errorMonitor->SetDesiredErrorRegex("VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774",
                                          "Index \\(10\\) \\+ firstVertex \\(0\\) = 10", 1);
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayTracing, IllFormedAabb) {
+    TEST_DESCRIPTION("Ill formed Aabb, where minima are superior to maxima");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin();
+    // Build Bottom Level Acceleration Structure
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
+    VkAabbPositionsKHR good_aabb;
+    good_aabb.minX = -1.0f;
+    good_aabb.maxX = 1.0f;
+    good_aabb.minY = -1.0f;
+    good_aabb.maxY = 1.0f;
+    good_aabb.minZ = -1.0f;
+    good_aabb.maxZ = 1.0f;
+    VkAabbPositionsKHR bad_aabb = good_aabb;
+    bad_aabb.minX = 2.0f;
+    bad_aabb.minY = 4.0f;
+    bad_aabb.minZ = 12345678.9123f;
+    std::array<VkAabbPositionsKHR, 4> aabbs = {{good_aabb, bad_aabb, good_aabb, bad_aabb}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer aabbs_buffer(*m_device, sizeof(aabbs[0]) * aabbs.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto aabbs_buffer_ptr = static_cast<VkAabbPositionsKHR*>(aabbs_buffer.Memory().Map());
+    std::copy(aabbs.begin(), aabbs.end(), aabbs_buffer_ptr);
+    aabbs_buffer.Memory().Unmap();
+
+    geometry.SetAABBsDeviceBuffer(std::move(aabbs_buffer));
+    geometry.SetPrimitiveCount(4);
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minX-03546", "primitive index 1");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minY-03547", "primitive index 1");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minZ-03548", "primitive index 1");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minX-03546", "primitive index 3");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minY-03547", "primitive index 3");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minZ-03548", "primitive index 3");
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
     m_errorMonitor->VerifyFound();

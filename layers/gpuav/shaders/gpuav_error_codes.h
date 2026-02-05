@@ -193,7 +193,9 @@ const int kErrorSubCode_PreBuildAccelerationStructures_InvalidASType = 4;
 const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory = 5;
 const int kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap = 6;
 const int kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex = 7;
-
+const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X = 8;
+const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y = 9;
+const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z = 10;
 #ifdef __cplusplus
 }  // namespace glsl
 }  // namespace gpuav
