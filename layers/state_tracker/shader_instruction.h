@@ -100,7 +100,7 @@ class Instruction {
     Instruction(uint32_t length, spv::Op opcode);
     void Fill(const std::vector<uint32_t>& words);
     void UpdateWord(uint32_t index, uint32_t data);
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
     // Increments Length() as well
     void AppendWord(uint32_t word);
     void ReplaceResultId(uint32_t new_result_id);

@@ -74,7 +74,7 @@ class Module {
     void PostProcess();
 
     // The class is designed to be written out to a binary file.
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
 
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
     vvl::unordered_set<uint32_t> added_interface_variables_;
@@ -96,6 +96,11 @@ class Module {
     bool use_bda_ = false;
 
     const DeviceFeatures& enabled_features_;
+
+    // We only care about the entrypoint the pipeline shader stage / shader object is targeting
+    // This is the ID both found in OpEntryPoint and the result ID of OpFunction
+    uint32_t target_entry_point_id_ = 0;
+    Instruction* GetTargetEntryPoint() const;
 
     // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
     // system to pass in the information from the descriptor set layout to build a LUT of which OpVariable point to bindless

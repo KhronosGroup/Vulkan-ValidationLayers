@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,26 +92,23 @@ bool LogErrorPass::IsShaderExiting(const Instruction& inst) const {
 }
 
 bool LogErrorPass::Instrument() {
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
-            continue;
-        }
+    for (Function& function : module_.functions_) {
         // Only need to clear when we know we are starting a new entry into the shader
-        if (!function->is_entry_point_) {
+        if (function.id_ != module_.target_entry_point_id_) {
             continue;
         }
 
         // This makes (a reasonably safe) assumption one entrypoint is not calling into another entrypoint after it has caused an
         // error. If we really care, we could build CFA to detect that, but likely not worth the effort currently.
-        ClearErrorPayloadVariable(*function);
+        ClearErrorPayloadVariable(function);
 
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             auto& block_instructions = current_block.instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 if (IsShaderExiting(*(inst_it->get()))) {
-                    CreateFunctionCallLogError(*function, current_block, &inst_it);
+                    CreateFunctionCallLogError(function, current_block, &inst_it);
                     instrumentations_count_++;
                 }
             }

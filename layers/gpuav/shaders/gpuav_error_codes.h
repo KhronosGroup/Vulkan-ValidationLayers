@@ -61,8 +61,7 @@ const int kExecutionModel_MissKHR = 13;
 const int kExecutionModel_CallableKHR = 14;
 const int kExecutionModel_TaskEXT = 15;
 const int kExecutionModel_MeshEXT = 16;
-// Used for MultiEntry and there is no single stage set
-const int kExecutionModel_MultiEntryPoint = 31;
+const int kExecutionModel_Unknown = 17;  // replace if new stage is added
 
 // Descriptor Indexing
 //

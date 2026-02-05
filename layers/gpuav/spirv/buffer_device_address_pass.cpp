@@ -180,11 +180,11 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 
 bool BufferDeviceAddressPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (!function.called_from_target_) {
             continue;
         }
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -205,7 +205,7 @@ bool BufferDeviceAddressPass::Instrument() {
                 block_skip_list_.clear();
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                     InstructionMeta meta;
-                    if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                    if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                         continue;
                     }
 
@@ -220,7 +220,7 @@ bool BufferDeviceAddressPass::Instrument() {
                     while (next_inst && next_inst->IsAccessChain()) {
                         access_chain_insts.push_back(next_inst);
                         const uint32_t access_chain_base_id = next_inst->Operand(0);
-                        next_inst = function->FindInstruction(access_chain_base_id);
+                        next_inst = function.FindInstruction(access_chain_base_id);
                     }
                     if (access_chain_insts.empty() || !next_inst) {
                         continue;
@@ -263,7 +263,7 @@ bool BufferDeviceAddressPass::Instrument() {
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     continue;
                 }
 
@@ -275,7 +275,7 @@ bool BufferDeviceAddressPass::Instrument() {
                 if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block

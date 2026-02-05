@@ -16,6 +16,8 @@
  */
 
 #include "vertex_attribute_fetch_oob_pass.h"
+#include <vulkan/vulkan_core.h>
+#include "function_basic_block.h"
 #include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 
@@ -37,72 +39,66 @@ VertexAttributeFetchOobPass::VertexAttributeFetchOobPass(Module& module) : Pass(
 uint32_t VertexAttributeFetchOobPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 bool VertexAttributeFetchOobPass::Instrument() {
-    for (const auto& entry_point_inst : module_.entry_points_) {
-        const uint32_t execution_model = entry_point_inst->Word(1);
-        if (execution_model != spv::ExecutionModelVertex) {
+    if (module_.interface_.entry_point_stage != VK_SHADER_STAGE_VERTEX_BIT) {
+        return false;
+    }
+    const Instruction* entry_point = module_.GetTargetEntryPoint();
+
+    // Handle edge case where there is no vertex input actually
+    // the entry point must list all input variables
+    {
+        bool found_input = false;
+
+        uint32_t word = entry_point->GetEntryPointInterfaceStart();
+        const uint32_t total_words = entry_point->Length();
+        for (; word < total_words; word++) {
+            const uint32_t interface_id = entry_point->Word(word);
+            const Variable* variable = type_manager_.FindVariableById(interface_id);
+            // guaranteed by spirv-val to be a OpVariable
+            assert(variable);
+            if (variable->StorageClass() == spv::StorageClassInput) {
+                found_input = true;
+                break;
+            }
+        }
+
+        if (!found_input) {
+            // vertex shader has no input, nothing to validate
+            return false;
+        }
+    }
+
+    for (Function& function : module_.functions_) {
+        if (function.id_ != module_.target_entry_point_id_) {
             continue;
         }
 
-        // Handle edge case where there is no vertex input actually
-        // the entry point must list all input variables
-        {
-            bool found_input = false;
+        BasicBlock& first_block = function.GetFirstBlock();
+        InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();
 
-            uint32_t word = entry_point_inst->GetEntryPointInterfaceStart();
-            const uint32_t total_words = entry_point_inst->Length();
-            for (; word < total_words; word++) {
-                const uint32_t interface_id = entry_point_inst->Word(word);
-                const Variable* variable = type_manager_.FindVariableById(interface_id);
-                // guaranteed by spirv-val to be a OpVariable
-                assert(variable);
-                if (variable->StorageClass() == spv::StorageClassInput) {
-                    found_input = true;
-                    break;
-                }
-            }
+        const uint32_t stage_info_id = GetStageInfo(function, first_block, first_injectable_instruction);
 
-            if (!found_input) {
-                // vertex shader has no input, nothing to validate
-                return false;
+        InstructionIt stage_info_inst_it;
+        for (auto inst_it = first_block.instructions_.begin(); inst_it != first_block.instructions_.end(); ++inst_it) {
+            if ((*inst_it)->ResultId() == stage_info_id) {
+                stage_info_inst_it = inst_it;
+                break;
             }
         }
+        ++stage_info_inst_it;
 
-        const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
-        for (const auto& function : module_.functions_) {
-            if (function->instrumentation_added_) {
-                continue;
-            }
-            const uint32_t function_id = function->GetDef().ResultId();
-            if (vertex_shader_entry_point_id != function_id) {
-                continue;
-            }
+        std::vector<uint32_t> index_validation_inst_words;
+        const uint32_t void_type = type_manager_.GetTypeVoid().Id();
+        const uint32_t function_result = module_.TakeNextId();
+        const uint32_t function_def = GetLinkFunctionId();
 
-            BasicBlock& first_block = function->GetFirstBlock();
-            InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();
+        first_block.CreateInstruction(spv::OpFunctionCall, {void_type, function_result, function_def, stage_info_id},
+                                      &stage_info_inst_it);
 
-            const uint32_t stage_info_id = GetStageInfo(*function, first_block, first_injectable_instruction);
-
-            InstructionIt stage_info_inst_it;
-            for (auto inst_it = first_block.instructions_.begin(); inst_it != first_block.instructions_.end(); ++inst_it) {
-                if ((*inst_it)->ResultId() == stage_info_id) {
-                    stage_info_inst_it = inst_it;
-                    break;
-                }
-            }
-            ++stage_info_inst_it;
-
-            std::vector<uint32_t> index_validation_inst_words;
-            const uint32_t void_type = type_manager_.GetTypeVoid().Id();
-            const uint32_t function_result = module_.TakeNextId();
-            const uint32_t function_def = GetLinkFunctionId();
-
-            first_block.CreateInstruction(spv::OpFunctionCall, {void_type, function_result, function_def, stage_info_id},
-                                          &stage_info_inst_it);
-
-            instrumentation_performed = true;
-            return true;
-        }
+        instrumentation_performed = true;
+        return true;
     }
+
     return false;
 }
 

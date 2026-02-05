@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ struct BasicBlock {
     BasicBlock(std::unique_ptr<Instruction> label, Function& function);
     BasicBlock(Module& module, Function& function);
 
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<uint32_t>& out) const;
 
     uint32_t GetLabelId() const;
 
@@ -78,13 +78,19 @@ using BasicBlockIt = BasicBlockList::iterator;
 
 struct Function {
     // Used to add functions building up SPIR-V the first time
-    Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point);
+    Function(Module& module, std::unique_ptr<Instruction> function_inst);
     // Used to link in new functions
-    Function(Module& module) : module_(module), is_entry_point_(false), instrumentation_added_(true) {}
+    Function(Module& module) : id_(0), module_(module) {}
 
-    void ToBinary(std::vector<uint32_t>& out);
+    // Allow copying when we expend the FunctionList
+    // Note we only will emplace_back, never move/delete things from the list
+    Function(const Function&) = delete;
+    Function& operator=(const Function&) = delete;
+    Function(Function&& other) noexcept = default;
+    Function& operator=(Function&& other) noexcept = delete;
 
-    const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
+    void ToBinary(std::vector<uint32_t>& out) const;
+
     BasicBlock& GetFirstBlock() { return *blocks_.front(); }
 
     // Adds a new block after and returns reference to it
@@ -92,6 +98,10 @@ struct Function {
     BasicBlock& InsertNewBlockEnd();
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
+
+    // Result ID of OpFunction (zero if injected function from GPU-AV as we shouldn't need it)
+    const uint32_t id_;
+    bool AddedFromInstrumentation() const { return id_ == 0; }
 
     Module& module_;
     // OpFunction and parameters
@@ -117,14 +127,20 @@ struct Function {
     uint32_t stage_info_z_id_ = 0;
     uint32_t stage_info_w_id_ = 0;
 
-    // Lets us know if the function on OpReturn will exit the shader or nor
-    const bool is_entry_point_;
-
-    // The main usage of this is for things like DebugPrintf that might want to actually run over previously instrumented functions
-    const bool instrumentation_added_;
+    // Will be updated once all functions are made and know if called.
+    // Lets us know if the function is never going to be called, therefore skipping instrumentation.
+    //
+    // While spirv-opt should remove unused functions, this is for 2 cases
+    // 1. When using multiple entry points, we only want to instrument the functions for this target
+    // 2. Some real debug workflows will not have ran spirv-opt 100% and have lingering functions
+    bool called_from_target_ = false;
 };
 
-using FunctionList = std::vector<std::unique_ptr<Function>>;
+// We can keep a list of Structs because we only grow the function
+// 1. When we first create the Module and find them all
+// 2. When we link them in
+// We shouldn't need to store pointers and can loop the list if we need to find a function quickly
+using FunctionList = std::vector<Function>;
 using FunctionIt = FunctionList::iterator;
 
 }  // namespace spirv

@@ -1,4 +1,4 @@
-/* Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 
 #include "mesh_shading_pass.h"
+#include <vulkan/vulkan_core.h>
 #include "module.h"
 #include <cassert>
 #include <spirv/unified1/spirv.hpp>
@@ -64,25 +65,13 @@ bool MeshShading::RequiresInstrumentation(const Instruction& inst, InstructionMe
 }
 
 bool MeshShading::Instrument() {
-    uint32_t mesh_entrypoint_id = 0;
-    for (const auto& entry_point_inst : module_.entry_points_) {
-        if (entry_point_inst->Word(1) == spv::ExecutionModelMeshEXT) {
-            if (mesh_entrypoint_id != 0) {
-                // TODO - Currently we have no good way to detect which entrypoint the instrumented instruction will be called from
-                module_.InternalWarning("MeshShading",
-                                        "Found 2 MeshEXT entrypoint, which is unsupported, skipping instrumentation.");
-                return false;
-            }
-            mesh_entrypoint_id = entry_point_inst->Word(2);
-        }
-    }
-    if (mesh_entrypoint_id == 0) {
-        return false;  // no mesh shader
+    if (module_.interface_.entry_point_stage != VK_SHADER_STAGE_MESH_BIT_EXT) {
+        return false;
     }
 
     // Note - OpExecutionModeId can't be used if the extra operands are marked as "literal"
     for (const auto& execution_mode_inst : module_.execution_modes_) {
-        if (execution_mode_inst->Word(1) != mesh_entrypoint_id) {
+        if (execution_mode_inst->Word(1) != module_.target_entry_point_id_) {
             continue;
         }
 
@@ -95,11 +84,11 @@ bool MeshShading::Instrument() {
     }
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (!function.called_from_target_) {
             continue;
         }
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -127,7 +116,7 @@ bool MeshShading::Instrument() {
                 if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block

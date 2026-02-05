@@ -172,14 +172,14 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
         return false;  // If there is no bindings, nothing to instrument
     }
 
-    for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) {
+    for (Function& function : module_.functions_) {
+        if (!function.called_from_target_) {
             continue;
         }
 
         FunctionDuplicateTracker function_duplicate_tracker;
 
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -197,7 +197,7 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                 pc_access.Update(module_, inst_it);
 
                 InstructionMeta meta;
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     continue;
                 }
 

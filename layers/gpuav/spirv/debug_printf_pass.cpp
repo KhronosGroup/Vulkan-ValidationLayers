@@ -375,25 +375,25 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         type_manager_.AddType(std::move(new_inst), SpvType::kFunction);
     }
 
-    auto& new_function = module_.functions_.emplace_back(std::make_unique<Function>(module_));
+    Function& new_function = module_.functions_.emplace_back(module_);
     std::vector<uint32_t> function_param_ids;
     {
         auto new_inst = std::make_unique<Instruction>(5, spv::OpFunction);
         new_inst->Fill({void_type_id, function_id, spv::FunctionControlMaskNone, function_type_id});
-        new_function->pre_block_inst_.emplace_back(std::move(new_inst));
+        new_function.pre_block_inst_.emplace_back(std::move(new_inst));
 
         for (size_t i = 0; i < argument_count; i++) {
             const uint32_t new_id = module_.TakeNextId();
             auto param_inst = std::make_unique<Instruction>(3, spv::OpFunctionParameter);
             param_inst->Fill({uint32_type_id, new_id});
-            new_function->pre_block_inst_.emplace_back(std::move(param_inst));
+            new_function.pre_block_inst_.emplace_back(std::move(param_inst));
             function_param_ids.push_back(new_id);
         }
     }
 
-    BasicBlock& check_block = new_function->InsertNewBlockEnd();
-    BasicBlock& store_block = new_function->InsertNewBlockEnd();
-    BasicBlock& merge_block = new_function->InsertNewBlockEnd();
+    BasicBlock& check_block = new_function.InsertNewBlockEnd();
+    BasicBlock& store_block = new_function.InsertNewBlockEnd();
+    BasicBlock& merge_block = new_function.InsertNewBlockEnd();
 
     const Type& uint32_type = type_manager_.GetTypeInt(32, false);
     const uint32_t pointer_type_id = type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
@@ -477,7 +477,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 
     {
         auto new_inst = std::make_unique<Instruction>(1, spv::OpFunctionEnd);
-        new_function->post_block_inst_.emplace_back(std::move(new_inst));
+        new_function.post_block_inst_.emplace_back(std::move(new_inst));
     }
 }
 
@@ -495,7 +495,11 @@ bool DebugPrintfPass::Instrument() {
     }
 
     for (const auto& function : module_.functions_) {
-        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+        if (!function.called_from_target_ && !function.AddedFromInstrumentation()) {
+            continue;
+        }
+
+        for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
@@ -505,11 +509,11 @@ bool DebugPrintfPass::Instrument() {
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 if (!RequiresInstrumentation(*(inst_it->get()), meta)) continue;
-                if (!Validate(*(function.get()), meta)) continue;  // if not valid, don't attempt to instrument it
+                if (!Validate(function, meta)) continue;  // if not valid, don't attempt to instrument it
                 instrumentations_count_++;
 
                 // Save the OpString here so we can use it later
-                if (function->instrumentation_added_) {
+                if (function.AddedFromInstrumentation()) {
                     for (const auto& debug_inst : module_.debug_source_) {
                         const uint32_t string_id = (*inst_it)->Word(5);
                         if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {

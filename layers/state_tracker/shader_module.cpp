@@ -25,6 +25,7 @@
 #include "layer_options.h"
 #include "utils/assert_utils.h"
 #include "utils/hash_util.h"
+#include "utils/shader_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"
 
@@ -394,45 +395,6 @@ VkPrimitiveTopology ExecutionModeSet::GetGeometryMeshOutputTopology() const {
         topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
     return topology;
-}
-
-static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
-    switch (mode) {
-        case spv::ExecutionModelVertex:
-            return VK_SHADER_STAGE_VERTEX_BIT;
-        case spv::ExecutionModelTessellationControl:
-            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        case spv::ExecutionModelTessellationEvaluation:
-            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        case spv::ExecutionModelGeometry:
-            return VK_SHADER_STAGE_GEOMETRY_BIT;
-        case spv::ExecutionModelFragment:
-            return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case spv::ExecutionModelGLCompute:
-            return VK_SHADER_STAGE_COMPUTE_BIT;
-        case spv::ExecutionModelRayGenerationKHR:
-            return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        case spv::ExecutionModelAnyHitKHR:
-            return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-        case spv::ExecutionModelClosestHitKHR:
-            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-        case spv::ExecutionModelMissKHR:
-            return VK_SHADER_STAGE_MISS_BIT_KHR;
-        case spv::ExecutionModelIntersectionKHR:
-            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-        case spv::ExecutionModelCallableKHR:
-            return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
-        case spv::ExecutionModelTaskNV:
-            return VK_SHADER_STAGE_TASK_BIT_NV;
-        case spv::ExecutionModelMeshNV:
-            return VK_SHADER_STAGE_MESH_BIT_NV;
-        case spv::ExecutionModelTaskEXT:
-            return VK_SHADER_STAGE_TASK_BIT_EXT;
-        case spv::ExecutionModelMeshEXT:
-            return VK_SHADER_STAGE_MESH_BIT_EXT;
-        default:
-            return 0;
-    }
 }
 
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
@@ -868,8 +830,7 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
     : entrypoint_insn(entrypoint_insn),
       is_data_graph(entrypoint_insn.Opcode() == spv::OpGraphEntryPointARM),
       execution_model(is_data_graph ? spv::ExecutionModelGLCompute : spv::ExecutionModel(entrypoint_insn.Word(1))),
-      stage(is_data_graph ? VK_SHADER_STAGE_ALL
-                          : static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
+      stage(is_data_graph ? VK_SHADER_STAGE_ALL : ExecutionModelToShaderStageFlagBits(execution_model)),
       id(is_data_graph ? entrypoint_insn.Word(1) : entrypoint_insn.Word(2)),
       name(is_data_graph ? entrypoint_insn.GetAsString(2) : entrypoint_insn.GetAsString(3)),
       execution_mode(module_state.GetExecutionModeSet(id)),
