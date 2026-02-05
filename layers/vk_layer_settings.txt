@@ -117,7 +117,7 @@ khronos_validation.gpuav_indirect_trace_rays_buffers = true
 
 # Maximum Indices
 # =====================
-# Number of indices held in the buffer used to index commands and validation resources.
+# Number of indices held in the buffer used to index commands and validation resources (Max number of draws/dispatches in a command buffer that can be tracked). Can be lowered to save memory.
 khronos_validation.gpuav_max_indices_count = 8192
 
 # Mesh Shading SPIR-V instructions

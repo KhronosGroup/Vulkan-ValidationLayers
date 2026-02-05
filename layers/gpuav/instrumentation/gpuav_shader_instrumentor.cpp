@@ -1817,7 +1817,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
             ss << "Unknown Pipeline Operation ";
         }
 
-        uint32_t invalid_index_command = dispatch_instance_->settings.gpuav_settings.GetInvalidIndexCommand();
+        uint32_t invalid_index_command = dispatch_instance_->settings.gpuav_settings.invalid_index_command;
         if (action_command_index == invalid_index_command) {
             ss << "Index Unknown (After " << invalid_index_command << " commands, we stop tracking) \nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value";
         } else {

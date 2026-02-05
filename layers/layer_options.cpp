@@ -998,8 +998,17 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_INDICES_COUNT)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_INDICES_COUNT,
-                                    gpuav_settings.max_indices_count);
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_INDICES_COUNT, gpuav_settings.invalid_index_command);
+            // Hard limit is set by the fact we have kActionId_Mask used... which is also arbitrary
+            // ... we don't need 64k slots for the kErrorLoggerId_Mask, so could increase 64k if really wanted
+            // (If we update, please update the SetMaxIndicesCountAtTheLimit test)
+            if (gpuav_settings.invalid_index_command >= 65535) {
+                setting_warnings.emplace_back(
+                    "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count) is being set to 65534, the max value supported "
+                    "currently.");
+                gpuav_settings.invalid_index_command = 65534;
+            }
+            gpuav_settings.indices_buffer_count = gpuav_settings.invalid_index_command + 1;
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
