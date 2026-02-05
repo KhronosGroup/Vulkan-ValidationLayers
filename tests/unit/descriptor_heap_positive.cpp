@@ -2608,11 +2608,15 @@ TEST_F(PositiveDescriptorHeap, ArrayStrideIdEXT) {
                OpFunctionEnd
     )";
 
+    const uint32_t data = (uint32_t)heap_props.imageDescriptorSize;
+    const VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+
     VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
     pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
-    VkShaderObj cs_module =
-        VkShaderObj(*m_device, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj cs_module = VkShaderObj(*m_device, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4,
+                                        SPV_SOURCE_ASM, &specialization_info);
 
     CreateComputePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
     pipe.cp_ci_.layout = VK_NULL_HANDLE;
