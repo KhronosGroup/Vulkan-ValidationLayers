@@ -519,32 +519,32 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
     // check range of imageOffset and imageExtent
     {
         if (region.imageOffset.x < 0) {
-            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07971), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_07971), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::x), "(%" PRId32 ") must be greater than zero.",
                              region.imageOffset.x);
         } else if ((uint64_t)region.imageOffset.x + (uint64_t)region.imageExtent.width > (uint64_t)effective_image_extent.width) {
-            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07971), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_07971), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::x),
                              "(%" PRId32 ") + extent.width (%" PRIu32 ") exceeds imageSubresource width extent (%" PRIu32 ").\n%s",
                              region.imageOffset.x, region.imageExtent.width, effective_image_extent.width,
                              image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         } else if (region.imageOffset.y < 0) {
-            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07972), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_07972), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::y), "(%" PRId32 ") must be greater than zero.",
                              region.imageOffset.y);
         } else if ((uint64_t)region.imageOffset.y + (uint64_t)region.imageExtent.height > (uint64_t)effective_image_extent.height) {
             skip |=
-                LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_07972), objlist,
+                LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_07972), objlist,
                          region_loc.dot(Field::imageOffset).dot(Field::y),
                          "(%" PRId32 ") + extent.height (%" PRIu32 ") exceeds imageSubresource height extent (%" PRIu32 ").\n%s",
                          region.imageOffset.y, region.imageExtent.height, effective_image_extent.height,
                          image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         } else if (region.imageOffset.z < 0) {
-            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_09104), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_09104), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::z), "(%" PRId32 ") must be greater than zero.",
                              region.imageOffset.z);
         } else if ((uint64_t)region.imageOffset.z + (uint64_t)region.imageExtent.depth > (uint64_t)effective_image_extent.depth) {
-            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffest_09104), objlist,
+            skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::ImageOffset_09104), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::z),
                              "(%" PRId32 ") + extent.depth (%" PRIu32 ") exceeds imageSubresource depth extent (%" PRIu32 ").\n%s",
                              region.imageOffset.z, region.imageExtent.depth, effective_image_extent.depth,

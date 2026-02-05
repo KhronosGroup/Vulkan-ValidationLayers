@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -241,7 +241,7 @@ class DescriptorSetLayoutDef {
 
     std::string DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const;
 
-    std::string DescribeDescriptorBufferSizeAndOffests(VkDevice device, VkDescriptorSetLayout layout) const;
+    std::string DescribeDescriptorBufferSizeAndOffsets(VkDevice device, VkDescriptorSetLayout layout) const;
 
   private:
     VkDescriptorSetLayoutCreateFlags flags_;
@@ -396,8 +396,8 @@ class DescriptorSetLayout : public StateObject {
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
 
-    std::string DescribeDescriptorBufferSizeAndOffests(VkDevice device) const {
-        return layout_id_->DescribeDescriptorBufferSizeAndOffests(device, VkHandle());
+    std::string DescribeDescriptorBufferSizeAndOffsets(VkDevice device) const {
+        return layout_id_->DescribeDescriptorBufferSizeAndOffsets(device, VkHandle());
     }
 
   private:

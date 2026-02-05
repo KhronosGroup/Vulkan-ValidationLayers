@@ -512,7 +512,7 @@ const std::vector<VkDescriptorType> &vvl::DescriptorSetLayoutDef::GetMutableType
     return mutable_bindings_[index].types;
 }
 
-std::string vvl::DescriptorSetLayoutDef::DescribeDescriptorBufferSizeAndOffests(VkDevice device,
+std::string vvl::DescriptorSetLayoutDef::DescribeDescriptorBufferSizeAndOffsets(VkDevice device,
                                                                                 VkDescriptorSetLayout layout) const {
     std::ostringstream ss;
     if (flags_ & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
