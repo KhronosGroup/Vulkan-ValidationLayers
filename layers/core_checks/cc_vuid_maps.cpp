@@ -148,7 +148,7 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
 
 const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) {
     static const std::map<CopyError, std::array<Entry, 6>> errors{
-        {CopyError::ImageOffest_07971,
+        {CopyError::ImageOffset_07971,
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageSubresource-07971"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageSubresource-07971"},
@@ -157,7 +157,7 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-imageSubresource-07971"},
              {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-imageSubresource-07971"},
          }}},
-        {CopyError::ImageOffest_07972,
+        {CopyError::ImageOffset_07972,
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageSubresource-07972"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageSubresource-07972"},
@@ -256,7 +256,7 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07981"},
              {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07981"},
          }}},
-        {CopyError::ImageOffest_09104,
+        {CopyError::ImageOffset_09104,
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageOffset-09104"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageOffset-09104"},
