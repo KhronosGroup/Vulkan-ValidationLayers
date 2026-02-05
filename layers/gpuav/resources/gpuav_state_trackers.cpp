@@ -152,7 +152,7 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *, const 
 // For things like vkCmdCopyImage there is no "last bound" as not shaders are attached to it
 void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const LastBound *last_bound,
                                                   ErrorLoggerFunc error_logger_func) {
-    if (command_error_loggers_.size() == gpuav_.gpuav_settings.GetInvalidIndexCommand()) {
+    if (command_error_loggers_.size() == gpuav_.gpuav_settings.invalid_index_command) {
         return;
     }
 
@@ -203,18 +203,18 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
 void CommandBufferSubState::IncrementActionCommandCount(VkPipelineBindPoint bind_point) {
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
-        if (draw_index > gpuav_.gpuav_settings.GetInvalidIndexCommand()) {
-            draw_index = gpuav_.gpuav_settings.GetInvalidIndexCommand();
+        if (draw_index > gpuav_.gpuav_settings.invalid_index_command) {
+            draw_index = gpuav_.gpuav_settings.invalid_index_command;
         }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         compute_index++;
-        if (compute_index > gpuav_.gpuav_settings.GetInvalidIndexCommand()) {
-            compute_index = gpuav_.gpuav_settings.GetInvalidIndexCommand();
+        if (compute_index > gpuav_.gpuav_settings.invalid_index_command) {
+            compute_index = gpuav_.gpuav_settings.invalid_index_command;
         }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         trace_rays_index++;
-        if (trace_rays_index > gpuav_.gpuav_settings.GetInvalidIndexCommand()) {
-            trace_rays_index = gpuav_.gpuav_settings.GetInvalidIndexCommand();
+        if (trace_rays_index > gpuav_.gpuav_settings.invalid_index_command) {
+            trace_rays_index = gpuav_.gpuav_settings.invalid_index_command;
         }
     }
 }
@@ -351,14 +351,15 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                 const uint32_t error_logger_i =
                     error_record_ptr[glsl::kHeader_ActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerId_Mask;
 
-                assert(error_logger_i < gpuav_.gpuav_settings.max_indices_count);
-                if (error_logger_i == gpuav_.gpuav_settings.GetInvalidIndexCommand()) {
+                assert(error_logger_i < gpuav_.gpuav_settings.indices_buffer_count);
+                if (error_logger_i == gpuav_.gpuav_settings.invalid_index_command) {
                     const LogObjectList objlist(queue, VkHandle());
                     gpuav_.LogError(
                         "GPUAV-Overflow-Unknown", queue, loc,
                         "An error was detected, but after internal limit of %" PRIu32
-                        " draw/dispatch/traceRays in a command buffer, we are unable to track which validation error occured.",
-                        gpuav_.gpuav_settings.max_indices_count);
+                        " draw/dispatch/traceRays commands in a command buffer, we are unable to track which validation error "
+                        "occured.\nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value.",
+                        gpuav_.gpuav_settings.invalid_index_command);
                 } else {
                     // normal case
                     const CommandErrorLogger &error_logger = GetErrorLogger(error_logger_i);

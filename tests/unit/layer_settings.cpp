@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -517,6 +517,19 @@ TEST_F(NegativeLayerSettings, DuplicateSettings) {
         "The setting \"enable_message_limit\" in VkLayerSettingsCreateInfoEXT was listed twice and only the first one listed will "
         "be "
         "recognized");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, MaxIndicesCountOverLimit) {
+    const uint32_t new_limit = 66000;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_max_indices_count", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1,
+                                       &new_limit};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().ExpectSuccess(kErrorBit | kWarningBit);
+    Monitor().SetDesiredWarning(
+        "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count) is being set to 65534, the max value supported");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();

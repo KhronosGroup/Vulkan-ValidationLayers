@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,9 +36,6 @@ bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
            shader_instrumentation.sanitizer;
 }
 bool GpuAVSettings::IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
-// If we hit our limit, we will use this to signal to the app what they are seeing is likely garbage.
-// This is required because we still need to bind our descriptors regardless.
-uint32_t GpuAVSettings::GetInvalidIndexCommand() const { return max_indices_count - 1; }
 
 // Also disables shader caching and select shader instrumentation
 void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
