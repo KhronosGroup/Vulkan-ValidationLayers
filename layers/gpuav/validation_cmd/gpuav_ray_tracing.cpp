@@ -739,7 +739,8 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
     struct ErrorInfo {
         uint32_t info_i{};
         uint32_t geom_i{};
-        VkAccelerationStructureGeometryTrianglesDataKHR triangle_data{};
+        VkGeometryTypeKHR geom_type;
+        VkAccelerationStructureGeometryDataKHR geom;
         VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
     };
 
@@ -754,42 +755,72 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
                 const VkAccelerationStructureGeometryKHR& geom_data = rt::GetGeometry(info, geom_i);
 
-                if (geom_data.geometryType != VK_GEOMETRY_TYPE_TRIANGLES_KHR ||
-                    geom_data.geometry.triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
+                const bool setup_triangle_indices_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
+                                                               geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR;
+                const bool setup_aabbs_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR;
+
+                if (!setup_triangle_indices_validation && !setup_aabbs_validation) {
                     continue;
                 }
+
+                DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
                 const VkAccelerationStructureBuildRangeInfoKHR& build_range_info = pp_build_ranges_infos[info_i][geom_i];
 
                 ErrorInfo& error_info = error_infos.emplace_back();
                 error_info.info_i = info_i;
                 error_info.geom_i = geom_i;
-                error_info.triangle_data = geom_data.geometry.triangles;
+                error_info.geom_type = geom_data.geometryType;
                 error_info.build_range_info = build_range_info;
 
                 BLASValidationShader shader_resources;
-                shader_resources.push_constants.index_data = geom_data.geometry.triangles.indexData.deviceAddress;
-                shader_resources.push_constants.index_type = geom_data.geometry.triangles.indexType;
-                shader_resources.push_constants.max_vertex = geom_data.geometry.triangles.maxVertex;
                 shader_resources.push_constants.first_vertex = build_range_info.firstVertex;
                 shader_resources.push_constants.primitive_offset = build_range_info.primitiveOffset;
                 shader_resources.push_constants.primitive_count = build_range_info.primitiveCount;
                 shader_resources.push_constants.error_info_i = uint32_t(error_infos.size() - 1);
 
-                DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+                if (setup_triangle_indices_validation) {
+                    error_info.geom.triangles = geom_data.geometry.triangles;
 
-                if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                         cb_state.GetErrorLoggerIndex(), shader_resources, !error_logging_desc_set_already_bound)) {
-                    assert(false);
-                    return;
+                    shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_triangles_indices;
+                    shader_resources.push_constants.address = geom_data.geometry.triangles.indexData.deviceAddress;
+                    shader_resources.push_constants.index_type = geom_data.geometry.triangles.indexType;
+                    shader_resources.push_constants.max_vertex = geom_data.geometry.triangles.maxVertex;
+
+                    if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                             cb_state.GetErrorLoggerIndex(), shader_resources,
+                                             !error_logging_desc_set_already_bound)) {
+                        assert(false);
+                        return;
+                    }
+                    error_logging_desc_set_already_bound = true;
+
+                    constexpr uint32_t shader_wg_size_x = 64;
+                    const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
+                                                uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
+                    DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
                 }
 
-                error_logging_desc_set_already_bound = true;
+                if (setup_aabbs_validation) {
+                    error_info.geom.aabbs = geom_data.geometry.aabbs;
 
-                constexpr uint32_t shader_wg_size_x = 64;
-                const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
-                                            uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
-                DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+                    shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_aabbs;
+                    shader_resources.push_constants.address = geom_data.geometry.aabbs.data.deviceAddress;
+                    shader_resources.push_constants.stride = geom_data.geometry.aabbs.stride;
+
+                    if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                             cb_state.GetErrorLoggerIndex(), shader_resources,
+                                             !error_logging_desc_set_already_bound)) {
+                        assert(false);
+                        return;
+                    }
+                    error_logging_desc_set_already_bound = true;
+
+                    constexpr uint32_t shader_wg_size_x = 64;
+                    const uint32_t wg_count_x = (build_range_info.primitiveCount) / shader_wg_size_x +
+                                                uint32_t(((build_range_info.primitiveCount) % shader_wg_size_x) > 0);
+                    DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+                }
             }
         }
     }
@@ -804,9 +835,9 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             return skip;
         }
 
-        const uint32_t index = error_record[kValCmd_ErrorPayloadDword_0];
+        const uint32_t error_info_i = error_record[kValCmd_ErrorPayloadDword_0];
         const uint32_t gid = error_record[kValCmd_ErrorPayloadDword_1];
-        const uint32_t error_info_i = error_record[kValCmd_ErrorPayloadDword_2];
+
         assert(error_info_i < error_infos.size());
         const ErrorInfo& error_info = error_infos[error_info_i];
 
@@ -815,18 +846,22 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex: {
+                const uint32_t index = error_record[kValCmd_ErrorPayloadDword_2];
+                const uint32_t index_type_byte_size = GetIndexBitsSize(error_info.geom.triangles.indexType) / 8u;
+
                 skip |= gpuav.LogError(
                     "VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774", objlist, loc_with_debug_region,
                     "Index out of bounds.\n"
                     "Index (%" PRIu32 ") + firstVertex (%" PRIu32 ") = %" PRIu32
                     " but VkAccelerationStructureGeometryTrianglesDataKHR::maxVertex is only %" PRIu32
                     ".\n"
-                    "Index was found at VkDeviceAddress indexData (0x%" PRIx64 ") + primitiveOffset (%" PRIu32 ") = 0x%" PRIx64
+                    "Index buffer starts at VkDeviceAddress indexData (0x%" PRIx64 ") + primitiveOffset (%" PRIu32 ") = 0x%" PRIx64
                     "\n"
                     "Given index type of %s, and that starting address, that's IndexBuffer[%" PRIu32
-                    "].\n"
+                    "] (VkDeviceAddress: 0x%" PRIx64
+                    ")\n"
 
-                    "BLAS build command info:\n"
+                    "Corresponding BLAS build command info:\n"
                     "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32 "]::VkAccelerationStructureGeometryKHR[%" PRIu32
                     "]::VkAccelerationStructureGeometryTrianglesDataKHR was:\n"
                     "    vertexFormat: %s\n"
@@ -853,15 +888,86 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "    transformOffset: %" PRIu32 "\n",
 
                     index, error_info.build_range_info.firstVertex, index + error_info.build_range_info.firstVertex,
-                    error_info.triangle_data.maxVertex, error_info.triangle_data.indexData.deviceAddress,
+                    error_info.geom.triangles.maxVertex, error_info.geom.triangles.indexData.deviceAddress,
                     error_info.build_range_info.primitiveOffset,
-                    error_info.triangle_data.indexData.deviceAddress + error_info.build_range_info.primitiveOffset,
-                    string_VkIndexType(error_info.triangle_data.indexType), gid,
+                    error_info.geom.triangles.indexData.deviceAddress + error_info.build_range_info.primitiveOffset,
+                    string_VkIndexType(error_info.geom.triangles.indexType), gid,
+                    error_info.geom.triangles.indexData.deviceAddress + error_info.build_range_info.primitiveOffset +
+                        gid * index_type_byte_size,
 
-                    error_info.info_i, error_info.geom_i, string_VkFormat(error_info.triangle_data.vertexFormat),
-                    error_info.triangle_data.vertexData.deviceAddress, error_info.triangle_data.vertexStride,
-                    error_info.triangle_data.maxVertex, string_VkIndexType(error_info.triangle_data.indexType),
-                    error_info.triangle_data.indexData.deviceAddress, error_info.triangle_data.transformData.deviceAddress,
+                    error_info.info_i, error_info.geom_i, string_VkFormat(error_info.geom.triangles.vertexFormat),
+                    error_info.geom.triangles.vertexData.deviceAddress, error_info.geom.triangles.vertexStride,
+                    error_info.geom.triangles.maxVertex, string_VkIndexType(error_info.geom.triangles.indexType),
+                    error_info.geom.triangles.indexData.deviceAddress, error_info.geom.triangles.transformData.deviceAddress,
+
+                    error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
+                    error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
+                    error_info.build_range_info.transformOffset
+
+                );
+                break;
+            }
+
+            case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X:
+            case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y:
+            case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z: {
+                const float min = *(float*)(error_record + kValCmd_ErrorPayloadDword_2);
+                const float max = *(float*)(error_record + kValCmd_ErrorPayloadDword_3);
+                vvl::Field min_field{};
+                vvl::Field max_field{};
+                const char* vuid = "";
+                switch (error_sub_code) {
+                    case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X:
+                        min_field = vvl::Field::minX;
+                        max_field = vvl::Field::maxX;
+                        vuid = "VUID-VkAabbPositionsKHR-minX-03546";
+                        break;
+                    case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y:
+                        min_field = vvl::Field::minY;
+                        max_field = vvl::Field::maxY;
+                        vuid = "VUID-VkAabbPositionsKHR-minY-03547";
+                        break;
+                    case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z:
+                        min_field = vvl::Field::minZ;
+                        max_field = vvl::Field::maxZ;
+                        vuid = "VUID-VkAabbPositionsKHR-minZ-03548";
+                        break;
+                    default:
+                        break;
+                }
+                skip |= gpuav.LogError(
+                    vuid, objlist, loc_with_debug_region,
+                    "Ill formed AABB at primitive index %" PRIu32
+                    ".\n"
+                    "%s (%f) > %s (%f)\n"
+                    "AABB was found at VkDeviceAddress aabbs.data (0x%" PRIx64 ") + primitiveOffset (%" PRIu32
+                    ") + primitive index (%" PRIu32 ") * stride (%" PRIu64 ") = 0x%" PRIx64
+                    "\n"
+
+                    "Corresponding BLAS build command info:\n"
+                    "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32 "]::VkAccelerationStructureGeometryKHR[%" PRIu32
+                    "]::VkAccelerationStructureGeometryAabbsDataKHR was:\n"
+                    "    data.deviceAddress: 0x%" PRIx64
+                    "\n"
+                    "    stride: %" PRIu64
+                    "\n\n"
+
+                    "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32
+                    "] was:\n"
+                    "    primitiveCount: %" PRIu32
+                    "\n"
+                    "    primitiveOffset: %" PRIu32
+                    "\n"
+                    "    firstVertex: %" PRIu32
+                    "\n"
+                    "    transformOffset: %" PRIu32 "\n",
+
+                    gid, vvl::String(min_field), min, vvl::String(max_field), max, error_info.geom.aabbs.data.deviceAddress,
+                    error_info.build_range_info.primitiveOffset, gid, error_info.geom.aabbs.stride,
+                    error_info.geom.aabbs.data.deviceAddress + error_info.build_range_info.primitiveOffset +
+                        gid * error_info.geom.aabbs.stride,
+
+                    error_info.info_i, error_info.geom_i, error_info.geom.aabbs.data.deviceAddress, error_info.geom.aabbs.stride,
 
                     error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
                     error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
