@@ -2486,6 +2486,64 @@ TEST_F(PositiveGpuAV, IgnoreFunctionsNoCalled) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(PositiveGpuAV, FragCoordNotUsed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11475#issuecomment-3828732673");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // The following, but the FragCoord builtin is declared, and not used
+    //
+    // layout(set = 0, binding = 0) uniform UBO { vec4 x; };
+    // layout(location = 0) out vec4 color;
+    // void main() {
+    //     color = x;
+    // }
+    const char* shader_source = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %_
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %unused BuiltIn FragCoord
+               OpDecorate %color Location 0
+               OpDecorate %UBO Block
+               OpMemberDecorate %UBO 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+        %UBO = OpTypeStruct %v4float
+%_ptr_Uniform_UBO = OpTypePointer Uniform %UBO
+          %_ = OpVariable %_ptr_Uniform_UBO Uniform
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Uniform_v4float = OpTypePointer Uniform %v4float
+
+ %unused_ptr = OpTypePointer Input %v4float
+     %unused = OpVariable %unused_ptr Input
+
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %17 = OpAccessChain %_ptr_Uniform_v4float %_ %int_0
+         %18 = OpLoad %v4float %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(*m_device, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveGpuAV, SafeBuffers) {
     TEST_DESCRIPTION("Ensure we are using safe struct for our VkBufferCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);

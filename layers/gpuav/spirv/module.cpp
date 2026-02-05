@@ -173,13 +173,15 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     //   - the most OpFunction created was 135, the mean was 2.4
     //   - the most Instruction count was 125k, the mean was 1500
     //
-    // The Function struct is only ~150 bytes so it should be better to just expand it (if needed) and loop through the function
+    // The Function struct is only ~160 bytes so it should be better to just expand it (if needed) and loop through the function
     // list if we need to find a certain function
     //
-    // We reserve a few extra to account for future linked functions
+    // Function is empty here, we want to reserve 3 for incoming functions and 5 (to make a power of two) for future functions
+    // GPU-AV will insert at linking time
     functions_.reserve(8);
 
     // < function id, [ OpFunctionCall ids ]
+    // (we use a set because Function A might call Function B multiple times)
     vvl::unordered_map<uint32_t, vvl::unordered_set<uint32_t>> function_call_map;
 
     // each function is broken up to 3 stage, pre/during/post basic_blocks
@@ -267,19 +269,20 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     vvl::unordered_set<uint32_t> seen_functions;
 
     while (!worklist.empty()) {
-        uint32_t current_id = worklist.back();
+        const uint32_t current_id = worklist.back();
         worklist.pop_back();
 
-        if (seen_functions.insert(current_id).second) {
-            Function* next_function = id_to_func[current_id];
-            next_function->called_from_target_ = true;
+        if (!seen_functions.insert(current_id).second) {
+            continue;
+        }
+        Function* next_function = id_to_func[current_id];
+        next_function->called_from_target_ = true;
 
-            auto it = function_call_map.find(current_id);
-            if (it != function_call_map.end()) {
-                for (uint32_t callee_id : it->second) {
-                    if (seen_functions.find(callee_id) == seen_functions.end()) {
-                        worklist.push_back(callee_id);
-                    }
+        auto func_it = function_call_map.find(current_id);
+        if (func_it != function_call_map.end()) {
+            for (uint32_t callee_id : func_it->second) {
+                if (seen_functions.find(callee_id) == seen_functions.end()) {
+                    worklist.push_back(callee_id);
                 }
             }
         }
@@ -367,6 +370,18 @@ void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decora
     annotations_.emplace_back(std::move(new_inst));
 }
 
+// Found in extreme cases production shaders have maybe 5 entrypoints
+// From 400k shaders dumped, the average was 1.01 entry points per shader
+Instruction* Module::GetTargetEntryPoint() const {
+    for (const auto& entry_point : entry_points_) {
+        if (entry_point->Word(2) == target_entry_point_id_) {
+            return entry_point.get();
+        }
+    }
+    assert(false);
+    return nullptr;
+}
+
 uint32_t Module::TakeNextId() {
     // SPIR-V limit.
     assert(header_.bound < 0x3FFFFF);
@@ -431,11 +446,7 @@ void Module::AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class)
             return;
         }
 
-        // Currently just apply to all Entrypoint as it should be ok to have a global variable in there even if it can't dynamically
-        // touch the new function
-        for (auto& entry_point : entry_points_) {
-            entry_point->AppendWord(id);
-        }
+        GetTargetEntryPoint()->AppendWord(id);
     }
 }
 

@@ -495,6 +495,10 @@ bool DebugPrintfPass::Instrument() {
     }
 
     for (const auto& function : module_.functions_) {
+        if (!function.called_from_target_ && !function.AddedFromInstrumentation()) {
+            continue;
+        }
+
         for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 

@@ -14,6 +14,7 @@
  */
 
 #include "pass.h"
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "cooperative_matrix.h"
@@ -70,9 +71,68 @@ const Variable& Pass::GetBuiltInVariable(uint32_t built_in) {
         new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
         built_in_variable = &type_manager_.AddVariable(std::move(new_inst), pointer_type);
         module_.AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
+    } else {
+        // Slang with the --preserve-params option will leave built-in variables that aren't in any interface.
+        const uint32_t built_in_variable_id = built_in_variable->Id();
+        const Instruction* entry_point = module_.GetTargetEntryPoint();
+
+        bool found_variable = false;
+        uint32_t word = entry_point->GetEntryPointInterfaceStart();
+        const uint32_t total_words = entry_point->Length();
+        for (; word < total_words; word++) {
+            const uint32_t interface_id = entry_point->Word(word);
+            if (interface_id == built_in_variable_id) {
+                found_variable = true;
+                break;
+            }
+        }
+
+        if (!found_variable) {
+            module_.AddInterfaceVariables(variable_id, spv::StorageClassInput);
+        }
     }
 
     return *built_in_variable;
+}
+
+// Special function to map to the internal representation of the execution models used for GenerateStageMessage()
+static uint32_t GetNormalizedExecutionModel(VkShaderStageFlagBits shader_stage) {
+    switch (shader_stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return glsl::kExecutionModel_Vertex;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return glsl::kExecutionModel_TessellationControl;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return glsl::kExecutionModel_TessellationEvaluation;
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return glsl::kExecutionModel_Geometry;
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            return glsl::kExecutionModel_Fragment;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return glsl::kExecutionModel_GLCompute;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+            return glsl::kExecutionModel_RayGenerationKHR;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+            return glsl::kExecutionModel_AnyHitKHR;
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+            return glsl::kExecutionModel_ClosestHitKHR;
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+            return glsl::kExecutionModel_MissKHR;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+            return glsl::kExecutionModel_IntersectionKHR;
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return glsl::kExecutionModel_CallableKHR;
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return glsl::kExecutionModel_TaskEXT;
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return glsl::kExecutionModel_MeshEXT;
+        case VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI:
+        case VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI:
+        case VK_SHADER_STAGE_ALL_GRAPHICS:
+        case VK_SHADER_STAGE_ALL:
+            break;
+    }
+    return glsl::kExecutionModel_Unknown;
 }
 
 // To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
@@ -95,139 +155,105 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
     const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
     uint32_t stage_info[4] = {uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id};
 
-    if (module_.entry_points_.size() > 1) {
-        // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
-        // For now we will just report it is "unknown" and skip printing that part of the error message
-        stage_info[0] = type_manager_.GetConstantUInt32(glsl::kExecutionModel_MultiEntryPoint).Id();
-    } else {
-        spv::ExecutionModel execution_model = spv::ExecutionModel(module_.entry_points_.begin()->get()->Operand(0));
+    const uint32_t execution_model = GetNormalizedExecutionModel(module_.interface_.entry_point_stage);
+    stage_info[0] = type_manager_.GetConstantUInt32(execution_model).Id();
 
-        // Need to map how GenerateStageMessage() will consume it
-        uint32_t normalized_execution_model = execution_model;
-        if (execution_model == spv::ExecutionModelTaskNV) {
-            normalized_execution_model = glsl::kExecutionModel_TaskNV;
-        } else if (execution_model == spv::ExecutionModelMeshNV) {
-            normalized_execution_model = glsl::kExecutionModel_MeshNV;
-        } else if (execution_model == spv::ExecutionModelRayGenerationKHR) {
-            normalized_execution_model = glsl::kExecutionModel_RayGenerationKHR;
-        } else if (execution_model == spv::ExecutionModelIntersectionKHR) {
-            normalized_execution_model = glsl::kExecutionModel_IntersectionKHR;
-        } else if (execution_model == spv::ExecutionModelAnyHitKHR) {
-            normalized_execution_model = glsl::kExecutionModel_AnyHitKHR;
-        } else if (execution_model == spv::ExecutionModelClosestHitKHR) {
-            normalized_execution_model = glsl::kExecutionModel_ClosestHitKHR;
-        } else if (execution_model == spv::ExecutionModelMissKHR) {
-            normalized_execution_model = glsl::kExecutionModel_MissKHR;
-        } else if (execution_model == spv::ExecutionModelCallableKHR) {
-            normalized_execution_model = glsl::kExecutionModel_CallableKHR;
-        } else if (execution_model == spv::ExecutionModelCallableKHR) {
-            normalized_execution_model = glsl::kExecutionModel_CallableKHR;
-        } else if (execution_model == spv::ExecutionModelTaskEXT) {
-            normalized_execution_model = glsl::kExecutionModel_TaskEXT;
-        } else if (execution_model == spv::ExecutionModelMeshEXT) {
-            normalized_execution_model = glsl::kExecutionModel_MeshEXT;
-        }
-        stage_info[0] = type_manager_.GetConstantUInt32(normalized_execution_model).Id();
+    // Gets BuiltIn variable and creates a valid OpLoad of it
+    auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
+        const Variable& variable = GetBuiltInVariable(built_in);
+        const Type* pointer_type = variable.PointerType(type_manager_);
+        const uint32_t load_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
+        return load_id;
+    };
 
-        // Gets BuiltIn variable and creates a valid OpLoad of it
-        auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
-            const Variable& variable = GetBuiltInVariable(built_in);
+    switch (module_.interface_.entry_point_stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT: {
+            uint32_t load_id = create_load(spv::BuiltInVertexIndex);
+            stage_info[1] = CastToUint32(load_id, block, &inst_it);
+            load_id = create_load(spv::BuiltInInstanceIndex);
+            stage_info[2] = CastToUint32(load_id, block, &inst_it);
+        } break;
+        case VK_SHADER_STAGE_FRAGMENT_BIT: {
+            const uint32_t load_id = create_load(spv::BuiltInFragCoord);
+            // convert vec4 to uvec4
+            const uint32_t bitcast_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpBitcast, {uvec4_type.Id(), bitcast_id, load_id}, &inst_it);
+
+            for (uint32_t i = 0; i < 2; i++) {
+                const uint32_t extract_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                stage_info[i + 1] = extract_id;
+            }
+        } break;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR: {
+            const uint32_t load_id = create_load(spv::BuiltInLaunchIdKHR);
+
+            for (uint32_t i = 0; i < 3; i++) {
+                const uint32_t extract_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                stage_info[i + 1] = extract_id;
+            }
+        } break;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+        case VK_SHADER_STAGE_TASK_BIT_NV:
+        case VK_SHADER_STAGE_MESH_BIT_NV: {
+            // This can be both a uvec3 or ivec3 so need to cast if ivec3
+            const Variable& variable = GetBuiltInVariable(spv::BuiltInGlobalInvocationId);
             const Type* pointer_type = variable.PointerType(type_manager_);
             const uint32_t load_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
-            return load_id;
-        };
+            uint32_t final_load_id = load_id;
 
-        switch (execution_model) {
-            case spv::ExecutionModelVertex: {
-                uint32_t load_id = create_load(spv::BuiltInVertexIndex);
-                stage_info[1] = CastToUint32(load_id, block, &inst_it);
-                load_id = create_load(spv::BuiltInInstanceIndex);
-                stage_info[2] = CastToUint32(load_id, block, &inst_it);
-            } break;
-            case spv::ExecutionModelFragment: {
-                const uint32_t load_id = create_load(spv::BuiltInFragCoord);
-                // convert vec4 to uvec4
-                const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uvec4_type.Id(), bitcast_id, load_id}, &inst_it);
+            if (pointer_type->IsIVec3(type_manager_)) {
+                const Type& vec3_type = type_manager_.GetTypeVector(uint32_type, 3);
+                final_load_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), final_load_id, load_id}, &inst_it);
+            }
 
-                for (uint32_t i = 0; i < 2; i++) {
-                    const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
-                    stage_info[i + 1] = extract_id;
-                }
-            } break;
-            case spv::ExecutionModelRayGenerationKHR:
-            case spv::ExecutionModelIntersectionKHR:
-            case spv::ExecutionModelAnyHitKHR:
-            case spv::ExecutionModelClosestHitKHR:
-            case spv::ExecutionModelMissKHR:
-            case spv::ExecutionModelCallableKHR: {
-                const uint32_t load_id = create_load(spv::BuiltInLaunchIdKHR);
+            for (uint32_t i = 0; i < 3; i++) {
+                const uint32_t extract_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, final_load_id, i}, &inst_it);
+                stage_info[i + 1] = extract_id;
+            }
+        } break;
+        case VK_SHADER_STAGE_GEOMETRY_BIT: {
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
+            const uint32_t load_id = create_load(spv::BuiltInInvocationId);
+            stage_info[2] = CastToUint32(load_id, block, &inst_it);
+        } break;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: {
+            const uint32_t load_id = create_load(spv::BuiltInInvocationId);
+            stage_info[1] = CastToUint32(load_id, block, &inst_it);
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[2] = CastToUint32(primitive_id, block, &inst_it);
+        } break;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: {
+            const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
+            stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
 
-                for (uint32_t i = 0; i < 3; i++) {
-                    const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
-                    stage_info[i + 1] = extract_id;
-                }
-            } break;
-            case spv::ExecutionModelGLCompute:
-            case spv::ExecutionModelTaskNV:
-            case spv::ExecutionModelMeshNV:
-            case spv::ExecutionModelTaskEXT:
-            case spv::ExecutionModelMeshEXT: {
-                // This can be both a uvec3 or ivec3 so need to cast if ivec3
-                const Variable& variable = GetBuiltInVariable(spv::BuiltInGlobalInvocationId);
-                const Type* pointer_type = variable.PointerType(type_manager_);
-                const uint32_t load_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
-                uint32_t final_load_id = load_id;
+            // convert vec3 to uvec3
+            const Type& uvec3_type = type_manager_.GetTypeVector(uint32_type, 3);
+            const uint32_t load_id = create_load(spv::BuiltInTessCoord);
+            const uint32_t bitcast_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpBitcast, {uvec3_type.Id(), bitcast_id, load_id}, &inst_it);
 
-                if (pointer_type->IsIVec3(type_manager_)) {
-                    const Type& vec3_type = type_manager_.GetTypeVector(uint32_type, 3);
-                    final_load_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), final_load_id, load_id}, &inst_it);
-                }
-
-                for (uint32_t i = 0; i < 3; i++) {
-                    const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, final_load_id, i}, &inst_it);
-                    stage_info[i + 1] = extract_id;
-                }
-            } break;
-            case spv::ExecutionModelGeometry: {
-                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-                stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
-                const uint32_t load_id = create_load(spv::BuiltInInvocationId);
-                stage_info[2] = CastToUint32(load_id, block, &inst_it);
-            } break;
-            case spv::ExecutionModelTessellationControl: {
-                const uint32_t load_id = create_load(spv::BuiltInInvocationId);
-                stage_info[1] = CastToUint32(load_id, block, &inst_it);
-                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-                stage_info[2] = CastToUint32(primitive_id, block, &inst_it);
-            } break;
-            case spv::ExecutionModelTessellationEvaluation: {
-                const uint32_t primitive_id = create_load(spv::BuiltInPrimitiveId);
-                stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
-
-                // convert vec3 to uvec3
-                const Type& uvec3_type = type_manager_.GetTypeVector(uint32_type, 3);
-                const uint32_t load_id = create_load(spv::BuiltInTessCoord);
-                const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uvec3_type.Id(), bitcast_id, load_id}, &inst_it);
-
-                // TessCoord.uv values from it
-                for (uint32_t i = 0; i < 2; i++) {
-                    const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
-                    stage_info[i + 2] = extract_id;
-                }
-            } break;
-            default:
-                module_.InternalError(Name(), "GetStageInfo has unsupported stage");
-                break;
-        }
+            // TessCoord.uv values from it
+            for (uint32_t i = 0; i < 2; i++) {
+                const uint32_t extract_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                stage_info[i + 2] = extract_id;
+            }
+        } break;
+        default:
+            module_.InternalError(Name(), "GetStageInfo has unsupported stage");
+            break;
     }
 
     function.stage_info_id_ = module_.TakeNextId();

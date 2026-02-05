@@ -1705,11 +1705,6 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrumentor::ShaderMessageInfo &shader_info,
                                  const std::vector<uint32_t> &instructions) {
     switch (shader_info.stage_id) {
-        case glsl::kExecutionModel_MultiEntryPoint: {
-            ss << "Stage has multiple OpEntryPoint (";
-            ::spirv::GetExecutionModelNames(instructions, ss);
-            ss << ") and could not detect stage. ";
-        } break;
         case glsl::kExecutionModel_Vertex: {
             ss << "Stage = Vertex. Vertex Index = " << shader_info.stage_info_0 << " Instance Index = " << shader_info.stage_info_1
                << ". ";

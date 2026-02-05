@@ -80,7 +80,14 @@ struct Function {
     // Used to add functions building up SPIR-V the first time
     Function(Module& module, std::unique_ptr<Instruction> function_inst);
     // Used to link in new functions
-    explicit Function(Module& module) : id_(0), module_(module) {}
+    Function(Module& module) : id_(0), module_(module) {}
+
+    // Allow copying when we expend the FunctionList
+    // Note we only will emplace_back, never move/delete things from the list
+    Function(const Function&) = delete;
+    Function& operator=(const Function&) = delete;
+    Function(Function&& other) noexcept = default;
+    Function& operator=(Function&& other) noexcept = delete;
 
     void ToBinary(std::vector<uint32_t>& out) const;
 
@@ -121,7 +128,11 @@ struct Function {
     uint32_t stage_info_w_id_ = 0;
 
     // Will be updated once all functions are made and know if called.
-    // Lets us know if the function is never going to be called, therefor skipping instrumentation.
+    // Lets us know if the function is never going to be called, therefore skipping instrumentation.
+    //
+    // While spirv-opt should remove unused functions, this is for 2 cases
+    // 1. When using multiple entry points, we only want to instrument the functions for this target
+    // 2. Some real debug workflows will not have ran spirv-opt 100% and have lingering functions
     bool called_from_target_ = false;
 };
 
