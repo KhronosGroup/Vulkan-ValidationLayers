@@ -460,7 +460,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->create_info.type);
             metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
             as_metadatas_ptr[written_count] = metadata;
-            const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetDeviceAddressRange();
+            const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->device_address_range;
             as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
             as_buffer_addr_ranges_ptr[2 * written_count + 1] = as_buffer_addr_range.end;
 
@@ -494,7 +494,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             auto blas_built_in_cmd_buffer_ptr = (uint64_t*)(blas_built_in_cmd_buffer.offset_mapped_ptr);
             for (const auto [i, blas_built_in_cmd] : vvl::enumerate(blas_built_in_cmd_array)) {
                 const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =
-                    blas_built_in_cmd.blas->GetDeviceAddressRange();
+                    blas_built_in_cmd.blas->device_address_range;
                 blas_built_in_cmd_buffer_ptr[2 * i] = blas_built_in_cmd_buffer_addr_range.begin;
                 blas_built_in_cmd_buffer_ptr[2 * i + 1] = blas_built_in_cmd_buffer_addr_range.end;
             }
@@ -668,9 +668,9 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
                 std::stringstream error_ss;
                 if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {
-                    const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = (*as_found_it)->GetDeviceAddressRange();
+                    const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = (*as_found_it)->device_address_range;
                     const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =
-                        blas_built_in_cmd.blas->GetDeviceAddressRange();
+                        blas_built_in_cmd.blas->device_address_range;
                     const vvl::range<VkDeviceAddress> overlap =
                         blas_in_tlas_buffer_addr_range & blas_built_in_cmd_buffer_addr_range;
                     assert(overlap.non_empty());

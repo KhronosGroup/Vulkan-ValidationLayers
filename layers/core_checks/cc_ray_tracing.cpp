@@ -299,10 +299,10 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
         if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
             src_as_state && info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
             if (src_as_state->buffer_state && !src_as_state->buffer_state->sparse) {
-                const vvl::range<VkDeviceAddress> src_as_range = src_as_state->GetDeviceAddressRange();
+                const vvl::range<VkDeviceAddress> src_as_range = src_as_state->device_address_range;
 
                 if (dst_as_state && dst_as_state->VkHandle() != src_as_state->VkHandle()) {
-                    const vvl::range<VkDeviceAddress> dst_as_range = dst_as_state->GetDeviceAddressRange();
+                    const vvl::range<VkDeviceAddress> dst_as_range = dst_as_state->device_address_range;
 
                     if (const vvl::range<VkDeviceAddress> dst_as_src_as_intersection = dst_as_range & src_as_range;
                         dst_as_src_as_intersection.non_empty()) {
@@ -360,7 +360,7 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
 
         if (dst_as_state) {
             if (dst_as_state->buffer_state && !dst_as_state->buffer_state->sparse) {
-                const AddressRange dst_as_address_range = {dst_as_state->GetDeviceAddressRange(), info_i,
+                const AddressRange dst_as_address_range = {dst_as_state->device_address_range, info_i,
                                                            AddressRangeOrigin::DstAccelStruct};
                 const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, dst_as_address_range);
                 if (overlapped_address_range.has_value()) {
