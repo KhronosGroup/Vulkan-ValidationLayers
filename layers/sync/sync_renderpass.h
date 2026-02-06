@@ -97,7 +97,8 @@ class RenderPassAccessContext {
                                           const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     static bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
-                                      const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
+                                      const vvl::RenderPass &rp_state, const VkRect2D &render_area,
+                                      uint32_t render_pass_instance_id, uint32_t subpass,
                                       const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
@@ -139,7 +140,7 @@ class RenderPassAccessContext {
     AccessContext *CreateStoreResolveProxy() const;
 
 private:
-    AttachmentAccessInfo GetAttachmentAccessInfo(SyncOrdering ordering) const;
+    AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
   private:
     const vvl::RenderPass *rp_state_;

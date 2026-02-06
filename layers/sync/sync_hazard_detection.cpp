@@ -113,20 +113,19 @@ class HazardDetector {
     const AccessContext &access_context_;
 };
 
-class HazardDetectorWithOrdering {
+class HazardDetectorAttachment {
   public:
-    HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, const AccessContext &access_context,
-                               SyncFlags flags, bool detect_load_op_after_store_op_hazards)
+    HazardDetectorAttachment(SyncAccessIndex access_index, const AttachmentAccess &attachment_access,
+                             const AccessContext &access_context, bool detect_load_op_after_store_op_hazards)
         : access_info_(GetAccessInfo(access_index)),
-          ordering_rule_(ordering),
+          attachment_access_(attachment_access),
           access_context_(access_context),
-          flags_(flags),
           detect_load_op_after_store_op_hazards(detect_load_op_after_store_op_hazards) {}
 
     HazardResult Detect(const AccessMap::const_iterator &pos) const {
-        const OrderingBarrier &ordering = GetOrderingRules(ordering_rule_);
+        const OrderingBarrier &ordering = GetOrderingRules(attachment_access_.ordering);
         return DoDetect(access_context_, pos->second, [this, &ordering](const AccessState &access_state) {
-            return access_state.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid,
+            return access_state.DetectHazard(access_info_, ordering, attachment_access_, 0, kQueueIdInvalid,
                                              detect_load_op_after_store_op_hazards);
         });
     }
@@ -139,9 +138,8 @@ class HazardDetectorWithOrdering {
 
   private:
     const SyncAccessInfo &access_info_;
-    const SyncOrdering ordering_rule_;
+    const AttachmentAccess attachment_access_;
     const AccessContext &access_context_;
-    const SyncFlags flags_;
     const bool detect_load_op_after_store_op_hazards;
 };
 
@@ -313,79 +311,62 @@ HazardResult AccessContext::DetectHazard(const vvl::Buffer &buffer, SyncAccessIn
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
-HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
-                                         bool is_depth_sliced, SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
-    if (ordering_rule == SyncOrdering::kOrderingNone) {
-        HazardDetector detector(current_usage, *this);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    } else {
-        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0, false);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    }
+HazardResult AccessContext::DetectHazard(ImageRangeGen &range_gen, SyncAccessIndex current_usage) const {
+    HazardDetector detector(current_usage, *this);
+    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
-                                         const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
-                                         SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
-    if (ordering_rule == SyncOrdering::kOrderingNone) {
-        HazardDetector detector(current_usage, *this);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    } else {
-        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0,
-                                            validator->syncval_settings.load_op_after_store_op_validation);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    }
+                                         SyncAccessIndex current_usage) const {
+    const auto &sub_state = SubState(image);
+    HazardDetector detector(current_usage, *this);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
+    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
+}
+
+HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                                         const VkOffset3D &offset, const VkExtent3D &extent, SyncAccessIndex current_usage) const {
+    const auto &sub_state = SubState(image);
+    HazardDetector detector(current_usage, *this);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
+    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const {
     HazardDetector detector(current_usage, *this);
-    auto range_gen = MakeImageRangeGen(image_view);
+    ImageRangeGen range_gen = MakeImageRangeGen(image_view);
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                                         SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, 0,
-                                        validator->syncval_settings.load_op_after_store_op_validation);
+                                         SyncAccessIndex current_usage) const {
+    HazardDetector detector(current_usage, *this);
     ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
-HazardResult AccessContext::DetectHazard(const ImageRangeGen &const_range_gen, SyncAccessIndex current_usage,
-                                         const SyncOrdering ordering_rule, SyncFlags flags) const {
-    ImageRangeGen range_gen(const_range_gen);
-    if (ordering_rule == SyncOrdering::kOrderingNone) {
-        HazardDetector detector(current_usage, *this);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    } else {
-        HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
-                                            validator->syncval_settings.load_op_after_store_op_validation);
-        return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-    }
-}
-
-HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                         SyncAccessIndex current_usage, SyncOrdering ordering_rule, SyncFlags flags) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, *this, flags,
-                                        validator->syncval_settings.load_op_after_store_op_validation);
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
-    if (!attachment_gen) {
-        return {};
-    }
-    ImageRangeGen range_gen(*attachment_gen);
+HazardResult AccessContext::DetectAttachmentHazard(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
+                                                   const AttachmentAccess &attachment_access) const {
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this,
+                                      validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
-HazardResult AccessContext::DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                                         SyncAccessIndex current_usage) const {
-    const auto image = static_cast<const vvl::Image *>(resource.image_state.get());
-    const auto &sub_state = SubState(*image);
-    const auto offset = resource.GetEffectiveImageOffset(vs_state);
-    const auto extent = resource.GetEffectiveImageExtent(vs_state);
-    ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
-    HazardDetector detector(current_usage, *this);
+HazardResult AccessContext::DetectAttachmentHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                                                   bool is_depth_sliced, SyncAccessIndex current_usage,
+                                                   const AttachmentAccess &attachment_access) const {
+    const auto &sub_state = SubState(image);
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this, false);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, is_depth_sliced);
+    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
+}
+
+HazardResult AccessContext::DetectAttachmentHazard(const vvl::ImageView &image_view, const VkOffset3D &offset,
+                                                   const VkExtent3D &extent, SyncAccessIndex current_usage,
+                                                   const AttachmentAccess &attachment_access) const {
+    HazardDetectorAttachment detector(current_usage, attachment_access, *this,
+                                      validator->syncval_settings.load_op_after_store_op_validation);
+    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
@@ -489,6 +470,17 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
         }
     }
     return {};
+}
+
+HazardResult AccessContext::DetectVideoHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
+                                              SyncAccessIndex current_usage) const {
+    const vvl::Image &image = *resource.image_state.get();
+    const auto &sub_state = SubState(image);
+    const auto offset = resource.GetEffectiveImageOffset(vs_state);
+    const auto extent = resource.GetEffectiveImageExtent(vs_state);
+    ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
+    HazardDetector detector(current_usage, *this);
+    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const AccessRange &range) const {
