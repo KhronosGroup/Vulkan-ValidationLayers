@@ -65,7 +65,6 @@ enum SyncHazard {
 
 enum class SyncOrdering : uint8_t {
     kOrderingNone = 0,
-    kNonAttachment = kOrderingNone,
     kColorAttachment = 1,
     kDepthStencilAttachment = 2,
     kRaster = 3,

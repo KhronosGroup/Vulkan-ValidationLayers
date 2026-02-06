@@ -532,8 +532,8 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
     return pos;
 }
 
-void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const AccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, const AccessRange &range,
+                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
     assert(range.valid());
     assert(!finalized_);
 
@@ -551,7 +551,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
     const AccessRange buffer_range = range + base_address;
 
     auto pos = access_state_map_.LowerBound(buffer_range.begin);
-    DoUpdateAccessState(pos, buffer_range, current_usage, ordering_rule, tag_ex, flags);
+    DoUpdateAccessState(pos, buffer_range, current_usage, SyncOrdering::kOrderingNone, tag_ex, flags);
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
