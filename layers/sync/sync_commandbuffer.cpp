@@ -1152,7 +1152,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             const std::string resource_description = ss.str();
             const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
             const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
-                                                                    aspects_to_clear, clear_rect_index, clear_rect);
+                                                                    clear_attachment.aspectMask, clear_rect_index, clear_rect);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
@@ -1175,7 +1175,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             const std::string resource_description = ss.str();
             const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
             const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
-                                                                    aspects_to_clear, clear_rect_index, clear_rect);
+                                                                    clear_attachment.aspectMask, clear_rect_index, clear_rect);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
