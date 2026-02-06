@@ -336,22 +336,22 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     }
 
     // Need to hazard detect load operations vs. the attachment views
-    const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-    for (uint32_t i = 0; i < attachment_count; i++) {
+    for (size_t i = 0; i < info.attachments.size(); i++) {
         const auto &attachment = info.attachments[i];
         const SyncAccessIndex load_index = attachment.GetLoadUsage();
         if (load_index == SYNC_ACCESS_INDEX_NONE) {
             continue;
         }
 
-        const HazardResult hazard =
-            GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering(), SyncFlag::kLoadOp);
+        const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
+        ImageRangeGen range_gen = attachment.view_gen;
+        const HazardResult hazard = GetCurrentAccessContext()->DetectAttachmentHazard(range_gen, load_index, attachment_access);
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
             std::ostringstream ss;
             ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
-            ss << attachment.GetLocation(error_obj.location, i).Fields();
+            ss << attachment.GetLocation(error_obj.location, uint32_t(i)).Fields();
             ss << " (" << sync_state_.FormatHandle(attachment.view->Handle());
             ss << ", loadOp " << string_VkAttachmentLoadOp(attachment.info.loadOp) << ")";
             std::string resource_description = ss.str();
@@ -379,9 +379,8 @@ void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cm
                 continue;
             }
             ImageRangeGen range_gen = attachment.view_gen;
-            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(attachment.GetOrdering());
-            GetCurrentAccessContext()->UpdateAccessState(range_gen, load_index, attachment_access, ResourceUsageTagEx{tag},
-                                                         SyncFlag::kLoadOp);
+            const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
+            GetCurrentAccessContext()->UpdateAccessState(range_gen, load_index, attachment_access, ResourceUsageTagEx{tag});
         }
     }
     dynamic_rendering_info_ = std::move(cmd_state.info);
@@ -409,7 +408,9 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             const bool is_color = attachment.type == AttachmentType::kColor;
             const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
 
-            HazardResult hazard = current_context_->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
+            const AttachmentAccess resolve_read_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveRead);
+            ImageRangeGen view_gen = attachment.view_gen;
+            HazardResult hazard = current_context_->DetectAttachmentHazard(view_gen, kResolveRead, resolve_read_access);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
@@ -426,7 +427,9 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                 }
             }
 
-            hazard = current_context_->DetectHazard(*attachment.resolve_gen, kResolveWrite, kResolveOrder);
+            const AttachmentAccess resolve_write_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveWrite);
+            ImageRangeGen resolve_gen = *attachment.resolve_gen;
+            hazard = current_context_->DetectAttachmentHazard(resolve_gen, kResolveWrite, resolve_write_access);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.resolve_view->Handle());
 
@@ -446,8 +449,10 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
 
         const SyncAccessIndex store_access = attachment.GetStoreUsage();
         if (store_access != SYNC_ACCESS_INDEX_NONE) {
-            HazardResult hazard =
-                current_context_->DetectHazard(attachment.view_gen, store_access, kStoreOrder, SyncFlag::kStoreOp);
+            const AttachmentAccess attachment_access = GetAttachmentAccess(kStoreOrder, AttachmentAccessType::StoreOp);
+            ImageRangeGen view_gen = attachment.view_gen;
+
+            HazardResult hazard = current_context_->DetectAttachmentHazard(view_gen, store_access, attachment_access);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
@@ -484,22 +489,21 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
         if (attachment.resolve_gen) {
             const bool is_color = attachment.type == AttachmentType::kColor;
             const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
-            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(kResolveOrder);
 
+            const AttachmentAccess resolve_read_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveRead);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, kResolveRead, attachment_access, ResourceUsageTagEx{store_tag});
+            access_context.UpdateAccessState(view_gen, kResolveRead, resolve_read_access, ResourceUsageTagEx{store_tag});
 
+            const AttachmentAccess resolve_write_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveWrite);
             ImageRangeGen resolve_gen = *attachment.resolve_gen;
-            access_context.UpdateAccessState(resolve_gen, kResolveWrite, attachment_access, ResourceUsageTagEx{store_tag});
+            access_context.UpdateAccessState(resolve_gen, kResolveWrite, resolve_write_access, ResourceUsageTagEx{store_tag});
         }
 
         const SyncAccessIndex store_index = attachment.GetStoreUsage();
         if (store_index != SYNC_ACCESS_INDEX_NONE) {
-            AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(kStoreOrder);
-
+            const AttachmentAccess attachment_access = GetAttachmentAccess(kStoreOrder, AttachmentAccessType::StoreOp);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag},
-                                             SyncFlag::kStoreOp);
+            access_context.UpdateAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag});
         }
     }
     current_render_pass_instance_id_++;
@@ -579,9 +583,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->render_area.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->render_area.offset);
-                            // Input attachments are subject to raster ordering rules
-                            hazard =
-                                current_context_->DetectHazard(*img_view_state, offset, extent, sync_index, SyncOrdering::kRaster);
+                            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kRaster);
+                            hazard = current_context_->DetectAttachmentHazard(*img_view_state, offset, extent, sync_index,
+                                                                              attachment_access);
                         } else {
                             hazard = current_context_->DetectHazard(*img_view_state, sync_index);
                         }
@@ -738,7 +742,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->render_area.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->render_area.offset);
-                            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kRaster);
+                            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kRaster);
 
                             ImageRangeGen range_gen(MakeImageRangeGen(*img_view_state, offset, extent));
                             current_context_->UpdateAccessState(range_gen, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
@@ -938,12 +942,18 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
 
     const DynamicRenderingInfo &info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
-        if (output_location >= info.info.colorAttachmentCount) continue;
+        if (output_location >= info.info.colorAttachmentCount) {
+            continue;
+        }
         const auto &attachment = info.attachments[output_location];
-        if (!attachment.IsWriteable(last_bound_state)) continue;
+        if (!attachment.IsWriteable(last_bound_state)) {
+            continue;
+        }
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
+        ImageRangeGen view_gen = attachment.view_gen;
+        HazardResult hazard =
+            access_context.DetectAttachmentHazard(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
 
-        HazardResult hazard = access_context.DetectHazard(attachment.view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                          SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
@@ -964,10 +974,11 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         bool writeable = attachment.IsWriteable(last_bound_state);
 
         if (writeable) {
-            HazardResult hazard =
-                access_context.DetectHazard(attachment.view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                            SyncOrdering::kDepthStencilAttachment);
-            // Depth stencil Hazard check
+            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
+            ImageRangeGen view_gen = attachment.view_gen;
+            HazardResult hazard = access_context.DetectAttachmentHazard(
+                view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
@@ -1007,8 +1018,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         if (!attachment.IsWriteable(last_bound_state)) {
             continue;
         }
-        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kColorAttachment);
-
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
         ImageRangeGen view_gen = attachment.view_gen;
         access_context.UpdateAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
                                          ResourceUsageTagEx{tag});
@@ -1025,7 +1035,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         bool writeable = attachment.IsWriteable(last_bound_state);
 
         if (writeable) {
-            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kDepthStencilAttachment);
+            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             ImageRangeGen view_gen = attachment.view_gen;
             access_context.UpdateAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
                                              ResourceUsageTagEx{tag});
@@ -1137,9 +1147,10 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
         // and if PLANE aspect is included then only one is allowed.
         assert(GetBitSetCount(aspects_to_clear) == 1);
 
-        HazardResult hazard = current_context_->DetectHazard(
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
+        HazardResult hazard = current_context_->DetectAttachmentHazard(
             *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
-            SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
+            SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
         if (hazard.IsHazard()) {
             std::ostringstream ss;
             ss << string_VkImageAspectFlags(clear_attachment.aspectMask);
@@ -1157,11 +1168,13 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
     }
 
     if (aspects_to_clear & kDepthStencilAspects) {
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
+
         // vkCmdClearAttachments depth/stencil writes are executed by the EARLY_FRAGMENT_TESTS_BIT and LATE_FRAGMENT_TESTS_BIT
         // stages. The implementation tracks the most recent access, which happens in the LATE_FRAGMENT_TESTS_BIT stage.
-        HazardResult hazard = current_context_->DetectHazard(
+        HazardResult hazard = current_context_->DetectAttachmentHazard(
             *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
-            SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kDepthStencilAttachment);
+            SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
 
         if (hazard.IsHazard()) {
             std::ostringstream ss;
@@ -1196,12 +1209,12 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
 
     if (aspects_to_clear & kColorAspects) {
         assert((aspects_to_clear & kDepthStencilAspects) == 0);
-        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kColorAttachment);
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
         current_context_->UpdateAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
                                             ResourceUsageTagEx{tag});
     } else {
         assert((aspects_to_clear & kColorAspects) == 0);
-        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kDepthStencilAttachment);
+        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
         current_context_->UpdateAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
                                             ResourceUsageTagEx{tag});
     }
@@ -1388,8 +1401,9 @@ void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
     sync_ops_.emplace_back(tag, std::move(sync_op));
 }
 
-AttachmentAccessInfo CommandBufferAccessContext::GetAttachmentAccessInfo(SyncOrdering ordering) {
-    AttachmentAccessInfo attachment_access;
+AttachmentAccess CommandBufferAccessContext::GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type) const {
+    AttachmentAccess attachment_access;
+    attachment_access.type = type;
     attachment_access.ordering = ordering;
     attachment_access.render_pass_instance_id = current_render_pass_instance_id_;
     attachment_access.subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;

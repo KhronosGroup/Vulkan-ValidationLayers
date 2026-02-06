@@ -544,8 +544,8 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
     bool skip = false;
     // Tag the presented images so record doesn't have to know the tagging scheme
     for (const PresentedImage& presented : presented_images) {
-        HazardResult hazard =
-            access_context_.DetectHazard(presented.range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
+        ImageRangeGen range_gen = presented.range_gen;
+        HazardResult hazard = access_context_.DetectHazard(range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
         if (hazard.IsHazard()) {
             const VulkanTypedHandle swapchain_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
             const VulkanTypedHandle image_handle = vvl::StateObject::Handle(presented.image);

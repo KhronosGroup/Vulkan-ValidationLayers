@@ -456,7 +456,7 @@ AccessMap::iterator AccessContext::ResolveGapRecursePrev(const AccessRange &gap_
 // The passed pos must either be a lower bound (can be the end iterator) or be strictly less than the range.
 // Map entries that intersect range.begin or range.end are split at the intersection point.
 AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range,
-                                                       SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access,
+                                                       SyncAccessIndex access_index, const AttachmentAccess &attachment_access,
                                                        ResourceUsageTagEx tag_ex, SyncFlags flags) {
     assert(range.non_empty());
     const SyncAccessInfo &access_info = GetAccessInfo(access_index);
@@ -551,7 +551,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
     const AccessRange buffer_range = range + base_address;
 
     auto pos = access_state_map_.LowerBound(buffer_range.begin);
-    DoUpdateAccessState(pos, buffer_range, current_usage, AttachmentAccessInfo::NonAttachment(), tag_ex, flags);
+    DoUpdateAccessState(pos, buffer_range, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags);
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex,
@@ -562,19 +562,19 @@ void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex 
     }
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = DoUpdateAccessState(pos, *range_gen, current_usage, AttachmentAccessInfo::NonAttachment(), tag_ex, flags);
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, AttachmentAccess::NonAttachment(), tag_ex, flags);
     }
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
-                                      const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+                                      const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex) {
     assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, flags);
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, 0);
     }
 }
 
@@ -680,7 +680,7 @@ AttachmentViewGen::AttachmentViewGen(const vvl::ImageView *image_view, const VkO
     }
 }
 
-const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
+const ImageRangeGen &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
     static_assert(Gen::kGenSize == 4, "Function written with this assumption");
     // If the view is a depth only view, then the depth only portion of the render area is simply the render area.
     // If the view is a depth stencil view, then the depth only portion of the render area will be a subset,
@@ -690,7 +690,8 @@ const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentVie
     if (depth_only || stencil_only) {
         type = Gen::kRenderArea;
     }
-    return gen_store_[type];
+    assert(gen_store_[type].has_value());
+    return *gen_store_[type];
 }
 
 AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {

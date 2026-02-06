@@ -200,7 +200,7 @@ class AttachmentViewGen {
     };
     AttachmentViewGen(const vvl::ImageView *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
     const vvl::ImageView *GetViewState() const { return view_; }
-    const std::optional<ImageRangeGen> &GetRangeGen(Gen type) const;
+    const ImageRangeGen &GetRangeGen(Gen type) const;
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:
@@ -282,8 +282,8 @@ class AccessContext {
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, const AccessRange &range,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, const AttachmentAccessInfo &attachment_access,
-                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
+                           ResourceUsageTagEx tag_ex);
 
     void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
@@ -362,22 +362,24 @@ class AccessContext {
     //
     HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const;
 
-    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
-                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
+    HazardResult DetectHazard(ImageRangeGen &range_gen, SyncAccessIndex current_usage) const;
+
+    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                              SyncAccessIndex current_usage) const;
     HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                              const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
+                              const VkExtent3D &extent, SyncAccessIndex current_usage) const;
 
     HazardResult DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const;
     HazardResult DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
-
-    HazardResult DetectHazard(const ImageRangeGen &const_range_gen, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule = SyncOrdering::kOrderingNone, SyncFlags flags = 0) const;
-    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
-                              SyncOrdering ordering_rule, SyncFlags flags = 0) const;
-    HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                               SyncAccessIndex current_usage) const;
+
+    HazardResult DetectAttachmentHazard(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
+                                        const AttachmentAccess &attachment_access) const;
+    HazardResult DetectAttachmentHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
+                                        bool is_depth_sliced, SyncAccessIndex current_usage,
+                                        const AttachmentAccess &attachment_access) const;
+    HazardResult DetectAttachmentHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
+                                        SyncAccessIndex current_usage, const AttachmentAccess &attachment_access) const;
 
     HazardResult DetectImageBarrierHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                           VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
@@ -394,6 +396,9 @@ class AccessContext {
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
+
+    HazardResult DetectVideoHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
+                                   SyncAccessIndex current_usage) const;
     HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const AccessRange &range) const;
 
   private:
@@ -422,8 +427,7 @@ class AccessContext {
     AccessMap::iterator ResolveGapRecursePrev(const AccessRange &gap_range, AccessMap::iterator pos_hint);
 
     AccessMap::iterator DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range, SyncAccessIndex access_index,
-                                            const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
-                                            SyncFlags flags);
+                                            const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags);
 
     // A recursive range walkers for hazard detection, first for the current context
     // and then walks the DAG of the contexts for subpasses
