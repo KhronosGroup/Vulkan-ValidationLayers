@@ -38,8 +38,9 @@ using InstructionIt = InstructionList::iterator;
 // Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering Instructions
 struct BasicBlock {
     // Used when loading initial SPIR-V
-    BasicBlock(std::unique_ptr<Instruction> label, Function& function);
-    BasicBlock(Module& module, Function& function);
+    BasicBlock(std::unique_ptr<Instruction> label);
+    // Used for times we need to inject a new block
+    BasicBlock(Module& module, Function* function);
 
     void ToBinary(std::vector<uint32_t>& out) const;
 
@@ -57,7 +58,9 @@ struct BasicBlock {
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it = nullptr);
 
     InstructionList instructions_;
-    Function& function_;
+
+    // Set after all functions are discovered (so can assume will be non-null when needed)
+    Function* function_ = nullptr;
 
     // For blocks that are a Loop hader, points to the Merge Target
     uint32_t loop_header_merge_target_ = 0;
