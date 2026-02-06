@@ -548,8 +548,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         const VkAttachmentDescription2 *attachment = attachment_info.attachment;
         const spirv::StageInterfaceVariable *output = attachment_info.output;
         if (attachment && !output) {
-            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-            // Need to understand when undefined or not
+            // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+            // If there is no output variable declared, the attachment is unaffected
         } else if (!attachment && output) {
             // With alphaToCoverage, the write is not "discarded" as the alpha mask is still updated
             if (!alpha_to_coverage_enabled || location != 0) {
@@ -561,12 +561,27 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                           location, location);
             }
         } else if (attachment && output) {
-            const uint32_t attachment_type = spirv::GetFormatType(attachment->format);
-            const uint32_t output_type = module_state.GetNumericType(output->type_id);
+            if (!output->IsWrittenTo()) {
+                const auto& attachment_states = pipeline.AttachmentStates();
+                if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
+                    skip |= LogUndefinedValue(
+                        "Undefined-Value-OutputNotWritten", module_state.handle(), create_info_loc,
+                        "Inside the fragment shader, the output Locaiton %" PRIu32
+                        " was never written to. This means anything future VkSubpassDescription::pColorAttachments[%" PRIu32
+                        "] will have undefined values written to it.\nThe pipeline was created with "
+                        "pColorBlendState->pAttachments[%" PRIu32 "].colorWriteMask set to 0x%" PRIx32
+                        " so setting it to zero is one way to prevent undefined values overriding your color attachment.\nIf you have the output variable, but are not using it on purpose, removing it from being declared in the shader will remove the "
+                        "undefined value warning.",
+                        location, location, location, attachment_states[location].colorWriteMask);
+                }
+            } else {
+                const uint32_t attachment_type = spirv::GetFormatType(attachment->format);
+                const uint32_t output_type = module_state.GetNumericType(output->type_id);
 
-            // Type checking
-            if ((output_type & attachment_type) == 0) {
-                skip |= LogUndefinedValue("Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
+                // Type checking
+                if ((output_type & attachment_type) == 0) {
+                    skip |=
+                        LogUndefinedValue("Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
                                           "Inside the fragment shader, it writes to output Location %" PRIu32
                                           " with a numeric type of %s but VkSubpassDescription::pColorAttachments[%" PRIu32
                                           "] pointing at VkRenderPassCreateInfo::pAttachments[%" PRIu32
@@ -575,6 +590,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                           "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
                                           location, spirv::string_NumericType(output_type), location, reference->attachment,
                                           string_VkFormat(attachment->format), spirv::string_NumericType(attachment_type));
+                }
             }
         } else {            // !attachment && !output
             assert(false);  // at least one exists in the map
@@ -654,8 +670,8 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
         uint32_t mapped_loc = attachment_info.mapped_location.value_or(location);
 
         if (has_attachment && !output) {
-            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-            // Need to understand when undefined or not
+            // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+            // If there is no output variable declared, the attachment is unaffected
         } else if (!has_attachment && output) {
             // With alphaToCoverage, the write is not "discarded" as the alpha mask is still updated
             if (!last_bound_state.IsAlphaToCoverageEnable() || location != 0) {
@@ -686,7 +702,6 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
             }
         } else if (has_attachment && output) {
             const auto image_view_state = Get<vvl::ImageView>(attachment_info.rendering_attachment_info->imageView);
-            const uint32_t attachment_type = spirv::GetFormatType(image_view_state->create_info.format);
 
             // TODO - This create helper to do this via LastBound (and find other places doing similar thing)
             const spirv::Module *module_state = nullptr;
@@ -700,20 +715,53 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 }
             }
             ASSERT_AND_CONTINUE(module_state);
-            const uint32_t output_type = module_state->GetNumericType(output->type_id);
 
-            // Type checking
-            if ((output_type & attachment_type) == 0) {
-                const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                skip |= LogUndefinedValue(
-                    "Undefined-Value-ShaderFragmentOutputMismatch-DynamicRendering", objlist, loc,
-                    "Inside the fragment shader, it writes to output Location %s with a numeric type of %s but "
-                    "VkRenderingInfo::pColorAttachments[%" PRIu32
-                    "].imageView is created with %s (numeric type of %s) which does not match and the "
-                    "resulting values written will be undefined.\n"
-                    "Spec information at https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
-                    DescribeMappedLocation(location, mapped_loc).c_str(), spirv::string_NumericType(output_type), mapped_loc,
-                    string_VkFormat(image_view_state->create_info.format), spirv::string_NumericType(attachment_type));
+            if (!output->IsWrittenTo()) {
+                const VkColorComponentFlags color_write_mask = last_bound_state.GetColorWriteMask(location);
+                if (color_write_mask != 0) {
+                    std::ostringstream msg;
+                    msg << "Inside the fragment shader, the output Locaiton " << location
+                        << " was never written to. This means the bound VkRenderingInfo::pColorAttachments[" << location
+                        << "].imageView (" << FormatHandle(attachment_info.rendering_attachment_info->imageView)
+                        << ") will have undefined values written to it.\n";
+                    if (last_bound_state.pipeline_state) {
+                        msg << "The pipeline was created with pColorBlendState->pAttachments[" << location
+                            << "].colorWriteMask set to ";
+                    } else {
+                        msg << "The last call to vkCmdSetColorWriteMaskEXT for attachment " << location
+                            << " set the colorWriteMask to ";
+                    }
+                    msg << "0x" << std::hex << (uint32_t)color_write_mask
+                        << " so setting it to zero is one way to prevent undefined values overriding your color attachment";
+                    if (color_attachment_count > 1) {
+                        msg << " (this will require independentBlend, which is basically supported everywhere, to have some "
+                               "attachments "
+                               "have different colorWriteMask)";
+                    }
+                    msg << ".\nIf you have the output variable, but are not using it on purpose, removing it from being declared in the shader will "
+                           "remove the undefined value warning";
+                    const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                    skip |= LogUndefinedValue("Undefined-Value-OutputNotWritten-DynamicRendering", objlist, loc, "%s",
+                                              msg.str().c_str());
+                }
+            } else {
+                const uint32_t attachment_type = spirv::GetFormatType(image_view_state->create_info.format);
+                const uint32_t output_type = module_state->GetNumericType(output->type_id);
+
+                // Type checking
+                if ((output_type & attachment_type) == 0) {
+                    const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                    skip |= LogUndefinedValue(
+                        "Undefined-Value-ShaderFragmentOutputMismatch-DynamicRendering", objlist, loc,
+                        "Inside the fragment shader, it writes to output Location %s with a numeric type of %s but "
+                        "VkRenderingInfo::pColorAttachments[%" PRIu32
+                        "].imageView is created with %s (numeric type of %s) which does not match and the "
+                        "resulting values written will be undefined.\n"
+                        "Spec information at "
+                        "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
+                        DescribeMappedLocation(location, mapped_loc).c_str(), spirv::string_NumericType(output_type), mapped_loc,
+                        string_VkFormat(image_view_state->create_info.format), spirv::string_NumericType(attachment_type));
+                }
             }
         } else {  // !attachment && !output
             // Means empty fragment shader and no color attachments

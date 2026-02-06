@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1715,8 +1715,7 @@ TEST_F(NegativeShaderInterface, PackingInsideArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
+TEST_F(NegativeShaderInterface, FragmentOutputNotWritten) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
         "attachments");
@@ -1724,26 +1723,33 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    // Nothing is written
-    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const char *fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 uFragColor; // not written to
+        void main() {}
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.cb_attachments_.colorWriteMask = 0xf;  // all components
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRendering) {
+TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRendering) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
-    // Nothing is written
-    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const char *fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 uFragColor; // not written to
+        void main() {}
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkFormat color_formats = VK_FORMAT_B8G8R8A8_UNORM;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
@@ -1758,15 +1764,14 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderin
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten-DynamicRendering");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderingShaderObject) {
+TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRenderingShaderObject) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1774,9 +1779,15 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderin
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
+    const char *fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 uFragColor; // not written to
+        void main() {}
+    )glsl";
+
     const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kMinimalShaderGlsl));
+                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -1784,7 +1795,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderin
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     VkColorComponentFlags color_write_mask = 0xf;  // all
     vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0, 1, &color_write_mask);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten-DynamicRendering");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
@@ -1792,6 +1803,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderin
 }
 
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
+// also https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
 TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1827,12 +1839,13 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArray) {
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blends;
     pipe.gp_ci_.renderPass = rp;
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923
+// also https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
 TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArrayDynamicRendering) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1880,7 +1893,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArrayDynamicRen
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten-DynamicRendering");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
@@ -2287,8 +2300,7 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachment) {
+TEST_F(NegativeShaderInterface, MultipleFragmentAttachment) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923");
     RETURN_IF_SKIP(Init());
 
@@ -2296,6 +2308,7 @@ TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachment) {
         #version 450
         layout(location=0) out vec4 color0;
         layout(location=1) out vec4 color1;
+        layout(location=2) out vec4 color2;
         void main() {
            color0 = vec4(1.0);
            color1 = vec4(1.0);
@@ -2331,13 +2344,12 @@ TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachment) {
     pipe.cb_ci_.attachmentCount = 3;
     pipe.cb_ci_.pAttachments = color_blends;
     pipe.gp_ci_.renderPass = rp;
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
-TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachmentDynamicRendering) {
+TEST_F(NegativeShaderInterface, MultipleFragmentAttachmentDynamicRendering) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
@@ -2347,6 +2359,7 @@ TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachmentDynamicRender
         #version 450
         layout(location=0) out vec4 color0;
         layout(location=1) out vec4 color1;
+        layout(location=2) out vec4 color2;
         void main() {
            color0 = vec4(1.0);
            color1 = vec4(1.0);
@@ -2389,7 +2402,7 @@ TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachmentDynamicRender
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-OutputNotWritten-DynamicRendering");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
