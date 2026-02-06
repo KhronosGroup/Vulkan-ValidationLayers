@@ -1049,6 +1049,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
         const auto num_set_layouts = std::max(pre_raster_count, frag_shader_count);
         for (uint32_t i = 0; i < num_set_layouts; ++i) {
+            if (!not_independent_sets) {
+                // this loop is only for when no VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8055
+                break;
+            }
+
             // if using VK_NULL_HANDLE, index into set_layouts will be null
             const auto pre_raster_dsl = i < pre_raster_count ? pre_raster_set_layouts.list[i] : nullptr;
             const auto fs_dsl = i < frag_shader_count ? fs_set_layouts.list[i] : nullptr;
@@ -1087,8 +1093,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     } else {
                         vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758";
                         msg << "is linking libraries with pre-raster and fragment shader state. The descriptor set "
-                               "layout at index "
-                            << i << " in pSetLayouts from " << pre_raster_layout_handle_str << " in the pre-raster state is NULL. "
+                               "layout at pSetLayouts["
+                            << i << "] from " << pre_raster_layout_handle_str << " in the pre-raster state is NULL. "
                             << "However, the descriptor set layout at the same index (" << i << ") in " << fs_layout_handle_str
                             << " is non-null with bindings (" << string_VkShaderStageFlags(fs_binding.stageFlags)
                             << ") that overlap with pre-raster state.";
@@ -1133,8 +1139,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     } else {
                         vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758";
                         msg << "is linking libraries with pre-raster and fragment shader state. The descriptor set "
-                               "layout at index "
-                            << i << " in pSetLayouts from " << fs_layout_handle_str << " in the fragment shader state is NULL. "
+                               "layout at pSetLayouts["
+                            << i << "] in pSetLayouts from " << fs_layout_handle_str << " in the fragment shader state is NULL. "
                             << "However, the descriptor set layout at the same index (" << i << ") in "
                             << pre_raster_layout_handle_str << " in the pre-raster state is non-null with bindings ("
                             << string_VkShaderStageFlags(pre_raster_binding.stageFlags)
@@ -1169,15 +1175,15 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 } else {
                     vuid = "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06681";
                     msg << "is linking libraries with pre-raster and fragment shader state. The descriptor set "
-                           "layout at index "
-                        << i << " in pSetLayouts from " << fs_layout_handle_str << " in the fragment shader state is NULL. "
+                           "layout at pSetLayouts["
+                        << i << "] from " << fs_layout_handle_str << " in the fragment shader state is NULL. "
                         << "However, the descriptor set layout at the same index (" << i << ") in " << pre_raster_layout_handle_str
                         << " in the pre-raster state is NULL too.";
                 }
                 LogObjectList objlist(pre_raster_info.layout->Handle(), frag_shader_info.layout->Handle());
                 skip |= LogError(vuid, objlist, create_info_loc, "%s", msg.str().c_str());
                 break;
-            } else if (not_independent_sets && !pipeline.descriptor_heap_mode) {
+            } else if (!pipeline.descriptor_heap_mode) {
                 // both handles are valid, but without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, need to check everything
                 // is identically defined
                 if (pre_raster_dsl->GetCreateFlags() != fs_dsl->GetCreateFlags()) {

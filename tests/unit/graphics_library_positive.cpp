@@ -1981,6 +1981,50 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveGraphicsLibrary, IndependentSetLayoutNullMismatch) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4660");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    // Prepare descriptors
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds2(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds2.layout_}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+        link_info.libraryCount = 1;
+        link_info.pLibraries = &pre_raster_lib.Handle();
+
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
+
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+}
+
 TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9870");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
