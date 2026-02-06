@@ -223,7 +223,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
 }
 
 void DebugPrintfPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    Function& block_func = block.function_;
+    Function& block_func = *block.function_;
     // need to call to get the underlying 4 IDs (simpler to pass in as 4 uint then a uvec4)
     GetStageInfo(block_func, block, *inst_it);
 
@@ -266,7 +266,7 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_
         if (constant) {
             argument_inst = &constant->inst_;
         } else {
-            argument_inst = block.function_.FindInstruction(argument_id);
+            argument_inst = block_func.FindInstruction(argument_id);
         }
         assert(argument_inst);  // argument is either constant or found within function block
 
@@ -375,6 +375,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         type_manager_.AddType(std::move(new_inst), SpvType::kFunction);
     }
 
+    // We could be doing this at linking time, but since this is the last pass, can add here
     Function& new_function = module_.functions_.emplace_back(module_);
     std::vector<uint32_t> function_param_ids;
     {
@@ -494,13 +495,20 @@ bool DebugPrintfPass::Instrument() {
         return false;  // no printf strings found, early return
     }
 
-    for (const auto& function : module_.functions_) {
+    for (Function& function : module_.functions_) {
         if (!function.called_from_target_ && !function.AddedFromInstrumentation()) {
             continue;
         }
 
         for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
+
+            // This is a silly hack, sorry
+            // We use to only add the |functions_| at parsing and linking.
+            // But in order to run debug printf on our own GLSL, we do this pass AFTER linking, which means the |functions_| list
+            // could have been expanded and now the |function_| reference in |block| is dangling, but just setting it here, before
+            // potentially updating the block is a simple-enough-fix
+            current_block.function_ = &function;
 
             cf_.Update(current_block);
             if (debug_disable_loops_ && cf_.in_loop) continue;

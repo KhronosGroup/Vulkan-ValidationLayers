@@ -63,7 +63,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
             // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
             // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
             uint32_t image_id = meta.target_instruction->Operand(0);
-            const Instruction* sampled_image_inst = block.function_.FindInstruction(image_id);
+            const Instruction* sampled_image_inst = block.function_->FindInstruction(image_id);
             // TODO - Add tests to understand what else can be here other then OpSampledImage
             if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
                 const uint32_t type_id = sampled_image_inst->TypeId();
@@ -78,7 +78,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
                 } else {
                     copy_object_map_.emplace(image_id, copy_id);
                     // slower, but need to guarantee it is placed after a OpSampledImage
-                    block.function_.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id);
+                    block.function_->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id);
                 }
             }
         }
