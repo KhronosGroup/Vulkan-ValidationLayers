@@ -1129,13 +1129,11 @@ void SyncValidator::RecordIndirectBuffer(CommandBufferAccessContext &cb_context,
     if (drawCount == 1 || stride == size) {
         if (drawCount > 1) size *= drawCount;
         const AccessRange range = MakeRange(offset, size);
-        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
-                                  tag_ex);
+        context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag_ex);
     } else {
         for (uint32_t i = 0; i < drawCount; ++i) {
             const AccessRange range = MakeRange(offset + i * stride, size);
-            context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
-                                      tag_ex);
+            context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag_ex);
         }
     }
 }
@@ -1162,8 +1160,7 @@ void SyncValidator::RecordCountBuffer(CommandBufferAccessContext &cb_context, co
     const AccessRange range = MakeRange(offset, 4);
     const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, count_buf_state->Handle());
     AccessContext &context = *cb_context.GetCurrentAccessContext();
-    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
-                              tag_ex);
+    context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag_ex);
 }
 
 bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -1842,8 +1839,7 @@ void SyncValidator::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer comman
     if (auto dst_buffer = Get<vvl::Buffer>(dstBuffer)) {
         const AccessRange range = MakeRange(dstOffset, 4);
         const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
-        context.UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex,
-                                  SyncFlag::kMarker);
+        context.UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range, tag_ex, SyncFlag::kMarker);
     }
 }
 
@@ -2295,7 +2291,7 @@ void SyncValidator::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comma
     if (dst_buffer) {
         const AccessRange range = MakeRange(dstOffset, 4);
         const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range, tag_ex);
     }
 }
 
@@ -3190,8 +3186,8 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
             const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer.deviceAddress;
             const AccessRange scratch_range = MakeRange(scratch_buffer, offset, scratch_size);
             const ResourceUsageTagEx scratch_tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
-            context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
-                                      SyncOrdering::kNonAttachment, scratch_range, scratch_tag_ex);
+            context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, scratch_range,
+                                      scratch_tag_ex);
         }
 
         const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
@@ -3204,14 +3200,14 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
             const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
             const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
             context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ,
-                                      SyncOrdering::kNonAttachment, range, tag_ex);
+                                      range, tag_ex);
         }
         // Record destination acceleration structure access (WRITE)
         if (dst_accel) {
             const AccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
             const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
             context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
-                                      SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+                                      dst_range, dst_tag_ex);
         }
         // Record geometry buffer acceses (READ)
         const VkAccelerationStructureBuildRangeInfoKHR *p_range_infos = ppBuildRangeInfos[i];
@@ -3230,28 +3226,28 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
             if (geometry_info->vertex_data) {
                 const ResourceUsageTagEx vertex_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->vertex_data->Handle());
                 context.UpdateAccessState(*geometry_info->vertex_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                          SyncOrdering::kNonAttachment, geometry_info->vertex_range, vertex_tag_ex);
+                                          geometry_info->vertex_range, vertex_tag_ex);
             }
             if (geometry_info->index_data) {
                 const ResourceUsageTagEx index_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->index_data->Handle());
                 context.UpdateAccessState(*geometry_info->index_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                          SyncOrdering::kNonAttachment, geometry_info->index_range, index_tag_ex);
+                                          geometry_info->index_range, index_tag_ex);
             }
             if (geometry_info->transform_data) {
                 const ResourceUsageTagEx transform_tag_ex =
                     cb_context.AddCommandHandle(tag, geometry_info->transform_data->Handle());
                 context.UpdateAccessState(*geometry_info->transform_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                          SyncOrdering::kNonAttachment, geometry_info->transform_range, transform_tag_ex);
+                                          geometry_info->transform_range, transform_tag_ex);
             }
             if (geometry_info->aabb_data) {
                 const ResourceUsageTagEx aabb_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->aabb_data->Handle());
                 context.UpdateAccessState(*geometry_info->aabb_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                          SyncOrdering::kNonAttachment, geometry_info->aabb_range, aabb_tag_ex);
+                                          geometry_info->aabb_range, aabb_tag_ex);
             }
             if (geometry_info->instance_data) {
                 const ResourceUsageTagEx instance_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->instance_data->Handle());
                 context.UpdateAccessState(*geometry_info->instance_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                          SyncOrdering::kNonAttachment, geometry_info->instance_range, instance_tag_ex);
+                                          geometry_info->instance_range, instance_tag_ex);
             }
         }
     }
@@ -3308,14 +3304,14 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffe
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
         const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
-        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
-                                  SyncOrdering::kNonAttachment, range, tag_ex);
+        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
+                                  tag_ex);
     }
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
         const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
-        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
-                                  SyncOrdering::kNonAttachment, range, tag_ex);
+        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
+                                  tag_ex);
     }
 }
 
@@ -3364,8 +3360,8 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkComm
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
         const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
-        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
-                                  SyncOrdering::kNonAttachment, range, tag_ex);
+        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
+                                  tag_ex);
     }
 }
 
@@ -3414,8 +3410,8 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
         const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
-        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
-                                  SyncOrdering::kNonAttachment, range, tag_ex);
+        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
+                                  tag_ex);
     }
 }
 

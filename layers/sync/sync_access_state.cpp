@@ -549,8 +549,6 @@ void AccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering ordering
             input_attachment_read = (usage_info.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
         }
     } else {
-        // Assume write
-        // TODO determine what to do with READ-WRITE operations if any
         SetWrite(usage_info.access_index, tag_ex, flags);
     }
     UpdateFirst(tag_ex, usage_info, ordering_rule, flags);
@@ -626,7 +624,7 @@ bool AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarr
 
         // Register write access that models layout transition writes
         SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, tag_ex);
-        UpdateFirst(tag_ex, layout_transition_access_info, SyncOrdering::kNonAttachment);
+        UpdateFirst(tag_ex, layout_transition_access_info, SyncOrdering::kOrderingNone);
         TouchupFirstForLayoutTransition(layout_transition_tag, layout_ordering);
 
         last_write->barriers |= barrier.dst_access_scope;
@@ -843,7 +841,7 @@ void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition &la
     const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
     SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, tag_ex);
-    UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kNonAttachment);
+    UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kOrderingNone);
     TouchupFirstForLayoutTransition(tag, layout_transition.ordering);
 }
 

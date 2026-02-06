@@ -279,8 +279,8 @@ class AccessContext {
     void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
                             subresource_adapter::ImageRangeGenerator range_gen);
 
-    void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const AccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, const AccessRange &range,
+                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
 

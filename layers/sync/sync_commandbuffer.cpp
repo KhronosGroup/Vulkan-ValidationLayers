@@ -220,32 +220,18 @@ static SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType 
 }
 
 static void UpdateImageAccessState(AccessContext &access_context, const vvl::Image &image, SyncAccessIndex current_usage,
-                                   SyncOrdering ordering_rule, const VkImageSubresourceRange &subresource_range,
-                                   const ResourceUsageTag &tag) {
+                                   const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
     const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
-    access_context.UpdateAccessState(range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
+    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, ResourceUsageTagEx{tag});
 }
 
 static void UpdateImageAccessState(AccessContext &access_context, const vvl::Image &image, SyncAccessIndex current_usage,
-                                   SyncOrdering ordering_rule, const VkImageSubresourceRange &subresource_range,
-                                   const VkOffset3D &offset, const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
+                                   const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                                   const VkExtent3D &extent, ResourceUsageTagEx tag_ex) {
     const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
-    access_context.UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
-}
-
-static void UpdateImageViewAccessState(AccessContext &access_context, const vvl::ImageView &image_view,
-                                       SyncAccessIndex current_usage, SyncOrdering ordering_rule, const VkOffset3D &offset,
-                                       const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
-    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
-    access_context.UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
-}
-
-static void UpdateImageViewAccessState(AccessContext &access_context, const vvl::ImageView &image_view,
-                                       SyncAccessIndex current_usage, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex) {
-    ImageRangeGen range_gen = MakeImageRangeGen(image_view);
-    access_context.UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
+    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, tag_ex);
 }
 
 static void UpdateVideoAccessState(AccessContext &access_context, const vvl::VideoSession &vs_state,
@@ -255,7 +241,7 @@ static void UpdateVideoAccessState(AccessContext &access_context, const vvl::Vid
     const auto extent = resource.GetEffectiveImageExtent(vs_state);
     const auto &sub_state = SubState(*image);
     ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
-    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag});
+    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, ResourceUsageTagEx{tag});
 }
 
 CommandExecutionContext::CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags)
@@ -746,11 +732,12 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->render_area.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->render_area.offset);
-                            UpdateImageViewAccessState(*current_context_, *img_view_state, sync_index, SyncOrdering::kRaster,
-                                                       offset, extent, tag_ex);
+                            ImageRangeGen range_gen(MakeImageRangeGen(*img_view_state, offset, extent));
+                            current_context_->UpdateAccessState(range_gen, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
+                                                                SyncOrdering::kRaster, tag_ex);
                         } else {
-                            UpdateImageViewAccessState(*current_context_, *img_view_state, sync_index, SyncOrdering::kNonAttachment,
-                                                       tag_ex);
+                            ImageRangeGen range_gen = MakeImageRangeGen(*img_view_state);
+                            current_context_->UpdateAccessState(range_gen, sync_index, SyncOrdering::kOrderingNone, tag_ex);
                         }
                         break;
                     }
@@ -763,7 +750,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         const auto *buf_state = buf_view_state->buffer_state.get();
                         const AccessRange range = MakeRange(*buf_view_state);
                         const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_view_state->Handle());
-                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag_ex);
+                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag_ex);
                         break;
                     }
                     case DescriptorClass::GeneralBuffer: {
@@ -783,7 +770,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const AccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
-                        current_context_->UpdateAccessState(*buf_state, sync_index, SyncOrdering::kNonAttachment, range, tag_ex);
+                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag_ex);
                         break;
                     }
                     case DescriptorClass::AccelerationStructure: {
@@ -798,8 +785,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         const AccessRange range =
                             MakeRange(*accel->buffer_state, accel->create_info.offset, accel->create_info.size);
                         const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, accel->Handle());
-                        current_context_->UpdateAccessState(*accel->buffer_state, sync_index, SyncOrdering::kNonAttachment, range,
-                                                            tag_ex);
+                        current_context_->UpdateAccessState(*accel->buffer_state, sync_index, range, tag_ex);
                         break;
                     }
                     // TODO: INLINE_UNIFORM_BLOCK_EXT
@@ -868,8 +854,7 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
 
             const AccessRange range = MakeRangeForVertexData(vertex_buffer->offset, firstVertex, vertexCount, binding_state);
             const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
-            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
-                                                SyncOrdering::kNonAttachment, range, tag_ex);
+            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range, tag_ex);
         }
     }
 }
@@ -912,7 +897,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
     const uint32_t index_size = IndexTypeSize(index_binding.index_type);
     const AccessRange range = MakeRangeForIndexData(index_binding.offset, firstIndex, indexCount, index_size);
     const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
-    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag_ex);
+    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range, tag_ex);
 
     // TODO: Shader instrumentation support is needed to read index buffer content and determine the range of accessed
     // versices (new syncval mode). Scanning index buffer for each draw call might be the simplest option to implement
@@ -1192,16 +1177,17 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
     const VkImageSubresourceRange subresource_range = info.subresource_range;
     const VkImageAspectFlags aspects_to_clear = subresource_range.aspectMask;
 
+    const auto &sub_state = SubState(*info.attachment_view.image_state);
+    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
+
     if (aspects_to_clear & kColorAspects) {
         assert((aspects_to_clear & kDepthStencilAspects) == 0);
-        UpdateImageAccessState(*current_context_, *info.attachment_view.image_state,
-                               SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment,
-                               subresource_range, tag);
+        current_context_->UpdateAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                            SyncOrdering::kColorAttachment, ResourceUsageTagEx{tag});
     } else {
         assert((aspects_to_clear & kColorAspects) == 0);
-        UpdateImageAccessState(*current_context_, *info.attachment_view.image_state,
-                               SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kDepthStencilAttachment,
-                               subresource_range, tag);
+        current_context_->UpdateAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                            SyncOrdering::kDepthStencilAttachment, ResourceUsageTagEx{tag});
     }
 }
 
@@ -1473,10 +1459,10 @@ void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl:
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
         const AccessRange src_range = MakeRange(src_buffer_state, copy_region.srcOffset, copy_region.size);
-        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
+        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
 
         const AccessRange dst_range = MakeRange(dst_buffer_state, copy_region.dstOffset, copy_region.size);
-        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
     }
 }
 
@@ -1490,10 +1476,10 @@ void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
         const AccessRange src_range = MakeRange(src_buffer_state, copy_region.srcOffset, copy_region.size);
-        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
+        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
 
         const AccessRange dst_range = MakeRange(dst_buffer_state, copy_region.dstOffset, copy_region.size);
-        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
     }
 }
 
@@ -1507,10 +1493,10 @@ void CommandBufferSubState::RecordCopyImage(vvl::Image &src_image_state, vvl::Im
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent, src_tag_ex);
-        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent, dst_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.srcSubresource),
+                               copy_region.srcOffset, copy_region.extent, src_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.dstSubresource),
+                               copy_region.dstOffset, copy_region.extent, dst_tag_ex);
     }
 }
 
@@ -1524,10 +1510,10 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image &src_image_state, vvl::I
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent, src_tag_ex);
-        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent, dst_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.srcSubresource),
+                               copy_region.srcOffset, copy_region.extent, src_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.dstSubresource),
+                               copy_region.dstOffset, copy_region.extent, dst_tag_ex);
     }
 }
 
@@ -1541,11 +1527,10 @@ void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer &src_buffer_stat
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
         AccessRange src_range = MakeRange(copy_region.bufferOffset, dst_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
+        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
 
-        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset, copy_region.imageExtent,
-                               dst_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.imageSubresource),
+                               copy_region.imageOffset, copy_region.imageExtent, dst_tag_ex);
     }
 }
 
@@ -1560,11 +1545,10 @@ void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer &src_buffer_sta
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
         AccessRange src_range = MakeRange(copy_region.bufferOffset, dst_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
+        context->UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
 
-        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset, copy_region.imageExtent,
-                               dst_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.imageSubresource),
+                               copy_region.imageOffset, copy_region.imageExtent, dst_tag_ex);
     }
 }
 
@@ -1578,12 +1562,11 @@ void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image &src_image_state,
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset, copy_region.imageExtent,
-                               src_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.imageSubresource),
+                               copy_region.imageOffset, copy_region.imageExtent, src_tag_ex);
 
         AccessRange dst_range = MakeRange(copy_region.bufferOffset, src_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
     }
 }
 
@@ -1597,12 +1580,11 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image &src_image_state
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
     for (const auto &copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset, copy_region.imageExtent,
-                               src_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.imageSubresource),
+                               copy_region.imageOffset, copy_region.imageExtent, src_tag_ex);
 
         AccessRange dst_range = MakeRange(copy_region.bufferOffset, src_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
     }
 }
 
@@ -1622,8 +1604,8 @@ void CommandBufferSubState::RecordBlitImage(vvl::Image &src_image_state, vvl::Im
         VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                              static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                              static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-        UpdateImageAccessState(*context, src_image_state, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_BLIT_TRANSFER_READ, RangeFromLayers(blit_region.srcSubresource),
+                               offset, extent, src_tag_ex);
 
         offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
                   std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
@@ -1631,8 +1613,8 @@ void CommandBufferSubState::RecordBlitImage(vvl::Image &src_image_state, vvl::Im
         extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                   static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                   static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-        UpdateImageAccessState(*context, dst_image_state, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_BLIT_TRANSFER_WRITE, RangeFromLayers(blit_region.dstSubresource),
+                               offset, extent, dst_tag_ex);
     }
 }
 
@@ -1652,8 +1634,8 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image &src_image_state, vvl::I
         VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                              static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                              static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-        UpdateImageAccessState(*context, src_image_state, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
+        UpdateImageAccessState(*context, src_image_state, SYNC_BLIT_TRANSFER_READ, RangeFromLayers(blit_region.srcSubresource),
+                               offset, extent, src_tag_ex);
 
         offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
                   std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
@@ -1661,8 +1643,8 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image &src_image_state, vvl::I
         extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                   static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                   static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-        UpdateImageAccessState(*context, dst_image_state, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                               RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
+        UpdateImageAccessState(*context, dst_image_state, SYNC_BLIT_TRANSFER_WRITE, RangeFromLayers(blit_region.dstSubresource),
+                               offset, extent, dst_tag_ex);
     }
 }
 
@@ -1675,10 +1657,10 @@ void CommandBufferSubState::RecordResolveImage(vvl::Image &src_image_state, vvl:
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto &resolve_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
+        UpdateImageAccessState(*context, src_image_state, SYNC_RESOLVE_TRANSFER_READ,
                                RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
                                src_tag_ex);
-        UpdateImageAccessState(*context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+        UpdateImageAccessState(*context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE,
                                RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
                                dst_tag_ex);
     }
@@ -1693,10 +1675,10 @@ void CommandBufferSubState::RecordResolveImage2(vvl::Image &src_image_state, vvl
     auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
 
     for (const auto &resolve_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(*context, src_image_state, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
+        UpdateImageAccessState(*context, src_image_state, SYNC_RESOLVE_TRANSFER_READ,
                                RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
                                src_tag_ex);
-        UpdateImageAccessState(*context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+        UpdateImageAccessState(*context, dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE,
                                RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
                                dst_tag_ex);
     }
@@ -1713,7 +1695,7 @@ void CommandBufferSubState::RecordClearColorImage(vvl::Image &image_state, VkIma
 
     for (uint32_t index = 0; index < range_count; index++) {
         const auto &range = ranges[index];
-        UpdateImageAccessState(*context, image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        UpdateImageAccessState(*context, image_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag);
     }
 }
 
@@ -1728,7 +1710,7 @@ void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image &image_state
 
     for (uint32_t index = 0; index < range_count; index++) {
         const auto &range = ranges[index];
-        UpdateImageAccessState(*context, image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+        UpdateImageAccessState(*context, image_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag);
     }
 }
 
@@ -1751,7 +1733,7 @@ void CommandBufferSubState::RecordFillBuffer(vvl::Buffer &buffer_state, VkDevice
 
     const AccessRange range = MakeRange(buffer_state, offset, size);
     const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, buffer_state.Handle());
-    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag_ex);
 }
 
 void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size,
@@ -1763,7 +1745,7 @@ void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDevi
     // VK_WHOLE_SIZE not allowed
     const AccessRange range = MakeRange(offset, size);
     const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, buffer_state.Handle());
-    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag_ex);
 }
 
 void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info,
@@ -1774,8 +1756,7 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession &vs_state, const
     if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
         const AccessRange src_range = MakeRange(*src_buffer, decode_info.srcBufferOffset, decode_info.srcBufferRange);
         const ResourceUsageTagEx src_tag_ex = access_context.AddCommandHandle(tag, src_buffer->Handle());
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range,
-                                   src_tag_ex);
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range, src_tag_ex);
     }
 
     const auto *device_state = access_context.GetSyncState().device_state;
@@ -1809,8 +1790,7 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const
     if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
         const AccessRange src_range = MakeRange(*src_buffer, encode_info.dstBufferOffset, encode_info.dstBufferRange);
         const ResourceUsageTagEx src_tag_ex = access_context.AddCommandHandle(tag, src_buffer->Handle());
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range,
-                                   src_tag_ex);
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range, src_tag_ex);
     }
 
     const auto *device_state = access_context.GetSyncState().device_state;
@@ -1843,8 +1823,9 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const
                 VkOffset3D offset = {0, 0, 0};
                 VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
                                      quantization_map_info->quantizationMapExtent.height, 1};
-                UpdateImageViewAccessState(*context, *image_view_state, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ,
-                                           SyncOrdering::kOrderingNone, offset, extent, ResourceUsageTagEx{tag});
+                ImageRangeGen range_gen(MakeImageRangeGen(*image_view_state, offset, extent));
+                context->UpdateAccessState(range_gen, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, SyncOrdering::kOrderingNone,
+                                           ResourceUsageTagEx{tag});
             }
         }
     }
@@ -1863,7 +1844,7 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool &pool_stat
     const VkDeviceSize range_size = (query_count - 1) * stride + query_size;
     const AccessRange range = MakeRange(dst_offset, range_size);
     const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
-    context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+    context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, range, tag_ex);
 
     // TODO:Track VkQueryPool
 }

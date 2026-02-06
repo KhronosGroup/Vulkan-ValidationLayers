@@ -1006,7 +1006,7 @@ void PresentedImage::SetImage(uint32_t at_index) {
 void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context,
                                         SyncFlags flags) const {
     ImageRangeGen mutable_range_gen = range_gen;
-    access_context.UpdateAccessState(mutable_range_gen, usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag}, flags);
+    access_context.UpdateAccessState(mutable_range_gen, usage, SyncOrdering::kOrderingNone, ResourceUsageTagEx{tag}, flags);
 }
 
 }  // namespace syncval
