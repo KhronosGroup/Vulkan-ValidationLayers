@@ -42,13 +42,13 @@ const uint VK_INDEX_TYPE_NONE_KHR = 1000165000;
 
 uint LoadIndex(uint i) {
     if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.address + pc.primitive_offset);
+        ArrayU16 array_u16 = ArrayU16(pc.address + pc.address_byte_offset);
         return uint(array_u16.array[i]);
     } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.address + pc.primitive_offset);
+        ArrayU32 array_u32 = ArrayU32(pc.address + pc.address_byte_offset);
         return array_u32.array[i];
     } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.address + pc.primitive_offset);
+        ArrayU8 array_u8 = ArrayU8(pc.address + pc.address_byte_offset);
         return uint(array_u8.array[i]);
     } else {
         return 0;
@@ -57,13 +57,13 @@ uint LoadIndex(uint i) {
 
 void StoreIndex(uint i, uint value) {
     if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.address + pc.primitive_offset);
+        ArrayU16 array_u16 = ArrayU16(pc.address + pc.address_byte_offset);
         array_u16.array[i] = uint16_t(value);
     } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.address + pc.primitive_offset);
+        ArrayU32 array_u32 = ArrayU32(pc.address + pc.address_byte_offset);
         array_u32.array[i] = value;
     } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.address + pc.primitive_offset);
+        ArrayU8 array_u8 = ArrayU8(pc.address + pc.address_byte_offset);
         array_u8.array[i] = uint8_t(value);
     }
 }
@@ -77,6 +77,8 @@ struct VkAabbPositionsKHR {
     float maxZ;
 };
 layout(buffer_reference, scalar) buffer AabbsPtr { VkAabbPositionsKHR coords; };
+
+layout(buffer_reference, scalar) buffer TransformPtr { mat3x4 mat; };
 
 void main() {
     const uint gid = gl_GlobalInvocationID.x;
@@ -98,8 +100,9 @@ void main() {
             return;
         }
 
+
         const uint64_t aabb_i = gid;
-        AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.primitive_offset) + aabb_i * pc.stride);
+        AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.address_byte_offset) + aabb_i * pc.stride);
         if (aabb.coords.minX > aabb.coords.maxX) {
             GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minX), floatBitsToUint(aabb.coords.maxX));
         }
@@ -109,6 +112,21 @@ void main() {
         }
         if (aabb.coords.minZ > aabb.coords.maxZ) {
             GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minZ), floatBitsToUint(aabb.coords.maxZ));
+        }
+    } else if (pc.validation_mode == kBLASValidationMode_transform_matrix) {
+        if (gid > 0) {
+            return;
+        }
+
+        TransformPtr transform = TransformPtr(pc.address + uint64_t(pc.address_byte_offset));
+        const mat3 transform3x3 = mat3(
+            transform.mat[0].xyz,
+            transform.mat[1].xyz,
+            transform.mat[2].xyz
+        );
+        const float det = determinant(transform3x3);
+        if (abs(det) < 1e-6) {
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_Transform, pc.error_info_i, gid, 0, 0);
         }
     }
 }
