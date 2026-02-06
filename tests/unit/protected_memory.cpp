@@ -554,7 +554,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-12357");
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT;
     lib_ci.renderPass = RenderPass();
@@ -562,7 +562,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-12359");
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT;
     vkt::Pipeline lib2(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
@@ -576,7 +576,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     VkGraphicsPipelineCreateInfo protected_lib_ci = vku::InitStructHelper(&link_info);
     protected_lib_ci.renderPass = RenderPass();
     protected_lib_ci.layout = pre_raster_lib.gp_ci_.layout;
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-12360");
     lib_ci.flags = 0;
     protected_lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     vkt::Pipeline lib3(*m_device, protected_lib_ci);
@@ -592,7 +592,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     unprotected_lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     unprotected_lib_ci.renderPass = RenderPass();
     unprotected_lib_ci.layout = pre_raster_lib.gp_ci_.layout;
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-12358");
     vkt::Pipeline lib4(*m_device, unprotected_lib_ci);
     m_errorMonitor->VerifyFound();
 }
