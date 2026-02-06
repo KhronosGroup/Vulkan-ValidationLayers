@@ -307,19 +307,18 @@ bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
     uint64_t *pTimeDomainsCounter, const Context &context) const {
     bool skip = false;
 
-    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7966
     const bool time_domains = pSwapchainTimeDomainProperties->pTimeDomains != nullptr;
     const bool time_domain_ids = pSwapchainTimeDomainProperties->pTimeDomainIds != nullptr;
     if (time_domains && time_domain_ids) {
         if (pSwapchainTimeDomainProperties->timeDomainCount == 0) {
-            skip |= LogError("UNASSIGNED-VkSwapchainTimeDomainPropertiesEXT-timeDomainCount-Todo1", swapchain,
-                             context.error_obj.location, "pTimeDomains and pTimeDomainIds are not null, but timeDomainCount is 0.");
+            skip |= LogError(" VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12371", swapchain, context.error_obj.location,
+                             "pTimeDomains and pTimeDomainIds are not null, but timeDomainCount is 0.");
         }
     } else if (time_domains || time_domain_ids) {
         const char *msg = time_domains ? "pTimeDomains is not null, but pTimeDomainIds is null"
                                        : "pTimeDomainIds is not null, but pTimeDomains is null";
-        skip |=
-            LogError("UNASSIGNED-VkSwapchainTimeDomainPropertiesEXT-none-Todo2", swapchain, context.error_obj.location, "%s", msg);
+        skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12370", swapchain, context.error_obj.location, "%s",
+                         msg);
     }
 
     return skip;

@@ -288,7 +288,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
                                                    const Location &create_info_loc) const {
     bool skip = false;
 
-    constexpr std::array<std::pair<const char *, VkPipelineCreateFlags>, 7> vuid_map = {{
+    constexpr std::array<std::pair<const char*, VkPipelineCreateFlags>, 7> vuid_map = {{
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04718", VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR},
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04719", VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR},
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04720", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR},
@@ -297,7 +297,6 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR},
         {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-07403", VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT},
     }};
-    bool uses_descriptor_buffer = false;
 
     // Use "pipeline" to refer to the pipeline be created
     const VkPipelineCreateFlags2 pipeline_create_flags = pipeline.create_flags;
@@ -330,27 +329,31 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11275", lib->Handle(), library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
-                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(lib->create_flags).c_str());
             } else {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11276", lib->Handle(), library_loc,
                                  "was created without %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
-                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(lib->create_flags).c_str());
             }
         }
-        if (i == 0) {
-            uses_descriptor_buffer = lib->descriptor_buffer_mode;
-        } else if (uses_descriptor_buffer != lib->descriptor_buffer_mode) {
-            skip |=
-                LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", lib->Handle(), library_loc,
-                         "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT while pLibraries[0] (%s) %s.",
-                         lib->descriptor_buffer_mode ? "was" : "was not", FormatHandle(library_create_info.pLibraries[0]).c_str(),
-                         lib->descriptor_buffer_mode ? "was not" : "was");
-            break;  // no point keep checking as might have many of same error
+
+        if (pipeline.descriptor_buffer_mode != lib->descriptor_buffer_mode) {
+            if (pipeline.descriptor_buffer_mode) {
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-12361", lib->Handle(), library_loc,
+                                 "was created with %s, which is missing "
+                                 "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            } else {
+                skip |=
+                    LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-12362", lib->Handle(), library_loc,
+                             "was created with %s, but VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT is not included in %s (%s).",
+                             string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            }
         }
 
         const auto &lib_create_info = lib->RayTracingCreateInfo();

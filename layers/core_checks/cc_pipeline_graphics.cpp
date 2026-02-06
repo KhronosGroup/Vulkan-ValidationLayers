@@ -314,7 +314,8 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
     const bool has_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
     const bool has_retain_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
     const bool has_capture_internal = (pipeline_flags & VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR) != 0;
-    bool uses_descriptor_buffer = false;
+    const bool has_no_protect = (pipeline_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT) != 0;
+    const bool has_protected_access = (pipeline_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT) != 0;
     bool lib_all_has_capture_internal = false;
     const bool null_render_pass = pipeline.GraphicsCreateInfo().renderPass == VK_NULL_HANDLE;
 
@@ -356,15 +357,63 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11273", lib->Handle(), library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
-                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
             } else {
-                skip |= LogError(
-                    "VUID-VkGraphicsPipelineCreateInfo-flags-11274", lib->Handle(), library_loc,
-                    "was created with %s, but VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT is not included in %s (%s).",
-                    string_VkPipelineCreateFlags2(lib->create_flags).c_str(), create_info_loc.dot(Field::flags).Fields().c_str(),
-                    string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11274", lib->Handle(), library_loc,
+                             "was created with %s, but VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT is not included in %s (%s).",
+                             string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            }
+        }
+
+        if (pipeline.descriptor_buffer_mode != lib->descriptor_buffer_mode) {
+            if (pipeline.descriptor_buffer_mode) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12355", lib->Handle(), library_loc,
+                                 "was created with %s, which is missing "
+                                 "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            } else {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12356", lib->Handle(), library_loc,
+                             "was created with %s, but VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT is not included in %s (%s).",
+                             string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            }
+        }
+
+        const bool lib_has_no_protect = (lib_pipeline_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT) != 0;
+        if (has_no_protect != lib_has_no_protect) {
+            if (has_no_protect) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12357", lib->Handle(), library_loc,
+                                 "was created with %s, which is missing "
+                                 "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            } else {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12358", lib->Handle(), library_loc,
+                                 "was created with %s, but VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT is not included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            }
+        }
+
+        const bool lib_has_protected_access = (lib_pipeline_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT) != 0;
+        if (has_protected_access != lib_has_protected_access) {
+            if (has_protected_access) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12359", lib->Handle(), library_loc,
+                                 "was created with %s, which is missing "
+                                 "VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT included in %s (%s).",
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
+            } else {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-flags-12360", lib->Handle(), library_loc,
+                             "was created with %s, but VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT is not included in %s (%s).",
+                             string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
             }
         }
 
@@ -408,53 +457,6 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                              "not equal to 0 for the pipeline",
                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                              string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str());
-        }
-
-        if ((pipeline_flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT)) {
-            if (!(lib_pipeline_flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT)) {
-                skip |= LogError(
-                    "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404", lib->Handle(), library_loc,
-                    "(%s) was created with %s, which is missing VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT included in %s (%s).",
-                    string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                    string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
-                    string_VkPipelineCreateFlags2(pipeline_flags).c_str());
-            }
-        } else if ((lib_pipeline_flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT)) {
-            skip |= LogError(
-                "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405", lib->Handle(), library_loc,
-                "(%s) was created with %s, which includes VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT not included in %s (%s).",
-                string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
-                string_VkPipelineCreateFlags2(pipeline_flags).c_str());
-        }
-
-        if ((pipeline_flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-            if (!(lib_pipeline_flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-                skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406", lib->Handle(), library_loc,
-                                 "(%s) was created with %s, which is missing VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT "
-                                 "included in %s (%s).",
-                                 string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                                 string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
-                                 string_VkPipelineCreateFlags2(pipeline_flags).c_str());
-            }
-        } else if ((lib_pipeline_flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
-            skip |= LogError(
-                "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407", lib->Handle(), library_loc,
-                "(%s) was created with %s, which includes VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT not included in %s (%s).",
-                string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
-                string_VkPipelineCreateFlags2(pipeline_flags).c_str());
-        }
-
-        if (i == 0) {
-            uses_descriptor_buffer = lib->descriptor_buffer_mode;
-        } else if (uses_descriptor_buffer != lib->descriptor_buffer_mode) {
-            skip |=
-                LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", lib->Handle(), library_loc,
-                         "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT while pLibraries[0] (%s) %s.",
-                         lib->descriptor_buffer_mode ? "was" : "was not", FormatHandle(library_create_info.pLibraries[0]).c_str(),
-                         lib->descriptor_buffer_mode ? "was not" : "was");
-            break;  // no point keep checking as might have many of same error
         }
 
         // Check if RenderPass are both not null when linking in a GPL stage that uses them

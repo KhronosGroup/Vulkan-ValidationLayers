@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5100,15 +5100,18 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferGPL) {
         }
     )glsl";
 
+    VkPipelineCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
     CreatePipelineHelper vertex_input_lib(*this);
-    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitVertexInputLibInfo(&create_flags);
     vertex_input_lib.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &create_flags);
         pre_raster_lib.gp_ci_.layout = pipeline_layout;
         pre_raster_lib.CreateGraphicsPipeline(false);
     }
@@ -5117,13 +5120,13 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferGPL) {
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
-        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &create_flags);
         frag_shader_lib.gp_ci_.layout = pipeline_layout;
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
-    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.InitFragmentOutputLibInfo(&create_flags);
     frag_out_lib.CreateGraphicsPipeline(false);
 
     VkPipeline libraries[4] = {
