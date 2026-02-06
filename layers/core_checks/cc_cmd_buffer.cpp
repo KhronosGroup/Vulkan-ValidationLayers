@@ -528,11 +528,11 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.Handle(), *buffer_state, loc.dot(Field::buffer), vuid);
 
-    const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
-    if (!IsIntegerMultipleOf(offset, offset_align)) {
+    const uint32_t index_type_size = IndexTypeSize(indexType);
+    if (!IsIntegerMultipleOf(offset, index_type_size)) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset),
-                         "(%" PRIu64 ") is not a multiple of %" PRIu64 " (the alignment for %s).", offset, offset_align,
+                         "(%" PRIu64 ") is not a multiple of %" PRIu32 " (the alignment for %s).", offset, index_type_size,
                          string_VkIndexType(indexType));
     }
     if (offset >= buffer_state->create_info.size) {
@@ -564,11 +564,12 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffe
         auto buffer_state = Get<vvl::Buffer>(buffer);
         if (!buffer_state) return skip;  // if using nullDescriptors
 
-        const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
-        if (!IsIntegerMultipleOf(size, offset_align)) {
+        const uint32_t index_type_size = IndexTypeSize(indexType);
+        if (!IsIntegerMultipleOf(size, index_type_size)) {
             const LogObjectList objlist(commandBuffer, buffer);
             skip |= LogError("VUID-vkCmdBindIndexBuffer2-size-08767", objlist, error_obj.location.dot(Field::size),
-                             "(%" PRIu64 ") does not fall on alignment (%s) boundary.", size, string_VkIndexType(indexType));
+                             "(%" PRIu64 ") is not a multiple of %" PRIu32 " (the alignment for %s).", size, index_type_size,
+                             string_VkIndexType(indexType));
         }
         if ((offset + size) > buffer_state->create_info.size) {
             const LogObjectList objlist(commandBuffer, buffer);

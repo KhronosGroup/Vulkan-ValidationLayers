@@ -282,9 +282,10 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
             }
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
-                const uint32_t index_bits_size = GetIndexBitsSize(local_error_info->index_buffer_binding->index_type);
+                const uint32_t index_byte_size = IndexTypeSize(local_error_info->index_buffer_binding->index_type);
+                assert(index_byte_size != 0);  // Should never be VK_INDEX_TYPE_NONE_KHR
                 const uint32_t max_indices_in_buffer =
-                    static_cast<uint32_t>(local_error_info->index_buffer_binding->size / (index_bits_size / 8u));
+                    static_cast<uint32_t>(local_error_info->index_buffer_binding->size / index_byte_size);
                 out_error_msg += "Index Buffer (";
                 out_error_msg += gpuav.FormatHandle(local_error_info->index_buffer_binding->buffer);
                 out_error_msg += ") binding info:\n";

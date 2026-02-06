@@ -3022,9 +3022,9 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
             if (p_index_data) {
                 geometry_info.index_data = p_index_data;
                 const VkDeviceSize base_index_offset = triangles.indexData.deviceAddress - p_index_data->deviceAddress;
-                const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
+                const uint32_t index_byte_size = IndexTypeSize(triangles.indexType);
                 const VkDeviceSize offset = base_index_offset + range_info.primitiveOffset;
-                const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
+                const uint32_t index_data_size = 3 * range_info.primitiveCount * index_byte_size;
                 geometry_info.index_range = MakeRange(*p_index_data, offset, index_data_size);
             }
         }

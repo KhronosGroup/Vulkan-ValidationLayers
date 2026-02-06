@@ -236,7 +236,7 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
         return skip;
     }
 
-    const uint32_t index_size = GetIndexAlignment(cb_state.index_buffer_binding.index_type);
+    const uint32_t index_size = IndexTypeSize(cb_state.index_buffer_binding.index_type);
     // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
     // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
     // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)

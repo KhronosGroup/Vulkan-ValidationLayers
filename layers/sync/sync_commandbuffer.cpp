@@ -880,7 +880,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
     const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return skip;
 
-    const auto index_size = GetIndexAlignment(index_binding.index_type);
+    const uint32_t index_size = IndexTypeSize(index_binding.index_type);
     const AccessRange range = MakeRangeForIndexData(index_binding.offset, firstIndex, index_count, index_size);
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
@@ -909,7 +909,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
     const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return;
 
-    const auto index_size = GetIndexAlignment(index_binding.index_type);
+    const uint32_t index_size = IndexTypeSize(index_binding.index_type);
     const AccessRange range = MakeRangeForIndexData(index_binding.offset, firstIndex, indexCount, index_size);
     const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
     current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag_ex);

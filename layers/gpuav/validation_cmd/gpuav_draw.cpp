@@ -845,8 +845,8 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
             return;
         }
 
-        const uint32_t index_bits_size = GetIndexBitsSize(index_buffer_binding.index_type);
-        const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
+        const uint32_t index_byte_size = IndexTypeSize(index_buffer_binding.index_type);
+        const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / index_byte_size);
 
         vko::BufferRange validation_dispatch_params_buffer_range =
             cb_state.gpu_resources_manager.GetDeviceLocalIndirectBufferRange(3 * sizeof(uint32_t));
@@ -981,8 +981,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                 const uint32_t first_index = error_record[kValCmd_ErrorPayloadDword_1];
                 const uint32_t index_count = error_record[kValCmd_ErrorPayloadDword_2];
                 const uint32_t highest_accessed_index = first_index + index_count;
-                const uint32_t index_bits_size = GetIndexBitsSize(index_buffer_binding.index_type);
-                const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
+                const uint32_t index_byte_size = IndexTypeSize(index_buffer_binding.index_type);
+                assert(index_byte_size != 0);  // Should never be VK_INDEX_TYPE_NONE_KHR
+                const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / index_byte_size);
 
                 skip |= gpuav.LogError(
                     vuid, objlist, loc_with_debug_region,
