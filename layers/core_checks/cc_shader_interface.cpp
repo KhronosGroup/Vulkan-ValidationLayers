@@ -566,7 +566,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                 if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
                     skip |= LogUndefinedValue(
                         "Undefined-Value-OutputNotWritten", module_state.handle(), create_info_loc,
-                        "Inside the fragment shader, the output Locaiton %" PRIu32
+                        "Inside the fragment shader, the output Location %" PRIu32
                         " was never written to. This means anything future VkSubpassDescription::pColorAttachments[%" PRIu32
                         "] will have undefined values written to it.\nThe pipeline was created with "
                         "pColorBlendState->pAttachments[%" PRIu32 "].colorWriteMask set to 0x%" PRIx32
@@ -720,7 +720,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 const VkColorComponentFlags color_write_mask = last_bound_state.GetColorWriteMask(location);
                 if (color_write_mask != 0) {
                     std::ostringstream msg;
-                    msg << "Inside the fragment shader, the output Locaiton " << location
+                    msg << "Inside the fragment shader, the output Location " << location
                         << " was never written to. This means the bound VkRenderingInfo::pColorAttachments[" << location
                         << "].imageView (" << FormatHandle(attachment_info.rendering_attachment_info->imageView)
                         << ") will have undefined values written to it.\n";
