@@ -15,6 +15,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/gpu_av_helper.h"
+#include "utils/math_utils.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
@@ -2616,6 +2617,56 @@ TEST_F(NegativeGpuAVRayTracing, IllFormedAabb) {
     m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minX-03546", "primitive index 3");
     m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minY-03547", "primitive index 3");
     m_errorMonitor->SetDesiredErrorRegex("VUID-VkAabbPositionsKHR-minZ-03548", "primitive index 3");
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayTracing, BuildAccelerationStructuresList2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin();
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer transform_buffer(*m_device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    // clang-format off
+    VkTransformMatrixKHR transform_matrix = {{
+        { 1.0f, 0.0f, 0.0f, 0.0f },
+        { 0.0f, 1.0f, 1.0f, 0.0f },
+        { 0.0f, 0.0f, 0.0f, 0.0f },
+    }};
+    // clang-format on
+
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR*>(transform_buffer.Memory().Map());
+    std::memcpy(transform_buffer_ptr + 64, &transform_matrix, sizeof(transform_matrix));
+    transform_buffer.Memory().Unmap();
+
+    geometry.SetTrianglesTransformBuffer(std::move(transform_buffer));
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.GetBuildRanges()[0].transformOffset = 64;
+
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkTransformMatrixKHR-matrix-03799");
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
     m_errorMonitor->VerifyFound();

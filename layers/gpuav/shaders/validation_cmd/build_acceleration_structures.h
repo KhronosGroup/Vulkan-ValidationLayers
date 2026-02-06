@@ -126,6 +126,7 @@ struct TLASValidationShaderPushData {
 
 const uint kBLASValidationMode_triangles_indices = 0;
 const uint kBLASValidationMode_aabbs = 1;
+const uint kBLASValidationMode_transform_matrix = 2;
 
 // Caution, I think Vulkan only guarantes 16 bytes of push constants
 struct BLASValidationShaderPushData {
@@ -135,7 +136,7 @@ struct BLASValidationShaderPushData {
     uint index_type;
     uint max_vertex;
     uint first_vertex;
-    uint primitive_offset;
+    uint address_byte_offset;
     uint primitive_count;
     uint error_info_i;
 };
