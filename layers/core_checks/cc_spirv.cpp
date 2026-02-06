@@ -1609,7 +1609,8 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
 
     // We just check the currently known writable descriptor types, spec doesn't provide a list for feature bit
     if (((variable.stage & VK_SHADER_STAGE_ALL_GRAPHICS) != 0) &&
-        (variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer) &&
+        (variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer ||
+         variable.is_storage_tensor) &&
         !variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
         // If the variable is a struct, all members must contain NonWritable
         if (!variable.type_struct_info ||
@@ -1621,6 +1622,8 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
                     return "VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER";
                 } else if (variable.is_storage_buffer) {
                     return "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER";
+                } else if (variable.is_storage_tensor) {
+                    return "VK_DESCRIPTOR_TYPE_TENSOR_ARM";
                 } else {
                     return "Unknown VkDescriptorType";
                 }

@@ -2509,8 +2509,10 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
     bool skip = false;
 
     if (!build_info.scratchData) {
-        skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558", device,
-                         build_info_loc.dot(Field::scratchData), "(0x%" PRIx64 ") must not be NULL", build_info.scratchData);
+        if (build_scratch_size != 0) {
+            skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558", device,
+                             build_info_loc.dot(Field::scratchData), "(0x%" PRIx64 ") must not be NULL", build_info.scratchData);
+        }
     } else {
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559",
@@ -2525,11 +2527,7 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, build_info_loc.dot(Field::scratchData), LogObjectList(device),
                                                                build_info.scratchData, build_scratch_size);
     }
-    if (!build_info.dstAccelerationStructureData) {
-        skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10561", device,
-                         build_info_loc.dot(Field::dstAccelerationStructureData), "(0x%" PRIx64 ") must not be NULL",
-                         build_info.dstAccelerationStructureData);
-    } else {
+    if (build_info.dstAccelerationStructureData != 0) {
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562",
                [&build_acceleration_structure_size](const vvl::Buffer &buffer_state) {
