@@ -426,6 +426,7 @@ const char* String(Func func) {
     {"vkCreateSwapchainKHR", 21},
     {"vkCreateTensorARM", 18},
     {"vkCreateTensorViewARM", 22},
+    {"vkCreateUbmSurfaceSEC", 22},
     {"vkCreateValidationCacheEXT", 27},
     {"vkCreateViSurfaceNN", 20},
     {"vkCreateVideoSessionKHR", 24},
@@ -682,6 +683,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceSurfaceSupportKHR", 37},
     {"vkGetPhysicalDeviceToolProperties", 34},
     {"vkGetPhysicalDeviceToolPropertiesEXT", 37},
+    {"vkGetPhysicalDeviceUbmPresentationSupportSEC", 45},
     {"vkGetPhysicalDeviceVideoCapabilitiesKHR", 40},
     {"vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR", 56},
     {"vkGetPhysicalDeviceVideoFormatPropertiesKHR", 44},
@@ -2041,6 +2043,7 @@ const char* String(Struct structure) {
     {"VkTraceRaysIndirectCommand2KHR", 31},
     {"VkTraceRaysIndirectCommandKHR", 30},
     {"VkTransformMatrixKHR", 21},
+    {"VkUbmSurfaceCreateInfoSEC", 26},
     {"VkValidationCacheCreateInfoEXT", 31},
     {"VkValidationFeaturesEXT", 24},
     {"VkValidationFlagsEXT", 21},
@@ -5277,6 +5280,8 @@ const char* String(Field field) {
     {"type", 5},
     {"tz", 3},
     {"u64", 4},
+    {"ubm_device", 11},
+    {"ubm_surface", 12},
     {"uint32", 7},
     {"uint64", 7},
     {"uncompressedHeaderOffset", 25},
@@ -6200,6 +6205,7 @@ const char* String(Extension extension) {
     {"VK_QNX_screen_surface", 22},
     {"VK_SEC_amigo_profiling", 23},
     {"VK_SEC_pipeline_cache_incremental_mode", 39},
+    {"VK_SEC_ubm_surface", 19},
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
@@ -6829,6 +6835,8 @@ bool IsFieldPointer(Field field) {
     case Field::ppGeometries:
     case Field::ppMaxPrimitiveCounts:
     case Field::ppUsageCounts:
+    case Field::ubm_device:
+    case Field::ubm_surface:
     case Field::valueString:
         return true;
     default:
@@ -9118,6 +9126,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_PARTITIONED_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
+    case VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC:
+       return Struct::VkUbmSurfaceCreateInfoSEC;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

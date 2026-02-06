@@ -34527,6 +34527,100 @@ VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
     }
 }
 
+#ifdef VK_USE_PLATFORM_UBM_SEC
+VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateUbmSurfaceSEC, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateUbmSurfaceSEC");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateCreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateUbmSurfaceSEC);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateUbmSurfaceSEC");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordCreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateUbmSurfaceSEC");
+        result = instance_dispatch->CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateUbmSurfaceSEC");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordCreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex,
+                                                                          struct ubm_device* ubm_device) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceUbmPresentationSupportSEC,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPhysicalDeviceUbmPresentationSupportSEC");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device,
+                                                                                  error_obj);
+            if (skip) return VK_FALSE;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceUbmPresentationSupportSEC);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPhysicalDeviceUbmPresentationSupportSEC");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device, record_obj);
+        }
+    }
+    VkBool32 result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceUbmPresentationSupportSEC");
+        result = instance_dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceUbmPresentationSupportSEC");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device, record_obj);
+        }
+    }
+    return result;
+}
+
+#endif  // VK_USE_PLATFORM_UBM_SEC
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -36571,6 +36665,10 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
         {"vkCmdBeginCustomResolveEXT", {kFuncTypeDev, (void*)CmdBeginCustomResolveEXT}},
         {"vkCmdSetComputeOccupancyPriorityNV", {kFuncTypeDev, (void*)CmdSetComputeOccupancyPriorityNV}},
+#ifdef VK_USE_PLATFORM_UBM_SEC
+        {"vkCreateUbmSurfaceSEC", {kFuncTypeInst, (void*)CreateUbmSurfaceSEC}},
+        {"vkGetPhysicalDeviceUbmPresentationSupportSEC", {kFuncTypePdev, (void*)GetPhysicalDeviceUbmPresentationSupportSEC}},
+#endif  // VK_USE_PLATFORM_UBM_SEC
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
         {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

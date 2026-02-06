@@ -132,6 +132,7 @@ struct InstanceExtensions {
     ExtEnabled vk_ext_layer_settings{kNotSupported};
     ExtEnabled vk_nv_display_stereo{kNotSupported};
     ExtEnabled vk_ohos_surface{kNotSupported};
+    ExtEnabled vk_sec_ubm_surface{kNotSupported};
 
     struct Requirement {
         const ExtEnabled InstanceExtensions::*enabled;
@@ -629,6 +630,7 @@ constexpr bool IsInstanceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_layer_settings:
         case vvl::Extension::_VK_NV_display_stereo:
         case vvl::Extension::_VK_OHOS_surface:
+        case vvl::Extension::_VK_SEC_ubm_surface:
             return true;
         default:
             return false;

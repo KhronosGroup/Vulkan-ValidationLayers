@@ -8881,6 +8881,23 @@ void Device::PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
     FinishReadObject(commandBuffer, record_obj.location);
 }
 
+#ifdef VK_USE_PLATFORM_UBM_SEC
+void Instance::PreCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                const RecordObject& record_obj) {
+    StartReadObject(instance, record_obj.location);
+}
+
+void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                 const RecordObject& record_obj) {
+    FinishReadObject(instance, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pSurface);
+    }
+}
+
+#endif  // VK_USE_PLATFORM_UBM_SEC
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

@@ -296,5 +296,11 @@ VkResult EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(VkPhys
                                                                           uint32_t queueFamilyIndex, uint32_t* pCounterCount,
                                                                           VkPerformanceCounterARM* pCounters,
                                                                           VkPerformanceCounterDescriptionARM* pCounterDescriptions);
+#ifdef VK_USE_PLATFORM_UBM_SEC
+VkResult CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+VkBool32 GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                    struct ubm_device* ubm_device);
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
 // NOLINTEND

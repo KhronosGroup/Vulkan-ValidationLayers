@@ -9177,6 +9177,27 @@ void Device::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                               const VkComputeOccupancyPriorityParametersNV* pParameters) {
     device_dispatch_table.CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
 }
+#ifdef VK_USE_PLATFORM_UBM_SEC
+
+VkResult Instance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (!wrap_handles) return instance_dispatch_table.CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
+
+    VkResult result = instance_dispatch_table.CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        *pSurface = WrapNew(*pSurface);
+    }
+    return result;
+}
+
+VkBool32 Instance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                              struct ubm_device* ubm_device) {
+    VkBool32 result =
+        instance_dispatch_table.GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+
+    return result;
+}
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
 VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,

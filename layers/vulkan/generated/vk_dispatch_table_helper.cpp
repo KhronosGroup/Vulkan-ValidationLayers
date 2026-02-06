@@ -1506,6 +1506,16 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdEndRendering2EXT(VkCommandBuffer, const
 static VKAPI_ATTR void VKAPI_CALL StubCmdBeginCustomResolveEXT(VkCommandBuffer, const VkBeginCustomResolveInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetComputeOccupancyPriorityNV(VkCommandBuffer,
                                                                        const VkComputeOccupancyPriorityParametersNV*) {}
+#ifdef VK_USE_PLATFORM_UBM_SEC
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateUbmSurfaceSEC(VkInstance, const VkUbmSurfaceCreateInfoSEC*,
+                                                              const VkAllocationCallbacks*, VkSurfaceKHR*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice, uint32_t,
+                                                                                     struct ubm_device*) {
+    return VK_FALSE;
+}
+#endif  // VK_USE_PLATFORM_UBM_SEC
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*,
                                                                          const VkAllocationCallbacks*,
                                                                          VkAccelerationStructureKHR*) {
@@ -5401,6 +5411,18 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
             (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)
                 StubEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
     }
+#ifdef VK_USE_PLATFORM_UBM_SEC
+    table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");
+    if (table->CreateUbmSurfaceSEC == nullptr) {
+        table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)StubCreateUbmSurfaceSEC;
+    }
+    table->GetPhysicalDeviceUbmPresentationSupportSEC =
+        (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)gpa(instance, "vkGetPhysicalDeviceUbmPresentationSupportSEC");
+    if (table->GetPhysicalDeviceUbmPresentationSupportSEC == nullptr) {
+        table->GetPhysicalDeviceUbmPresentationSupportSEC =
+            (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)StubGetPhysicalDeviceUbmPresentationSupportSEC;
+    }
+#endif  // VK_USE_PLATFORM_UBM_SEC
 }
 
 // NOLINTEND

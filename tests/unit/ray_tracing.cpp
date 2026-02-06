@@ -4269,7 +4269,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     command_info.scratchData = 0;
     m_command_buffer.Begin();
     // scratchData must not be NULL
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
