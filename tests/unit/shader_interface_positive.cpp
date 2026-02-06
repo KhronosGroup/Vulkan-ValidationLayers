@@ -291,7 +291,7 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     VkShaderObj vs(*m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
 
-TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
+TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenMasked) {
     TEST_DESCRIPTION(
         "Test that no error is produced when the fragment shader fails to declare an output, but the corresponding attachment's "
         "write mask is 0.");
@@ -299,15 +299,58 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
+        layout(location = 0) out vec4 uFragColor;
         void main() {}
     )glsl";
-    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderInterface, FragmentOutputNotWritten) {
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
+    InitRenderTarget();
+
+    // Valid because no Output variable is declared
+    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.cb_attachments_.colorWriteMask = 0xf;  // all components
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenDynamicRendering) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
+    InitDynamicRenderTarget();
+
+    // Valid because no Output variable is declared
+    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkFormat color_formats = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.cb_attachments_.colorWriteMask = 0xf;  // all components
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
