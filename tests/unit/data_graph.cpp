@@ -1970,7 +1970,46 @@ TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
     // set the correct flags, but leave pResourceInfos
     pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
 
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-11841");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-12363");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphCreateInfoResourceCountZero) {
+    TEST_DESCRIPTION("Create a datagraph with the ARM cache, resource count is zero, but resource pointer is not null.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    VkDataGraphPipelineIdentifierCreateInfoARM pipeline_id = vku::InitStructHelper();
+    constexpr uint8_t dummy_data = 1;
+    pipeline_id.identifierSize = 1;
+    pipeline_id.pIdentifier = &dummy_data;
+    // replace the pNext chain, to remove the VkDataGraphPipelineShaderModuleCreateInfoARM added in the helper constructor
+    pipeline.pipeline_ci_.pNext = &pipeline_id;
+    // set the correct flags, set resourceInfoCount to 0, but leave pResourceInfos
+    pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline.pipeline_ci_.resourceInfoCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-12364");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphCreateInfoNullResources) {
+    TEST_DESCRIPTION("Create a datagraph but resource count is zero.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.pipeline_ci_.pResourceInfos = nullptr; // this is to avoid VU 12364
+    pipeline.pipeline_ci_.resourceInfoCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-12365");
+    // we also get 2x this because the spirv still includes 2 resources
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }

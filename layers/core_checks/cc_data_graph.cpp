@@ -184,13 +184,23 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                     string_VkPipelineCreateFlags2(create_info.flags).c_str(),
                     PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
             }
-            if (create_info.pResourceInfos || create_info.resourceInfoCount) {
+            if (create_info.resourceInfoCount) {
                 skip |= LogError(
-                    "VUID-VkDataGraphPipelineCreateInfoARM-None-11841", device, create_info_loc,
-                    "pResourceInfos (%p) is not NULL, or resourceInfoCount (%" PRIu32 ") is not 0, but the pNext chain include one of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
-                    create_info.pResourceInfos, create_info.resourceInfoCount,
-                    PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+                    "VUID-VkDataGraphPipelineCreateInfoARM-None-12363", device, create_info_loc.dot(Field::resourceInfoCount),
+                    "(%" PRIu32 ") is not zero, but the pNext chain includes one of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                    create_info.resourceInfoCount, PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
             }
+        } else if (create_info.resourceInfoCount == 0) {
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineCreateInfoARM-None-12365", device, create_info_loc.dot(Field::resourceInfoCount),
+                "is 0, but the pNext chain doesn't include VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+        }
+
+        if (create_info.resourceInfoCount == 0 && create_info.pResourceInfos) {
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-12364", device, create_info_loc.dot(Field::resourceInfoCount),
+                "(%" PRIu32 ") is 0, but pResourceInfos (%p) is not NULL.", create_info.resourceInfoCount, create_info.pResourceInfos);
         }
 
         if (dg_shader_ci) {
