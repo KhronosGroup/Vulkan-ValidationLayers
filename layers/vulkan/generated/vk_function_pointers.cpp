@@ -893,6 +893,10 @@ PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM Enumerate
 PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
 PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+#ifdef VK_USE_PLATFORM_UBM_SEC
+PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
+PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
+#endif  // VK_USE_PLATFORM_UBM_SEC
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
 PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
@@ -1668,6 +1672,14 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
             }
         },
 #endif  // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_UBM_SEC
+        {
+            "VK_SEC_ubm_surface", [](VkInstance instance) {
+                CreateUbmSurfaceSEC = reinterpret_cast<PFN_vkCreateUbmSurfaceSEC>(GetInstanceProcAddr(instance, "vkCreateUbmSurfaceSEC"));
+                GetPhysicalDeviceUbmPresentationSupportSEC = reinterpret_cast<PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceUbmPresentationSupportSEC"));
+            }
+        },
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
     };
 
@@ -3406,6 +3418,10 @@ void ResetAllExtensions() {
     CmdEndRendering2EXT = nullptr;
     CmdBeginCustomResolveEXT = nullptr;
     CmdSetComputeOccupancyPriorityNV = nullptr;
+#ifdef VK_USE_PLATFORM_UBM_SEC
+    CreateUbmSurfaceSEC = nullptr;
+    GetPhysicalDeviceUbmPresentationSupportSEC = nullptr;
+#endif  // VK_USE_PLATFORM_UBM_SEC
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;
     CmdBuildAccelerationStructuresKHR = nullptr;

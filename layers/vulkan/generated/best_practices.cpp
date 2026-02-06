@@ -1946,6 +1946,14 @@ void bp_state::Instance::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerform
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
+#ifdef VK_USE_PLATFORM_UBM_SEC
+void bp_state::Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                           const RecordObject& record_obj) {
+    bp_state::LogResult(*this, instance, record_obj);
+}
+#endif  // VK_USE_PLATFORM_UBM_SEC
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                  const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,

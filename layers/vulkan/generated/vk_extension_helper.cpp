@@ -467,6 +467,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_shader_uniform_buffer_unsized_array", vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array},
         {"VK_NV_compute_occupancy_priority", vvl::Extension::_VK_NV_compute_occupancy_priority},
         {"VK_EXT_shader_subgroup_partitioned", vvl::Extension::_VK_EXT_shader_subgroup_partitioned},
+        {"VK_SEC_ubm_surface", vvl::Extension::_VK_SEC_ubm_surface},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},
         {"VK_KHR_ray_query", vvl::Extension::_VK_KHR_ray_query},
@@ -882,6 +883,10 @@ static const InstanceExtensionsInfoMap& GetInstanceInfoMap() {
         {vvl::Extension::_VK_OHOS_surface,
          Info(&InstanceExtensions::vk_ohos_surface, {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_OHOS
+#ifdef VK_USE_PLATFORM_UBM_SEC
+        {vvl::Extension::_VK_SEC_ubm_surface,
+         Info(&InstanceExtensions::vk_sec_ubm_surface, {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
     };
 

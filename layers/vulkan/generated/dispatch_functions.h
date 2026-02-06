@@ -4638,6 +4638,21 @@ static inline void DispatchCmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
 }
+#ifdef VK_USE_PLATFORM_UBM_SEC
+
+static inline VkResult DispatchCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    auto dispatch = vvl::dispatch::GetData(instance);
+    return dispatch->CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
+}
+
+static inline VkBool32 DispatchGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex,
+                                                                          struct ubm_device* ubm_device) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+}
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

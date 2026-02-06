@@ -19310,15 +19310,13 @@ bool Device::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuff
 
         skip |=
             context.ValidateFlags(pCopyMemoryIndirectInfo_loc.dot(Field::srcCopyFlags), vvl::FlagBitmask::VkAddressCopyFlagBitsKHR,
-                                  AllVkAddressCopyFlagBitsKHR, pCopyMemoryIndirectInfo->srcCopyFlags, kRequiredFlags,
-                                  "VUID-VkCopyMemoryIndirectInfoKHR-srcCopyFlags-parameter",
-                                  "VUID-VkCopyMemoryIndirectInfoKHR-srcCopyFlags-requiredbitmask", false);
+                                  AllVkAddressCopyFlagBitsKHR, pCopyMemoryIndirectInfo->srcCopyFlags, kOptionalFlags,
+                                  "VUID-VkCopyMemoryIndirectInfoKHR-srcCopyFlags-parameter", nullptr, false);
 
         skip |=
             context.ValidateFlags(pCopyMemoryIndirectInfo_loc.dot(Field::dstCopyFlags), vvl::FlagBitmask::VkAddressCopyFlagBitsKHR,
-                                  AllVkAddressCopyFlagBitsKHR, pCopyMemoryIndirectInfo->dstCopyFlags, kRequiredFlags,
-                                  "VUID-VkCopyMemoryIndirectInfoKHR-dstCopyFlags-parameter",
-                                  "VUID-VkCopyMemoryIndirectInfoKHR-dstCopyFlags-requiredbitmask", false);
+                                  AllVkAddressCopyFlagBitsKHR, pCopyMemoryIndirectInfo->dstCopyFlags, kOptionalFlags,
+                                  "VUID-VkCopyMemoryIndirectInfoKHR-dstCopyFlags-parameter", nullptr, false);
     }
     return skip;
 }
@@ -19343,9 +19341,8 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
 
         skip |= context.ValidateFlags(pCopyMemoryToImageIndirectInfo_loc.dot(Field::srcCopyFlags),
                                       vvl::FlagBitmask::VkAddressCopyFlagBitsKHR, AllVkAddressCopyFlagBitsKHR,
-                                      pCopyMemoryToImageIndirectInfo->srcCopyFlags, kRequiredFlags,
-                                      "VUID-VkCopyMemoryToImageIndirectInfoKHR-srcCopyFlags-parameter",
-                                      "VUID-VkCopyMemoryToImageIndirectInfoKHR-srcCopyFlags-requiredbitmask", false);
+                                      pCopyMemoryToImageIndirectInfo->srcCopyFlags, kOptionalFlags,
+                                      "VUID-VkCopyMemoryToImageIndirectInfoKHR-srcCopyFlags-parameter", nullptr, false);
 
         skip |= context.ValidateRequiredHandle(pCopyMemoryToImageIndirectInfo_loc.dot(Field::dstImage),
                                                pCopyMemoryToImageIndirectInfo->dstImage);
@@ -26885,10 +26882,9 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
             skip |= context.ValidateStructTypeArray(
                 pCreateInfos_loc.dot(Field::resourceInfoCount), pCreateInfos_loc.dot(Field::pResourceInfos),
                 pCreateInfos[createInfoIndex].resourceInfoCount, pCreateInfos[createInfoIndex].pResourceInfos,
-                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, true, true,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, false, true,
                 "VUID-VkDataGraphPipelineResourceInfoARM-sType-sType",
-                "VUID-VkDataGraphPipelineCreateInfoARM-pResourceInfos-parameter",
-                "VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
+                "VUID-VkDataGraphPipelineCreateInfoARM-pResourceInfos-parameter", kVUIDUndefined);
 
             if (pCreateInfos[createInfoIndex].pResourceInfos != nullptr) {
                 for (uint32_t resourceInfoIndex = 0; resourceInfoIndex < pCreateInfos[createInfoIndex].resourceInfoCount;
@@ -27614,10 +27610,6 @@ bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                                         "VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-parameter",
                                         pBuildInfo_loc.dot(Field::dstAccelerationStructureData));
 
-        skip |= context.ValidateNotZero(pBuildInfo->scratchData == 0,
-                                        "VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-parameter",
-                                        pBuildInfo_loc.dot(Field::scratchData));
-
         skip |= context.ValidateNotZero(pBuildInfo->srcInfos == 0,
                                         "VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfos-parameter",
                                         pBuildInfo_loc.dot(Field::srcInfos));
@@ -28107,6 +28099,48 @@ bool Device::PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer com
     }
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_UBM_SEC
+bool Instance::PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_sec_ubm_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_SEC_ubm_surface});
+    skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC,
+                                       true, "VUID-vkCreateUbmSurfaceSEC-pCreateInfo-parameter",
+                                       "VUID-VkUbmSurfaceCreateInfoSEC-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkUbmSurfaceCreateInfoSEC-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
+                                              "VUID-VkUbmSurfaceCreateInfoSEC-flags-zerobitmask");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateUbmSurfaceSEC-pSurface-parameter");
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                         struct ubm_device* ubm_device,
+                                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_sec_ubm_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_SEC_ubm_surface});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::ubm_device), ubm_device,
+                                            "VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-ubm_device-parameter");
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

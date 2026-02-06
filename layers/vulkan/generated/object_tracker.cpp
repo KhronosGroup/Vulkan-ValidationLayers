@@ -8612,6 +8612,23 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 // vkCmdSetComputeOccupancyPriorityNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetComputeOccupancyPriorityNV-commandBuffer-parameter"
 
+#ifdef VK_USE_PLATFORM_UBM_SEC
+
+// vkCreateUbmSurfaceSEC:
+// Checked by chassis: instance: "VUID-vkCreateUbmSurfaceSEC-instance-parameter"
+
+void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                 const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
+}
+
+// vkGetPhysicalDeviceUbmPresentationSupportSEC:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-physicalDevice-parameter"
+
+#endif  // VK_USE_PLATFORM_UBM_SEC
+
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

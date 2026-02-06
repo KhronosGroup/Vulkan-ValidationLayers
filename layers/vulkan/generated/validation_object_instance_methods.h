@@ -1360,5 +1360,29 @@ virtual void PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersB
 virtual void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
     VkPerformanceCounterDescriptionARM* pCounterDescriptions, const RecordObject& record_obj) {}
+#ifdef VK_USE_PLATFORM_UBM_SEC
+virtual bool PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                       struct ubm_device* ubm_device,
+                                                                       const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                     struct ubm_device* ubm_device,
+                                                                     const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                      struct ubm_device* ubm_device,
+                                                                      const RecordObject& record_obj) {}
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
 // NOLINTEND

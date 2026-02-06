@@ -477,6 +477,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const {
         case VK_FORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
             return IsExtEnabled(extensions.vk_ext_texture_compression_astc_3d) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R8_BOOL_ARM:
+        case VK_FORMAT_R16_SFLOAT_FPENCODING_BFLOAT16_ARM:
+        case VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM:
+        case VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E5M2_ARM:
             return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return IsExtEnabled(extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
@@ -2630,6 +2633,9 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkFormat value) const {
         case VK_FORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
             return {vvl::Extension::_VK_EXT_texture_compression_astc_3d};
         case VK_FORMAT_R8_BOOL_ARM:
+        case VK_FORMAT_R16_SFLOAT_FPENCODING_BFLOAT16_ARM:
+        case VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM:
+        case VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E5M2_ARM:
             return {vvl::Extension::_VK_ARM_tensors};
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
