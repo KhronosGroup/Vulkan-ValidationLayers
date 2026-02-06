@@ -33,8 +33,8 @@ static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
     VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 
-static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
-    switch (indexType) {
+static inline uint32_t IndexTypeSize(VkIndexType index_type) {
+    switch (index_type) {
         case VK_INDEX_TYPE_UINT16:
             return 2;
         case VK_INDEX_TYPE_UINT32:
@@ -43,27 +43,12 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
             return 1;
         case VK_INDEX_TYPE_NONE_KHR:  // alias VK_INDEX_TYPE_NONE_NV
             return 0;
-        default:
-            // Not a real index type. Express no alignment requirement here; we expect upper layer
-            // to have already picked up on the enum being nonsense.
-            return 1;
-    }
-}
-
-inline constexpr uint32_t GetIndexBitsSize(VkIndexType indexType) {
-    switch (indexType) {
-        case VK_INDEX_TYPE_UINT16:
-            return 16;
-        case VK_INDEX_TYPE_UINT32:
-            return 32;
-        case VK_INDEX_TYPE_NONE_KHR:
-            return 0;
-        case VK_INDEX_TYPE_UINT8_KHR:
-            return 8;
         case VK_INDEX_TYPE_MAX_ENUM:
-            return 0;
+            break;
+            // Not a real index type. Express no alignment requirement here
+            // Assume caller is handling this already
     }
-    return 0;
+    return 1;  // so compilers don't complain nothing is returned in all cases
 }
 
 static bool inline IsStageInPipelineBindPoint(VkShaderStageFlags stages, VkPipelineBindPoint bind_point) {

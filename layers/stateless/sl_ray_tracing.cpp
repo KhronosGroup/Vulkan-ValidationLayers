@@ -55,8 +55,8 @@ bool Device::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles,
         triangles.indexType != VK_INDEX_TYPE_NONE_NV) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexType-02433", object_handle, loc, "is invalid.");
     } else {
-        const uint32_t index_element_size = GetIndexAlignment(triangles.indexType);
-        if (index_element_size > 0 && !IsIntegerMultipleOf(triangles.indexOffset, index_element_size)) {
+        const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
+        if (index_type_size > 0 && !IsIntegerMultipleOf(triangles.indexOffset, index_type_size)) {
             skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02432", object_handle, loc, "is invalid.");
         }
 
@@ -1246,14 +1246,14 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
             const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
             if (as_geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                 const auto &triangles = as_geometry.geometry.triangles;
-                const uint32_t index_buffer_alignment = GetIndexAlignment(triangles.indexType);
+                const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
                 if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
-                    if (!IsPointerAligned(triangles.indexData.deviceAddress, index_buffer_alignment)) {
+                    if (!IsPointerAligned(triangles.indexData.deviceAddress, index_type_size)) {
                         skip |= LogError(
                             "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
                             p_geom_geom_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
                             "(0x%" PRIx64 ") is not aligned to %" PRIu32 " (the corresponding geometry's VkIndexType of %s).",
-                            triangles.indexData.deviceAddress, index_buffer_alignment, string_VkIndexType(triangles.indexType));
+                            triangles.indexData.deviceAddress, index_type_size, string_VkIndexType(triangles.indexType));
                     }
 
                     if (!IsPointerAligned(triangles.transformData.deviceAddress, 16)) {
@@ -1264,12 +1264,12 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                          triangles.transformData.deviceAddress);
                     }
 
-                    if (!IsIntegerMultipleOf(build_range.primitiveOffset, index_buffer_alignment)) {
+                    if (!IsIntegerMultipleOf(build_range.primitiveOffset, index_type_size)) {
                         skip |= LogError(
                             "VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03656", commandBuffer,
                             error_obj.location.dot(Field::ppBuildRangeInfos, info_i).brackets(geom_i).dot(Field::primitiveOffset),
                             "(%" PRIu32 ") is not a multiple of %" PRIu32 " (the corresponding geometry's VkIndexType of %s).",
-                            build_range.primitiveOffset, index_buffer_alignment, string_VkIndexType(triangles.indexType));
+                            build_range.primitiveOffset, index_type_size, string_VkIndexType(triangles.indexType));
                     }
                 } else {
                     if (build_range.primitiveCount > 0) {
@@ -1464,14 +1464,14 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
                     }
                 } else if (as_geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                     const auto &triangles = as_geometry.geometry.triangles;
-                    const VkDeviceSize index_buffer_alignment = GetIndexAlignment(triangles.indexType);
+                    const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
                     if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR &&
-                        !IsPointerAligned(triangles.indexData.deviceAddress, index_buffer_alignment)) {
+                        !IsPointerAligned(triangles.indexData.deviceAddress, index_type_size)) {
                         skip |= LogError(
                             "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03712", commandBuffer,
                             geometry_loc.dot(Field::geometry).dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
-                            "(0x%" PRIx64 ") is not aligned to the size in bytes of its corresponding index type (%s).",
-                            triangles.indexData.deviceAddress, string_VkIndexType(triangles.indexType));
+                            "(0x%" PRIx64 ") is not aligned to %" PRIu32 " (the alignment for %s).",
+                            triangles.indexData.deviceAddress, index_type_size, string_VkIndexType(triangles.indexType));
                     }
 
                     if (!IsPointerAligned(triangles.transformData.deviceAddress, 16)) {

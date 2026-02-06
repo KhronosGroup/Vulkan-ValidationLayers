@@ -847,7 +847,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         switch (error_sub_code) {
             case kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex: {
                 const uint32_t index = error_record[kValCmd_ErrorPayloadDword_2];
-                const uint32_t index_type_byte_size = GetIndexBitsSize(error_info.geom.triangles.indexType) / 8u;
+                const uint32_t index_type_byte_size = IndexTypeSize(error_info.geom.triangles.indexType);
 
                 skip |= gpuav.LogError(
                     "VUID-VkAccelerationStructureBuildRangeInfoKHR-maxVertex-10774", objlist, loc_with_debug_region,
