@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
- * Copyright (c) 2023-2025 Google, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Copyright (c) 2023-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,35 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
     m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageOffset-09114");
     m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09115");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeHostImageCopy, ImageOffsetArrayLayer) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11627");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    image_ci.arrayLayers = 2;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(layout);
+
+    uint8_t garbage = 0;  // should never be dereferenced
+
+    VkMemoryToImageCopy region_to_image = vku::InitStructHelper();
+    region_to_image.pHostPointer = &garbage;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageOffset = {0, 0, 0};
+    region_to_image.imageExtent = {width, height, 1};
+
+    VkCopyMemoryToImageInfo copy_to_image = vku::InitStructHelper();
+    copy_to_image.dstImage = image;
+    copy_to_image.dstImageLayout = layout;
+    copy_to_image.regionCount = 1;
+    copy_to_image.pRegions = &region_to_image;
+
+    copy_to_image.flags = VK_HOST_IMAGE_COPY_MEMCPY;
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09115");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 }
 
