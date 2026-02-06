@@ -2267,7 +2267,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
         if (pSizes) {
             if (offset >= buffer_state->create_info.size) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pOffsets-03357", objlist, error_obj.location.dot(Field::pOffsets, i),
-                                 "(0x%" PRIu64 ") is beyond the end of the buffer of size (%" PRIu64 ").", offset,
+                                 "(%" PRIu64 ") is beyond the end of the buffer of size (%" PRIu64 ").", offset,
                                  buffer_state->create_info.size);
             }
             const VkDeviceSize size = pSizes[i];
