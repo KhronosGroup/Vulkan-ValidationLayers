@@ -797,7 +797,7 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
     if (constant) {
         type = &constant->type_;
     } else {
-        const Instruction* inst = block.function_.FindInstruction(id);
+        const Instruction* inst = block.function_->FindInstruction(id);
         if (inst) {
             type = type_manager_.FindTypeById(inst->TypeId());
         }
@@ -831,7 +831,7 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
     if (constant) {
         type = &constant->type_;
     } else {
-        const Instruction* inst = block.function_.FindInstruction(int32_id);
+        const Instruction* inst = block.function_->FindInstruction(int32_id);
         if (inst) {
             type = type_manager_.FindTypeById(inst->TypeId());
         }

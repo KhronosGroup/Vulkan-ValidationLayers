@@ -17,6 +17,7 @@
 #include <cassert>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
+#include "function_basic_block.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
@@ -33,6 +34,8 @@ namespace spirv {
 
 static constexpr uint32_t kLinkedInstruction = vvl::kNoIndex32;
 
+// This constructor is really our "parse incoming SPIR-V" logic for GPU-AV
+// It will build up the Module object which will be modified, and when done, dumpped back out to SPIR-V
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const DeviceSettings& settings,
                const InstrumentationInterface& interface, const DeviceFeatures& enabled_features)
     : type_manager_(*this),
@@ -239,7 +242,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
         if (opcode == spv::OpLabel) {
             block_found = true;
-            auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *current_function);
+            auto new_block = std::make_unique<BasicBlock>(std::move(new_inst));
             auto& added_block = current_function->blocks_.emplace_back(std::move(new_block));
             current_block = &(*added_block);
         } else if (function_end_found) {
@@ -285,6 +288,15 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                     worklist.push_back(callee_id);
                 }
             }
+        }
+    }
+
+    // This is all in effort to have |functions_| not be a vector<std::unique_ptr<Function>>
+    // (Because it shouldn't need to be!!)
+    // From here, the |functions_| vector is not going to change until we link (when it is safe too)
+    for (Function& function : functions_) {
+        for (auto& block : function.blocks_) {
+            block->function_ = &function;
         }
     }
 }
@@ -751,7 +763,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
 
                 // Only do on first label at top of function
                 if (!link_basic_block) {
-                    auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), new_function);
+                    auto new_block = std::make_unique<BasicBlock>(std::move(new_inst));
                     auto& added_block = new_function.blocks_.emplace_back(std::move(new_block));
                     link_basic_block = &(*added_block);
                     offset += length;

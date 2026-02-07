@@ -38,12 +38,14 @@ void Function::ToBinary(std::vector<uint32_t>& out) const {
     }
 }
 
-BasicBlock::BasicBlock(std::unique_ptr<Instruction> label, Function& function) : function_(function) {
-    // Used when loading initial SPIR-V
+// Used when loading initial SPIR-V
+// The Function pointer is not stable yet
+BasicBlock::BasicBlock(std::unique_ptr<Instruction> label) {
     instructions_.emplace_back(std::move(label));  // OpLabel
 }
 
-BasicBlock::BasicBlock(Module& module, Function& function) : function_(function) {
+// We are injecting a new block in a pass, so the function is stable
+BasicBlock::BasicBlock(Module& module, Function* function) : function_(function) {
     uint32_t new_label_id = module.TakeNextId();
     CreateInstruction(spv::OpLabel, {new_label_id});
 }
@@ -93,7 +95,7 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
 
     const uint32_t result_id = new_inst->ResultId();
     if (result_id != 0) {
-        function_.inst_map_[result_id] = new_inst.get();
+        function_->inst_map_[result_id] = new_inst.get();
     }
 
     InstructionIt it = instructions_.insert(*inst_it, std::move(new_inst));
@@ -111,12 +113,12 @@ Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) :
 
 BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
     it++;  // make sure it inserted after
-    BasicBlockIt new_block_it = blocks_.emplace(it, std::make_unique<BasicBlock>(module_, *this));
+    BasicBlockIt new_block_it = blocks_.emplace(it, std::make_unique<BasicBlock>(module_, this));
     return new_block_it;
 }
 
 BasicBlock& Function::InsertNewBlockEnd() {
-    std::unique_ptr<BasicBlock>& new_block = blocks_.emplace_back(std::make_unique<BasicBlock>(module_, *this));
+    std::unique_ptr<BasicBlock>& new_block = blocks_.emplace_back(std::make_unique<BasicBlock>(module_, this));
     return *new_block;
 }
 
