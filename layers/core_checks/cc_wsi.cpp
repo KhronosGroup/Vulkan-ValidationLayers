@@ -572,7 +572,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     if (shared_present_mode) {
         if (create_info.minImageCount != 1) {
             if (LogError("VUID-VkSwapchainCreateInfoKHR-minImageCount-01383", device, create_info_loc,
-                         "called with presentMode %s, but minImageCount value is %d. For shared presentable image, minImageCount "
+                         "called with presentMode %s, but minImageCount value is %" PRIu32
+                         ". For shared presentable image, minImageCount "
                          "must be 1.",
                          string_VkPresentModeKHR(present_mode), create_info.minImageCount)) {
                 return true;
@@ -670,7 +671,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     // Validate pCreateInfo->imageArrayLayers against VkImageFormatProperties::maxArrayLayers
     if (create_info.imageArrayLayers > image_properties.maxArrayLayers) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageArrayLayers),
-                     "%" PRIu32 ", but Maximum value returned by vkGetPhysicalDeviceImageFormatProperties() is %d "
+                     "%" PRIu32 ", but Maximum value returned by vkGetPhysicalDeviceImageFormatProperties() is %" PRIu32 " "
                      "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
                      create_info.imageArrayLayers, image_properties.maxArrayLayers, string_VkFormat(create_info.imageFormat))) {
             return true;
