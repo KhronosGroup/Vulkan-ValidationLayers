@@ -218,7 +218,7 @@ if(MSVC AND UPDATE_DEPS)
     add_custom_target(Scripts SOURCES ${SCRIPTS})
     source_group(TREE ${SCRIPTS_DIR} PREFIX "Scripts" FILES ${SCRIPTS})
 
-    set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+    set(EXTERNAL_DIR "${UPDATE_DEPS_DIR}")
     file(GLOB_RECURSE EXTERNAL_HEADER_FILES
             "${GLSLANG_INSTALL_DIR}/*.h"
             "${GLSLANG_INSTALL_DIR}/*.hpp"

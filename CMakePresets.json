@@ -1,0 +1,42 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{
+			"name": "DeveloperSettings",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"cacheVariables": {
+				"UPDATE_DEPS": true,
+				"UPDATE_DEPS_DIR": "${sourceDir}/build/${presetName}/external",
+				"BUILD_WERROR": true,
+				"BUILD_TESTS": true
+			}
+		},
+		{
+			"name": "Audit",
+			"displayName": "Audit",
+			"inherits": "DeveloperSettings",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"VVL_ENABLE_ASAN": true,
+				"VVL_ENABLE_UBSAN": true
+			}
+		},
+		{
+			"name": "Debug",
+			"displayName": "Debug",
+			"inherits": "DeveloperSettings",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "Release",
+			"displayName": "Release",
+			"inherits": "DeveloperSettings",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+			}
+		}
+	]
+}
