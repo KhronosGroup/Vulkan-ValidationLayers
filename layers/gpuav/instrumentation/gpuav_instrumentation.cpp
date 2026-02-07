@@ -484,6 +484,46 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
     cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
+void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, CommandBufferSubState &cb_state,
+                                                              const LastBound &last_bound, const Location &loc) {
+    if (!gpuav.gpuav_settings.debug_printf_enabled) {
+        return;  // currently only thing enabled
+    }
+
+    VkDeviceSize offset = gpuav.resource_heap_reserved_offset_;
+    bool need_to_unmap = false;
+    void *heap_memory = gpuav.resource_heap_buffer_memory_state_->p_driver_data;
+
+    if (!heap_memory) {
+        need_to_unmap = true;
+        DispatchMapMemory(gpuav.device, gpuav.resource_heap_buffer_memory_state_->VkHandle(), 0, VK_WHOLE_SIZE, 0, &heap_memory);
+    }
+
+    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_heap_update_functions.size(); ++func_i) {
+        VkDeviceAddressRangeEXT device_range;
+        cb_state.on_instrumentation_desc_heap_update_functions[func_i](cb_state, last_bound.bind_point, device_range);
+
+        VkResourceDescriptorInfoEXT resource = vku::InitStructHelper();
+        resource.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        resource.data.pAddressRange = &device_range;
+
+        VkHostAddressRangeEXT descriptor;
+        descriptor.address = static_cast<uint8_t *>(heap_memory) + offset;
+        descriptor.size = static_cast<size_t>(gpuav.buffer_descriptor_size_);
+        DispatchWriteResourceDescriptorsEXT(gpuav.device, 1u, &resource, &descriptor);
+
+        VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+        push_data_info.offset = gpuav.push_data_offset_;
+        push_data_info.data.address = &offset;
+        push_data_info.data.size = sizeof(uint32_t);
+        DispatchCmdPushDataEXT(cb_state.VkHandle(), &push_data_info);
+    }
+
+    if (need_to_unmap) {
+        DispatchUnmapMemory(gpuav.device, gpuav.resource_heap_buffer_memory_state_->VkHandle());
+    }
+}
+
 void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav, CommandBufferSubState &cb_state,
                                                                 const LastBound &last_bound,
                                                                 const InstBindingPipeLayout &inst_binding_pipe_layout,
@@ -548,13 +588,16 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     InstBindingPipeLayout inst_binding_pipe_layout;
 
     // App uses regular pipelines or graphics pipeline libraries
+    const vvl::DescriptorMode mode = last_bound.GetActionDescriptorMode();
     if (last_bound.pipeline_state) {
-        const PipelineSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
-        const vvl::DescriptorMode mode = last_bound.GetActionDescriptorMode();
-        inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(loc, mode);
-        assert(inst_binding_pipe_layout.handle != VK_NULL_HANDLE);
-        if (gpuav.aborted_) {
-            return;
+        if (mode != vvl::DescriptorMode::DescriptorModeHeap) {
+            const PipelineSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
+
+            inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(loc, mode);
+            assert(inst_binding_pipe_layout.handle != VK_NULL_HANDLE);
+            if (gpuav.aborted_) {
+                return;
+            }
         }
         inst_binding_pipe_layout.source = PipelineLayoutSource::LastBoundPipeline;
     }
@@ -573,7 +616,9 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         }
     }
 
-    if (last_bound.GetActionDescriptorMode() == vvl::DescriptorModeBuffer) {
+    if (mode == vvl::DescriptorModeHeap) {
+        PreCallSetupShaderInstrumentationResourcesDescriptorHeap(gpuav, cb_state, last_bound, loc);
+    } else if (mode == vvl::DescriptorModeBuffer) {
         PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(gpuav, cb_state, last_bound, inst_binding_pipe_layout, loc);
     } else {
         PreCallSetupShaderInstrumentationResourcesClassic(gpuav, cb_state, last_bound, inst_binding_pipe_layout, loc);
