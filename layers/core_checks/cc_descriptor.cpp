@@ -4131,20 +4131,18 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
     for (uint32_t i = 0; i < pCreateInfo->descriptorUpdateEntryCount; ++i) {
         const auto &descriptor_update = pCreateInfo->pDescriptorUpdateEntries[i];
         if (descriptor_update.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-            if (descriptor_update.dstArrayElement & 3) {
+            if (!IsIntegerMultipleOf(descriptor_update.dstArrayElement, 4)) {
                 skip |= LogError("VUID-VkDescriptorUpdateTemplateEntry-descriptor-02226", pCreateInfo->pipelineLayout,
                                  create_info_loc.dot(Field::pDescriptorUpdateEntries, i),
                                  "has descriptorType VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but dstArrayElement (%" PRIu32
-                                 ") is not a "
-                                 "multiple of 4).",
+                                 ") is not a multiple of 4.",
                                  descriptor_update.dstArrayElement);
             }
-            if (descriptor_update.descriptorCount & 3) {
+            if (!IsIntegerMultipleOf(descriptor_update.descriptorCount, 4)) {
                 skip |= LogError("VUID-VkDescriptorUpdateTemplateEntry-descriptor-02227", pCreateInfo->pipelineLayout,
                                  create_info_loc.dot(Field::pDescriptorUpdateEntries, i),
                                  "has descriptorType VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but descriptorCount (%" PRIu32
-                                 ") is not a "
-                                 "multiple of 4).",
+                                 ") is not a multiple of 4.",
                                  descriptor_update.descriptorCount);
             }
         }

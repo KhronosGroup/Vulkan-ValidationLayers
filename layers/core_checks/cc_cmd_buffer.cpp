@@ -475,8 +475,8 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
 
     for (const auto &query_obj : cb_state.active_queries) {
         skip |= LogError("VUID-vkEndCommandBuffer-commandBuffer-00061", commandBuffer, error_obj.location,
-                         "Ending command buffer with in progress query: %s, query %d.", FormatHandle(query_obj.pool).c_str(),
-                         query_obj.slot);
+                         "Ending command buffer with in progress query: %s, query %" PRIu32 ".",
+                         FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
     if (cb_state.conditional_rendering_active) {
         skip |= LogError("VUID-vkEndCommandBuffer-None-01978", commandBuffer, error_obj.location,

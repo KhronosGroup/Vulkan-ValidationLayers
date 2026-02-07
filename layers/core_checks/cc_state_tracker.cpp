@@ -836,11 +836,12 @@ void CommandBufferSubState::RecordBeginVideoCoding(vvl::VideoSession& vs_state, 
                 for (const auto& slot : expected_slots) {
                     if (!dev_state.IsSlotActive(slot.index)) {
                         skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239", vs_state->Handle(), loc,
-                                                   "DPB slot index %d is not active in %s.", slot.index,
+                                                   "DPB slot index %" PRIu32 " is not active in %s.", slot.index,
                                                    validator.FormatHandle(*vs_state).c_str());
                     } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
                         skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265", vs_state->Handle(), loc,
-                                                   "DPB slot index %d of %s is not currently associated with the specified "
+                                                   "DPB slot index %" PRIu32
+                                                   " of %s is not currently associated with the specified "
                                                    "video picture resource: %s, layer %" PRIu32 ", offset (%s), extent (%s).",
                                                    slot.index, validator.FormatHandle(*vs_state).c_str(),
                                                    validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),
@@ -921,7 +922,8 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
                 const auto log_picture_kind_error = [&](const vvl::VideoReferenceSlot& slot, const char* vuid,
                                                         const char* picture_kind) -> bool {
                     return validator.LogError(vuid, vs_state->Handle(), loc,
-                                              "DPB slot index %d of %s does not currently contain a %s with the specified "
+                                              "DPB slot index %" PRIu32
+                                              " of %s does not currently contain a %s with the specified "
                                               "video picture resource: %s, layer %" PRIu32 ", offset (%s), extent (%s).",
                                               slot.index, validator.FormatHandle(*vs_state).c_str(), picture_kind,
                                               validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),

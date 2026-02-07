@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -106,8 +106,9 @@ struct CommandBufferSubmitState {
                 barrier.dstQueueFamilyIndex != queue_state.queue_family_index) {
                 skip |= core.LogError("VUID-VkTensorMemoryBarrierARM-tensor-09757", cb_state.Handle(), loc,
                                       "Tensor (%s) used in barrier has sharing mode VK_SHARING_MODE_EXCLUSIVE but neither "
-                                      "srcQueueFamilyIndex (%d) or dstQueueFamilyIndex (%d) are VK_QUEUE_FAMILY_IGNORED or "
-                                      "the same queue family as this queue which is executing the barrier (%d)",
+                                      "srcQueueFamilyIndex (%" PRIu32 ") or dstQueueFamilyIndex (%" PRIu32
+                                      ") are VK_QUEUE_FAMILY_IGNORED or "
+                                      "the same queue family as this queue which is executing the barrier (%" PRIu32 ")",
                                       core.FormatHandle(barrier.tensor).c_str(), barrier.srcQueueFamilyIndex,
                                       barrier.dstQueueFamilyIndex, queue_state.queue_family_index);
             }
@@ -530,7 +531,7 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const
         const LogObjectList objlist(cb_state.Handle(), object);
         skip |= LogError("VUID-vkQueueSubmit-pSubmits-04626", objlist, loc,
                          "%s contains %s which was not created allowing concurrent access to "
-                         "this queue family %d.",
+                         "this queue family %" PRIu32 ".",
                          FormatHandle(cb_state).c_str(), FormatHandle(object).c_str(), queueFamilyIndex);
     }
     return skip;
@@ -548,8 +549,9 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::Comm
         const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
         const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdWrongQueueFamily);
         skip |= LogError(vuid, objlist, loc,
-                         "Primary command buffer %s created in queue family %d is being submitted on %s "
-                         "from queue family %d.",
+                         "Primary command buffer %s created in queue family %" PRIu32
+                         " is being submitted on %s "
+                         "from queue family %" PRIu32 ".",
                          FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue_state.Handle()).c_str(),
                          queue_state.queue_family_index);
     }

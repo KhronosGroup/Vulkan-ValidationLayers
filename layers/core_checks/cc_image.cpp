@@ -728,7 +728,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         const auto format_limits = image_format_properties.imageFormatProperties;
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
             skip |= LogError("VUID-VkImageCreateInfo-mipLevels-02255", device, create_info_loc.dot(Field::mipLevels),
-                             "(%d) exceed image format maxMipLevels (%d) for format %s.", pCreateInfo->mipLevels,
+                             "(%" PRIu32 ") exceed image format maxMipLevels (%" PRIu32 ") for format %s.", pCreateInfo->mipLevels,
                              format_limits.maxMipLevels, string_VkFormat(pCreateInfo->format));
         }
 
@@ -763,7 +763,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
             skip |= LogError("VUID-VkImageCreateInfo-arrayLayers-02256", device, create_info_loc.dot(Field::arrayLayers),
-                             "(%d) exceeds allowable maximum supported by format %s (format maxArrayLayers: %" PRIu32 ").",
+                             "(%" PRIu32 ") exceeds allowable maximum supported by format %s (format maxArrayLayers: %" PRIu32 ").",
                              pCreateInfo->arrayLayers, string_VkFormat(pCreateInfo->format), format_limits.maxArrayLayers);
         }
 
@@ -797,8 +797,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (FormatRequiresYcbcrConversionExplicitly(pCreateInfo->format)) {
         if (pCreateInfo->mipLevels != 1) {
             skip |= LogError("VUID-VkImageCreateInfo-format-06410", device, create_info_loc.dot(Field::mipLevels),
-                             "(%d), but when using a YCbCr Conversion format (%s), mipLevels must be 1.", pCreateInfo->mipLevels,
-                             string_VkFormat(pCreateInfo->format));
+                             "(%" PRIu32 "), but when using a YCbCr Conversion format (%s), mipLevels must be 1.",
+                             pCreateInfo->mipLevels, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
@@ -2181,19 +2181,19 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE && remaining_layers != 6) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02962", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
-                             "is VK_REMAINING_ARRAY_LAYERS (%d) but must be 6.", remaining_layers);
+                             "is VK_REMAINING_ARRAY_LAYERS (%" PRIu32 ") but must be 6.", remaining_layers);
         }
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && !IsIntegerMultipleOf(remaining_layers, 6)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02963", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
-                             "is VK_REMAINING_ARRAY_LAYERS (%d) but must be a multiple of 6.", remaining_layers);
+                             "is VK_REMAINING_ARRAY_LAYERS (%" PRIu32 ") but must be a multiple of 6.", remaining_layers);
         }
         if ((remaining_layers != 1) && ((view_type == VK_IMAGE_VIEW_TYPE_1D) || (view_type == VK_IMAGE_VIEW_TYPE_2D) ||
                                         (view_type == VK_IMAGE_VIEW_TYPE_3D))) {
             skip |=
                 LogError("VUID-VkImageViewCreateInfo-imageViewType-04974", create_info.image, create_info_loc.dot(Field::viewType),
                          "is %s and the subresourceRange.layerCount "
-                         "is VK_REMAINING_ARRAY_LAYERS (%d) but must be 1 (try looking into VK_IMAGE_VIEW_TYPE_%s_ARRAY).",
+                         "is VK_REMAINING_ARRAY_LAYERS (%" PRIu32 ") but must be 1 (try looking into VK_IMAGE_VIEW_TYPE_%s_ARRAY).",
                          string_VkImageViewType(view_type), remaining_layers,
                          view_type == VK_IMAGE_VIEW_TYPE_1D   ? "1D"
                          : view_type == VK_IMAGE_VIEW_TYPE_2D ? "2D"
@@ -2290,7 +2290,8 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
             skip |= LogError("VUID-VkImageViewCreateInfo-image-03569", create_info.image, create_info_loc.dot(Field::image),
                              "was created with flags containing "
                              "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and usage containing VK_IMAGE_USAGE_SAMPLED_BIT "
-                             "but subresourceRange.layerCount (%s) must be less than or equal to maxSubsampledArrayLayers (%d)",
+                             "but subresourceRange.layerCount (%s) must be less than or equal to maxSubsampledArrayLayers (%" PRIu32
+                             ")",
                              string_LayerCount(image_state.create_info, create_info.subresourceRange).c_str(),
                              phys_dev_ext_props.fragment_density_map2_props.maxSubsampledArrayLayers);
         }

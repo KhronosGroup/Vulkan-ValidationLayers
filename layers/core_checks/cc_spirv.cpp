@@ -1014,7 +1014,8 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
 
                 if (m_signed.component_count > phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-maxCooperativeVectorComponents-10094", module_state.handle(), loc,
-                                     "SPIR-V (%s) component count (%d) is greater than maxCooperativeVectorComponents (%d)",
+                                     "SPIR-V (%s) component count (%" PRIu32
+                                     ") is greater than maxCooperativeVectorComponents (%" PRIu32 ")",
                                      string_VkShaderStageFlagBits(entrypoint.stage), m_signed.component_count,
                                      phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents);
                 }
@@ -1375,9 +1376,10 @@ bool CoreChecks::ValidateVectorTypes(const spirv::Module &module_state, const Lo
 
             uint32_t components = module_state.GetNumComponentsInBaseType(&insn);
             if (components > maxVectorComponents) {
-                skip |= LogError("VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
-                                 "SPIR-V vector type component count (%d) exceeds maxVectorComponents (%d).\n%s\n", components,
-                                 maxVectorComponents, module_state.DescribeInstruction(insn).c_str());
+                skip |=
+                    LogError("VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
+                             "SPIR-V vector type component count (%" PRIu32 ") exceeds maxVectorComponents (%" PRIu32 ").\n%s\n",
+                             components, maxVectorComponents, module_state.DescribeInstruction(insn).c_str());
             }
         }
     }

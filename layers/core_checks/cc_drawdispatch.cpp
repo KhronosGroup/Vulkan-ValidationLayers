@@ -381,7 +381,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                          "(%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
-    if (offset & 3) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
     }
@@ -426,7 +426,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                              "or equal to the size of buffer (%" PRIu64 ").",
                              (offset + sizeof(VkDrawIndexedIndirectCommand)), indirect_buffer_state->create_info.size);
         }
-        if (offset & 3) {
+        if (!IsIntegerMultipleOf(offset, 4)) {
             skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                              error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
         }
@@ -581,7 +581,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
         skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
-        if (offset & 3) {
+        if (!IsIntegerMultipleOf(offset, 4)) {
             skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                              error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
         }
@@ -607,12 +607,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
-    if (offset & 3) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
     }
 
-    if (countBufferOffset & 3) {
+    if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |=
             LogError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                      error_obj.location.dot(Field::countBufferOffset), "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
@@ -667,11 +667,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
-    if (offset & 3) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
     }
-    if (countBufferOffset & 3) {
+    if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
                          "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
@@ -1103,12 +1103,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
                                  "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
             }
-            if ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
-                skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
-                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::stride),
-                                 "(0x%" PRIxLEAST32
-                                 "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
-                                 stride);
+            if (!IsIntegerMultipleOf(stride, 4) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
+                skip |=
+                    LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::stride),
+                             "(%" PRIu32 ") is not a multiple of 4 or smaller than sizeof(VkDrawMeshTasksIndirectCommandNV) (%zu).",
+                             stride, sizeof(VkDrawMeshTasksIndirectCommandNV));
             }
         } else if (drawCount == 1 &&
                    ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > indirect_buffer_state.get()->create_info.size)) {
@@ -1121,7 +1121,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
         }
     }
 
-    if (offset & 3) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
     }
@@ -1146,12 +1146,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
-    if (offset & 3) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         skip |=
             LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                      error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
     }
-    if (countBufferOffset & 3) {
+    if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
                          "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);

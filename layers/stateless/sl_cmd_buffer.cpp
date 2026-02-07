@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandB
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        if (pOffsets[i] & 3) {
+        if (!IsIntegerMultipleOf(pOffsets[i], 4)) {
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359", commandBuffer,
                              error_obj.location.dot(Field::pOffsets, i), "(%" PRIu64 ") is not a multiple of 4.", pOffsets[i]);
         }
@@ -370,7 +370,7 @@ bool Device::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if ((pConditionalRenderingBegin->offset & 3) != 0) {
+    if (!IsIntegerMultipleOf(pConditionalRenderingBegin->offset, 4)) {
         skip |= LogError("VUID-VkConditionalRenderingBeginInfoEXT-offset-01984", commandBuffer,
                          error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::offset),
                          "(%" PRIu64 ") is not a multiple of 4.", pConditionalRenderingBegin->offset);
@@ -440,7 +440,7 @@ bool Device::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (dstOffset & 3) {
+    if (!IsIntegerMultipleOf(dstOffset, 4)) {
         const LogObjectList objlist(commandBuffer, dstBuffer);
         skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00036", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
@@ -450,7 +450,7 @@ bool Device::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         const LogObjectList objlist(commandBuffer, dstBuffer);
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00037", objlist, error_obj.location.dot(Field::dataSize),
                          "(%" PRIu64 ") must be greater than zero and less than or equal to 65536.", dataSize);
-    } else if (dataSize & 3) {
+    } else if (!IsIntegerMultipleOf(dataSize, 4)) {
         const LogObjectList objlist(commandBuffer, dstBuffer);
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00038", objlist, error_obj.location.dot(Field::dataSize),
                          "(%" PRIu64 ") is not a multiple of 4.", dataSize);
@@ -463,7 +463,7 @@ bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (dstOffset & 3) {
+    if (!IsIntegerMultipleOf(dstOffset, 4)) {
         const LogObjectList objlist(commandBuffer, dstBuffer);
         skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00025", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
@@ -474,7 +474,7 @@ bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
             const LogObjectList objlist(commandBuffer, dstBuffer);
             skip |= LogError("VUID-vkCmdFillBuffer-size-00026", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") must be greater than zero.", size);
-        } else if (size & 3) {
+        } else if (!IsIntegerMultipleOf(size, 4)) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
             skip |= LogError("VUID-vkCmdFillBuffer-size-00028", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") is not a multiple of 4.", size);
@@ -803,21 +803,22 @@ bool Device::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList 
                                                             const Location &info_loc) const {
     bool skip = false;
 
-    size_t src_element_size = ComponentTypeBytesPerElement(info.srcComponentType);
-    size_t dst_element_size = ComponentTypeBytesPerElement(info.dstComponentType);
+    // size_t to match the stride used in the API
+    const size_t src_element_size = ComponentTypeBytesPerElement(info.srcComponentType);
+    const size_t dst_element_size = ComponentTypeBytesPerElement(info.dstComponentType);
 
     if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
         if (info.srcStride < info.numColumns * src_element_size) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
-                             "(%zu) must be at least as large as numColumns (%d) times source element size (%zu)", info.srcStride,
-                             info.numColumns, src_element_size);
+                             "(%zu) must be at least as large as numColumns (%" PRIu32 ") times source element size (%zu)",
+                             info.srcStride, info.numColumns, src_element_size);
         }
     }
     if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
         if (info.srcStride < info.numRows * src_element_size) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
-                             "(%zu) must be at least as large as numRows (%d) times source element size (%zu)", info.srcStride,
-                             info.numRows, src_element_size);
+                             "(%zu) must be at least as large as numRows (%" PRIu32 ") times source element size (%zu)",
+                             info.srcStride, info.numRows, src_element_size);
         }
     }
     if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
@@ -831,15 +832,15 @@ bool Device::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList 
     if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
         if (info.dstStride < info.numColumns * dst_element_size) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
-                             "(%zu) must be at least as large as numColumns (%d) times destination element size (%zu)",
+                             "(%zu) must be at least as large as numColumns (%" PRIu32 ") times destination element size (%zu)",
                              info.dstStride, info.numColumns, dst_element_size);
         }
     }
     if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
         if (info.dstStride < info.numRows * dst_element_size) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
-                             "(%zu) must be at least as large as numRows (%d) times destination element size (%zu)", info.dstStride,
-                             info.numRows, dst_element_size);
+                             "(%zu) must be at least as large as numRows (%" PRIu32 ") times destination element size (%zu)",
+                             info.dstStride, info.numRows, dst_element_size);
         }
     }
     if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
@@ -922,7 +923,7 @@ bool Device::manual_PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice dev
                                      (uintptr_t)pInfo->dstData.hostAddress + *pInfo->pDstSize);
         if (src_range.intersects(dst_range)) {
             skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10076", device, info_loc,
-                             "Source [%zx,%zx) and destination [%zx,%zx) ranges overlap", src_range.begin, src_range.end,
+                             "Source [0x%zx,0x%zx) and destination [0x%zx,0x%zx) ranges overlap", src_range.begin, src_range.end,
                              dst_range.begin, dst_range.end);
         }
     }
@@ -989,10 +990,11 @@ bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommand
                              src_ranges_it->begin, src_ranges_it->end, dst_ranges_it->begin, dst_ranges_it->end);
         }
 
-        if (*src_ranges_it < *dst_ranges_it)
+        if (*src_ranges_it < *dst_ranges_it) {
             ++src_ranges_it;
-        else
+        } else {
             ++dst_ranges_it;
+        }
     }
 
     return skip;

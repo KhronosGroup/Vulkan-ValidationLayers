@@ -1890,7 +1890,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 } else {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-04006", objlist, loc.dot(Field::image),
-                                     "is non-disjoint and is being bound twice at pBindInfos[%d]", it->second[0]);
+                                     "is non-disjoint and is being bound twice at pBindInfos[%" PRIu32 "]", it->second[0]);
                 }
             }
         } else if ((plane_info != nullptr) && (image_state->disjoint == true) && !is_drm) {
@@ -1973,8 +1973,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 } else {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-04006", objlist, loc.dot(Field::image),
-                                     "is a disjoint image for plane %d but is being bound twice at "
-                                     "pBindInfos[%d]",
+                                     "is a disjoint image for plane %" PRIu32
+                                     " but is being bound twice at "
+                                     "pBindInfos[%" PRIu32 "]",
                                      plane, it->second[plane]);
                 }
             }
@@ -1992,8 +1993,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             for (uint32_t i = 0; i < total_planes; i++) {
                 if (resource.second[i] == vvl::kNoIndex32) {
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-02858", resource.first, error_obj.location,
-                                     "Plane %" PRIu32
-                                     " of the disjoint image was not bound. All %d planes need to bound individually "
+                                     "Plane %" PRIu32 " of the disjoint image was not bound. All %" PRIu32
+                                     " planes need to bound individually "
                                      "in separate pBindInfos in a single call.",
                                      i, total_planes);
                 }
