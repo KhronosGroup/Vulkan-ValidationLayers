@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,6 +348,12 @@ static void ReportLayoutTransitionSynchronizationInsight(std::ostringstream &ss,
     }
 }
 
+static void ReportAcquireImageSynchronizationInsight(std::ostringstream &ss) {
+    ss << "\nVulkan insight: If a submit command waits on a semaphore signaled by AcquireNextImage command at specific pipeline "
+          "stages, this error can occur if the layout transition barrier does not create an execution dependency with those stages "
+          "(for example, by including them in the barrier's srcStageMask).";
+}
+
 void ReportProperties::Add(std::string_view property_name, std::string_view value) {
     name_values.emplace_back(NameValue{std::string(property_name), std::string(value)});
 }
@@ -429,7 +435,9 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
         ss << (hazard_info.IsWrite() ? "writes to" : "reads");
     }
     ss << " " << resouce_description << ", which was previously ";
-    if (hazard_info.IsPriorWrite()) {
+    if (prior_access.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
+        ss << "accessed by ";
+    } else if (hazard_info.IsPriorWrite()) {
         if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
             ss << "written during an image layout transition initiated by ";
         } else {
@@ -536,13 +544,16 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
             ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
             ss << ", but layout transition does not synchronize with these stages.";
+            if (prior_access.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
+                ReportAcquireImageSynchronizationInsight(ss);
+            }
             ReportLayoutTransitionSynchronizationInsight(ss, true, read_barriers);
         }
     }
 
     // Give a hint for WAR hazard
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
-        ss << "\nVulkan insight: an execution dependency is sufficient to prevent this hazard.";
+        ss << "\nVulkan insight: An execution dependency is sufficient to prevent this hazard.";
     }
 
     if (!additional_info.message_end_text.empty()) {
