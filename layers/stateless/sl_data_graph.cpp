@@ -18,8 +18,75 @@
 #include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "stateless/sl_vuid_maps.h"
+#include "containers/container_utils.h"
+#include "utils/hash_vk_types.h"
 
 namespace stateless {
+
+bool Device::ValidateDataGraphProcessingEngineCreateInfoARM(const VkDataGraphProcessingEngineCreateInfoARM& engine_ci,
+                                                            const Location& loc) const {
+    bool skip = false;
+    vvl::unordered_set<VkPhysicalDeviceDataGraphProcessingEngineARM, HashCombineDataGraphProcessingEngineARMInfo> unique_engine_set{};
+
+    if (engine_ci.processingEngineCount > 0) {
+        unique_engine_set.reserve(engine_ci.processingEngineCount);
+    }
+
+    if (!enabled_features.dataGraph) {
+        skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-dataGraph-09953",
+                         device,
+                         loc,
+                         "required to enable VkPhysicalDeviceDataGraphFeaturesARM::dataGraph feature.");
+    }
+
+    for (uint32_t engine_index = 0; engine_index < engine_ci.processingEngineCount; ++engine_index) {
+        const auto& processing_engine = engine_ci.pProcessingEngines[engine_index];
+        const bool is_qcom_engine = IsValueIn(processing_engine.type,
+                                              { VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM,
+                                                VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM });
+        const bool is_valid_processing_engine = is_qcom_engine || IsValueIn(processing_engine.type,
+                                                { VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM });
+
+        if (!unique_engine_set.insert(processing_engine).second) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-09918",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element is duplicate, VkDataGraphProcessingEngineCreateInfoARM::pProcessingEngines "
+                             "contains two or more identical VkPhysicalDeviceDataGraphProcessingEngineARM structures.");
+        }
+
+        if (!is_valid_processing_engine) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-09956",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element has a type of %s, which is invalid.",
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type));
+        }
+
+        if ((is_qcom_engine) && (engine_ci.processingEngineCount != 1) && (processing_engine.isForeign)) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843",
+                              device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element with members isForeign = %u and type = %s; "
+                             "while actual VkDataGraphProcessingEngineCreateInfoARM::processingEngineCount == %" PRIu32 ", "
+                             "which must be equal to 1 according to Vulkan Spec.",
+                             static_cast<uint32_t>(processing_engine.isForeign),
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type),
+                             engine_ci.processingEngineCount);
+        }
+
+        if ((is_qcom_engine) && (!enabled_features.dataGraphModel)) {
+            skip |= LogError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844",
+                             device,
+                             loc.dot(Field::pProcessingEngines, engine_index),
+                             "element has a type of %s, while VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel "
+                             "feature in the VkDeviceCreateInfo pNext chain is disabled.",
+                             string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(processing_engine.type));
+        }
+    }
+
+    return skip;
+}
 
 bool Device::ValidateCreateDataGraphPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
     bool skip = false;
@@ -69,6 +136,13 @@ bool Device::manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, 
         const VkDataGraphPipelineCreateInfoARM &create_info = pCreateInfos[i];
 
         skip |= ValidateCreatePipelinesFlagsCommon(create_info.flags, create_info_loc.dot(Field::flags));
+
+        // Retrieve and validate data graph processing engine information
+        if (const auto* processing_engine_info =
+            vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext)) {
+            const Location processing_engine_ci_loc = create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+            skip |= ValidateDataGraphProcessingEngineCreateInfoARM(*processing_engine_info, processing_engine_ci_loc);
+        }
 
         // TODO - Enable and test
         // skip |= ValidatePipelineShaderStageCreateInfoCommon(context, create_info.stage, create_info_loc.dot(Field::stage));

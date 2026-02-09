@@ -39,4 +39,6 @@ struct SpecialSupported {
     bool descriptor_binding_inline_uniform_buffer_uab{false};  // descriptorBindingInlineUniformBlockUpdateAfterBind
     // VK_KHR_maintenance9
     bool has_maintenance9{false};
+    // VK_QCOM_data_graph_model
+    bool vk_qcom_data_graph_model{false};
 };

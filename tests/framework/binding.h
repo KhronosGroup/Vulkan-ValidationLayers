@@ -901,6 +901,7 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) { Init(dev, info); }
+    Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, const VkPipelineCache cache) { Init(dev, info, cache); }
     ~Pipeline() noexcept;
     void Destroy() noexcept;
 
@@ -916,6 +917,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     void InitDeferred(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info, VkDeferredOperationKHR deferred_op);
     // vkCreateDataGraphPipelinesARM
     void Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info);
+    // vkCreateDataGraphPipelinesARM with pipeline cache
+    void Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info, VkPipelineCache cache);
     // vkLoadPipeline()
     void Init(const Device &dev, size_t size, const void *data);
     // vkLoadPipelineDerivative()
@@ -1270,7 +1273,7 @@ class Tensor : public internal::NonDispHandle<VkTensorARM> {
     void InitNoMem(const Device &dev, const VkTensorCreateInfoARM &info);
 
     const VkMemoryRequirements2 &GetMemoryReqs();
-    void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0);
+    void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0, const void* next_in_allocate_info = nullptr);
     VkFormat Format() const { return description_.format; }
     uint32_t DimensionCount() const { return description_.dimensionCount; }
     const VkTensorDescriptionARM &Description() const { return description_; }

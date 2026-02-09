@@ -494,6 +494,9 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_shader_long_vector,
                                              &phys_dev_ext_props.shader_long_vector_props);
 
+    // VK_QCOM_data_graph_model
+    special_supported.vk_qcom_data_graph_model = IsExtEnabled(extensions.vk_qcom_data_graph_model);
+
     // None of these "check if supported" features are possible without first having gpdp2 first
     if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         uint32_t n_props = 0;
