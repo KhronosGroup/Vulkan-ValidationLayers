@@ -2901,6 +2901,10 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     image_ci.pNext = &formatList;
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
 
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not supported on device";
+    }
+
     // The first image in the list should be size-compatible (128-bit)
     vkt::Image good_image(*m_device, image_ci);
 
@@ -3124,10 +3128,8 @@ TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_SAMPLED_BIT)) {
+        GTEST_SKIP() << "Image create info not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 

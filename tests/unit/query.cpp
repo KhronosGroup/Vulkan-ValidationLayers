@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2310,6 +2310,10 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    if (!(m_device->Physical().limits_.timestampComputeAndGraphics & VK_QUEUE_GRAPHICS_BIT)) {
+        GTEST_SKIP() << "Timestamps not supported in the graphics queue";
+    }
+
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 2;
@@ -2517,6 +2521,10 @@ TEST_F(NegativeQuery, CopyUnavailableQueries) {
 TEST_F(NegativeQuery, QueryResultCopyBufferInvalidFlags) {
     TEST_DESCRIPTION("Copy query results to a buffer without transfer dst flag");
     RETURN_IF_SKIP(Init());
+
+    if (!m_device->Physical().limits_.timestampComputeAndGraphics) {
+        GTEST_SKIP() << "Timestamps not supported";
+    }
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1u);
     vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);

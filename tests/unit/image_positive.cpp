@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -549,6 +549,10 @@ TEST_F(PositiveImage, ImageFormatListSizeCompatibleUncompressed) {
     image_ci.pNext = &format_list;
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
 
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not supported on device";
+    }
+
     vkt::Image image(*m_device, image_ci);
 }
 
@@ -570,6 +574,10 @@ TEST_F(PositiveImage, ImageFormatListSizeCompatibleCompressed) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_USAGE_SAMPLED_BIT);
     image_ci.pNext = &format_list;
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not supported on device";
+    }
 
     vkt::Image image(*m_device, image_ci);
 }
@@ -641,10 +649,8 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
@@ -744,10 +750,8 @@ TEST_F(PositiveImage, BlockTexelViewType) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
@@ -922,10 +926,8 @@ TEST_F(PositiveImage, BlockTexelViewLayerCount) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info);
 
