@@ -161,6 +161,14 @@ struct FirstAccess {
 
 using QueueId = uint32_t;
 
+struct AttachmentAccessInfo {
+    SyncOrdering ordering = SyncOrdering::kOrderingNone;
+    uint32_t render_pass_instance_id = vvl::kNoIndex32;
+    uint32_t subpass = vvl::kNoIndex32;
+
+    static AttachmentAccessInfo NonAttachment() { return AttachmentAccessInfo{}; }
+};
+
 struct OrderingBarrier {
     VkPipelineStageFlags2 exec_scope = VK_PIPELINE_STAGE_2_NONE;
     SyncAccessFlags access_scope;
@@ -235,7 +243,13 @@ struct WriteState {
     uint32_t handle_index;
     QueueId queue;
 
-    void Set(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags);
+    // Identifies a render pass instance (and subpass for legacy render passes).
+    // Used to determine whether two accesses are in the same render pass instance.
+    uint32_t render_pass_instance_id;
+    uint32_t subpass;
+
+    void Set(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+             SyncFlags flags);
     void SetQueueId(QueueId id);
     void MergeBarriers(const WriteState &other);
 
@@ -339,8 +353,10 @@ class AccessState {
                                      VkPipelineStageFlags2 source_exec_scope, const SyncAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
-    void Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void SetWrite(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void Update(const SyncAccessInfo &usage_info, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+                SyncFlags flags = 0);
+    void SetWrite(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+                  SyncFlags flags = 0);
     void ClearWrite();
     void ClearRead();
     void ClearFirstUse();

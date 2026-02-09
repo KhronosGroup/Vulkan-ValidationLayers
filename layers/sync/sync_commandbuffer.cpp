@@ -223,7 +223,7 @@ static void UpdateImageAccessState(AccessContext &access_context, const vvl::Ima
                                    const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
     const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
-    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, ResourceUsageTagEx{tag});
+    access_context.UpdateAccessState(range_gen, current_usage, ResourceUsageTagEx{tag});
 }
 
 static void UpdateImageAccessState(AccessContext &access_context, const vvl::Image &image, SyncAccessIndex current_usage,
@@ -231,7 +231,7 @@ static void UpdateImageAccessState(AccessContext &access_context, const vvl::Ima
                                    const VkExtent3D &extent, ResourceUsageTagEx tag_ex) {
     const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
-    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, tag_ex);
+    access_context.UpdateAccessState(range_gen, current_usage, tag_ex);
 }
 
 static void UpdateVideoAccessState(AccessContext &access_context, const vvl::VideoSession &vs_state,
@@ -241,7 +241,7 @@ static void UpdateVideoAccessState(AccessContext &access_context, const vvl::Vid
     const auto extent = resource.GetEffectiveImageExtent(vs_state);
     const auto &sub_state = SubState(*image);
     ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
-    access_context.UpdateAccessState(range_gen, current_usage, SyncOrdering::kOrderingNone, ResourceUsageTagEx{tag});
+    access_context.UpdateAccessState(range_gen, current_usage, ResourceUsageTagEx{tag});
 }
 
 CommandExecutionContext::CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags)
@@ -368,24 +368,22 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
 }
 
 void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cmd_state, const Location &loc) {
-    using Attachment = DynamicRenderingInfo::Attachment;
-    const DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
     const auto tag = NextCommandTag(loc.function);
 
-    // Only load if not resuming
-    if (0 == (info.info.flags & VK_RENDERING_RESUMING_BIT)) {
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-        for (uint32_t i = 0; i < attachment_count; i++) {
-            const Attachment &attachment = info.attachments[i];
+    const DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
+    if ((info.info.flags & VK_RENDERING_RESUMING_BIT) == 0) {
+        for (size_t i = 0; i < info.attachments.size(); i++) {
+            const DynamicRenderingInfo::Attachment &attachment = info.attachments[i];
             const SyncAccessIndex load_index = attachment.GetLoadUsage();
-            if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
-
+            if (load_index == SYNC_ACCESS_INDEX_NONE) {
+                continue;
+            }
             ImageRangeGen range_gen = attachment.view_gen;
-            GetCurrentAccessContext()->UpdateAccessState(range_gen, load_index, attachment.GetOrdering(), ResourceUsageTagEx{tag},
+            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(attachment.GetOrdering());
+            GetCurrentAccessContext()->UpdateAccessState(range_gen, load_index, attachment_access, ResourceUsageTagEx{tag},
                                                          SyncFlag::kLoadOp);
         }
     }
-
     dynamic_rendering_info_ = std::move(cmd_state.info);
 }
 
@@ -471,32 +469,40 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
 }
 
 void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_obj) {
-    if (dynamic_rendering_info_ && (0 == (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT))) {
-        auto store_tag = NextCommandTag(record_obj.location.function, ResourceUsageRecord::SubcommandType::kStoreOp);
-
-        const DynamicRenderingInfo &info = *dynamic_rendering_info_;
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-        AccessContext *access_context = GetCurrentAccessContext();
-        for (uint32_t i = 0; i < attachment_count; i++) {
-            const auto &attachment = info.attachments[i];
-            if (attachment.resolve_gen) {
-                const bool is_color = attachment.type == AttachmentType::kColor;
-                const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
-
-                ImageRangeGen view_gen = attachment.view_gen;
-                access_context->UpdateAccessState(view_gen, kResolveRead, kResolveOrder, ResourceUsageTagEx{store_tag});
-
-                ImageRangeGen resolve_gen = *attachment.resolve_gen;
-                access_context->UpdateAccessState(resolve_gen, kResolveWrite, kResolveOrder, ResourceUsageTagEx{store_tag});
-            }
-            if (const SyncAccessIndex store_index = attachment.GetStoreUsage(); store_index != SYNC_ACCESS_INDEX_NONE) {
-                ImageRangeGen view_gen = attachment.view_gen;
-                access_context->UpdateAccessState(view_gen, store_index, kStoreOrder, ResourceUsageTagEx{store_tag},
-                                                  SyncFlag::kStoreOp);
-            }
-        }
+    if (!dynamic_rendering_info_) {
+        return;
+    }
+    if ((dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT) != 0) {
+        dynamic_rendering_info_.reset();
+        return;
     }
 
+    auto store_tag = NextCommandTag(record_obj.location.function, ResourceUsageRecord::SubcommandType::kStoreOp);
+    AccessContext &access_context = *GetCurrentAccessContext();
+
+    for (const auto &attachment : dynamic_rendering_info_->attachments) {
+        if (attachment.resolve_gen) {
+            const bool is_color = attachment.type == AttachmentType::kColor;
+            const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
+            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(kResolveOrder);
+
+            ImageRangeGen view_gen = attachment.view_gen;
+            access_context.UpdateAccessState(view_gen, kResolveRead, attachment_access, ResourceUsageTagEx{store_tag});
+
+            ImageRangeGen resolve_gen = *attachment.resolve_gen;
+            access_context.UpdateAccessState(resolve_gen, kResolveWrite, attachment_access, ResourceUsageTagEx{store_tag});
+        }
+
+        const SyncAccessIndex store_index = attachment.GetStoreUsage();
+        if (store_index != SYNC_ACCESS_INDEX_NONE) {
+            AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(kStoreOrder);
+
+            ImageRangeGen view_gen = attachment.view_gen;
+            access_context.UpdateAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag},
+                                             SyncFlag::kStoreOp);
+        }
+    }
+    current_render_pass_instance_id_++;
     dynamic_rendering_info_.reset();
 }
 
@@ -732,12 +738,14 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->render_area.extent);
                             const VkOffset3D offset = CastTo3D(cb_state_->render_area.offset);
+                            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kRaster);
+
                             ImageRangeGen range_gen(MakeImageRangeGen(*img_view_state, offset, extent));
                             current_context_->UpdateAccessState(range_gen, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
-                                                                SyncOrdering::kRaster, tag_ex);
+                                                                attachment_access, tag_ex);
                         } else {
                             ImageRangeGen range_gen = MakeImageRangeGen(*img_view_state);
-                            current_context_->UpdateAccessState(range_gen, sync_index, SyncOrdering::kOrderingNone, tag_ex);
+                            current_context_->UpdateAccessState(range_gen, sync_index, tag_ex);
                         }
                         break;
                     }
@@ -992,13 +1000,18 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
 
     const DynamicRenderingInfo &info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
-        if (output_location >= info.info.colorAttachmentCount) continue;
+        if (output_location >= info.info.colorAttachmentCount) {
+            continue;
+        }
         const auto &attachment = info.attachments[output_location];
-        if (!attachment.IsWriteable(last_bound_state)) continue;
+        if (!attachment.IsWriteable(last_bound_state)) {
+            continue;
+        }
+        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kColorAttachment);
 
         ImageRangeGen view_gen = attachment.view_gen;
-        access_context.UpdateAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                         SyncOrdering::kColorAttachment, ResourceUsageTagEx{tag});
+        access_context.UpdateAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
+                                         ResourceUsageTagEx{tag});
     }
 
     // TODO -- fixup this and Subpass attachment to correct map the various depth stencil enables/reads vs. writes
@@ -1012,9 +1025,10 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         bool writeable = attachment.IsWriteable(last_bound_state);
 
         if (writeable) {
+            const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kDepthStencilAttachment);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                             SyncOrdering::kDepthStencilAttachment, ResourceUsageTagEx{tag});
+            access_context.UpdateAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
+                                             ResourceUsageTagEx{tag});
         }
     }
 }
@@ -1182,12 +1196,14 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
 
     if (aspects_to_clear & kColorAspects) {
         assert((aspects_to_clear & kDepthStencilAspects) == 0);
-        current_context_->UpdateAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                            SyncOrdering::kColorAttachment, ResourceUsageTagEx{tag});
+        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kColorAttachment);
+        current_context_->UpdateAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
+                                            ResourceUsageTagEx{tag});
     } else {
         assert((aspects_to_clear & kColorAspects) == 0);
-        current_context_->UpdateAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                            SyncOrdering::kDepthStencilAttachment, ResourceUsageTagEx{tag});
+        const AttachmentAccessInfo attachment_access = GetAttachmentAccessInfo(SyncOrdering::kDepthStencilAttachment);
+        current_context_->UpdateAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
+                                            ResourceUsageTagEx{tag});
     }
 }
 
@@ -1200,8 +1216,8 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func com
     const auto barrier_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
     AddCommandHandle(barrier_tag, rp_state.Handle());
     const auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
-    render_pass_contexts_.emplace_back(
-        std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(), attachment_views, cb_access_context_));
+    render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
+        rp_state, render_area, GetQueueFlags(), attachment_views, cb_access_context_, current_render_pass_instance_id_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
     current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
@@ -1235,6 +1251,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
     current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
+    current_render_pass_instance_id_++;
     return barrier_tag;
 }
 
@@ -1369,6 +1386,14 @@ void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
     // As renderpass operations can have side effects on the command buffer access context,
     // update the sync operation to record these if any.
     sync_ops_.emplace_back(tag, std::move(sync_op));
+}
+
+AttachmentAccessInfo CommandBufferAccessContext::GetAttachmentAccessInfo(SyncOrdering ordering) {
+    AttachmentAccessInfo attachment_access;
+    attachment_access.ordering = ordering;
+    attachment_access.render_pass_instance_id = current_render_pass_instance_id_;
+    attachment_access.subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
+    return attachment_access;
 }
 
 // NOTE: debug location reporting feature works only for reproducible application sessions
@@ -1824,8 +1849,7 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const
                 VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
                                      quantization_map_info->quantizationMapExtent.height, 1};
                 ImageRangeGen range_gen(MakeImageRangeGen(*image_view_state, offset, extent));
-                context->UpdateAccessState(range_gen, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, SyncOrdering::kOrderingNone,
-                                           ResourceUsageTagEx{tag});
+                context->UpdateAccessState(range_gen, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, ResourceUsageTagEx{tag});
             }
         }
     }

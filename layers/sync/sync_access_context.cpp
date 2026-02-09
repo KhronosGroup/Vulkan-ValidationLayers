@@ -456,7 +456,7 @@ AccessMap::iterator AccessContext::ResolveGapRecursePrev(const AccessRange &gap_
 // The passed pos must either be a lower bound (can be the end iterator) or be strictly less than the range.
 // Map entries that intersect range.begin or range.end are split at the intersection point.
 AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range,
-                                                       SyncAccessIndex access_index, SyncOrdering ordering_rule,
+                                                       SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access,
                                                        ResourceUsageTagEx tag_ex, SyncFlags flags) {
     assert(range.non_empty());
     const SyncAccessInfo &access_info = GetAccessInfo(access_index);
@@ -494,7 +494,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             // Update
             AccessState &new_access_state = infilled_it->second;
             ApplyGlobalBarriers(new_access_state);
-            new_access_state.Update(access_info, ordering_rule, tag_ex, flags);
+            new_access_state.Update(access_info, attachment_access, tag_ex, flags);
 
             // Advance current location.
             // Do not advance pos, as it's the next map entry to visit
@@ -511,7 +511,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             // Update
             AccessState &access_state = pos->second;
             ApplyGlobalBarriers(access_state);
-            access_state.Update(access_info, ordering_rule, tag_ex, flags);
+            access_state.Update(access_info, attachment_access, tag_ex, flags);
 
             // Advance both current location and map entry
             current_begin = pos->first.end;
@@ -527,7 +527,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
         // Update
         AccessState &new_access_state = infilled_it->second;
         ApplyGlobalBarriers(new_access_state);
-        new_access_state.Update(access_info, ordering_rule, tag_ex, flags);
+        new_access_state.Update(access_info, attachment_access, tag_ex, flags);
     }
     return pos;
 }
@@ -551,20 +551,30 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
     const AccessRange buffer_range = range + base_address;
 
     auto pos = access_state_map_.LowerBound(buffer_range.begin);
-    DoUpdateAccessState(pos, buffer_range, current_usage, SyncOrdering::kOrderingNone, tag_ex, flags);
+    DoUpdateAccessState(pos, buffer_range, current_usage, AttachmentAccessInfo::NonAttachment(), tag_ex, flags);
 }
 
-void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
+void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex,
+                                      SyncFlags flags) {
     assert(!finalized_);
-
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
-
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = DoUpdateAccessState(pos, *range_gen, current_usage, ordering_rule, tag_ex, flags);
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, AttachmentAccessInfo::NonAttachment(), tag_ex, flags);
+    }
+}
+
+void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
+                                      const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+    assert(!finalized_);
+    if (current_usage == SYNC_ACCESS_INDEX_NONE) {
+        return;
+    }
+    auto pos = access_state_map_.LowerBound(range_gen->begin);
+    for (; range_gen->non_empty(); ++range_gen) {
+        pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, flags);
     }
 }
 
