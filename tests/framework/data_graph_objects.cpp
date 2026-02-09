@@ -423,8 +423,8 @@ DataGraphPipelineHelper::DataGraphPipelineHelper(VkLayerTest& test, const Helper
     layer_test_.Monitor().Finish();
 }
 
-VkResult DataGraphPipelineHelper::CreateDataGraphPipeline() {
-    return vk::CreateDataGraphPipelinesARM(device_->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci_, nullptr,
+VkResult DataGraphPipelineHelper::CreateDataGraphPipeline(VkPipelineCache pipeline_cache) {
+    return vk::CreateDataGraphPipelinesARM(device_->handle(), VK_NULL_HANDLE, pipeline_cache, 1, &pipeline_ci_, nullptr,
                                            &pipeline_);
 }
 

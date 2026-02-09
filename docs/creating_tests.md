@@ -62,7 +62,7 @@ AddRequiredFeature(vkt::Feature:: samplerYcbcrConversion);
 // Also will check that all extensions and their dependencies were enabled successfully
 RETURN_IF_SKIP(InitFramework());
 
-// Finish initializing state, including creating the VkDevice (whith extensions added) that will be used for the test
+// Finish initializing state, including creating the VkDevice (with extensions added) that will be used for the test
 RETURN_IF_SKIP(InitState());
 ```
 

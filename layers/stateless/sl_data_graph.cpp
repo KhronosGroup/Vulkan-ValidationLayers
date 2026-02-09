@@ -70,6 +70,22 @@ bool Device::manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, 
 
         skip |= ValidateCreatePipelinesFlagsCommon(create_info.flags, create_info_loc.dot(Field::flags));
 
+        if (deferredOperation != VK_NULL_HANDLE && (create_info.flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
+            skip |= LogError(
+                "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-09916", device, create_info_loc.dot(Field::flags),
+                "(%s) includes VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT but deferredOperation is not VK_NULL_HANDLE.",
+                string_VkPipelineCreateFlags2(create_info.flags).c_str());
+        }
+
+        if (vku::FindStructInPNextChain<VkDataGraphPipelineIdentifierCreateInfoARM>(create_info.pNext)) {
+            if (pipelineCache == VK_NULL_HANDLE) {
+                skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-pNext-09928", device,
+                                 create_info_loc.pNext(Struct::VkDataGraphPipelineIdentifierCreateInfoARM),
+                                 "exists but pipelineCache is VK_NULL_HANDLE.\n%s",
+                                 PrintPNextChain(Struct::VkDataGraphPipelineConstantARM, create_info.pNext).c_str());
+            }
+        }
+
         // TODO - Enable and test
         // skip |= ValidatePipelineShaderStageCreateInfoCommon(context, create_info.stage, create_info_loc.dot(Field::stage));
         // skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);

@@ -56,6 +56,30 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesDeferredOperationNotNull) {
     vk::DestroyDeferredOperationKHR(*m_device, deferred_operation, nullptr);
 }
 
+TEST_F(NegativeDataGraph, CreateDataGraphPipelinesDeferredOperationWrongFlags) {
+    TEST_DESCRIPTION("Try to create a DataGraphPipeline with deferredOperation and invalid pipeline flags");
+    InitBasicDataGraph();
+    AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline_helper(*this);
+    VkDeferredOperationKHR deferred_operation;
+    vk::CreateDeferredOperationKHR(*m_device, nullptr, &deferred_operation);
+    VkPipeline pipeline;
+
+    // set the wrong flags in the pipeline create info
+    pipeline_helper.pipeline_ci_.flags |= VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDataGraphPipelinesARM-deferredOperation-09916");
+    // this is also triggered because deferredOperations currently MUST be NULL
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDataGraphPipelinesARM-deferredOperation-09761");
+    vk::CreateDataGraphPipelinesARM(*m_device, deferred_operation, VK_NULL_HANDLE, 1, &pipeline_helper.pipeline_ci_, nullptr,
+                                    &pipeline);
+    m_errorMonitor->VerifyFound();
+    vk::DestroyDeferredOperationKHR(*m_device, deferred_operation, nullptr);
+}
+
 TEST_F(NegativeDataGraph, CreateDataGraphPipelinesInvalidFlags) {
     TEST_DESCRIPTION("Try to create a DataGraphPipeline with invalid flags in create_info");
     InitBasicDataGraph();
@@ -1805,7 +1829,8 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
     // too many of the structs included
     {
         vkt::dg::DataGraphPipelineHelper pipeline(*this);
-        // a VkDataGraphPipelineShaderModuleCreateInfoARM is already included by the helper, add another dummy one
+        // a VkDataGraphPipelineShaderModuleCreateInfoARM is already included by the helper, add also
+        // a VkDataGraphPipelineIdentifierCreateInfoARM (can't have both)
         VkDataGraphPipelineIdentifierCreateInfoARM pipeline_id = vku::InitStructHelper();
         constexpr uint8_t dummy_data = 1;
         pipeline_id.identifierSize = 1;
@@ -1814,11 +1839,17 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
         pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         pipeline.pipeline_ci_.pResourceInfos = nullptr;
         pipeline.pipeline_ci_.resourceInfoCount = 0;
+
+        VkPipelineCache pipeline_cache;
+        VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
+        cache_create_info.initialDataSize = 0;
+        VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
+        ASSERT_EQ(VK_SUCCESS, err);
+
         m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763");
-        // we also get this error because we set resourceInfoCount = 0
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
-        pipeline.CreateDataGraphPipeline();
+        pipeline.CreateDataGraphPipeline(pipeline_cache);
         m_errorMonitor->VerifyFound();
+        vk::DestroyPipelineCache(device(), pipeline_cache, nullptr);
     }
 }
 
@@ -1947,11 +1978,16 @@ TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierNoFlag) {
     pipeline.pipeline_ci_.pResourceInfos = nullptr;
     pipeline.pipeline_ci_.resourceInfoCount = 0;
 
+    VkPipelineCache pipeline_cache;
+    VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
+    cache_create_info.initialDataSize = 0;
+    VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
+    ASSERT_EQ(VK_SUCCESS, err);
+
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-11840");
-    // currently we have a conflict with this implicit rule, it will go in a future update
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
-    pipeline.CreateDataGraphPipeline();
+    pipeline.CreateDataGraphPipeline(pipeline_cache);
     m_errorMonitor->VerifyFound();
+    vk::DestroyPipelineCache(device(), pipeline_cache, nullptr);
 }
 
 TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
@@ -1970,9 +2006,16 @@ TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
     // set the correct flags, but leave pResourceInfos
     pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
 
+    VkPipelineCache pipeline_cache;
+    VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
+    cache_create_info.initialDataSize = 0;
+    VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
+    ASSERT_EQ(VK_SUCCESS, err);
+
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-12363");
-    pipeline.CreateDataGraphPipeline();
+    pipeline.CreateDataGraphPipeline(pipeline_cache);
     m_errorMonitor->VerifyFound();
+    vk::DestroyPipelineCache(device(), pipeline_cache, nullptr);
 }
 
 TEST_F(NegativeDataGraph, DataGraphCreateInfoResourceCountZero) {
@@ -1992,9 +2035,16 @@ TEST_F(NegativeDataGraph, DataGraphCreateInfoResourceCountZero) {
     pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipeline.pipeline_ci_.resourceInfoCount = 0;
 
+    VkPipelineCache pipeline_cache;
+    VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
+    cache_create_info.initialDataSize = 0;
+    VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
+    ASSERT_EQ(VK_SUCCESS, err);
+
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-12364");
-    pipeline.CreateDataGraphPipeline();
+    pipeline.CreateDataGraphPipeline(pipeline_cache);
     m_errorMonitor->VerifyFound();
+    vk::DestroyPipelineCache(device(), pipeline_cache, nullptr);
 }
 
 TEST_F(NegativeDataGraph, DataGraphCreateInfoNullResources) {
@@ -2011,6 +2061,30 @@ TEST_F(NegativeDataGraph, DataGraphCreateInfoNullResources) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
     pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierNoCache) {
+    TEST_DESCRIPTION("Create a datagraph using the cache identifier but without a valid cache object.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+
+    // add the cache identifier object
+    VkDataGraphPipelineIdentifierCreateInfoARM pipeline_id = vku::InitStructHelper();
+    constexpr uint8_t dummy_data = 1;
+    pipeline_id.identifierSize = 1;
+    pipeline_id.pIdentifier = &dummy_data;
+    vvl::PnextChainAdd(&pipeline.pipeline_ci_, &pipeline_id);
+    pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+
+    // ... but pass a NULL handle for the cache object
+    VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDataGraphPipelinesARM-pNext-09928");
+    pipeline.CreateDataGraphPipeline(pipeline_cache);
     m_errorMonitor->VerifyFound();
 }
 
