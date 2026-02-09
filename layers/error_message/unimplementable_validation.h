@@ -542,6 +542,9 @@ const char* unimplementable_validation[] = {
     "VUID-vkDestroyTensorARM-pAllocator-parameter",
     "VUID-vkDestroyTensorViewARM-pAllocator-parameter",
 
+    // about requiring external host access synchronization, can't be verified
+    "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-09762",
+
     // Removed in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9302
     // Found these are not invalid actually
     "VUID-VkPhysicalDeviceAccelerationStructurePropertiesKHR-sType-sType",

@@ -92,7 +92,7 @@ class DataGraphPipelineHelper {
     void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const VkTensorDescriptionARM &tensor_desc,
                     bool is_protected = false);
     void CreatePipelineLayout(const std::vector<VkPushConstantRange> &push_constant_ranges = {});
-    VkResult CreateDataGraphPipeline();
+    VkResult CreateDataGraphPipeline(VkPipelineCache pipeline_cache = VK_NULL_HANDLE);
     const VkPipeline &Handle() const { return pipeline_; }
     operator VkPipeline() const { return pipeline_; }
 
