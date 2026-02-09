@@ -143,6 +143,9 @@ if (ANNOTATED_SPEC_LINK)
     add_compile_definitions(ANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
 endif()
 
+# The idiom for open source projects is to NOT enable warnings as errors.
+# System/language package managers have to build on multiple different platforms and compilers.
+# By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings until CMake 3.24
 option(BUILD_WERROR "Treat compiler warnings as errors")
 if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
