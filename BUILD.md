@@ -29,19 +29,11 @@ The following will be enough for most people, for more detailed instructions, se
 git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 cd Vulkan-ValidationLayers
 
-cmake -S . -B build -D UPDATE_DEPS=ON -D BUILD_WERROR=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=Debug
+# - Warnings as errors off by default
+# - Building with test is off by default
+cmake -S . -B build -D BUILD_WERROR=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=Debug
 cmake --build build --config Debug
 ```
-
-### Warnings as errors off by default!
-
-By default `BUILD_WERROR` is `OFF`. The idiom for open source projects is to NOT enable warnings as errors.
-
-System/language package managers have to build on multiple different platforms and compilers.
-
-By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings until CMake 3.24
-
-Add `-D BUILD_WERROR=ON` to your workflow.
 
 ## Generated source code
 
@@ -55,7 +47,7 @@ Currently this repo has a custom process for grabbing C/C++ dependencies.
 
 Keep in mind this repo predates tools like `vcpkg`, `conan`, etc. Our process is most similar to `vcpkg`.
 
-By specifying `-D UPDATE_DEPS=ON` when configuring CMake we grab dependencies listed in [known_good.json](scripts/known_good.json).
+By specifying `-D UPDATE_DEPS=ON` (which is on by default) when configuring CMake we grab dependencies listed in [known_good.json](scripts/known_good.json).
 
 All we are doing is streamlining `building`/`installing` the `known good` dependencies and helping CMake `find` the dependencies.
 
@@ -63,7 +55,7 @@ This is done via a combination of `Python` and `CMake` scripting.
 
 Misc Useful Information:
 
-- By default `UPDATE_DEPS` is `OFF`. The intent is to be friendly by default to system/language package managers.
+- By default `UPDATE_DEPS` is `ON` and simply use `-D UPDATE_DEPS=OFF` if you don't want to use it
 - You can run `update_deps.py` manually but it isn't recommended for most users.
 
 ### How to test new dependency versions
