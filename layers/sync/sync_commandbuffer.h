@@ -214,6 +214,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
+    uint32_t GetCurrentRenderPassInstanceId() const { return current_render_pass_instance_id_; }
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                            const std::vector<const vvl::ImageView *> &attachment_views);
 
@@ -292,9 +293,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
 
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
-
-    // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
+    AttachmentAccessInfo GetAttachmentAccessInfo(SyncOrdering ordering);
 
     struct ClearAttachmentInfo {
         const vvl::ImageView &attachment_view;
@@ -339,6 +339,13 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // Because in this case PreRecord is not called, the label state is not updated. We make
     // a copy of label state to update it locally together with proxy context.
     std::vector<vvl::LabelCommand> proxy_label_commands_;
+
+    // Zero-based render pass instance id, incremented for each render pass instance.
+    // Used to initialize the corresponding value in the access object during recording.
+    // At submit time, these ids are offset to ensure unique values among all submitted
+    // command buffers.
+    // TODO: add the above mentioned submit time behavior
+    uint32_t current_render_pass_instance_id_ = 0;
 };
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {

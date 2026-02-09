@@ -1241,8 +1241,9 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // More broadly we could look at thread specific state shared between Validate and Record as is done for other heavyweight
     // operations (though it's currently a messy approach)
     const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
-    skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, rp_state, render_area, subpass, view_gens,
-                                                               command_);
+    const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
+    skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, rp_state, render_area,
+                                                               render_pass_instance_id, subpass, view_gens, command_);
 
     // Validate load operations if there were no layout transition hazards
     if (!skip) {

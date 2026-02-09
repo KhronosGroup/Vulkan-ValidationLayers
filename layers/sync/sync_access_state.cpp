@@ -511,7 +511,8 @@ void AccessState::Resolve(const AccessState &other) {
     }
 }
 
-void AccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+                         SyncFlags flags) {
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
     if (IsRead(usage_info.access_index)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
@@ -549,9 +550,9 @@ void AccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering ordering
             input_attachment_read = (usage_info.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
         }
     } else {
-        SetWrite(usage_info.access_index, tag_ex, flags);
+        SetWrite(usage_info.access_index, attachment_access, tag_ex, flags);
     }
-    UpdateFirst(tag_ex, usage_info, ordering_rule, flags);
+    UpdateFirst(tag_ex, usage_info, attachment_access.ordering, flags);
 }
 
 HazardResult HazardResult::HazardVsPriorWrite(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
@@ -582,12 +583,13 @@ bool HazardResult::IsWAWHazard() const {
 // Clobber last read and all barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
 // if the last_reads/last_write were unsafe, we've reported them, in either case the prior access is irrelevant.
 // We can overwrite them as *this* write is now after them.
-void AccessState::SetWrite(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+void AccessState::SetWrite(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+                           SyncFlags flags) {
     ClearRead();
     if (!last_write.has_value()) {
         last_write.emplace();
     }
-    last_write->Set(access_index, tag_ex, flags);
+    last_write->Set(access_index, attachment_access, tag_ex, flags);
 }
 
 void AccessState::ClearWrite() { last_write.reset(); }
@@ -623,7 +625,7 @@ bool AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarr
         const OrderingBarrier layout_ordering{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
 
         // Register write access that models layout transition writes
-        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, tag_ex);
+        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccessInfo::NonAttachment(), tag_ex);
         UpdateFirst(tag_ex, layout_transition_access_info, SyncOrdering::kOrderingNone);
         TouchupFirstForLayoutTransition(layout_transition_tag, layout_ordering);
 
@@ -840,7 +842,7 @@ void AccessState::ApplyPendingWriteBarrier(const PendingWriteBarrier &write_barr
 void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag) {
     const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
-    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, tag_ex);
+    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccessInfo::NonAttachment(), tag_ex);
     UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kOrderingNone);
     TouchupFirstForLayoutTransition(tag, layout_transition.ordering);
 }
@@ -1127,7 +1129,8 @@ bool ReadState::InBarrierSourceScope(const BarrierScope &barrier_scope) const {
     return ReadOrDependencyChainInSourceScope(barrier_scope.scope_queue, barrier_scope.src_exec_scope);
 }
 
-void WriteState::Set(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags) {
+void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+                     SyncFlags flags) {
     this->access_index = access_index;
     this->flags = flags;
     barriers.reset();
@@ -1135,6 +1138,8 @@ void WriteState::Set(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, Sy
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
     queue = kQueueIdInvalid;
+    render_pass_instance_id = attachment_access.render_pass_instance_id;
+    subpass = attachment_access.subpass;
 }
 
 void WriteState::SetQueueId(QueueId id) {
