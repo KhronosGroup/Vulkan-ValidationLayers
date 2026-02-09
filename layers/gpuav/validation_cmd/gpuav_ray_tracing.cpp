@@ -516,7 +516,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 assert(false);
             } else {
                 VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-                barrier_write_after_read.srcAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+                barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
                 barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
                 barrier_write_after_read.buffer = blas_array_buffers[0]->VkHandle();
                 barrier_write_after_read.offset = 0;
@@ -801,6 +801,20 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
                                                 uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
                     DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+
+                    if (const auto index_buffers = gpuav.GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
+                        !index_buffers.empty()) {
+                        VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                        barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+                        barrier_read_after_write.buffer = index_buffers[0]->VkHandle();
+                        barrier_read_after_write.offset = 0;
+                        barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                        DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                   VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                                   &barrier_read_after_write, 0, nullptr);
+                    }
                 }
 
                 if (setup_aabbs_validation) {
@@ -821,6 +835,20 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     const uint32_t wg_count_x = (build_range_info.primitiveCount) / shader_wg_size_x +
                                                 uint32_t(((build_range_info.primitiveCount) % shader_wg_size_x) > 0);
                     DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+
+                    if (const auto aabb_buffers = gpuav.GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
+                        !aabb_buffers.empty()) {
+                        VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                        barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+                        barrier_read_after_write.buffer = aabb_buffers[0]->VkHandle();
+                        barrier_read_after_write.offset = 0;
+                        barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                        DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                   VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                                   &barrier_read_after_write, 0, nullptr);
+                    }
                 }
 
                 if (setup_transform_validation) {
@@ -839,6 +867,21 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     error_logging_desc_set_already_bound = true;
 
                     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
+
+                    if (const auto transform_buffers =
+                            gpuav.GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
+                        !transform_buffers.empty()) {
+                        VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                        barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+                        barrier_read_after_write.buffer = transform_buffers[0]->VkHandle();
+                        barrier_read_after_write.offset = 0;
+                        barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                        DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                   VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                                   &barrier_read_after_write, 0, nullptr);
+                    }
                 }
             }
         }
