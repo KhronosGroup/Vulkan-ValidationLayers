@@ -2868,6 +2868,10 @@ TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
 TEST_F(PositiveSyncVal, SingleQueryCopyIgnoresStride) {
     RETURN_IF_SKIP(InitSyncVal());
 
+    if (!m_device->Physical().limits_.timestampComputeAndGraphics) {
+        GTEST_SKIP() << "Timestamps not supported";
+    }
+
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     vkt::Buffer buffer8(*m_device, 8, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer16(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT);

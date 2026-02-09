@@ -4062,7 +4062,7 @@ TEST_F(NegativeCommand, CommandBufferRecording) {
         m_errorMonitor->VerifyFound();
     }
 
-    {
+    if (m_device->Physical().limits_.timestampComputeAndGraphics) {
         vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-commandBuffer-recording");
