@@ -344,10 +344,16 @@ vvl::DescriptorMode GpuShaderInstrumentor::SelectDescriptorModeFromDSL(uint32_t 
     vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
     if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
         if (set_layout_count > 0) {
-            // Only need to check the first one because they all have to be or not-be descriptor buffer
-            const auto &dsl_state = Get<vvl::DescriptorSetLayout>(set_layouts[0]);
-            if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                mode = vvl::DescriptorModeBuffer;
+            // It is valid to have null DSL (using GPL) so need to find the first valid
+            for (uint32_t i = 0; i < set_layout_count; i++) {
+                // VU 08008 forces all layouts to have this flag, so only need to check first flag
+                if (set_layouts[i]) {
+                    const auto& dsl_state = Get<vvl::DescriptorSetLayout>(set_layouts[i]);
+                    if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                        mode = vvl::DescriptorModeBuffer;
+                        break;
+                    }
+                }
             }
         } else if (enabled_features.descriptorBuffer) {
             // At this point, we have actually zero way to know how this VkPipelineLayout/VkShaderEXT is going to be used because

@@ -3062,7 +3062,11 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuff
     cb_state->PushDescriptorSetState(pipelineBindPoint, pipeline_layout, set, descriptorWriteCount, pDescriptorWrites,
                                      record_obj.location);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    if (pipeline_layout->has_descriptor_buffer) {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    } else {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    }
 }
 
 void DeviceState::PostCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -3095,7 +3099,11 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuf
                                          record_obj.location);
     }
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    if (pipeline_layout->has_descriptor_buffer) {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    } else {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    }
 }
 
 void DeviceState::PostCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -4921,7 +4929,11 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer
     auto template_state = Get<DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     auto pipeline_layout = Get<PipelineLayout>(layout);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    if (pipeline_layout->has_descriptor_buffer) {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    } else {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    }
 
     if (!template_state || !pipeline_layout) {
         return;
@@ -4950,7 +4962,11 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate2(
     auto template_state = Get<DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
     auto pipeline_layout = Get<PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    if (pipeline_layout->has_descriptor_buffer) {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    } else {
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    }
 
     if (!template_state || !pipeline_layout) {
         return;

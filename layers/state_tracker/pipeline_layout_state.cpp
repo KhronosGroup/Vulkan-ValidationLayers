@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -251,6 +251,17 @@ static DescriptorSetLayoutList GetSetLayouts(const vvl::span<const PipelineLayou
     return set_layouts;
 }
 
+static bool HasDescriptorBuffer(const DescriptorSetLayoutList& set_layouts) {
+    // It is valid to have null DSL (using GPL) so need to find the first valid
+    for (const auto& set_layout : set_layouts.list) {
+        // VU 08008 forces all layouts to have this flag, so only need to check first flag
+        if (set_layout) {
+            return (set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+        }
+    }
+    return false;
+}
+
 static bool HasImmutableSamplers(const DescriptorSetLayoutList &set_layouts) {
     for (const auto &set_layout : set_layouts.list) {
         if (set_layout && set_layout->HasImmutableSamplers()) {
@@ -260,20 +271,22 @@ static bool HasImmutableSamplers(const DescriptorSetLayoutList &set_layouts) {
     return false;
 }
 
-PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo)
+PipelineLayout::PipelineLayout(DeviceState& dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       create_flags(pCreateInfo->flags),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
+      has_descriptor_buffer(HasDescriptorBuffer(set_layouts)),
       has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 
-PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
+PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout* const>& layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
       create_flags(GetCreateFlags(layouts)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
+      has_descriptor_buffer(HasDescriptorBuffer(set_layouts)),
       has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 
 }  // namespace vvl
