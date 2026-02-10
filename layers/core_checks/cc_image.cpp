@@ -1152,9 +1152,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
     for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
         const Location &attachment_loc = error_obj.location.dot(Field::pAttachments, attachment_index);
-        auto clear_desc = &pAttachments[attachment_index];
+        const VkClearAttachment& clear_desc = pAttachments[attachment_index];
 
-        const VkImageAspectFlags aspect_mask = clear_desc->aspectMask;
+        const VkImageAspectFlags aspect_mask = clear_desc.aspectMask;
 
         const vvl::ImageView *color_view_state = nullptr;
         uint32_t color_attachment_count = 0;
@@ -1166,20 +1166,20 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
         const bool is_dynamic_rendering = rp_state->UsesDynamicRendering();
         if (is_dynamic_rendering) {
-            uint32_t colorAttachment = clear_desc->colorAttachment;
+            const uint32_t color_index = clear_desc.colorAttachment;
 
-            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && cb_state.rendering_attachments.set_color_locations &&
-                colorAttachment < cb_state.rendering_attachments.color_locations.size() &&
-                cb_state.rendering_attachments.color_locations[colorAttachment] == VK_ATTACHMENT_UNUSED) {
+            if ((clear_desc.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && cb_state.rendering_attachments.set_color_locations &&
+                color_index < cb_state.rendering_attachments.color_locations.size() &&
+                cb_state.rendering_attachments.color_locations[color_index] == VK_ATTACHMENT_UNUSED) {
                 const LogObjectList objlist(commandBuffer, rp_state->VkHandle());
                 skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
                                  "cannot be cleared because VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32
                                  "] is VK_ATTACHMENT_UNUSED.",
-                                 colorAttachment);
+                                 color_index);
             }
 
             color_view_state =
-                cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicRenderingColorAttachmentIndex(colorAttachment));
+                cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicRenderingColorAttachmentIndex(color_index));
             color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
 
             depth_view_state = cb_state.GetActiveAttachmentImageViewState(
@@ -1194,16 +1194,16 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             const auto *framebuffer = cb_state.active_framebuffer.get();
 
             if (subpass_desc) {
-                if (framebuffer && (clear_desc->colorAttachment != VK_ATTACHMENT_UNUSED) &&
-                    (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
-                    if (subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment <
+                if (framebuffer && (clear_desc.colorAttachment != VK_ATTACHMENT_UNUSED) &&
+                    (clear_desc.colorAttachment < subpass_desc->colorAttachmentCount)) {
+                    if (subpass_desc->pColorAttachments[clear_desc.colorAttachment].attachment <
                         framebuffer->create_info.attachmentCount) {
                         color_view_state = cb_state.GetActiveAttachmentImageViewState(
-                            subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment);
+                            subpass_desc->pColorAttachments[clear_desc.colorAttachment].attachment);
 
                         if (subpass_desc->pResolveAttachments) {
                             const uint32_t resolve_attachment =
-                                subpass_desc->pResolveAttachments[clear_desc->colorAttachment].attachment;
+                                subpass_desc->pResolveAttachments[clear_desc.colorAttachment].attachment;
                             if (resolve_attachment != VK_ATTACHMENT_UNUSED) {
                                 external_format_resolve =
                                     GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0;
@@ -1253,15 +1253,15 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             skip |= LogError("VUID-VkClearAttachment-aspectMask-02246", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
                              string_VkImageAspectFlags(aspect_mask).c_str());
         } else if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            if (clear_desc->colorAttachment == VK_ATTACHMENT_UNUSED) {
+            if (clear_desc.colorAttachment == VK_ATTACHMENT_UNUSED) {
                 const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                                  "is VK_ATTACHMENT_UNUSED, but aspectMask is VK_IMAGE_ASPECT_COLOR_BIT.");
             } else if (color_attachment_count == 0) {
                 const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::aspectMask),
-                                 "VK_IMAGE_ASPECT_COLOR_BIT but there are no color attachments in the renderpass.");
-            } else if (clear_desc->colorAttachment >= color_attachment_count) {
+                                 "has VK_IMAGE_ASPECT_COLOR_BIT but there are no color attachments in the renderpass.");
+            } else if (clear_desc.colorAttachment >= color_attachment_count) {
                 auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
                     std::ostringstream ss;
                     if (is_dynamic_rendering) {
@@ -1275,7 +1275,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 skip |=
                     LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                              "is index %" PRIu32 ", which is not less than colorAttachmentCount (%" PRIu32 ") which was set by %s",
-                             clear_desc->colorAttachment, color_attachment_count, describe_color_count().c_str());
+                             clear_desc.colorAttachment, color_attachment_count, describe_color_count().c_str());
             }
 
             if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) || (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
@@ -1285,7 +1285,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
 
         } else if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-            skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
+            skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc.clearValue.depthStencil,
                                                    attachment_loc.dot(Field::clearValue).dot(Field::depthStencil));
         } else if (external_format_resolve && IsAnyPlaneAspect(aspect_mask)) {
             const LogObjectList objlist(commandBuffer, rp_state->Handle());
@@ -1308,7 +1308,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         }
 
         for (auto image_view : image_views) {
-            if (!image_view || !image_view->image_state) continue;
+            if (!image_view || !image_view->image_state) {
+                continue;
+            }
             skip |= ValidateProtectedImage(cb_state, *image_view->image_state, attachment_loc,
                                            "VUID-vkCmdClearAttachments-commandBuffer-02504");
             skip |= ValidateUnprotectedImage(cb_state, *image_view->image_state, attachment_loc,
