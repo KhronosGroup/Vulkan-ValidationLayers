@@ -94,34 +94,40 @@ HazardResult AccessState::DetectMarkerHazard() const {
 HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering,
                                        const AttachmentAccess &attachment_access, SyncFlags flags, QueueId queue_id,
                                        bool detect_load_op_after_store_op_hazards) const {
-    // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
-    const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
+    const VkPipelineStageFlagBits2 access_stage = usage_info.stage_mask;
     const SyncAccessIndex access_index = usage_info.access_index;
-    const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
 
     if (IsRead(usage_info.access_index)) {
-        // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
         bool is_raw_hazard = IsRAWHazard(usage_info);
         if (is_raw_hazard) {
-            // NOTE: we know last_write is non-zero
-            // See if the ordering rules save us from the simple RAW check above
-            // First check to see if the current usage is covered by the ordering rules
-            const bool usage_is_input_attachment = (access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
-            const bool usage_is_ordered =
-                (input_attachment_ordering && usage_is_input_attachment) || (0 != (usage_stage & ordering.exec_scope));
-            if (usage_is_ordered) {
+            const bool access_is_input_attachment = (access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
+            const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
+
+            // Check if the ordering rules make a RAW sequence not a hazard.
+            // The ordering act as barriers to the last accesses.
+            // At first check if the current access is covered by the ordering rules
+            const bool access_is_ordered =
+                (access_stage & ordering.exec_scope) != 0 || (access_is_input_attachment && input_attachment_ordering);
+
+            if (access_is_ordered) {
                 // Check if the most recent write is ordered.
                 // Input attachment is ordered against load op but not against regular draws (requires subpass barrier).
                 bool most_recent_is_ordered =
-                    last_write->IsOrdered(ordering, queue_id) && (!usage_is_input_attachment || last_write->IsLoadOp());
+                    last_write->IsOrdered(ordering, queue_id) && (!access_is_input_attachment || last_write->IsLoadOp());
 
                 // LoadOp after StoreOp happens only if accesses are from different render pass instances.
                 // Such accesses are not implicitly synchronized.
-                const bool load_op_after_store_op =
-                    last_write->IsStoreOp() && attachment_access.type == AttachmentAccessType::LoadOp;
-                const bool validate_load_op_after_store_op = detect_load_op_after_store_op_hazards && load_op_after_store_op;
-                if (validate_load_op_after_store_op) {
-                    most_recent_is_ordered = false;
+                if (detect_load_op_after_store_op_hazards) {
+                    if (last_write->IsStoreOp() && attachment_access.type == AttachmentAccessType::LoadOp) {
+                        most_recent_is_ordered = false;
+                    }
+                }
+
+                // Resolve read is not ordered against accesses from other subpasses
+                if (attachment_access.type == AttachmentAccessType::ResolveRead) {
+                    if (attachment_access.subpass != last_write->attachment_access.subpass) {
+                        most_recent_is_ordered = false;
+                    }
                 }
 
                 // If most recent write is not ordered then check if subsequent read is ordered
@@ -156,7 +162,7 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
         if ((ordered_stages & last_read_stages) != last_read_stages) {
             for (const auto &read_access : GetReads()) {
                 if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
-                if (IsReadHazard(usage_stage, read_access)) {
+                if (IsReadHazard(access_stage, read_access)) {
                     return HazardResult::HazardVsPriorRead(this, usage_info, WRITE_AFTER_READ, read_access);
                 }
             }

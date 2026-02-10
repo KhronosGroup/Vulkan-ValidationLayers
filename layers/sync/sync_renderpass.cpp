@@ -56,13 +56,10 @@ class ValidateResolveAction {
 
             const SyncValidator &validator = cb_context_.GetSyncState();
 
-            // TODO: this error message is not triggered by the tests
             std::ostringstream ss;
             ss << validator.FormatHandle(view_gen.GetViewState()->Handle());
-            ss << " (" << aspect_name << " " << resolve_action_name;
-            ss << ", attachment " << src_at;
-            ss << ", resolve attachment " << dst_at;
-            ss << ", subpass " << subpass_ << " of " << validator.FormatHandle(render_pass_) << ")";
+            ss << " (" << resolve_action_name << " of " << aspect_name << " multisample attachment " << src_at;
+            ss << " in subpass " << subpass_ << " of " << validator.FormatHandle(render_pass_) << ")";
             const std::string resource_description = ss.str();
             const auto error =
                 validator.error_messages_.RenderPassResolveError(hazard, cb_context_, command_, resource_description);
