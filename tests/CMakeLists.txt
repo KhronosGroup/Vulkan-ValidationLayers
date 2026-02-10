@@ -103,6 +103,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_descriptor_class_general_buffer_coop_mat_positive.cpp
     unit/gpu_av_descriptor_class_texel_buffer.cpp
     unit/gpu_av_descriptor_class_texel_buffer_positive.cpp
+    unit/gpu_av_descriptor_heap.cpp
     unit/gpu_av_descriptor_indexing.cpp
     unit/gpu_av_descriptor_indexing_positive.cpp
     unit/gpu_av_descriptor_post_process.cpp

@@ -284,6 +284,16 @@ class GpuAVRayQueryTest : public GpuAVTest {
     void InitGpuAVRayQuery(std::vector<VkLayerSettingEXT> layer_settings = {});
 };
 
+class GpuAVDescriptorHeap : public GpuAVTest {
+  public:
+    void InitGpuAVDescriptorHeap(bool safe_mode = true);
+
+    VkDeviceSize AlignResource(VkDeviceSize offset);
+    VkDeviceSize AlignSampler(VkDeviceSize offset);
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+};
+
 class GpuAVRayHitObjectTest : public GpuAVTest {
   public:
     void InitHitObjectMotionTest(std::vector<VkLayerSettingEXT> layer_settings = {});
