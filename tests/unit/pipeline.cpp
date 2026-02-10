@@ -113,10 +113,8 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkPipelineColorBlendAttachmentState cb_attachments[2];
@@ -160,8 +158,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(non_blending_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -181,8 +178,7 @@ TEST_F(NegativePipeline, ColorWriteMaskE5B9G9R9) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -1258,10 +1254,8 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_D16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -1420,10 +1414,8 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, test_case.depth_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-        rp.AddColorAttachment(0);
-        rp.AddDepthStencilAttachment(1);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         rp.CreateRenderPass();
 
         VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
@@ -1487,10 +1479,8 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rp.AddAttachmentDescription(ds_format, test_case.depth_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-        rp.AddColorAttachment(0);
-        rp.AddDepthStencilAttachment(1);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
         if (test_case.color_samples != test_case.depth_samples) {
             m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-pDepthStencilAttachment-01418");
@@ -1601,13 +1591,11 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, test_case.color_samples, VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         if (test_case.depth_samples) {
             rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, test_case.depth_samples, VK_IMAGE_LAYOUT_UNDEFINED,
                                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-            rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-            rp.AddDepthStencilAttachment(1);
+            rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         }
         rp.CreateRenderPass();
 
@@ -3263,8 +3251,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
         rp.CreateRenderPass();
 
         // Check if the colorAttachmentRead capability enable, renderpass should be null
@@ -3466,8 +3453,7 @@ TEST_F(NegativePipeline, PipelineMissingFeatures) {
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical());
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);

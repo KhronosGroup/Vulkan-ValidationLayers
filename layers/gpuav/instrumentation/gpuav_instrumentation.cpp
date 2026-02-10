@@ -24,6 +24,7 @@
 #include "containers/small_vector.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
+#include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -186,7 +187,7 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, co
 
 void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                      const Location &loc, CommonInstrumentationErrorInfo &out_error_info) {
-    void *descriptor_start = gpuav.global_resource_descriptor_buffer_.GetMappedPtr();
+    void* descriptor_start = gpuav.GetGlobalDescriptorBuffer().GetMappedPtr();
 
     for (const auto &func : vvl::make_span(cb_state.on_instrumentation_desc_buffer_update_functions)) {
         VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
@@ -490,22 +491,22 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
         return;  // currently only thing enabled
     }
     void *resource_heap_memory = nullptr;
-    VkDeviceSize write_offset = gpuav.resource_heap_reserved_offset_;
+    VkDeviceSize write_offset = gpuav.resource_heap.reserved_offset_;
     bool need_to_unmap_resource = false;
     bool host_visible_heap = true;
     bool host_coherent_heap = true;
-    if (gpuav.resource_heap_buffer_state_) {
-        const auto memory_state = gpuav.resource_heap_buffer_state_->MemoryState();
-        const VkMemoryType memoryType = gpuav.phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex];
+    if (gpuav.resource_heap.buffer_state_) {
+        const auto memory_state = gpuav.resource_heap.buffer_state_->MemoryState();
+        const VkMemoryType memory_type = gpuav.phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex];
         if (memory_state->p_driver_data) {
             resource_heap_memory = memory_state->p_driver_data;
-            if ((memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            if ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
                 host_coherent_heap = false;
             }
-        } else if ((memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+        } else if ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
             need_to_unmap_resource = true;
             DispatchMapMemory(gpuav.device, memory_state->VkHandle(), 0, VK_WHOLE_SIZE, 0, &resource_heap_memory);
-            if ((memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            if ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
                 host_coherent_heap = false;
             }
         } else {
@@ -515,15 +516,15 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
     }
 
     if (!resource_heap_memory) {
-        resource_heap_memory = gpuav.global_resource_descriptor_heap_.GetMappedPtr();
+        vko::Buffer& global_heap = gpuav.GetGlobalDescriptorHeap();
+        resource_heap_memory = global_heap.GetMappedPtr();
 
         if (host_visible_heap) {
             VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-            bind_resource_info.heapRange.address = gpuav.global_resource_descriptor_heap_.Address();
-            bind_resource_info.heapRange.size = gpuav.global_resource_descriptor_heap_.Size();
+            bind_resource_info.heapRange.address = global_heap.Address();
+            bind_resource_info.heapRange.size = global_heap.Size();
             bind_resource_info.reservedRangeOffset = gpuav.resource_heap_reserved_bytes_;
-            bind_resource_info.reservedRangeSize =
-                gpuav.global_resource_descriptor_heap_.Size() - gpuav.resource_heap_reserved_bytes_;
+            bind_resource_info.reservedRangeSize = global_heap.Size() - gpuav.resource_heap_reserved_bytes_;
             DispatchCmdBindResourceHeapEXT(cb_state.VkHandle(), &bind_resource_info);
         }
     }
@@ -544,13 +545,13 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
 
     if (!host_coherent_heap) {
         VkMappedMemoryRange memory_range = vku::InitStructHelper();
-        memory_range.memory = gpuav.resource_heap_buffer_state_->MemoryState()->VkHandle();
+        memory_range.memory = gpuav.resource_heap.buffer_state_->MemoryState()->VkHandle();
         memory_range.offset = write_offset;
         memory_range.size = gpuav.buffer_descriptor_size_;
         DispatchFlushMappedMemoryRanges(gpuav.device, 1u, &memory_range);
     }
 
-    const uint32_t push_offset = static_cast<uint32_t>(gpuav.resource_heap_reserved_offset_);
+    const uint32_t push_offset = static_cast<uint32_t>(gpuav.resource_heap.reserved_offset_);
     VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
     push_data_info.offset = gpuav.push_data_offset_;
     push_data_info.data.address = &push_offset;
@@ -560,10 +561,10 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
     if (!host_visible_heap) {
         VkBufferCopy region;
         region.srcOffset = 0u;
-        region.dstOffset = gpuav.resource_heap_reserved_offset_;
+        region.dstOffset = gpuav.resource_heap.reserved_offset_;
         region.size = gpuav.resource_heap_reserved_bytes_;
-        DispatchCmdCopyBuffer(cb_state.VkHandle(), gpuav.global_resource_descriptor_heap_.VkHandle(),
-                              gpuav.resource_heap_buffer_state_->VkHandle(), 1u, &region);
+        DispatchCmdCopyBuffer(cb_state.VkHandle(), gpuav.GetGlobalDescriptorHeap().VkHandle(),
+                              gpuav.resource_heap.buffer_state_->VkHandle(), 1u, &region);
         if (gpuav.enabled_features.synchronization2) {
             VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
             buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
@@ -572,8 +573,8 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
             buffer_barrier.dstAccessMask = VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT;
             buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            buffer_barrier.buffer = gpuav.resource_heap_buffer_state_->VkHandle();
-            buffer_barrier.offset = gpuav.resource_heap_reserved_offset_;
+            buffer_barrier.buffer = gpuav.resource_heap.buffer_state_->VkHandle();
+            buffer_barrier.offset = gpuav.resource_heap.reserved_offset_;
             buffer_barrier.size = gpuav.resource_heap_reserved_bytes_;
             VkDependencyInfo dep_info = vku::InitStructHelper();
             dep_info.bufferMemoryBarrierCount = 1;
@@ -587,7 +588,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
                                        1, &memory_barrier, 0, nullptr, 0, nullptr);
         }
     } else if (need_to_unmap_resource) {
-        DispatchUnmapMemory(gpuav.device, gpuav.resource_heap_buffer_state_->MemoryState()->VkHandle());
+        DispatchUnmapMemory(gpuav.device, gpuav.resource_heap.buffer_state_->MemoryState()->VkHandle());
     }
 }
 
@@ -617,7 +618,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav
     if (last_bound.GetDescriptorMode() == vvl::DescriptorModeUnknown) {
         VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
         binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        binding_info.address = gpuav.global_resource_descriptor_buffer_.Address();
+        binding_info.address = gpuav.GetGlobalDescriptorBuffer().Address();
         DispatchCmdBindDescriptorBuffersEXT(cb_state.VkHandle(), 1, &binding_info);
 
         cb_state.resource_descriptor_buffer_index_ = 0;

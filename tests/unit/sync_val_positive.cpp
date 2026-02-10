@@ -248,10 +248,9 @@ TEST_F(PositiveSyncVal, LoadOpImplicitOrdering) {
     // Use LOAD_OP_CLEAR we check that input attachment READ is implicitly ordered against load op WRITE
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     // Need to add color attachment too, otherwise input attachment alone can't be used with LOAD_OP_CLEAR
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
@@ -292,8 +291,7 @@ TEST_F(PositiveSyncVal, StoreOpImplicitOrdering) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
 
     vkt::Image input_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -334,13 +332,12 @@ TEST_F(PositiveSyncVal, SubpassWithBarrier) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddInputAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     // Add subpass self-dependency in order to be able to use pipeline barrier in subpass
-    rp.AddSubpassDependency(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT,
-                            VK_DEPENDENCY_BY_REGION_BIT);
+    rp.AddSubpassSelfDependency(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
@@ -399,13 +396,12 @@ TEST_F(PositiveSyncVal, SubpassWithBarrier2) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddInputAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     // Add subpass self-dependency in order to be able to use pipeline barrier in subpass
-    rp.AddSubpassDependency(VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_DEPENDENCY_BY_REGION_BIT);
+    rp.AddSubpassSelfDependency(VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
@@ -589,6 +585,53 @@ TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier2) {
 
     vk::CmdEndRendering(m_command_buffer);
     m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, SyncStoreOpWriteWithPreviousRead) {
+    TEST_DESCRIPTION("Synchronize StoreOp writes with previous copy reads");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+
+    // Prevent WAR
+    m_command_buffer.Barrier(barrier);
+
+    // There is no loadOp access (LOAD_OP_NONE)
+    m_command_buffer.BeginRendering(rendering_info);
+
+    vk::CmdEndRendering(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, LayoutTransition) {
@@ -1592,8 +1635,7 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
                                 VK_ATTACHMENT_STORE_OP_NONE);
-    rp.AddAttachmentReference({0, input_attachment_layout});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, input_attachment_layout);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -2520,12 +2562,11 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
     {
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         rp.AddAttachmentDescription(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_LAYOUT_UNDEFINED,
                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-        rp.AddDepthStencilAttachment(1);
+
+        rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         rp.CreateRenderPass();
 
         VkImageView image_views[] = {color_image_view, depth_image_view};
@@ -3288,8 +3329,7 @@ TEST_F(PositiveSyncVal, MultipleExternalSubpassDependencies) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddSubpassDependency(subpass_dependency_color);
     rp.AddSubpassDependency(subpass_dependency_depth);
     rp.CreateRenderPass();
@@ -3326,8 +3366,7 @@ TEST_F(PositiveSyncVal, QSSubpassDependency) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_NONE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddSubpassDependency(subpass_dependency);
     rp.CreateRenderPass();
 

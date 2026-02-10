@@ -5251,3 +5251,34 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToDepthOnTransferQueue) {
     vk::CmdCopyBufferToImage2(cb, &copy_buffer_to_image_info2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCopyBufferImage, BufferToLayeredImageCopy) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC7_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 4, VK_FORMAT_BC7_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+    vkt::Image image(*m_device, image_ci);
+
+    VkDeviceSize buff_size = 32 * 32;
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(buff_size, kSrcDstUsage));
+
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 4};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-pRegions-00183");
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

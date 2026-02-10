@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,8 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionSample) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-externalFormatResolve-09345");
     rp.CreateRenderPass();
@@ -76,10 +74,8 @@ TEST_F(NegativeAndroidExternalResolve, AttachmentDescriptionZeroExternalFormat) 
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription2-format-09334");
     rp.CreateRenderPass();
@@ -108,10 +104,8 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionViewMask) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.SetViewMask(1);  // bad
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-externalFormatResolve-09346");
@@ -201,11 +195,9 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionMultiPlaneInput) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
-    rp.AddInputAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-externalFormatResolve-09348");
     rp.CreateRenderPass();
@@ -294,10 +286,8 @@ TEST_F(NegativeAndroidExternalResolve, Framebuffer) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -369,10 +359,8 @@ TEST_F(NegativeAndroidExternalResolve, ImagelessFramebuffer) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -491,10 +479,8 @@ TEST_F(NegativeAndroidExternalResolve, ImagelessFramebufferFormat) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -787,10 +773,8 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamples) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this, &external_format);
@@ -1117,11 +1101,9 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     rp.AddAttachmentDescription(format_resolve_prop.colorAttachmentFormat);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
-    rp.AddSubpassDependency();
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddSubpassSelfDependency();
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1210,11 +1192,9 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
-    rp.AddSubpassDependency();
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    rp.AddSubpassSelfDependency();
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1309,10 +1289,8 @@ TEST_F(NegativeAndroidExternalResolve, RenderPassAndFramebuffer) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();

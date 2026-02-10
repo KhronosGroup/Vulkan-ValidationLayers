@@ -356,10 +356,8 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkPipelineColorBlendAttachmentState cb_attachments[2];

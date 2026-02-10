@@ -997,12 +997,22 @@ class Device : public vvl::base::Device {
                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
                                                      const Context &context) const;
 
-    [[nodiscard]] bool ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count,
-                                                    const VulkanTypedHandle &handle, const Location &loc) const;
-    [[nodiscard]] bool ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &context,
-                                                                         const VkAccelerationStructureBuildGeometryInfoKHR &info,
-                                                                         const VulkanTypedHandle &handle,
-                                                                         const Location &info_loc) const;
+    bool ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count, const VulkanTypedHandle& handle,
+                                      const Location& loc) const;
+    bool ValidateAccelerationStructureBuildGeometryInfo(const VulkanTypedHandle& handle,
+                                                        const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                        const Location& info_loc) const;
+    bool ValidateAccelerationStructureGeometry(const Context& context, const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                               const VkAccelerationStructureGeometryKHR& geom,
+                                               const Location& geometry_ptr_loc) const;
+    bool ValidateAccelerationStructureGeometryHost(const Context& context, const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                   const VkAccelerationStructureGeometryKHR& geom,
+                                                   const Location& geometry_ptr_loc) const;
+    bool ValidateAccelerationStructureGeometryDevice(const Context& context, const VkAccelerationStructureGeometryKHR& geom,
+                                                     const Location& geometry_ptr_loc) const;
+    bool ValidateAccelerationStructureBuildRangeInfo(const Context& context, const VkAccelerationStructureGeometryKHR& geom,
+                                                     const VkAccelerationStructureBuildRangeInfoKHR& build_range,
+                                                     const Location& geometry_ptr_loc, const Location& build_range_loc) const;
     bool manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const Context &context) const;

@@ -195,16 +195,17 @@ void GpuShaderInstrumentor::SetupDescriptorBuffers(const Location &loc) {
 }
 
 void GpuShaderInstrumentor::SetupDescriptorHeap(const Location &loc) {
-    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        const VkPhysicalDeviceDescriptorHeapPropertiesEXT &descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
-        VkDeviceSize bytes_to_reserve = Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings,
-                                              descriptor_heap_props.bufferDescriptorAlignment);
-        bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
-
-        resource_heap_reserved_bytes_ = bytes_to_reserve;
-        buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
-        push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        return;
     }
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
+    VkDeviceSize bytes_to_reserve =
+        Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings, descriptor_heap_props.bufferDescriptorAlignment);
+    bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
+
+    resource_heap_reserved_bytes_ = bytes_to_reserve;
+    buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
+    push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
@@ -274,6 +275,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
     instrumentation_device_settings_.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     instrumentation_device_settings_.support_non_semantic_info =
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
+    instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
 }
 
 void GpuShaderInstrumentor::Cleanup() {
@@ -344,10 +346,16 @@ vvl::DescriptorMode GpuShaderInstrumentor::SelectDescriptorModeFromDSL(uint32_t 
     vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
     if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
         if (set_layout_count > 0) {
-            // Only need to check the first one because they all have to be or not-be descriptor buffer
-            const auto &dsl_state = Get<vvl::DescriptorSetLayout>(set_layouts[0]);
-            if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                mode = vvl::DescriptorModeBuffer;
+            // It is valid to have null DSL (using GPL) so need to find the first valid
+            for (uint32_t i = 0; i < set_layout_count; i++) {
+                // VU 08008 forces all layouts to have this flag, so only need to check first flag
+                if (set_layouts[i]) {
+                    const auto& dsl_state = Get<vvl::DescriptorSetLayout>(set_layouts[i]);
+                    if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                        mode = vvl::DescriptorModeBuffer;
+                        break;
+                    }
+                }
             }
         } else if (enabled_features.descriptorBuffer) {
             // At this point, we have actually zero way to know how this VkPipelineLayout/VkShaderEXT is going to be used because

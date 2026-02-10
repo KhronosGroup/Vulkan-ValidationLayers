@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -58,6 +58,13 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
     if (scope_ != kInternal) {
         return true;
     }
+
+    // Ensure that the fence's std::promise is not set when the fence is submitted to the queue.
+    // This guarantees that we can always call set_value() on the promise during Retire.
+    // (For ill-formed applications that forgot to call vkResetFences, the fence may be in the
+    // signaled state and its promise set - this would cause a crash during Retire)
+    ResetPromise();
+
     // Mark fence in use
     state_ = kInflight;
     queue_ = queue_state;
@@ -137,13 +144,13 @@ void vvl::Fence::Reset() {
         imported_handle_type_.reset();
     }
     state_ = kUnsignaled;
-    completed_ = std::promise<void>();
-    waiter_ = std::shared_future<void>(completed_.get_future());
     present_submission_ref_.reset();
 
     // Do not reset swapchain-in-use state of each semaphore here, only stop the tracking.
     // In order to reset swapchain-in-use state we need to wait on the fence.
     present_wait_semaphores_.clear();
+
+    ResetPromise();
 }
 
 void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
@@ -170,8 +177,7 @@ void vvl::Fence::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
             imported_handle_type_.reset();
         }
         state_ = kUnsignaled;
-        completed_ = std::promise<void>();
-        waiter_ = std::shared_future<void>(completed_.get_future());
+        ResetPromise();
     }
 }
 
@@ -213,4 +219,9 @@ void vvl::Fence::SetPresentWaitSemaphores(vvl::span<std::shared_ptr<vvl::Semapho
     for (const auto &semaphore : present_wait_semaphores) {
         present_wait_semaphores_.emplace_back(semaphore);
     }
+}
+
+void vvl::Fence::ResetPromise() {
+    completed_ = std::promise<void>();
+    waiter_ = std::shared_future<void>(completed_.get_future());
 }

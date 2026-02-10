@@ -141,40 +141,33 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     for (uint32_t i = 0; i < swapchain_present_modes_ci->presentModeCount; i++) {
         VkPresentModeKHR swapchain_present_mode = swapchain_present_modes_ci->pPresentModes[i];
 
-        if (swapchain_present_mode == VK_PRESENT_MODE_FIFO_LATEST_READY_EXT && !enabled_features.presentModeFifoLatestReady) {
+        if (swapchain_present_mode == VK_PRESENT_MODE_FIFO_LATEST_READY_KHR && !enabled_features.presentModeFifoLatestReady) {
             skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentModeFifoLatestReady-10160", device,
                              create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
                              "is %s, but feature presentModeFifoLatestReady is not enabled",
                              string_VkPresentModeKHR(swapchain_present_mode));
         }
 
-        if (std::find(present_modes.begin(), present_modes.end(), swapchain_present_mode) == present_modes.end()) {
-            if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
-                         "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                skip |= true;
-            }
+        if (!vvl::Contains(present_modes, swapchain_present_mode)) {
+            skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
+                             "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode));
         }
 
-        if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), swapchain_present_mode) ==
-            compatible_present_modes.end()) {
-            if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
-                         "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                skip |= true;
-            }
+        if (!vvl::Contains(compatible_present_modes, swapchain_present_mode)) {
+            skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
+                             "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode));
         }
 
         const bool has_present_mode = (swapchain_present_modes_ci->pPresentModes[i] == present_mode);
         found_swapchain_modes_ci_present_mode |= has_present_mode;
     }
     if (!found_swapchain_modes_ci_present_mode) {
-        if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764", device, create_info_loc,
-                     "was called with a present mode (%s) that was not included in the set of present modes specified in "
-                     "the vkSwapchainPresentModesCreateInfoKHR structure included in its pNext chain.",
-                     string_VkPresentModeKHR(present_mode))) {
-            skip |= true;
-        }
+        skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764", device, create_info_loc,
+                         "was called with a present mode (%s) that was not included in the set of present modes specified in "
+                         "the vkSwapchainPresentModesCreateInfoKHR structure included in its pNext chain.",
+                         string_VkPresentModeKHR(present_mode));
     }
     return skip;
 }
@@ -240,7 +233,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                          "(%s) is not among the scaling methods for the surface as returned in "
                          "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for the specified presentMode: (%s).",
                          string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
-                         string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
+                         string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
                 skip |= true;
             }
         }
@@ -1142,7 +1135,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
                 if (!IsValueIn(
                         swapchain_state->create_info.presentMode,
-                        {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
+                        {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_KHR})) {
                     skip |= LogError(
                         "VUID-VkPresentTimingsInfoEXT-pSwapchains-12235", pPresentInfo->pSwapchains[i],
                         present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),

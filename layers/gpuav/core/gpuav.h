@@ -271,22 +271,28 @@ class Validator : public GpuShaderInstrumentor {
     uint32_t indices_buffer_alignment_ = 0;
 
     // VK_EXT_descriptor_buffer global tracking
-    //
-    // Our internal Descriptor Buffer we will use
-    vko::Buffer global_resource_descriptor_buffer_;
-    // TODO - These are not needed for DebugPrintf, but will be needed for GPU-AV to track the descriptor used
-    // Most common apps will have few, but large descriptor buffers
-    vvl::unordered_set<VkBuffer> resource_descriptor_buffer_handles_;
-    // We need to track handles in order to adjust vkMapMemory calls
-    vvl::unordered_set<VkDeviceMemory> resource_descriptor_buffer_memory_handles_;
+    struct DescriptorBuffer {
+        // TODO - These are not needed for DebugPrintf, but will be needed for GPU-AV to track the descriptor used
+        // Most common apps will have few, but large descriptor buffers
+        vvl::unordered_set<VkBuffer> resource_handles_;
+        // We need to track handles in order to adjust vkMapMemory calls
+        vvl::unordered_set<VkDeviceMemory> resource_memory_handles_;
+    } descriptor_buffer;
 
-    // VK_EXT_descriptor_heap glboal tracking
-    //
-    vko::Buffer global_resource_descriptor_heap_;
-    const vvl::Buffer* resource_heap_buffer_state_ = nullptr;
-    VkDeviceSize resource_heap_reserved_offset_ = 0;
+    // VK_EXT_descriptor_heap global tracking
+    struct ResourceHeap {
+        const vvl::Buffer* buffer_state_ = nullptr;
+        VkDeviceSize reserved_offset_ = 0;
+    } resource_heap;
+
+    vko::Buffer& GetGlobalDescriptorBuffer();
+    vko::Buffer& GetGlobalDescriptorHeap();
 
   private:
+    // For Descriptor Buffer/Heap we have our own global buffer, but lazily allocate it when first used
+    vko::Buffer global_resource_descriptor_buffer_;
+    vko::Buffer global_resource_descriptor_heap_;
+
     std::string instrumented_shader_cache_path_{};
 
     // Make sure we call the right versions of any timeline semaphore functions.

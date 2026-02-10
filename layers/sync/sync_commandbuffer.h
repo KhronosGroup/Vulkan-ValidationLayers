@@ -294,7 +294,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
     void RecordSyncOp(SyncOpPointer &&sync_op);
-    AttachmentAccessInfo GetAttachmentAccessInfo(SyncOrdering ordering);
+    AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
     struct ClearAttachmentInfo {
         const vvl::ImageView &attachment_view;

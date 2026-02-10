@@ -136,8 +136,8 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location &function
     const vvl::Buffer &buffer_a = *accel_struct_a.buffer_state;
     const vvl::Buffer &buffer_b = *accel_struct_b.buffer_state;
 
-    const vvl::range<VkDeviceSize> range_a(accel_struct_a.create_info.offset, accel_struct_a.create_info.size);
-    const vvl::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
+    const vvl::range<VkDeviceSize> range_a(accel_struct_a.GetOffset(), accel_struct_a.GetSize());
+    const vvl::range<VkDeviceSize> range_b(accel_struct_b.GetOffset(), accel_struct_b.GetSize());
 
     if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
         memory != VK_NULL_HANDLE) {

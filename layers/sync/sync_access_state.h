@@ -72,14 +72,12 @@ enum class SyncOrdering : uint8_t {
 };
 
 struct SyncFlag {
-    enum : uint32_t {
-        kLoadOp = 0x01,
-        kStoreOp = 0x02,
-        kPresent = 0x04,
-        kMarker = 0x08,
+    enum : uint8_t {
+        kPresent = 0x01,
+        kMarker = 0x02,
     };
 };
-using SyncFlags = uint32_t;
+using SyncFlags = uint8_t;
 
 const char *string_SyncHazardVUID(SyncHazard hazard);
 
@@ -144,30 +142,51 @@ class HazardResult {
     std::optional<HazardState> state_;
 };
 
+enum class AttachmentAccessType : uint8_t {
+    Empty,
+    Access,  // Generic access
+    LoadOp,
+    StoreOp,
+    ResolveRead,
+    ResolveWrite,
+};
+
+struct AttachmentAccess {
+    AttachmentAccessType type = AttachmentAccessType::Empty;
+    SyncOrdering ordering = SyncOrdering::kOrderingNone;
+
+    // Identifies a render pass instance (and subpass for legacy render passes).
+    // Used to determine whether two accesses are in the same render pass instance.
+    uint32_t render_pass_instance_id = vvl::kNoIndex32;
+    uint32_t subpass = vvl::kNoIndex32;
+
+    static AttachmentAccess NonAttachment() { return AttachmentAccess{}; }
+    bool operator==(const AttachmentAccess &other) const;
+};
+
 struct FirstAccess {
     const SyncAccessInfo *usage_info;
     ResourceUsageTag tag;
     uint32_t handle_index;
-    SyncOrdering ordering_rule;
+    AttachmentAccess attachment_access;
     SyncFlags flags;
 
-    FirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule, SyncFlags flags)
-        : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule), flags(flags) {}
+    FirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, const AttachmentAccess &attachment_access,
+                SyncFlags flags)
+        : usage_info(&usage_info),
+          tag(tag_ex.tag),
+          handle_index(tag_ex.handle_index),
+          attachment_access(attachment_access),
+          flags(flags) {}
+
     bool operator==(const FirstAccess &rhs) const {
-        return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule) && flags == rhs.flags;
+        return tag == rhs.tag && usage_info == rhs.usage_info && attachment_access == rhs.attachment_access && flags == rhs.flags;
     }
+
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
 };
 
 using QueueId = uint32_t;
-
-struct AttachmentAccessInfo {
-    SyncOrdering ordering = SyncOrdering::kOrderingNone;
-    uint32_t render_pass_instance_id = vvl::kNoIndex32;
-    uint32_t subpass = vvl::kNoIndex32;
-
-    static AttachmentAccessInfo NonAttachment() { return AttachmentAccessInfo{}; }
-};
 
 struct OrderingBarrier {
     VkPipelineStageFlags2 exec_scope = VK_PIPELINE_STAGE_2_NONE;
@@ -231,7 +250,7 @@ static_assert(std::is_trivially_copyable_v<ReadState>);
 
 struct WriteState {
     SyncAccessIndex access_index;
-    SyncFlags flags;
+    AttachmentAccess attachment_access;
 
     // Union of applicable barrier masks since last write
     SyncAccessFlags barriers;
@@ -243,13 +262,9 @@ struct WriteState {
     uint32_t handle_index;
     QueueId queue;
 
-    // Identifies a render pass instance (and subpass for legacy render passes).
-    // Used to determine whether two accesses are in the same render pass instance.
-    uint32_t render_pass_instance_id;
-    uint32_t subpass;
+    SyncFlags flags;
 
-    void Set(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
-             SyncFlags flags);
+    void Set(SyncAccessIndex access_index, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags);
     void SetQueueId(QueueId id);
     void MergeBarriers(const WriteState &other);
 
@@ -266,8 +281,8 @@ struct WriteState {
                               const SyncAccessFlags &src_access_scope) const;
 
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
-    bool IsLoadOp() const { return flags & SyncFlag::kLoadOp; }
-    bool IsStoreOp() const { return flags & SyncFlag::kStoreOp; }
+    bool IsLoadOp() const { return attachment_access.type == AttachmentAccessType::LoadOp; }
+    bool IsStoreOp() const { return attachment_access.type == AttachmentAccessType::StoreOp; }
     bool IsPresent() const { return flags & SyncFlag::kPresent; }
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
@@ -338,7 +353,8 @@ class AccessState {
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectMarkerHazard() const;
 
-    HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags, QueueId queue_id,
+    HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering,
+                              const AttachmentAccess &attachment_access, SyncFlags flags, QueueId queue_id,
                               bool detect_load_op_after_store_op_hazards) const;
     HazardResult DetectHazard(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range,
                               bool detect_load_op_after_store_op_hazards) const;
@@ -353,9 +369,9 @@ class AccessState {
                                      VkPipelineStageFlags2 source_exec_scope, const SyncAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
-    void Update(const SyncAccessInfo &usage_info, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+    void Update(const SyncAccessInfo &usage_info, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex,
                 SyncFlags flags = 0);
-    void SetWrite(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+    void SetWrite(SyncAccessIndex access_index, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex,
                   SyncFlags flags = 0);
     void ClearWrite();
     void ClearRead();
@@ -437,9 +453,11 @@ class AccessState {
     bool IsReadHazard(VkPipelineStageFlags2 stage_mask, const ReadState &read_access) const {
         return stage_mask != (stage_mask & read_access.barriers);
     }
-    VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering, SyncFlags flags) const;
+    VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering,
+                                           AttachmentAccessType attachment_access_type) const;
 
-    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, SyncFlags flags = 0);
+    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, const AttachmentAccess &attachment_access,
+                     SyncFlags flags = 0);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
 
     bool HasReads() const { return last_read_count != 0; }

@@ -417,8 +417,12 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         const uint32_t int_add_id = module_.TakeNextId();
         check_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
 
-        const uint32_t array_length_id = module_.TakeNextId();
-        check_block.CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id, 1});
+        // We hardcode the array length because
+        //   1. We know it and its a bit faster than grabbing the OpArrayLength
+        //   2. It allows us to use VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT
+        // We read the array as a uint[] so need to ceil up to 4 bytes (as OpArrayLength does as well)
+        const uint32_t array_length = (module_.settings_.debug_printf_buffer_size + 3) / 4;
+        const uint32_t array_length_id = type_manager_.GetConstantUInt32(array_length).Id();
 
         const uint32_t less_than_equal_id = module_.TakeNextId();
         const uint32_t bool_type_id = type_manager_.GetTypeBool().Id();

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -735,8 +735,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, sampleCount, VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     const vkt::PipelineLayout pl(*m_device);
@@ -769,8 +768,7 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -860,10 +858,9 @@ TEST_F(PositivePipeline, ConditionalRendering) {
     // A renderpass with a single subpass that declared a self-dependency
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddSubpassDependency(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-                            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT, 0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddSubpassSelfDependency(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
+                                VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT, 0);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -1153,10 +1150,10 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    VkImageFormatProperties format_props;
-    if (VK_SUCCESS != GetImageFormatProps(Gpu(), image_create_info, format_props)) {
-        GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_STORAGE_BIT)) {
+        GTEST_SKIP() << "Image create info not compatible on device";
     }
+
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
@@ -1544,10 +1541,8 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_D16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     // disable with rasterizerDiscardEnable
@@ -1807,8 +1802,7 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical());
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -1896,8 +1890,7 @@ TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -1958,10 +1951,8 @@ TEST_F(PositivePipeline, SampleLocations) {
                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    render_pass.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    render_pass.AddColorAttachment(0);
-    render_pass.AddResolveAttachment(1);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    render_pass.AddResolveAttachment(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     render_pass.CreateRenderPass();
 
     VkImageView image_views[2] = {ms_image_view, resolve_image_view};
@@ -2541,10 +2532,8 @@ TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV)
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, ds_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();

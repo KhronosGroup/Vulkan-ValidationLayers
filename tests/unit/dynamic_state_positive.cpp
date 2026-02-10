@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -268,10 +268,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
@@ -311,10 +309,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
@@ -354,10 +350,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
@@ -921,10 +915,8 @@ TEST_F(PositiveDynamicState, RasterizationSamples) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(color_format, VK_SAMPLE_COUNT_4_BIT);
     rp.AddAttachmentDescription(color_format, VK_SAMPLE_COUNT_1_BIT);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     VkImageView attachments[2] = {image_view, resolve_image_view};
@@ -1750,10 +1742,8 @@ TEST_F(PositiveDynamicState, SampleLocations) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(stencil_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     // Create a framebuffer

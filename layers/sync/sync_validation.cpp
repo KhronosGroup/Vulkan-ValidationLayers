@@ -499,7 +499,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     for (const auto [region_index, copy_region] : vvl::enumerate(pRegions, regionCount)) {
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
-                                                copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
+                                                copy_region.extent, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -511,7 +511,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
 
         if (dst_image) {
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset,
-                                                copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
+                                                copy_region.extent, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -546,7 +546,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
     for (const auto [region_index, copy_region] : vvl::enumerate(pCopyImageInfo->pRegions, pCopyImageInfo->regionCount)) {
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
-                                                copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
+                                                copy_region.extent, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pCopyImageInfo->srcImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -559,7 +559,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
 
         if (dst_image) {
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset,
-                                                copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
+                                                copy_region.extent, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pCopyImageInfo->dstImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -905,7 +905,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
             }
 
             hazard = context->DetectHazard(*dst_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                           copy_region.imageExtent, false, SYNC_COPY_TRANSFER_WRITE);
+                                           copy_region.imageExtent, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -961,7 +961,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     for (const auto [region_index, copy_region] : vvl::enumerate(pRegions, regionCount)) {
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                                copy_region.imageExtent, false, SYNC_COPY_TRANSFER_READ);
+                                                copy_region.imageExtent, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -1031,7 +1031,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-            auto hazard = context->DetectHazard(*src_image, RangeFromLayers(blit_region.srcSubresource), offset, extent, false,
+            auto hazard = context->DetectHazard(*src_image, RangeFromLayers(blit_region.srcSubresource), offset, extent,
                                                 SYNC_BLIT_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
@@ -1049,7 +1049,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-            auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(blit_region.dstSubresource), offset, extent, false,
+            auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(blit_region.dstSubresource), offset, extent,
                                                 SYNC_BLIT_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
@@ -1555,7 +1555,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = context->DetectHazard(*image_state, range, false, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kOrderingNone);
+            auto hazard = context->DetectHazard(*image_state, range, SYNC_CLEAR_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
                 const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,
@@ -1584,7 +1584,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 
     if (auto image_state = Get<vvl::Image>(image)) {
         for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = context->DetectHazard(*image_state, range, false, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kOrderingNone);
+            auto hazard = context->DetectHazard(*image_state, range, SYNC_CLEAR_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
                 const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,
@@ -1692,7 +1692,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     for (const auto [region_index, resolve_region] : vvl::enumerate(pRegions, regionCount)) {
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(resolve_region.srcSubresource),
-                                                resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
+                                                resolve_region.srcOffset, resolve_region.extent, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -1703,9 +1703,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
         }
 
         if (dst_image) {
-            auto hazard =
-                context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                      resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
+            auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource),
+                                                resolve_region.dstOffset, resolve_region.extent, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -1740,7 +1739,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
         const Location region_loc = image_info_loc.dot(Field::pRegions, region_index);
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(resolve_region.srcSubresource),
-                                                resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
+                                                resolve_region.srcOffset, resolve_region.extent, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pResolveImageInfo->srcImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -1752,9 +1751,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
         }
 
         if (dst_image) {
-            auto hazard =
-                context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                      resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
+            auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(resolve_region.dstSubresource),
+                                                resolve_region.dstOffset, resolve_region.extent, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pResolveImageInfo->dstImage);
                 const std::string error = error_messages_.ImageCopyResolveBlitError(
@@ -1873,7 +1871,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
 
     auto dst_resource = vvl::VideoPictureResource(*device_state, pDecodeInfo->dstPictureResource);
     if (dst_resource) {
-        auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
+        auto hazard = context->DetectVideoHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
             std::ostringstream ss;
             ss << "decode output picture ";
@@ -1891,7 +1889,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pSetupReferenceSlot->pPictureResource;
         auto setup_resource = vvl::VideoPictureResource(*device_state, video_picture);
         if (setup_resource && (setup_resource != dst_resource)) {
-            auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
+            auto hazard = context->DetectVideoHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
                 ss << "reconstructed picture ";
@@ -1914,7 +1912,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pReferenceSlots[i].pPictureResource;
             auto reference_resource = vvl::VideoPictureResource(*device_state, video_picture);
             if (reference_resource) {
-                auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
+                auto hazard = context->DetectVideoHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
                     std::ostringstream ss;
                     ss << "reference picture " << i << " ";
@@ -1964,7 +1962,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     }
 
     if (auto src_resource = vvl::VideoPictureResource(*device_state, pEncodeInfo->srcPictureResource)) {
-        auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
+        auto hazard = context->DetectVideoHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
             std::ostringstream ss;
             ss << "encode input picture ";
@@ -1983,7 +1981,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pSetupReferenceSlot->pPictureResource;
         auto setup_resource = vvl::VideoPictureResource(*device_state, video_picture);
         if (setup_resource) {
-            auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
+            auto hazard = context->DetectVideoHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
                 ss << "reconstructed picture ";
@@ -2006,7 +2004,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pReferenceSlots[i].pPictureResource;
             auto reference_resource = vvl::VideoPictureResource(*device_state, video_picture);
             if (reference_resource) {
-                auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
+                auto hazard = context->DetectVideoHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
                     std::ostringstream ss;
                     ss << "reference picture " << i << " ";
@@ -2033,8 +2031,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                 VkOffset3D offset = {0, 0, 0};
                 VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
                                      quantization_map_info->quantizationMapExtent.height, 1};
-                auto hazard = context->DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ,
-                                                    SyncOrdering::kOrderingNone);
+                auto hazard = context->DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
                     std::ostringstream ss;
                     ss << "quantization map ";
@@ -3090,7 +3087,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         }
         // Validate access to source acceleration structure
         if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
-            const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
             auto hazard = context.DetectHazard(*src_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
             if (hazard.IsHazard()) {
@@ -3104,7 +3101,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         }
         // Validate access to the acceleration structure being built
         if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
-            const AccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            const AccessRange dst_range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
             auto hazard = context.DetectHazard(*dst_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
             if (hazard.IsHazard()) {
@@ -3197,14 +3194,14 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
         // If the source is the same as the destination then no need to record READ
         // (destination update will replace access with WRITE anyway).
         if (src_accel && src_accel != dst_accel) {
-            const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
             const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
             context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ,
                                       range, tag_ex);
         }
         // Record destination acceleration structure access (WRITE)
         if (dst_accel) {
-            const AccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            const AccessRange dst_range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
             const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
             context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
                                       dst_range, dst_tag_ex);
@@ -3265,7 +3262,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         auto hazard =
             context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
         if (hazard.IsHazard()) {
@@ -3277,7 +3274,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
         }
     }
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         auto hazard =
             context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
@@ -3302,13 +3299,13 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffe
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
         context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
                                   tag_ex);
     }
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
         context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
                                   tag_ex);
@@ -3327,7 +3324,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCom
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         auto hazard =
             context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
         if (hazard.IsHazard()) {
@@ -3358,7 +3355,7 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkComm
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
         context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
                                   tag_ex);
@@ -3377,7 +3374,7 @@ bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCom
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         auto hazard =
             context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
@@ -3408,7 +3405,7 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
         context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
                                   tag_ex);

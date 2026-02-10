@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
@@ -196,9 +197,9 @@ class DummyBLAS {
             VmaAllocationCreateInfo alloc_ci = {};
             alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
             alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            const bool success = vertex_buffer.Create(&vertex_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's vertex buffer.");
+            const VkResult result = vertex_buffer.Create(&vertex_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's vertex buffer.");
                 return;
             }
             constexpr std::array vertices = {// Vertex 0
@@ -220,9 +221,9 @@ class DummyBLAS {
             VmaAllocationCreateInfo alloc_ci = {};
             alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
             alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            const bool success = transform_buffer.Create(&transform_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's transform buffer.");
+            const VkResult result = transform_buffer.Create(&transform_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's transform buffer.");
                 return;
             }
             // clang-format off
@@ -272,9 +273,9 @@ class DummyBLAS {
             if (gpuav.IsAllDeviceLocalMappable()) {
                 alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             }
-            const bool success = scratch_buffer.Create(&scratch_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's scratch buffer.");
+            const VkResult result = scratch_buffer.Create(&scratch_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's scratch buffer.");
                 return;
             }
         }
@@ -289,9 +290,9 @@ class DummyBLAS {
             if (gpuav.IsAllDeviceLocalMappable()) {
                 alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             }
-            const bool success = blas_buffer.Create(&blas_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS buffer.");
+            const VkResult result = blas_buffer.Create(&blas_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS buffer.");
                 return;
             }
         }
@@ -457,7 +458,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             const bool is_buffer_destroyed = as->buffer_state && !as->buffer_state->Destroyed();
             const bool is_buffer_bound_to_memory = is_buffer_destroyed && as->buffer_state->IsMemoryBound();
             metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed);
-            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->create_info.type);
+            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->GetType());
             metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
             as_metadatas_ptr[written_count] = metadata;
             const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->device_address_range;
@@ -647,7 +648,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidASType: {
                 std::stringstream ss_as_type;
                 if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {
-                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->create_info.type)
+                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->GetType())
                                << ". ";
                 }
                 const std::string ss_as_type_str = ss_as_type.str();

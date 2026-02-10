@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -37,8 +37,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_formats[0]);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
@@ -318,8 +317,7 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
@@ -364,8 +362,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
@@ -459,14 +456,10 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     rp.AddAttachmentDescription(color_input_attachment_format);                           // Color resolve attachment
     rp.AddAttachmentDescription(depth_stencil_attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth stencil attachment
     rp.AddAttachmentDescription(color_input_attachment_format);                           // Input attachment
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({2, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({3, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
-    rp.AddDepthStencilAttachment(2);
-    rp.AddInputAttachment(3);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(2, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(3, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_infos[4] = {};
@@ -568,14 +561,10 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     rp.AddAttachmentDescription(color_input_attachment_format);                           // Color resolve attachment
     rp.AddAttachmentDescription(depth_stencil_attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth stencil attachment
     rp.AddAttachmentDescription(color_input_attachment_format);                           // Input attachment
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({2, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({3, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
-    rp.AddDepthStencilAttachment(2);
-    rp.AddInputAttachment(3);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilAttachment(2, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(3, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass(&rp_multiview_ci);
 
     VkFramebufferAttachmentImageInfo framebuffer_attachment_image_infos[4] = {};
@@ -680,10 +669,8 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(0);
-    rp.AddDepthStencilResolveAttachment(1, depth_resolve_mode, stencil_resolve_mode);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, depth_resolve_mode, stencil_resolve_mode);
     rp.SetViewMask(0x3u);
     rp.CreateRenderPass();
 
@@ -752,8 +739,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     VkFormat view_format = VK_FORMAT_R8_UINT;
@@ -798,8 +784,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     VkFormat view_format = VK_FORMAT_R8_UINT;
@@ -865,8 +850,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.SetViewMask(0x4);
     rp.CreateRenderPass();
 
@@ -915,8 +899,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_formats[0], VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     // Create Attachments
@@ -1095,8 +1078,7 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();

@@ -3641,10 +3641,8 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     rp.AddAttachmentDescription(depth_format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
-    rp.AddDepthStencilAttachment(1);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::Framebuffer fb(*m_device, rp, 2u, attachments, 64, 64);
@@ -4334,8 +4332,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     auto image_create_info =
@@ -4395,8 +4392,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     auto image_create_info =
@@ -4513,8 +4509,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     auto image_create_info =
@@ -4586,8 +4581,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     auto image_create_info =

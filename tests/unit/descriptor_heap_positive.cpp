@@ -1146,6 +1146,13 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
 
     // Don't need to call vkCmdBindSamplerHeapEXT if only using embedded
     m_command_buffer.Begin();
+
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();

@@ -99,6 +99,8 @@ struct DeviceSettings {
     // zero is same as "unlimited"
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
+    // Lets us embed the size instead of calling OpArrayLength
+    uint32_t debug_printf_buffer_size;
 };
 
 // When running the DebugPrintf pass, if we detect an instrumented shader has a printf call (for debugging) we can hold them until

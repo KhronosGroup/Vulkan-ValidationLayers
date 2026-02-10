@@ -10,6 +10,7 @@
  */
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include <thread>
 
 std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup() {
     uint32_t physical_device_group_count = 0;
@@ -1647,7 +1648,9 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    { vkt::Swapchain swapchain(*m_device, swapchain_create_info); }
+    {
+        vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+    }
 
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
     wayland_ctx.Release();
@@ -1858,7 +1861,8 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
         // image_index presentation should succeed, image_index2 should fail.
         const uint32_t image_indices[2] = {image_index, image_index2};
 
-        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphores[image_index]), frame_fence);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphores[image_index]),
+                                frame_fence);
 
         VkPresentInfoKHR present = vku::InitStructHelper();
         present.waitSemaphoreCount = 1;
@@ -2803,6 +2807,57 @@ TEST_F(PositiveWsi, DestroySwapchainBeforeLayoutValidation) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, PresentModeFifoLatestReady) {
+    TEST_DESCRIPTION("Create a swapchain with present mode VK_PRESENT_MODE_FIFO_LATEST_READY_KHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentModeFifoLatestReady);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkPresentModeKHR fifo_present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    for (size_t i = 0; i < m_surface_present_modes.size(); i++) {
+        const VkPresentModeKHR present_mode = m_surface_present_modes[i];
+        if (present_mode == VK_PRESENT_MODE_FIFO_LATEST_READY_KHR) {
+            fifo_present_mode = present_mode;
+            break;
+        }
+    }
+    if (fifo_present_mode == VK_PRESENT_MODE_FIFO_KHR) {
+        GTEST_SKIP() << "Cannot find supported FIFO present mode";
+    }
+
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    surface_present_mode.presentMode = fifo_present_mode;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
+    surface_info.surface = m_surface;
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
+                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = fifo_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+}
+
 TEST_F(PositiveWsi, PresentTimings) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
@@ -2849,7 +2904,155 @@ TEST_F(PositiveWsi, PresentTimings) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto& available_mode : present_modes) {
+    for (const auto &available_mode : present_modes) {
+        if (available_mode == present_mode) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "Required present mode " << present_mode << " not supported";
+    }
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    // On Windows, Present Timing info might not get returned unless a window is visible
+    ShowWindow(m_surface_context.m_win32Window, SW_SHOW);
+    SetForegroundWindow(m_surface_context.m_win32Window);
+#endif
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT | VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR;
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    vkt::Semaphore render_semaphore(*m_device);
+    VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    layout_transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    layout_transition.image = images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::CommandBuffer cmdbuf(*m_device, m_command_pool);
+    cmdbuf.Begin();
+    vk::CmdPipelineBarrier(cmdbuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &layout_transition);
+    cmdbuf.End();
+
+    m_default_queue->Submit(cmdbuf, vkt::Signal(render_semaphore));
+
+    VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_props.timeDomainCount);
+    std::vector<uint64_t> time_domain_ids(time_domain_props.timeDomainCount);
+    time_domain_props.pTimeDomains = time_domains.data();
+    time_domain_props.pTimeDomainIds = time_domain_ids.data();
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+
+    vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1u);
+
+    uint64_t present_id_value = 1u;
+    VkPresentId2KHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1u;
+    present_id.pPresentIds = &present_id_value;
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
+    present_timing_info.timeDomainId = time_domain_ids[0];
+    present_timing_info.targetTime = 1u;
+    present_timing_info.presentStageQueries = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
+    present_timing_info.targetTimeDomainPresentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper(&present_id);
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+    m_default_queue->Present(swapchain, image_index, render_semaphore, &present_timings_info);
+
+    VkPastPresentationTimingInfoEXT past_presentation_timing_info = vku::InitStructHelper();
+    past_presentation_timing_info.flags = VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT;
+    past_presentation_timing_info.swapchain = swapchain;
+
+    VkPresentStageTimeEXT present_stage_time;
+    present_stage_time.stage = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
+    present_stage_time.time = 0u;
+
+    VkPastPresentationTimingEXT past_presentation_timing = vku::InitStructHelper();
+    past_presentation_timing.presentId = present_id_value;
+    past_presentation_timing.targetTime = 1u;
+    past_presentation_timing.presentStageCount = 1u;
+    past_presentation_timing.pPresentStages = &present_stage_time;
+    past_presentation_timing.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+
+    // Give some time for a frame to land
+    static const uint32_t num_attempts = 100;
+    static const uint32_t wait_time_ms = 17;
+    for (uint32_t attempt = 0; attempt < num_attempts; attempt++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait_time_ms));
+
+        VkPastPresentationTimingPropertiesEXT past_presentation_timing_properties = vku::InitStructHelper();
+        past_presentation_timing_properties.presentationTimingCount = 1u;
+        past_presentation_timing_properties.pPresentationTimings = &past_presentation_timing;
+        vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
+
+        if (past_presentation_timing_properties.presentationTimingCount > 0) {
+            std::vector<VkPastPresentationTimingEXT> past_presentation_timings(
+                past_presentation_timing_properties.presentationTimingCount);
+            for (uint32_t i = 0; i < past_presentation_timing_properties.presentationTimingCount; ++i) {
+                past_presentation_timings[i] = vku::InitStructHelper();
+                past_presentation_timings[i].presentStageCount = 1u;
+                past_presentation_timings[i].pPresentStages = &present_stage_time;
+            }
+            past_presentation_timing_properties.pPresentationTimings = past_presentation_timings.data();
+            vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
+
+            // If frame present timing info has returned, the render_semaphore should not be in-use anymore, and the image is safe
+            // to be reacquired
+            swapchain.AcquireNextImage(render_semaphore, kWaitTimeout);
+        }
+    }
+}
+
+TEST_F(PositiveWsi, PresentTimingsFull) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
+    }
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
+
+    bool found = false;
+    for (const auto &available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -2877,69 +3080,62 @@ TEST_F(PositiveWsi, PresentTimings) {
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
     const auto images = swapchain.GetImages();
 
-    vkt::Fence fence(*m_device);
-    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
-    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
-
-    SetPresentImageLayout(images[image_index]);
-
-    VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
-    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
-    std::vector<VkTimeDomainKHR> time_domains(time_domain_props.timeDomainCount);
-    std::vector<uint64_t> time_domain_ids(time_domain_props.timeDomainCount);
-    time_domain_props.pTimeDomains = time_domains.data();
-    time_domain_props.pTimeDomainIds = time_domain_ids.data();
-    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
-
+    // We'll present twice, but only make room for one info in the Present Timing Queue, causing it to fill
+    const uint32_t num_presents = 2;
     vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1u);
 
-    uint64_t present_id_value = 1u;
-    VkPresentId2KHR present_id = vku::InitStructHelper();
-    present_id.swapchainCount = 1u;
-    present_id.pPresentIds = &present_id_value;
+    std::array<vkt::Semaphore, num_presents> acq_semaphores{*m_device, *m_device};
+    std::array<vkt::Semaphore, num_presents> render_semaphores{*m_device, *m_device};
+    std::array<vkt::CommandBuffer, num_presents> cmdbufs{{{*m_device, m_command_pool}, {*m_device, m_command_pool}}};
+    for (uint32_t frame = 0; frame < num_presents; frame++) {
+        uint32_t image_index = swapchain.AcquireNextImage(acq_semaphores[frame], kWaitTimeout);
 
-    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
-    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
-    present_timing_info.timeDomainId = time_domain_ids[0];
-    present_timing_info.targetTime = 1u;
-    present_timing_info.presentStageQueries = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
-    present_timing_info.targetTimeDomainPresentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
+        VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
+        layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        layout_transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        layout_transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        layout_transition.image = images[image_index];
+        layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper(&present_id);
-    present_timings_info.swapchainCount = 1u;
-    present_timings_info.pTimingInfos = &present_timing_info;
-    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+        cmdbufs[frame].Begin();
+        vk::CmdPipelineBarrier(cmdbufs[frame], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &layout_transition);
+        cmdbufs[frame].End();
 
-    VkPastPresentationTimingInfoEXT past_presentation_timing_info = vku::InitStructHelper();
-    past_presentation_timing_info.flags = VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT;
-    past_presentation_timing_info.swapchain = swapchain;
+        m_default_queue->Submit(cmdbufs[frame], vkt::Wait(acq_semaphores[frame]), vkt::Signal(render_semaphores[image_index]));
 
-    VkPresentStageTimeEXT present_stage_time;
-    present_stage_time.stage = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
-    present_stage_time.time = 0u;
+        VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
+        vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+        std::vector<VkTimeDomainKHR> time_domains(time_domain_props.timeDomainCount);
+        std::vector<uint64_t> time_domain_ids(time_domain_props.timeDomainCount);
+        time_domain_props.pTimeDomains = time_domains.data();
+        time_domain_props.pTimeDomainIds = time_domain_ids.data();
+        vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
 
-    VkPastPresentationTimingEXT past_presentation_timing = vku::InitStructHelper();
-    past_presentation_timing.presentId = present_id_value;
-    past_presentation_timing.targetTime = 1u;
-    past_presentation_timing.presentStageCount = 1u;
-    past_presentation_timing.pPresentStages = &present_stage_time;
-    past_presentation_timing.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+        VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+        present_timing_info.timeDomainId = time_domain_ids[0];
+        present_timing_info.presentStageQueries = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
+        present_timing_info.targetTimeDomainPresentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
 
-    VkPastPresentationTimingPropertiesEXT past_presentation_timing_properties = vku::InitStructHelper();
-    past_presentation_timing_properties.presentationTimingCount = 1u;
-    past_presentation_timing_properties.pPresentationTimings = &past_presentation_timing;
-    vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
+        VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+        present_timings_info.swapchainCount = 1u;
+        present_timings_info.pTimingInfos = &present_timing_info;
+        VkResult result = m_default_queue->Present(swapchain, image_index, render_semaphores[image_index], &present_timings_info);
 
-    if (past_presentation_timing_properties.presentationTimingCount > 0) {
-        std::vector<VkPastPresentationTimingEXT> past_presentation_timings(
-            past_presentation_timing_properties.presentationTimingCount);
-        for (uint32_t i = 0; i < past_presentation_timing_properties.presentationTimingCount; ++i) {
-            past_presentation_timings[i] = vku::InitStructHelper();
-            past_presentation_timings[i].presentStageCount = 1u;
-            past_presentation_timings[i].pPresentStages = &present_stage_time;
+        // On the second present, confirm the queue is full, then verify the render semaphore is complete
+        if (frame == 1) {
+            if (result != VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT) {
+                GTEST_FAIL() << "Present returned " << result << " instead of VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT";
+            }
+
+            // If the present timing queue is full, it's still expected the Present enqueued its semaphore waits.
+            // Submit a signal on the render semaphore to confirm no validation error appears stating it is still in-use
+            m_default_queue->Submit(vkt::CommandBuffer(), vkt::Signal(render_semaphores[image_index]));
+
+            // Wait for the latest queue submission to complete, so that the render_semaphore can be cleanly destroyed
+            m_default_queue->Wait();
         }
-        past_presentation_timing_properties.pPresentationTimings = past_presentation_timings.data();
-        vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
     }
 }
 

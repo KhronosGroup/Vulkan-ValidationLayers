@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,6 +81,8 @@ class PipelineLayout : public StateObject {
     VkPipelineLayoutCreateFlags create_flags;
     // table of "compatible for set N" canonical forms for trivial accept validation
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
+    // When the sets are using VK_EXT_descriptor_buffer
+    bool has_descriptor_buffer;
     // Way to quick prevent searching if we know there are no immutable samplers
     bool has_immutable_samplers;
 

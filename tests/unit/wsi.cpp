@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "containers/container_utils.h"
 #include "generated/vk_function_pointers.h"
 #include <algorithm>
 
@@ -1954,55 +1955,24 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
     }
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
-    TEST_DESCRIPTION("Test swapchain Maintenance1 extensions.");
-    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentMode) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
-
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
     RETURN_IF_SKIP(InitSurface());
-    InitSwapchainInfo();
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
-    swapchain_create_info.surface = m_surface;
-    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
-    swapchain_create_info.imageFormat = m_surface_formats[0].format;
-    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
-    swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
-    swapchain_create_info.clipped = VK_FALSE;
-    swapchain_create_info.oldSwapchain = 0;
-
-    // Query present mode data
+    const std::vector<VkPresentModeKHR> surface_present_modes = m_surface.GetPresentModes(Gpu());
     const std::array defined_present_modes{VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_KHR,
                                            VK_PRESENT_MODE_FIFO_RELAXED_KHR};
 
-    uint32_t count;
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> pdev_surface_present_modes(count);
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, pdev_surface_present_modes.data());
-
-    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
-    surface_info.surface = m_surface;
-
-    // Set a present_mode in VkSurfacePresentModeKHR that's NOT returned by GetPhsyicalDeviceSurfaceCapabilities2KHR
+    // Set a present_mode in VkSurfacePresentModeKHR that's NOT returned by GetPhysicalDeviceSurfaceCapabilities2KHR
+    // With real drivers it happens we can't find unsupported but valid present mode. Then we go with MAX_ENUM value
+    // to trigger the error.
     VkPresentModeKHR mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
     for (auto item : defined_present_modes) {
-        if (std::find(pdev_surface_present_modes.begin(), pdev_surface_present_modes.end(), item) ==
-            pdev_surface_present_modes.end()) {
+        if (!vvl::Contains(surface_present_modes, item)) {
             mismatched_present_mode = item;
             break;
         }
@@ -2010,256 +1980,524 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
     present_mode.presentMode = mismatched_present_mode;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+    surface_info.surface = m_surface;
 
-    surface_info.pNext = &present_mode;
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+
     m_errorMonitor->SetDesiredError("VUID-VkSurfacePresentModeKHR-presentMode-07780");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeKHR-presentMode-parameter");  // skip stateless
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
+}
 
-    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = vku::InitStructHelper();
-    present_mode.presentMode = pdev_surface_present_modes[0];
-    surface_caps.pNext = &present_mode_compatibility;
+TEST_F(NegativeWsi, SwapchainMaintenanceWrongPresentMode2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const std::vector<VkPresentModeKHR> surface_present_modes = m_surface.GetPresentModes(Gpu());
+    const std::array defined_present_modes{VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_KHR,
+                                           VK_PRESENT_MODE_FIFO_RELAXED_KHR};
+
+    // Set a present_mode in VkSurfacePresentModeKHR that's NOT returned by GetPhysicalDeviceSurfaceCapabilities2KHR
+    // With real drivers it happens we can't find unsupported but valid present mode. Then we go with MAX_ENUM value
+    // to trigger the error.
+    VkPresentModeKHR mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
+    for (auto item : defined_present_modes) {
+        if (!vvl::Contains(surface_present_modes, item)) {
+            mismatched_present_mode = item;
+            break;
+        }
+    }
+
+    VkSwapchainPresentModesCreateInfoKHR present_modes_ci = vku::InitStructHelper();
+    present_modes_ci.presentModeCount = 1;
+    present_modes_ci.pPresentModes = &mismatched_present_mode;
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_modes_ci;
+
+    {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-parameter");
+
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-parameter");
+
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1NonCompatiblePresentMode) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const std::vector<VkPresentModeKHR> surface_present_modes = m_surface.GetPresentModes(Gpu());
+
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+    present_mode.presentMode = surface_present_modes[0];
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+    surface_info.surface = m_surface;
+
+    VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
+
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
 
     std::vector<VkPresentModeKHR> compatible_present_modes(present_mode_compatibility.presentModeCount);
     present_mode_compatibility.pPresentModes = compatible_present_modes.data();
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
 
-    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
-    surface_caps.pNext = &scaling_capabilities;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    if (compatible_present_modes.size() < 2) {
+        GTEST_SKIP() << "Required at least 2 compatible present modes";
+    }
 
-    mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
-
-    VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
-    swapchain_create_info.pNext = &present_modes_ci;
+    VkSwapchainPresentModesCreateInfoKHR present_modes_ci = vku::InitStructHelper();
     present_modes_ci.presentModeCount = 1;
-    present_modes_ci.pPresentModes = &mismatched_present_mode;
+    present_modes_ci.pPresentModes = &compatible_present_modes[0];
 
-    // Pick a presentmode that's not in gpspmkhr
-    for (auto item : defined_present_modes) {
-        if (std::find(pdev_surface_present_modes.begin(), pdev_surface_present_modes.end(), item) ==
-            pdev_surface_present_modes.end()) {
-            mismatched_present_mode = item;
-            break;
-        }
-    }
-    if (mismatched_present_mode != VK_PRESENT_MODE_MAX_ENUM_KHR) {
-        // Each entry in QueuePresent->vkPresentInfoKHR->pNext->SwapchainPresentModesCreateInfo->pPresentModes must be one of the
-        // VkPresentModeKHR values returned by vkGetPhysicalDeviceSurfacePresentModesKHR for the surface
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
-        // lazy way to not query properties
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
-        m_swapchain.Init(*m_device, swapchain_create_info);
-        m_errorMonitor->VerifyFound();
-    }
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_modes_ci;
+    swapchain_ci.presentMode = compatible_present_modes[1];  // not in the present_modes_ci.pPresentModes list
 
-    // The entries in pPresentModes must be a subset of the present modes returned in
-    // VkSurfacePresentModeCompatibilityEXT::pPresentModes, given vkSwapchainCreateInfoKHR::presentMode in VkSurfacePresentModeKHR
-    mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
-    for (auto item : defined_present_modes) {
-        if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), item) == compatible_present_modes.end()) {
-            mismatched_present_mode = item;
-            break;
-        }
-    }
-    if (mismatched_present_mode != VK_PRESENT_MODE_MAX_ENUM_KHR) {
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
-        // lazy way to not query properties
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
-        present_modes_ci.pPresentModes = &mismatched_present_mode;
-        m_swapchain.Init(*m_device, swapchain_create_info);
-        m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentScaling) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    const VkSurfacePresentScalingCapabilitiesKHR scaling_caps =
+        m_surface.GetScalingCapabilities(Gpu(), swapchain_info.surface_non_shared_present_mode);
+
+    if (scaling_caps.supportedPresentScaling == 0) {
+        GTEST_SKIP() << "Present scaling not supported";
     }
 
-    present_modes_ci.presentModeCount = 1;
-    present_modes_ci.pPresentModes = present_mode_compatibility.pPresentModes;
-    // SwapchainCreateInfo->presentMode has to be in VkSurfacePresentModeCompatibilityEXT->pPresentModes
-    if (compatible_present_modes.size() > 1) {
-        swapchain_create_info.presentMode = compatible_present_modes[1];
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
+    present_scaling_info.presentGravityX = 0;
+    present_scaling_info.presentGravityY = 0;
 
-        VkSurfacePresentModeEXT present_mode2 = vku::InitStructHelper();
-        present_mode2.presentMode = pdev_surface_present_modes[0];
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper(&present_mode2);
-        surface_info2.surface = m_surface;
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_scaling_info;
 
-        VkSurfacePresentModeCompatibilityEXT present_mode_compatibility2 = vku::InitStructHelper();
-        present_mode2.presentMode = swapchain_create_info.presentMode;
-        VkSurfaceCapabilities2KHR surface_caps2 = vku::InitStructHelper(&present_mode_compatibility2);
-        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info2, &surface_caps2);
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
 
-        swapchain_create_info.minImageCount = surface_caps2.surfaceCapabilities.minImageCount;
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
-        m_swapchain.Init(*m_device, swapchain_create_info);
-        m_errorMonitor->VerifyFound();
+TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentGravity) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    const VkSurfacePresentScalingCapabilitiesKHR scaling_caps =
+        m_surface.GetScalingCapabilities(Gpu(), swapchain_info.surface_non_shared_present_mode);
+
+    if (scaling_caps.supportedPresentScaling == 0) {
+        GTEST_SKIP() << "Present scaling not supported";
     }
-    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
 
-    swapchain_create_info.presentMode = compatible_present_modes[0];
-    VkSwapchainPresentScalingCreateInfoEXT present_scaling_info = vku::InitStructHelper();
-    present_scaling_info.pNext = swapchain_create_info.pNext;
-    swapchain_create_info.pNext = &present_scaling_info;
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_scaling_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07765");
-    // Dumb hack, should query for supported present mode
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
-    // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
-    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = 0;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07766");
-    // Dumb hack, should query for supported present mode
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
-    // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
-    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = 0;
-    m_swapchain.Init(*m_device, swapchain_create_info);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767");
-    // Dumb hack, should query for supported present mode
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
-    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
-    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
-    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
-
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07768");
-    // Dumb hack, should query for supported present mode
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
-    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07769");
-    // Dumb hack, should query for supported present mode
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-pNext-07782");
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
+}
 
-    present_scaling_info.presentGravityX = 0;
-    present_scaling_info.presentGravityY = 0;
-    // Find scaling cap not in scaling_capabilities.supportedPresentScaling and create a swapchain using that
-    if (scaling_capabilities.supportedPresentScaling != 0) {
-        const std::array defined_scaling_flag_bits = {VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT,
-                                                      VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT,
-                                                      VK_PRESENT_SCALING_STRETCH_BIT_EXT};
-        for (auto scaling_flag : defined_scaling_flag_bits) {
-            if ((scaling_capabilities.supportedPresentScaling & scaling_flag) == 0) {
-                present_scaling_info.scalingBehavior = scaling_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
-                break;
-            }
-        }
+TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    const std::array defined_gravity_flag_bits = {VK_PRESENT_GRAVITY_MIN_BIT_EXT, VK_PRESENT_GRAVITY_MAX_BIT_EXT,
-                                                  VK_PRESENT_GRAVITY_CENTERED_BIT_EXT};
-    if (scaling_capabilities.supportedPresentGravityX != 0) {
-        for (auto gravity_flag : defined_gravity_flag_bits) {
-            if ((scaling_capabilities.supportedPresentGravityX & gravity_flag) == 0) {
-                present_scaling_info.presentGravityX = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
-                break;
-            }
-        }
-    }
-    if (scaling_capabilities.supportedPresentGravityY != 0) {
-        for (auto gravity_flag : defined_gravity_flag_bits) {
-            if ((scaling_capabilities.supportedPresentGravityY & gravity_flag) == 0) {
-                present_scaling_info.presentGravityY = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
-                break;
-            }
-        }
-    }
+    const auto swapchain_info = GetSwapchainInfo(m_surface);
 
-    // If the swapchain is created with VkSwapchainPresentModesCreateInfoKHR,
-    present_mode.presentMode = present_modes_ci.pPresentModes[0];
-    surface_caps.pNext = &scaling_capabilities;
+    // Get scaling caps
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+    present_mode.presentMode = swapchain_info.surface_non_shared_present_mode;
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+    surface_info.surface = m_surface;
+
+    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_capabilities);
+
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
 
-    // presentScaling must be a valid scaling method for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling,
-    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
+    // // Find scaling caps not in scaling_capabilities's caps
+    const std::array defined_scaling_flag_bits = {
+        VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT, VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT, VK_PRESENT_SCALING_STRETCH_BIT_EXT};
+
+    VkPresentScalingFlagsKHR unsupported_scaling = 0;
     if (scaling_capabilities.supportedPresentScaling != 0) {
-        const std::array defined_scaling_flag_bits = {VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT,
-                                                      VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT,
-                                                      VK_PRESENT_SCALING_STRETCH_BIT_EXT};
         for (auto scaling_flag : defined_scaling_flag_bits) {
             if ((scaling_capabilities.supportedPresentScaling & scaling_flag) == 0) {
-                present_scaling_info.scalingBehavior = scaling_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
+                unsupported_scaling = scaling_flag;
                 break;
             }
         }
     }
+    if (!unsupported_scaling) {
+        GTEST_SKIP() << "Failed to find unsupported scaling mode";
+    }
 
-    // presentGravityX must be a valid x-axis present gravity for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX,
-    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
+    // Create swapchain using unsupported scaling caps
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = unsupported_scaling;
+    present_scaling_info.presentGravityX = 0;
+    present_scaling_info.presentGravityY = 0;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_scaling_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    const auto swapchain_info = GetSwapchainInfo(m_surface);
+    const std::vector<VkPresentModeKHR> surface_present_modes = m_surface.GetPresentModes(Gpu());
+
+    // Get 2 compatible present modes
+    std::vector<VkPresentModeKHR> compatible_present_modes;
+    {
+        VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+        present_mode.presentMode = surface_present_modes[0];
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+        surface_info.surface = m_surface;
+
+        VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
+
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+
+        compatible_present_modes.resize(present_mode_compatibility.presentModeCount);
+        present_mode_compatibility.pPresentModes = compatible_present_modes.data();
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    }
+    if (compatible_present_modes.size() < 2) {
+        GTEST_SKIP() << "Required at least 2 compatible present modes";
+    }
+
+    // Get common scaling flags for found present modes
+    VkPresentScalingFlagsKHR common_scaling_flags = ~VkPresentScalingFlagsKHR(0);
+    for (uint32_t i = 0; i < 2; i++) {
+        VkSurfacePresentModeKHR present_mode2 = vku::InitStructHelper();
+        present_mode2.presentMode = compatible_present_modes[i];
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper(&present_mode2);
+        surface_info2.surface = m_surface;
+
+        VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities2 = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_caps2 = vku::InitStructHelper(&scaling_capabilities2);
+
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info2, &surface_caps2);
+        common_scaling_flags &= scaling_capabilities2.supportedPresentScaling;
+    }
+
+    // Find scaling caps not in common caps
+    const std::array defined_scaling_flag_bits = {
+        VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT, VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT, VK_PRESENT_SCALING_STRETCH_BIT_EXT};
+    VkPresentScalingFlagsKHR unsupported_scaling = 0;
+    if (common_scaling_flags != 0) {
+        for (auto scaling_flag : defined_scaling_flag_bits) {
+            if ((common_scaling_flags & scaling_flag) == 0) {
+                unsupported_scaling = scaling_flag;
+                break;
+            }
+        }
+    }
+    if (!unsupported_scaling) {
+        GTEST_SKIP() << "Failed to find unsupported scaling mode";
+    }
+
+    // Create swapchain using unsupported scaling caps
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = unsupported_scaling;
+    present_scaling_info.presentGravityX = 0;
+    present_scaling_info.presentGravityY = 0;
+
+    VkSwapchainPresentModesCreateInfoKHR present_modes_ci = vku::InitStructHelper(&present_scaling_info);
+    present_modes_ci.presentModeCount = 2;
+    present_modes_ci.pPresentModes = compatible_present_modes.data();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.presentMode = surface_present_modes[0];
+    swapchain_ci.pNext = &present_modes_ci;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    const auto swapchain_info = GetSwapchainInfo(m_surface);
+
+    // Get gravity caps
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+    present_mode.presentMode = swapchain_info.surface_non_shared_present_mode;
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+    surface_info.surface = m_surface;
+
+    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_capabilities);
+
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+
+    // Find gravity caps not in scaling_capabilities's caps
+    const std::array defined_gravity_flag_bits = {VK_PRESENT_GRAVITY_MIN_BIT_EXT, VK_PRESENT_GRAVITY_MAX_BIT_EXT,
+                                                  VK_PRESENT_GRAVITY_CENTERED_BIT_EXT};
+
+    VkPresentGravityFlagsKHR unsupported_gravity_x = 0;
+    VkPresentGravityFlagsKHR unsupported_gravity_y = 0;
     if (scaling_capabilities.supportedPresentGravityX != 0) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityX & gravity_flag) == 0) {
-                present_scaling_info.presentGravityX = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
+                unsupported_gravity_x = gravity_flag;
                 break;
             }
         }
     }
-
-    // presentGravityY must be a valid y-axis present gravity for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY,
-    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
     if (scaling_capabilities.supportedPresentGravityY != 0) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityY & gravity_flag) == 0) {
-                present_scaling_info.presentGravityY = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
-                m_swapchain.Init(*m_device, swapchain_create_info);
-                m_errorMonitor->VerifyFound();
+                unsupported_gravity_y = gravity_flag;
                 break;
             }
         }
     }
+    if (unsupported_gravity_x == 0 && unsupported_gravity_y == 0) {
+        GTEST_SKIP() << "Failed to find unsupported gravity mode";
+    }
 
-    // Create swapchain
-    VkPresentModeKHR good_present_mode = m_surface_non_shared_present_mode;
-    present_modes_ci.pPresentModes = &good_present_mode;
-    swapchain_create_info.pNext = nullptr;
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    // Create swapchain using unsupported gravity caps
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.pNext = &present_scaling_info;
+
+    if (unsupported_gravity_x) {
+        present_scaling_info.presentGravityX = unsupported_gravity_x;
+        present_scaling_info.presentGravityY = 0;
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+    if (unsupported_gravity_y) {
+        present_scaling_info.presentGravityX = 0;
+        present_scaling_info.presentGravityY = unsupported_gravity_y;
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    const auto swapchain_info = GetSwapchainInfo(m_surface);
+    const std::vector<VkPresentModeKHR> surface_present_modes = m_surface.GetPresentModes(Gpu());
+
+    // Get 2 compatible present modes
+    std::vector<VkPresentModeKHR> compatible_present_modes;
+    {
+        VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+        present_mode.presentMode = surface_present_modes[0];
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+        surface_info.surface = m_surface;
+
+        VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
+
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+
+        compatible_present_modes.resize(present_mode_compatibility.presentModeCount);
+        present_mode_compatibility.pPresentModes = compatible_present_modes.data();
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    }
+    if (compatible_present_modes.size() < 2) {
+        GTEST_SKIP() << "Required at least 2 compatible present modes";
+    }
+
+    // Get common gravity flags for found present modes
+    VkPresentGravityFlagsKHR common_gravity_flags_x = ~VkPresentGravityFlagsKHR(0);
+    VkPresentGravityFlagsKHR common_gravity_flags_y = ~VkPresentGravityFlagsKHR(0);
+    for (uint32_t i = 0; i < 2; i++) {
+        VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+        present_mode.presentMode = compatible_present_modes[i];
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+        surface_info.surface = m_surface;
+
+        VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_capabilities);
+
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+        common_gravity_flags_x &= scaling_capabilities.supportedPresentGravityX;
+        common_gravity_flags_y &= scaling_capabilities.supportedPresentGravityY;
+    }
+
+    // Find gravity caps not in common caps
+    const std::array defined_gravity_flag_bits = {VK_PRESENT_GRAVITY_MIN_BIT_EXT, VK_PRESENT_GRAVITY_MAX_BIT_EXT,
+                                                  VK_PRESENT_GRAVITY_CENTERED_BIT_EXT};
+
+    VkPresentGravityFlagsKHR unsupported_gravity_x = 0;
+    VkPresentGravityFlagsKHR unsupported_gravity_y = 0;
+    if (common_gravity_flags_x != 0) {
+        for (auto gravity_flag : defined_gravity_flag_bits) {
+            if ((common_gravity_flags_x & gravity_flag) == 0) {
+                unsupported_gravity_x = gravity_flag;
+                break;
+            }
+        }
+    }
+    if (common_gravity_flags_y != 0) {
+        for (auto gravity_flag : defined_gravity_flag_bits) {
+            if ((common_gravity_flags_y & gravity_flag) == 0) {
+                unsupported_gravity_y = gravity_flag;
+                break;
+            }
+        }
+    }
+    if (unsupported_gravity_x == 0 && unsupported_gravity_y == 0) {
+        GTEST_SKIP() << "Failed to find unsupported gravity mode";
+    }
+
+    // Create swapchain using unsupported gravity caps
+    VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
+
+    VkSwapchainPresentModesCreateInfoKHR present_modes_ci = vku::InitStructHelper(&present_scaling_info);
+    present_modes_ci.presentModeCount = 2;
+    present_modes_ci.pPresentModes = compatible_present_modes.data();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.presentMode = surface_present_modes[0];
+    swapchain_ci.pNext = &present_modes_ci;
+
+    if (unsupported_gravity_x) {
+        present_scaling_info.presentGravityX = unsupported_gravity_x;
+        present_scaling_info.presentGravityY = 0;
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+    if (unsupported_gravity_y) {
+        present_scaling_info.presentGravityX = 0;
+        present_scaling_info.presentGravityY = unsupported_gravity_y;
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
+        m_swapchain.Init(*m_device, swapchain_ci);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeWsi, SwapchainMaintenance1ReleaseImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+
+    m_swapchain.Init(*m_device, swapchain_ci);
 
     const auto swapchain_images = m_swapchain.GetImages();
     const vkt::Semaphore acquire_semaphore(*m_device);
     m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
-
     m_default_queue->Wait();
 
     uint32_t release_index = static_cast<uint32_t>(swapchain_images.size()) + 2;
@@ -2268,140 +2506,114 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07785");
-    vk::ReleaseSwapchainImagesEXT(device(), &release_info);
+    vk::ReleaseSwapchainImagesKHR(device(), &release_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
-    TEST_DESCRIPTION("Test swapchain and surface Maintenance1 extensions.");
-    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+TEST_F(NegativeWsi, SwapchainMaintenance1DeferredNoAcquire) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    // Add this after check, surfacless checks are done conditionally
-    AddOptionalExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
-
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
-    InitSwapchainInfo();
 
-    uint32_t count;
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR;
+    m_swapchain.Init(*m_device, swapchain_ci);
 
-    // Call CreateSwapChain with a VkSwapchainPresentModesCreateInfoEXT struct W/O calling getcompatibleModes/getScalingCaps
-    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
-    swapchain_create_info.surface = m_surface;
-    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
-    swapchain_create_info.imageFormat = m_surface_formats[0].format;
-    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
-    swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
-    swapchain_create_info.clipped = VK_FALSE;
-    swapchain_create_info.oldSwapchain = 0;
-    swapchain_create_info.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = m_swapchain;
 
-    VkPresentModeKHR old_present_mode = m_surface_non_shared_present_mode;
-    VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
-    swapchain_create_info.pNext = &present_modes_ci;
-    present_modes_ci.presentModeCount = 1;
-    present_modes_ci.pPresentModes = &old_present_mode;
-
-    m_swapchain.Init(*m_device, swapchain_create_info);
-
-    const auto swapchain_images = m_swapchain.GetImages();
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = m_surface_formats[0].format;
-    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
-    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
-    image_swapchain_create_info.swapchain = m_swapchain;
-    image_create_info.pNext = &image_swapchain_create_info;
-
-    vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
-
-    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
-    bind_info.image = image_from_swapchain;
-    bind_info.memory = VK_NULL_HANDLE;
-    bind_info.memoryOffset = 0;
+    const VkExtent2D extent = swapchain_info.surface_capabilities.minImageExtent;
+    const VkFormat format = swapchain_info.surface_formats[0].format;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(extent.width, extent.height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.pNext = &image_swapchain_ci;
+    vkt::Image image_from_swapchain(*m_device, image_ci, vkt::no_mem);
 
     VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
     bind_swapchain_info.imageIndex = 0;
-    bind_info.pNext = &bind_swapchain_info;
     bind_swapchain_info.swapchain = m_swapchain;
 
-    // SwapchainMaint1 enabled + deferred_memory_alloc but image not acquired:
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
+    bind_info.image = image_from_swapchain;
+
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756");
-    vk::BindImageMemory2KHR(device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
+}
 
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> present_modes(count);
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, present_modes.data());
+TEST_F(NegativeWsi, SwapchainMaintenance1MissingPNext) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
+    // Missing VkSurfacePresentModeKHR in surface info pNext
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     surface_info.surface = m_surface;
 
-    VkSurfacePresentModeEXT present_mode = vku::InitStructHelper();
-    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = vku::InitStructHelper();
-    present_mode.presentMode = present_modes[0];
-    surface_caps.pNext = &present_mode_compatibility;
+    VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
 
-    // Leave VkSurfacePresentMode off of the pNext chain
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
+}
 
-    surface_info.pNext = &present_mode;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+TEST_F(NegativeWsi, SwapchainMaintenance1MissingPNext2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
-    std::vector<VkPresentModeKHR> compatible_present_modes(present_mode_compatibility.presentModeCount);
-    present_mode_compatibility.pPresentModes = compatible_present_modes.data();
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    // Missing VkSurfacePresentModeKHR in surface info pNext
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface;
 
     VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
-    surface_caps.pNext = &scaling_capabilities;
-    surface_info.pNext = nullptr;
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_capabilities);
+
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
+}
 
-    if (IsExtensionsEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
-        surface_info.pNext = &present_mode;
-        surface_info.surface = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778");
-        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
-        m_errorMonitor->VerifyFound();
+TEST_F(NegativeWsi, SwapchainMaintenance1InvalidSurface) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    // This allows null surface in some context but VUIDs bellow still need valid surface
+    AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
-        surface_caps.pNext = &present_mode_compatibility;
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779");
-        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
-        m_errorMonitor->VerifyFound();
-    }
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+    present_mode.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.pNext = &present_mode;
+    surface_info.surface = VK_NULL_HANDLE;
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+
+    VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+    surface_caps.pNext = &present_mode_compatibility;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778");
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    m_errorMonitor->VerifyFound();
+
+    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
+    surface_caps.pNext = &scaling_capabilities;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779");
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    m_errorMonitor->VerifyFound();
 }
 
 // TODO: investigate why if we replace layout transition code with SetPresentImageLayout helper

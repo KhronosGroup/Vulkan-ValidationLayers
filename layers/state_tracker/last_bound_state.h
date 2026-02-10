@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -159,9 +159,19 @@ struct LastBound {
     // Since GPU-AV uses this to access an array, force a getter to ensure people use this correctly.
     vvl::DescriptorMode GetActionDescriptorMode() const;
     vvl::DescriptorMode GetDescriptorMode() const { return descriptor_mode; };
-    void SetDescriptorMode(vvl::DescriptorMode mode) { descriptor_mode = mode; };
+    void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
+        previous_descriptor_mode = descriptor_mode;
+        previous_set_descriptor_mode = set_descriptor_mode;
+        descriptor_mode = new_mode;
+        set_descriptor_mode = function;
+    };
+    std::string DescribeInvalidDescriptorMode() const;
 
   private:
     // While Descriptor Buffer are bound to all bindpoint, Classic is only tied to a single bind point.
     vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeUnknown;
+    vvl::Func set_descriptor_mode = vvl::Func::Empty;
+    // Helper to know how things were invalidated if mixing and matching
+    vvl::DescriptorMode previous_descriptor_mode = vvl::DescriptorModeUnknown;
+    vvl::Func previous_set_descriptor_mode = vvl::Func::Empty;
 };

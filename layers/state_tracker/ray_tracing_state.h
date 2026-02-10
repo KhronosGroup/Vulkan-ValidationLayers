@@ -107,12 +107,15 @@ class AccelerationStructureKHRSubState;
 
 class AccelerationStructureKHR : public StateObject, public SubStateManager<AccelerationStructureKHRSubState> {
   public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-                             std::shared_ptr<Buffer>&& buf_state, const VkDeviceAddress buffer_device_address)
+    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
+                             std::shared_ptr<Buffer> &&buf_state, const VkDeviceAddress buffer_device_address)
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
-          create_info(*pCreateInfo),
           buffer_state(buf_state),
           buffer_device_address(buffer_device_address),
+          create_flags(pCreateInfo->createFlags),
+          offset(pCreateInfo->offset),
+          size(pCreateInfo->size),
+          type(pCreateInfo->type),
           device_address_range(GetDeviceAddressRange()) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
@@ -148,12 +151,11 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         }
     }
 
-    // At time of writing, having a safe_VkAccelerationStructureCreateInfoKHR is not strictly necessary,
-    // and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9669
-    // showed that the underlying used to store host side acceleration structure
-    // data seems to have hard to reproduce issues
-    // => rely on a plain VkAccelerationStructureCreateInfoKHR
-    VkAccelerationStructureCreateInfoKHR create_info;
+    VkAccelerationStructureCreateFlagsKHR GetCreateFlags() const { return create_flags; }
+    VkBuffer GetBuffer() const { return buffer_state->VkHandle(); }
+    VkDeviceSize GetOffset() const { return offset; }
+    VkDeviceSize GetSize() const { return size; }
+    VkAccelerationStructureTypeKHR GetType() const { return type; }
 
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
@@ -166,24 +168,29 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     // if the acceleration structure was filled by a call to vkCmdCopyMemoryToAccelerationStructure
     bool is_built = false;
 
+  private:
+    const VkAccelerationStructureCreateFlagsKHR create_flags = 0;
+    const VkDeviceSize offset = 0;
+    const VkDeviceSize size = 0;
+    const VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+
+    vvl::range<VkDeviceAddress> GetDeviceAddressRange() const {
+        if (!buffer_state) {
+            return {};
+        }
+        if (buffer_state->deviceAddress != 0) {
+            return {buffer_state->deviceAddress + offset, buffer_state->deviceAddress + offset + size};
+        }
+        return {buffer_device_address + offset, buffer_device_address + offset + size};
+    }
+
+  public:
     // Returns the device address range effectively occupied by the acceleration structure,
     // as defined by its creation info.
     // It does NOT take into account the acceleration structure address as returned by
     // vkGetAccelerationStructureDeviceAddress, this address may be at an offset
     // of the buffer range backing the acceleration structure
     const vvl::range<VkDeviceAddress> device_address_range;
-
-  private:
-    vvl::range<VkDeviceAddress> GetDeviceAddressRange() const {
-        if (!buffer_state) {
-            return {};
-        }
-        if (buffer_state->deviceAddress != 0) {
-            return {buffer_state->deviceAddress + create_info.offset,
-                    buffer_state->deviceAddress + create_info.offset + create_info.size};
-        }
-        return {buffer_device_address + create_info.offset, buffer_device_address + create_info.offset + create_info.size};
-    }
 };
 
 class AccelerationStructureKHRSubState {

@@ -385,16 +385,17 @@ bool Device::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     bool skip = false;
     const auto &error_obj = context.error_obj;
     for (uint32_t rect = 0; rect < rectCount; rect++) {
+        const VkClearRect& clear_rect = pRects[rect];
         const Location rect_loc = error_obj.location.dot(Field::pRects, rect);
-        if (pRects[rect].layerCount == 0) {
+        if (clear_rect.layerCount == 0) {
             skip |=
                 LogError("VUID-vkCmdClearAttachments-layerCount-01934", commandBuffer, rect_loc.dot(Field::layerCount), "is zero.");
         }
-        if (pRects[rect].rect.extent.width == 0) {
+        if (clear_rect.rect.extent.width == 0) {
             skip |= LogError("VUID-vkCmdClearAttachments-rect-02682", commandBuffer,
                              rect_loc.dot(Field::rect).dot(Field::extent).dot(Field::width), "is zero.");
         }
-        if (pRects[rect].rect.extent.height == 0) {
+        if (clear_rect.rect.extent.height == 0) {
             skip |= LogError("VUID-vkCmdClearAttachments-rect-02683", commandBuffer,
                              rect_loc.dot(Field::rect).dot(Field::extent).dot(Field::height), "is zero.");
         }

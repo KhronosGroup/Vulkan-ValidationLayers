@@ -45,8 +45,7 @@ TEST_F(NegativeRenderPass, AttachmentIndexOutOfRange) {
 
     // There are no attachments, but refer to attachment 0.
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // "... must be less than the total number of attachments ..."
     CreateRenderPassTest(rp.GetCreateInfo(), true, "VUID-VkRenderPassCreateInfo-attachment-00834",
@@ -121,10 +120,8 @@ TEST_F(NegativeRenderPass, AttachmentMismatchingLayoutsColor) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
 
     CreateRenderPassTest(rp.GetCreateInfo(), true, "VUID-VkSubpassDescription-layout-02519",
                          "VUID-VkSubpassDescription2-layout-02528");
@@ -1427,9 +1424,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         RenderPass2SingleSubpass rp(*this);
         rp.AddAttachmentDescription(depth_stencil_format, depth_initial_layout, VK_IMAGE_LAYOUT_GENERAL);
         rp.SetAttachmentDescriptionPNext(0, &stencil_layout);
-        rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                                  &stencil_ref);
-        rp.AddInputAttachment(0);
+        rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, &stencil_ref);
         rp.CreateRenderPass();
 
         const uint32_t fb_width = input_image.Width();
@@ -1616,8 +1611,7 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     // Create simple renderpass
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     m_command_buffer.Begin();
@@ -1662,10 +1656,8 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(0);
-    rp.AddDepthStencilResolveAttachment(1, depth_resolve_mode, stencil_resolve_mode);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, depth_resolve_mode, stencil_resolve_mode);
     rp.CreateRenderPass();
 
     // Depth resolve attachment, mismatched image usage
@@ -1708,8 +1700,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     // A renderpass with one color attachment.
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     // A compatible framebuffer.
@@ -1795,10 +1786,8 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
@@ -1872,8 +1861,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     RenderPassSingleSubpass rp(*this);
     // Format incompatible with PSO RP color attach format B8G8R8A8_UNORM
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -1989,8 +1977,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     // Create a renderPass with a single color attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::ImageView iv = m_renderTargets[0]->CreateView();
@@ -2431,10 +2418,9 @@ TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UNORM, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(ds_format, VK_SAMPLE_COUNT_4_BIT);           // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(1);
-    rp.AddDepthStencilResolveAttachment(0, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+                                        VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
     rp.CreateRenderPass();
@@ -2501,8 +2487,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -3375,8 +3360,7 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
 
     m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-format-06698");
     rp.CreateRenderPass();
@@ -4222,8 +4206,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());

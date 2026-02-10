@@ -3291,11 +3291,9 @@ TEST_F(NegativeImage, BlockTexelViewFormat) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
-    }
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_SAMPLED_BIT))
+        GTEST_SKIP() << "Image create info not compatible on device";
+
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -4418,7 +4416,8 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 

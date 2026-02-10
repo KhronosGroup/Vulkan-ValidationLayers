@@ -612,10 +612,7 @@ void Device::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR 
     tracker.CreateObject(swapchain_image, kVulkanObjectTypeImage, nullptr, loc, swapchain);
 }
 
-bool Instance::ReportLeakedObjects(VulkanObjectType object_type, const std::string &error_code,
-                                           const Location &loc) const {
-    bool skip = false;
-
+void Instance::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanTypedHandle>& leaked_list) const {
     // The state tracker also tracks implicit images created for swapchains and reports them as leak.
     // This is entirely incorrect and unfortunately the machinery does not allow distinguishing between
     // implicitly and explicitly created swapchain images, so the best we can do is to ignore any leaked
@@ -632,25 +629,54 @@ bool Instance::ReportLeakedObjects(VulkanObjectType object_type, const std::stri
             : tracker.object_map[object_type].snapshot();
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
-        const LogObjectList objlist(instance, ObjTrackStateTypedHandle(*object_info));
-        skip |= LogError(error_code, objlist, loc, "Object Tracking - For %s, %s has not been destroyed.",
-                         FormatHandle(instance).c_str(), FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
+        leaked_list.emplace_back(ObjTrackStateTypedHandle(*object_info));
     }
-    return skip;
 }
 
-bool Device::ReportLeakedObjects(VulkanObjectType object_type, const std::string &error_code,
-                                       const Location &loc) const {
-    bool skip = false;
+bool Instance::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
+    std::stringstream ss;
+    ss << FormatHandle(instance) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
+    uint32_t count = 0;
+    for (const auto& object : leaked_list) {
+        if (count >= 64) {
+            // Feels like spam after this, user should have zero anyway
+            ss << "\n(Only printing the first 64 objects)";
+            break;
+        }
+        if (count != 0) {
+            ss << ", ";
+        }
+        ss << FormatHandle(object);
+        count++;
+    }
+    return LogError("VUID-vkDestroyInstance-instance-00629", instance, loc, "%s", ss.str().c_str());
+}
 
+void Device::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanTypedHandle>& leaked_list) const {
     auto snapshot = tracker.object_map[object_type].snapshot();
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
-        const LogObjectList objlist(device, ObjTrackStateTypedHandle(*object_info));
-        skip |= LogError(error_code, objlist, loc, "Object Tracking - For %s, %s has not been destroyed.",
-                         FormatHandle(device).c_str(), FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
+        leaked_list.emplace_back(ObjTrackStateTypedHandle(*object_info));
     }
-    return skip;
+}
+
+bool Device::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
+    std::stringstream ss;
+    ss << FormatHandle(device) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
+    uint32_t count = 0;
+    for (const auto& object : leaked_list) {
+        if (count >= 64) {
+            // Feels like spam after this, user should have zero anyway
+            ss << "\n(Only printing the first 64 objects)";
+            break;
+        }
+        if (count != 0) {
+            ss << ", ";
+        }
+        ss << FormatHandle(object);
+        count++;
+    }
+    return LogError("VUID-vkDestroyDevice-device-05137", device, loc, "%s", ss.str().c_str());
 }
 
 bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,

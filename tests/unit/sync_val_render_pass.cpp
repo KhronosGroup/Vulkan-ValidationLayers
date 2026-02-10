@@ -36,8 +36,7 @@ TEST_F(NegativeSyncValRenderPass, ClearColorAttachmentWAW) {
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(color_format, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_LOAD_OP_NONE,
                                          VK_ATTACHMENT_STORE_OP_NONE);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddColorAttachment(0);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -88,8 +87,7 @@ TEST_F(NegativeSyncValRenderPass, ClearDepthAspectWAW) {
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(depth_stencil_format, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                          VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_NONE);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -149,8 +147,7 @@ TEST_F(NegativeSyncValRenderPass, ClearStencilAspectWAW) {
 
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(attachment);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -210,8 +207,7 @@ TEST_F(NegativeSyncValRenderPass, ClearDepthCopyStencilWAW) {
 
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(attachment);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -338,4 +334,238 @@ TEST_F(NegativeSyncValRenderPass, InputAttachmentReadAndResolveWrite) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValRenderPass, StoreOpWAR) {
+    TEST_DESCRIPTION("StoreOp WAR hazard");
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                         VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_STORE);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 64, 64);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    // Copy read
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+
+    // There is no loadOp access (LOAD_OP_NONE)
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 64, 64);
+
+    // StoreOp write
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_command_buffer.EndRenderPass();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValRenderPass, MultisampleAttachmentRAW) {
+    TEST_DESCRIPTION("Insufficient synchronization between multisample resolve read and previous attachment clear");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo multi_sample_image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    multi_sample_image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image multi_sample_image(*m_device, multi_sample_image_ci);
+    vkt::ImageView multi_sample_image_view = multi_sample_image.CreateView();
+
+    VkImageCreateInfo single_sample_image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image single_sample_image(*m_device, single_sample_image_ci);
+    vkt::ImageView single_sample_image_view = single_sample_image.CreateView();
+
+    VkAttachmentDescription multi_sample_attachment = {};
+    multi_sample_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    multi_sample_attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    multi_sample_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    multi_sample_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    multi_sample_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    multi_sample_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription single_sample_attachment = {};
+    single_sample_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    single_sample_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    single_sample_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    single_sample_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    single_sample_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    single_sample_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference multi_sample_attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference single_sample_attachment_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &multi_sample_attachment_ref;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &multi_sample_attachment_ref;
+    subpass1.pResolveAttachments = &single_sample_attachment_ref;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 1;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = 0;  // Hazard: do not make clear writes available
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+    const VkAttachmentDescription attachments[2] = {multi_sample_attachment, single_sample_attachment};
+    const VkImageView image_views[2] = {multi_sample_image_view, single_sample_image_view};
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper();
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+    renderpass_ci.dependencyCount = 1;
+    renderpass_ci.pDependencies = &subpass_dependency;
+
+    const vkt::RenderPass render_pass(*m_device, renderpass_ci);
+    const vkt::Framebuffer framebuffer(*m_device, render_pass, 2, image_views, 32, 32);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+
+    m_command_buffer.NextSubpass();
+
+    // Hazard when reading multi sample attachment due to incomplete sync with clear
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_command_buffer.EndRenderPass();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValRenderPass, InputAttachmentRAW) {
+    TEST_DESCRIPTION("Input attachment read hazards with previous attachment write");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_write(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_read(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_write(*this);
+    pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
+    pipe_write.gp_ci_.renderPass = rp;
+    pipe_write.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_read(*this);
+    pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
+    pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe_read.gp_ci_.renderPass = rp;
+    pipe_read.CreateGraphicsPipeline();
+    pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                        VK_IMAGE_LAYOUT_GENERAL);
+    pipe_read.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_write);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+
+    // Input attachmnent read should be synchronized with writes from previous draws.
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read.pipeline_layout_, 0, 1,
+                              &pipe_read.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRenderPass, InputAttachmentWAR) {
+    TEST_DESCRIPTION("Attachment write hazards with the previous input attachment read");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_read(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_write(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_read(*this);
+    pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
+    pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe_read.gp_ci_.renderPass = rp;
+    pipe_read.CreateGraphicsPipeline();
+    pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                        VK_IMAGE_LAYOUT_GENERAL);
+    pipe_read.descriptor_set_->UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe_write(*this);
+    pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
+    pipe_write.gp_ci_.renderPass = rp;
+    pipe_write.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read.pipeline_layout_, 0, 1,
+                              &pipe_read.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+
+    // This draw is not synchronized with input attachment reads (requires subpass pipeline barrier).
+    // NOTE: the reason is that input attachment reads are not in the raster order (shader execution
+    // accesses in general are not in raster order). The raster order itself defines execution
+    // dependency which is enough to resolve WAR but it's not applicable here.
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4693
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_write);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }

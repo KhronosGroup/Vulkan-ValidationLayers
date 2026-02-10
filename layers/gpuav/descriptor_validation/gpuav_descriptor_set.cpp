@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
  */
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
+#include <vulkan/vulkan_core.h>
 #include <mutex>
 
 #include "gpuav/core/gpuav.h"
@@ -196,8 +197,8 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    const bool success = input_buffer_.Create(&buffer_info, &alloc_info);
-    if (!success) {
+    const VkResult result = input_buffer_.Create(&buffer_info, &alloc_info);
+    if (result != VK_SUCCESS) {
         return 0;
     }
 

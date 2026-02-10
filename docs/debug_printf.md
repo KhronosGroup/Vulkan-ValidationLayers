@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2020-2025 LunarG, Inc. -->
-<!-- Copyright 2020-2025 Valve Corporation -->
+<!-- Copyright 2020-2026 LunarG, Inc. -->
+<!-- Copyright 2020-2026 Valve Corporation -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -9,12 +9,19 @@
 # Using Debug Printf
 
 ## Introduction
-Debugging Vulkan shaders, especially compute shaders, can be very difficult to do even with the aid
-of a powerful debugging tool like RenderDoc. Debug Printf is a recent Vulkan feature that allows
-developers to debug their shaders by inserting Debug Print statements. This feature is now
-supported within RenderDoc in a way that allows for per-invocation inspection of values in a shader.
-This article describes how to instrument your GLSL or HLSL shaders with Debug Printf and how to
-inspect and debug with them in RenderDoc, using vkconfig, or with environment variables.
+
+This is an overview how to use c-style `printf` statements directly into shaders for real-time inspection. This is currently supported in GLSL, HLSL, and Slang and should be **simple** to add to your debugging workflow right now!
+
+## Quick understanding Debug Printf
+
+Without going into too much details, this is all possible because of the interface provided by the [VK_KHR_shader_non_semantic_info](https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/nonsemantic.md) extension, which was promoted to Vulkan 1.3
+
+To get Debug Printf to work you need 2 things:
+
+1. A way to add to the shader (which GLSL/HLSL/Slang provide)
+2. An implementation to consume the printf statement and print it out for you
+
+The main two implementations are inside the Validation Layers and RenderDoc.
 
 ## Turning on Debug Printf in Validation Layer
 
@@ -33,21 +40,32 @@ export VK_LAYER_PRINTF_ONLY_PRESET=1
 adb shell setprop debug.vulkan.khronos_validation.printf_only_preset=1
 ```
 
+Note this will print to the debug callback and you might want it directly sent to `stdout`.
+
+```bash
+# Optional - will print to `stdout` **instead** of the normal Debug Callback
+export VK_LAYER_PRINTF_TO_STDOUT=1
+```
+
+### Turn on with other validation
+
+The `VK_LAYER_PRINTF_ENABLE=1` environment variable (`printf_enable` for people using `VK_EXT_layer_settings`) will turn on Debug Printf alongside the other validation.
+
 ## Settings
 
-The following are the various Debug Printf settings (listed as environment variables, but work like all other settings).
+There are a few additional Debug Printf settings
 
 > All settings also found in `VkConfig`
 
-- `VK_LAYER_PRINTF_ENABLE` will turn on Debug Printf alongside the other validation
-    - `VK_LAYER_PRINTF_ENABLE=1` turn on
-- `VK_LAYER_PRINTF_TO_STDOUT` will print to `stdout` **instead** of the normal Debug Callback
-    - `VK_LAYER_PRINTF_TO_STDOUT=1` turn on
-- `VK_LAYER_PRINTF_VERBOSE` will print extra information (pipeline, shader, command, etc)
-    - `VK_LAYER_PRINTF_VERBOSE=1` turn on
-- `VK_LAYER_PRINTF_BUFFER_SIZE` size of the buffer used to store Printf messages (buffer is shared across all calls in a single `vkQueueSubmit`).
+- `VK_LAYER_PRINTF_VERBOSE`
+    - Will print extra information (pipeline, shader, command, etc)
+    - `VK_LAYER_PRINTF_VERBOSE=1` (env variable)
+    - 'printf_verbose` (`VK_EXT_layer_settings`)
+- `VK_LAYER_PRINTF_BUFFER_SIZE`
+    - Set the size in bytes of the buffer per `VkCommandBuffer` to hold the messages (Each message is about 50 bytes)
     - Default: 1024 bytes
-    - `set VK_LAYER_PRINTF_BUFFER_SIZE=4096` (example of making it larger)
+    - `VK_LAYER_PRINTF_BUFFER_SIZE=4096`  (env variable)
+    - 'printf_buffer_size` (`VK_EXT_layer_settings`)
 
 ## Using Debug Printf in GLSL Shaders
 
@@ -122,7 +140,7 @@ The format string for this implementation of debug printf is more restricted tha
 
 Format for specifier is "%"*precision* <d, i, o, u, x, X, a, A, e, E, f, F, g, G, ul, lu, or lx>
 
-Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above]
+Format for **vector** specifier is "%"*precision*"**v**" [2, 3, or 4] [specifiers list above]
 
 Format for pointers (`PhysicalStorageBuffer`) is "%p"
 
@@ -231,9 +249,6 @@ buffer size.
 * The `VK_KHR_shader_non_semantic_info` extension must be supported and enabled
   * If using the Validation Layers, we attempt to strip it out to allow wider range of users to still use Debug Printf
 * RenderDoc release 1.14 or later
-* When using Debug Printf with a debug callback, it is recommended to disable validation,
-as the debug level of INFO or DEBUG causes the validation layers to produce many messages
-unrelated to Debug Printf, making it difficult to find the desired output.
 
 ### Other References
 Documentation for the GL_EXT_debug_printf extension can be found

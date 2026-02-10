@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -768,8 +768,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -797,8 +796,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     VkImageCreateInfo ici =
@@ -852,8 +850,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensionsMultiview) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.SetViewMask(0x4);
     rp.CreateRenderPass();
 
@@ -1051,14 +1048,12 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     RenderPass2SingleSubpass rp_fsr_1(*this);
     rp_fsr_1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp_fsr_1.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp_fsr_1.AddFragmentShadingRateAttachment(0, texel_size_1);
+    rp_fsr_1.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, texel_size_1);
     rp_fsr_1.CreateRenderPass();
 
     RenderPass2SingleSubpass rp_fsr_2(*this);
     rp_fsr_2.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp_fsr_2.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp_fsr_2.AddFragmentShadingRateAttachment(0, texel_size_2);
+    rp_fsr_2.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, texel_size_2);
     rp_fsr_2.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -3565,8 +3560,7 @@ TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayers) {
         const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
         rp.CreateRenderPass(nullptr, VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE);
 
         auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, fdm_properties.maxFragmentDensityMapLayers + 1,

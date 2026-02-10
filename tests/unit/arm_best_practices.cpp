@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -169,8 +169,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
@@ -883,15 +882,13 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     RenderPassSingleSubpass rp0(*this);
     rp0.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                  VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
-    rp0.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp0.AddColorAttachment(0);
+    rp0.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp0.CreateRenderPass();
 
     RenderPassSingleSubpass rp1(*this);
     rp1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                  VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp1.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp1.AddColorAttachment(0);
+    rp1.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp1.CreateRenderPass();
 
     vkt::Image image0(*m_device, 512, 512, format,
@@ -998,8 +995,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::Framebuffer fb(*m_device, rp, 1, &view0.handle(), 512, 512);

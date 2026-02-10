@@ -86,3 +86,7 @@ settings_create_info.pSettings = settings;
 VkInstanceCreateInfo instance_create_info;
 instance_create_info.pNext = &settings_create_info;
 ```
+
+### Full setting list
+
+If you are confused where `validate_sync` and `unique_handles` are found, the [full list is generated here](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html)

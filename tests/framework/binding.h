@@ -1495,6 +1495,10 @@ class Surface {
         instance_ = VK_NULL_HANDLE;
     }
 
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice physical_device) const;
+    VkSurfacePresentScalingCapabilitiesKHR GetScalingCapabilities(VkPhysicalDevice physical_device,
+                                                                  VkPresentModeKHR present_mode) const;
+
   private:
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR handle_ = VK_NULL_HANDLE;

@@ -1250,10 +1250,8 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddSubpassDependency(external_subpass_dependency);
     rp.CreateRenderPass();
     VkImageView views[2] = {rt_image_view_0, rt_image_view_1};
@@ -1325,8 +1323,7 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &attachment_view.handle());
 
@@ -1365,8 +1362,7 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &dst_image_view.handle());
 
@@ -1482,6 +1478,47 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     // Collide with attachment store by copying to the same attachment
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, StoreOpWAR) {
+    TEST_DESCRIPTION("StoreOp WAR hazard");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    // Copy read
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+
+    // There is no loadOp access (LOAD_OP_NONE)
+    m_command_buffer.BeginRendering(rendering_info);
+
+    // StoreOp write
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdEndRendering(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1656,8 +1693,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadOpAfterStoreOpRAW) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -1679,8 +1715,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadOpAfterStoreOpRAWSubmitTime) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -3038,8 +3073,7 @@ TEST_F(NegativeSyncVal, FinalLayoutTransitionHazard) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
@@ -3058,111 +3092,69 @@ TEST_F(NegativeSyncVal, FinalLayoutTransitionHazard) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSyncVal, InputAttachmentReadHazard) {
-    TEST_DESCRIPTION("Input attachment read hazards with previous attachment write (RAW)");
+TEST_F(NegativeSyncVal, InputAttachmentWAR) {
+    TEST_DESCRIPTION("Attachment write hazards with the previous input attachment read");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
     RETURN_IF_SKIP(InitSyncVal());
-
-    RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
-                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddInputAttachment(0);
-    rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs_write(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkShaderObj fs_read(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
 
-    CreatePipelineHelper pipe_write(*this);
-    pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
-    pipe_write.gp_ci_.renderPass = rp;
-    pipe_write.CreateGraphicsPipeline();
-
-    CreatePipelineHelper pipe_read(*this);
-    pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
-    pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe_read.gp_ci_.renderPass = rp;
-    pipe_read.CreateGraphicsPipeline();
-    pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                                        VK_IMAGE_LAYOUT_GENERAL);
-    pipe_read.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
-
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_write);
-    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
-
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read.pipeline_layout_, 0, 1,
-                              &pipe_read.descriptor_set_->set_, 0, nullptr);
-    // Input attachmnent read should be synchronized with writes from previous draws.
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeSyncVal, InputAttachmentReadHazard2) {
-    TEST_DESCRIPTION("Input attachment read hazards with the following attachment write (WAR)");
-    RETURN_IF_SKIP(InitSyncVal());
-
-    RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
-                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddInputAttachment(0);
-    rp.CreateRenderPass();
-
-    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
-                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    vkt::ImageView image_view = image.CreateView();
-
-    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_read(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderObj fs_write(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    CreatePipelineHelper pipe_read(*this);
+    CreatePipelineHelper pipe_read(*this, &pipeline_rendering_info);
     pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
     pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe_read.gp_ci_.renderPass = rp;
     pipe_read.CreateGraphicsPipeline();
     pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                                         VK_IMAGE_LAYOUT_GENERAL);
     pipe_read.descriptor_set_->UpdateDescriptorSets();
 
-    CreatePipelineHelper pipe_write(*this);
+    CreatePipelineHelper pipe_write(*this, &pipeline_rendering_info);
     pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
-    pipe_write.gp_ci_.renderPass = rp;
     pipe_write.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+    m_command_buffer.BeginRendering(rendering_info);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read.pipeline_layout_, 0, 1,
                               &pipe_read.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
-    // This draw is not synchronized with input attachment reads (requires subpass pipeline barrier)
+    // This draw is not synchronized with input attachment reads (requires pipeline barrier).
+    // NOTE: the reason is that input attachment reads are not in the raster order (shader execution
+    // accesses in general are not in raster order). The raster order itself defines execution
+    // dependency which is enough to resolve WAR but it's not applicable here.
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4693
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_write);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.EndRenderPass();
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 
@@ -4149,8 +4141,7 @@ TEST_F(NegativeSyncVal, StoreOpAndLayoutTransitionHazard) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
                                 VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.AddSubpassDependency(subpass_dependency);
     rp.CreateRenderPass();
 
@@ -5588,8 +5579,7 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(depth_format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
                                 VK_ATTACHMENT_STORE_OP_NONE);
-    rp.AddAttachmentReference({0, input_attachment_layout});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, input_attachment_layout);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);

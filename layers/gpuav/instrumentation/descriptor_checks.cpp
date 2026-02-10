@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/error_message/gpuav_vuids.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
@@ -41,8 +42,8 @@ DescriptorHeap::DescriptorHeap(Validator& gpuav, uint32_t max_descriptors) : max
 
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    const bool success = buffer_.Create(&buffer_info, &alloc_info);
-    if (!success) {
+    const VkResult result = buffer_.Create(&buffer_info, &alloc_info);
+    if (result != VK_SUCCESS) {
         return;
     }
 

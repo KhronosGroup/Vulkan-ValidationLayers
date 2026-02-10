@@ -243,7 +243,7 @@ void CommandBuffer::RemoveChild(std::shared_ptr<StateObject> &child_node) {
 //   - Override both using Heaps
 // To "properly" do this, we woudl need to really devide LastBound state into 3 structs for each
 // For the practical future, we will try and get away just assuming these crazy cases are not happening
-void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode) {
+void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
     // 99% of time, all LastBound will be the same mode
     bool reset_heap = false;
     bool reset_buffer = false;
@@ -265,18 +265,18 @@ void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode) {
             reset_buffer = true;
         }
 
-        lastBound[i].SetDescriptorMode(new_mode);
+        lastBound[i].SetDescriptorMode(new_mode, function);
     }
 }
 
 // Some functions like vkCmdPushConstant are valid in Classic/Buffer, but invalid in Heap
 // So calling it doesn't "set" a mode, but instead only "invalidates"
-void CommandBuffer::InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode) {
+void CommandBuffer::InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::Func function) {
     for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
         const vvl::DescriptorMode current_mode = lastBound[i].GetDescriptorMode();
         if (current_mode == invalidate_mode) {
             // This will happen calling vkCmdPushConstant when in heap, go to "Classic" as a fallback
-            SetDescriptorMode(vvl::DescriptorModeClassic);
+            SetDescriptorMode(vvl::DescriptorModeClassic, function);
         }
     }
 }
@@ -365,7 +365,7 @@ void CommandBuffer::ResetCBState() {
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
 
-    SetDescriptorMode(vvl::DescriptorModeUnknown);
+    SetDescriptorMode(vvl::DescriptorModeUnknown, vvl::Func::Empty);
     // Need to reset on initalization
     descriptor_heap.Reset();
     descriptor_buffer.Reset();
@@ -1601,7 +1601,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     last_bound.desc_set_bound_command = loc.function;
-    last_bound.SetDescriptorMode(DescriptorModeClassic);
+    last_bound.SetDescriptorMode(DescriptorModeClassic, loc.function);
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {

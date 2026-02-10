@@ -33,6 +33,11 @@ const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) { return kOr
 static ThreadSafeLookupTable<OrderingBarrier> layout_ordering_barrier_lookup;
 ThreadSafeLookupTable<OrderingBarrier> &GetLayoutOrderingBarrierLookup() { return layout_ordering_barrier_lookup; }
 
+bool AttachmentAccess::operator==(const AttachmentAccess &other) const {
+    return type == other.type && ordering == other.ordering && render_pass_instance_id == other.render_pass_instance_id &&
+           subpass == other.subpass;
+}
+
 bool OrderingBarrier::operator==(const OrderingBarrier &rhs) const {
     return exec_scope == rhs.exec_scope && access_scope == rhs.access_scope;
 }
@@ -86,44 +91,48 @@ HazardResult AccessState::DetectMarkerHazard() const {
     return DetectHazard(marker_access_info);
 }
 
-HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
-                                       QueueId queue_id, bool detect_load_op_after_store_op_hazards) const {
-    // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
-    const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
+HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering,
+                                       const AttachmentAccess &attachment_access, SyncFlags flags, QueueId queue_id,
+                                       bool detect_load_op_after_store_op_hazards) const {
+    const VkPipelineStageFlagBits2 access_stage = usage_info.stage_mask;
     const SyncAccessIndex access_index = usage_info.access_index;
-    const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
 
     if (IsRead(usage_info.access_index)) {
-        // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
         bool is_raw_hazard = IsRAWHazard(usage_info);
         if (is_raw_hazard) {
-            // NOTE: we know last_write is non-zero
-            // See if the ordering rules save us from the simple RAW check above
-            // First check to see if the current usage is covered by the ordering rules
-            const bool usage_is_input_attachment = (access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
-            const bool usage_is_ordered =
-                (input_attachment_ordering && usage_is_input_attachment) || (0 != (usage_stage & ordering.exec_scope));
-            if (usage_is_ordered) {
+            const bool access_is_input_attachment = (access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
+            const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
+
+            // Check if the ordering rules make a RAW sequence not a hazard.
+            // The ordering act as barriers to the last accesses.
+            // At first check if the current access is covered by the ordering rules
+            const bool access_is_ordered =
+                (access_stage & ordering.exec_scope) != 0 || (access_is_input_attachment && input_attachment_ordering);
+
+            if (access_is_ordered) {
                 // Check if the most recent write is ordered.
                 // Input attachment is ordered against load op but not against regular draws (requires subpass barrier).
                 bool most_recent_is_ordered =
-                    last_write->IsOrdered(ordering, queue_id) && (!usage_is_input_attachment || last_write->IsLoadOp());
+                    last_write->IsOrdered(ordering, queue_id) && (!access_is_input_attachment || last_write->IsLoadOp());
 
                 // LoadOp after StoreOp happens only if accesses are from different render pass instances.
                 // Such accesses are not implicitly synchronized.
-                const bool load_op_after_store_op = last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp);
-                const bool validate_load_op_after_store_op = detect_load_op_after_store_op_hazards && load_op_after_store_op;
-                if (validate_load_op_after_store_op) {
-                    most_recent_is_ordered = false;
+                if (detect_load_op_after_store_op_hazards) {
+                    if (last_write->IsStoreOp() && attachment_access.type == AttachmentAccessType::LoadOp) {
+                        most_recent_is_ordered = false;
+                    }
                 }
 
-                // TODO: current implementation does not distiguish separate render pass instances. Some cases can be
-                // handled with SyncFlags, but not all. We need to add some idea of render pass instance id, and
-                // combine that with ordering rules and/or SyncFlags to get unified solution.
+                // Resolve read is not ordered against accesses from other subpasses
+                if (attachment_access.type == AttachmentAccessType::ResolveRead) {
+                    if (attachment_access.subpass != last_write->attachment_access.subpass) {
+                        most_recent_is_ordered = false;
+                    }
+                }
 
                 // If most recent write is not ordered then check if subsequent read is ordered
                 if (!most_recent_is_ordered) {
-                    most_recent_is_ordered = (GetOrderedStages(queue_id, ordering, flags) != 0);
+                    most_recent_is_ordered = (GetOrderedStages(queue_id, ordering, attachment_access.type) != 0);
                 }
 
                 is_raw_hazard = !most_recent_is_ordered;
@@ -147,13 +156,13 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
         VkPipelineStageFlags2 ordered_stages = VK_PIPELINE_STAGE_2_NONE;
         if (usage_write_is_ordered) {
             // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
-            ordered_stages = GetOrderedStages(queue_id, ordering, flags);
+            ordered_stages = GetOrderedStages(queue_id, ordering, attachment_access.type);
         }
         // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
         if ((ordered_stages & last_read_stages) != last_read_stages) {
             for (const auto &read_access : GetReads()) {
                 if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
-                if (IsReadHazard(usage_stage, read_access)) {
+                if (IsReadHazard(access_stage, read_access)) {
                     return HazardResult::HazardVsPriorRead(this, usage_info, WRITE_AFTER_READ, read_access);
                 }
             }
@@ -164,7 +173,7 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
     // Only check for WAW if there are no reads since last_write
     if (last_write.has_value()) {
         // Check if it's two ordered write accesses
-        const bool load_op_after_store_op = last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp);
+        const bool load_op_after_store_op = last_write->IsStoreOp() && attachment_access.type == AttachmentAccessType::LoadOp;
         const bool validate_load_op_after_store_op = detect_load_op_after_store_op_hazards && load_op_after_store_op;
         if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered && !validate_load_op_after_store_op) {
             return {};
@@ -211,8 +220,9 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
                 break;
             }
 
-            const auto &first_ordering = GetOrderingRules(first.ordering_rule);
-            hazard = DetectHazard(*first.usage_info, first_ordering, first.flags, queue_id, detect_load_op_after_store_op_hazards);
+            const auto &first_ordering = GetOrderingRules(first.attachment_access.ordering);
+            hazard = DetectHazard(*first.usage_info, first_ordering, first.attachment_access, first.flags, queue_id,
+                                  detect_load_op_after_store_op_hazards);
             if (hazard.IsHazard()) {
                 hazard.AddRecordedAccess(first);
                 return hazard;
@@ -223,7 +233,7 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
             // Writes are a bit special... both for the "most recent" access logic, and layout transition specific logic
             const auto &last_access = recorded_accesses.back();
             if (tag_range.includes(last_access.tag)) {
-                OrderingBarrier barrier = GetOrderingRules(last_access.ordering_rule);
+                OrderingBarrier barrier = GetOrderingRules(last_access.attachment_access.ordering);
                 if (last_access.usage_info->access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
                     // Or in the layout first access scope as a barrier... IFF the usage is an ILT
                     // this was saved off in the "apply barriers" logic to simplify ILT access checks as they straddle
@@ -246,7 +256,7 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
                     // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
                     barrier.access_scope |= last_access.usage_info->access_bit;
                 }
-                hazard = DetectHazard(*last_access.usage_info, barrier, last_access.flags, queue_id,
+                hazard = DetectHazard(*last_access.usage_info, barrier, last_access.attachment_access, last_access.flags, queue_id,
                                       detect_load_op_after_store_op_hazards);
                 if (hazard.IsHazard()) {
                     hazard.AddRecordedAccess(last_access);
@@ -500,18 +510,18 @@ void AccessState::Resolve(const AccessState &other) {
         for (auto &b : other.first_accesses_) {
             // TODO: Determine whether some tag offset will be needed for PHASE II
             while ((a != a_end) && (a->tag < b.tag)) {
-                UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
+                UpdateFirst(a->TagEx(), *a->usage_info, a->attachment_access, a->flags);
                 ++a;
             }
-            UpdateFirst(b.TagEx(), *b.usage_info, b.ordering_rule, b.flags);
+            UpdateFirst(b.TagEx(), *b.usage_info, b.attachment_access, b.flags);
         }
         for (; a != a_end; ++a) {
-            UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
+            UpdateFirst(a->TagEx(), *a->usage_info, a->attachment_access, a->flags);
         }
     }
 }
 
-void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex,
                          SyncFlags flags) {
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
     if (IsRead(usage_info.access_index)) {
@@ -552,7 +562,7 @@ void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAcces
     } else {
         SetWrite(usage_info.access_index, attachment_access, tag_ex, flags);
     }
-    UpdateFirst(tag_ex, usage_info, attachment_access.ordering, flags);
+    UpdateFirst(tag_ex, usage_info, attachment_access, flags);
 }
 
 HazardResult HazardResult::HazardVsPriorWrite(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
@@ -583,7 +593,7 @@ bool HazardResult::IsWAWHazard() const {
 // Clobber last read and all barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
 // if the last_reads/last_write were unsafe, we've reported them, in either case the prior access is irrelevant.
 // We can overwrite them as *this* write is now after them.
-void AccessState::SetWrite(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+void AccessState::SetWrite(SyncAccessIndex access_index, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex,
                            SyncFlags flags) {
     ClearRead();
     if (!last_write.has_value()) {
@@ -625,8 +635,8 @@ bool AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarr
         const OrderingBarrier layout_ordering{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
 
         // Register write access that models layout transition writes
-        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccessInfo::NonAttachment(), tag_ex);
-        UpdateFirst(tag_ex, layout_transition_access_info, SyncOrdering::kOrderingNone);
+        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex);
+        UpdateFirst(tag_ex, layout_transition_access_info, AttachmentAccess::NonAttachment());
         TouchupFirstForLayoutTransition(layout_transition_tag, layout_ordering);
 
         last_write->barriers |= barrier.dst_access_scope;
@@ -842,8 +852,8 @@ void AccessState::ApplyPendingWriteBarrier(const PendingWriteBarrier &write_barr
 void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag) {
     const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
-    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccessInfo::NonAttachment(), tag_ex);
-    UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kOrderingNone);
+    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex);
+    UpdateFirst(tag_ex, layout_usage_info, AttachmentAccess::NonAttachment());
     TouchupFirstForLayoutTransition(tag, layout_transition.ordering);
 }
 
@@ -1032,7 +1042,8 @@ bool AccessState::IsRAWHazard(const SyncAccessInfo &usage_info) const {
            last_write->IsWriteHazard(usage_info);
 }
 
-VkPipelineStageFlags2 AccessState::GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering, SyncFlags flags) const {
+VkPipelineStageFlags2 AccessState::GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering,
+                                                    AttachmentAccessType attachment_access_type) const {
     // At apply queue submission order limits on the effect of ordering
     VkPipelineStageFlags2 non_qso_stages = VK_PIPELINE_STAGE_2_NONE;
     if (queue_id != kQueueIdInvalid) {
@@ -1047,7 +1058,7 @@ VkPipelineStageFlags2 AccessState::GetOrderedStages(QueueId queue_id, const Orde
     VkPipelineStageFlags2 ordered_stages = read_stages_in_qso & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
-    if (input_attachment_ordering && input_attachment_read && (flags & SyncFlag::kStoreOp) != 0) {
+    if (input_attachment_ordering && input_attachment_read && attachment_access_type == AttachmentAccessType::StoreOp) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
         ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
@@ -1055,8 +1066,8 @@ VkPipelineStageFlags2 AccessState::GetOrderedStages(QueueId queue_id, const Orde
     return ordered_stages;
 }
 
-void AccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule,
-                              SyncFlags flags) {
+void AccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info,
+                              const AttachmentAccess &attachment_access, SyncFlags flags) {
     // Only record until we record a write.
     if (!first_access_closed_) {
         const bool is_read = IsRead(usage_info.access_index);
@@ -1067,7 +1078,7 @@ void AccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const SyncAccessI
             first_read_stages_ |= usage_stage;
             if (0 == (read_execution_barriers & usage_stage)) {
                 // If this stage isn't masked then we add it (since writes map to usage_stage 0, this also records writes)
-                first_accesses_.emplace_back(usage_info, tag_ex, ordering_rule, flags);
+                first_accesses_.emplace_back(usage_info, tag_ex, attachment_access, flags);
                 first_access_closed_ = !is_read;
             }
         }
@@ -1129,17 +1140,16 @@ bool ReadState::InBarrierSourceScope(const BarrierScope &barrier_scope) const {
     return ReadOrDependencyChainInSourceScope(barrier_scope.scope_queue, barrier_scope.src_exec_scope);
 }
 
-void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccessInfo &attachment_access, ResourceUsageTagEx tag_ex,
+void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex,
                      SyncFlags flags) {
     this->access_index = access_index;
-    this->flags = flags;
+    this->attachment_access = attachment_access;
     barriers.reset();
     dependency_chain = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
     queue = kQueueIdInvalid;
-    render_pass_instance_id = attachment_access.render_pass_instance_id;
-    subpass = attachment_access.subpass;
+    this->flags = flags;
 }
 
 void WriteState::SetQueueId(QueueId id) {

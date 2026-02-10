@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -50,19 +50,19 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
         if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
             if ((vkuFormatIsColor(format) || vkuFormatHasDepth(format)) &&
                 pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                skip |= LogWarning("BestPractices-vkCreateRenderPass-attatchment-color-depth", device, attachment_loc,
+                skip |= LogWarning("BestPractices-vkCreateRenderPass-attachment-color-depth", device, attachment_loc,
                                    "Render pass has an attachment with loadOp == VK_ATTACHMENT_LOAD_OP_LOAD and "
                                    "initialLayout == VK_IMAGE_LAYOUT_UNDEFINED and format %s. This is probably not what you "
-                                   "intended.  Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
-                                   "image truely is undefined at the start of the render pass.",
+                                   "intended. Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
+                                   "image truly is undefined at the start of the render pass.",
                                    string_VkFormat(format));
             }
             if (vkuFormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-                skip |= LogWarning("BestPractices-vkCreateRenderPass-attatchment-stencil", device, attachment_loc,
+                skip |= LogWarning("BestPractices-vkCreateRenderPass-attachment-stencil", device, attachment_loc,
                                    "Render pass has an attachment with stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD "
                                    "and initialLayout == VK_IMAGE_LAYOUT_UNDEFINED and format %s. This is probably not what you "
-                                   "intended.  Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
-                                   "image truely is undefined at the start of the render pass.",
+                                   "intended. Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
+                                   "image truly is undefined at the start of the render pass.",
                                    string_VkFormat(format));
             }
         }

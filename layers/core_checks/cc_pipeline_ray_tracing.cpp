@@ -329,8 +329,8 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11275", lib->Handle(), library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT included in %s (%s).",
-                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str(), flags_loc.Fields().c_str(),
-                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str());
+                                 string_VkPipelineCreateFlags2(lib->create_flags).c_str(), flags_loc.Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline.create_flags).c_str());
             } else {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11276", lib->Handle(), library_loc,
                                  "was created without %s, which is missing "

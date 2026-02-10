@@ -36,6 +36,15 @@ INDENT = 4
 # Structure to hold processed shader data
 ShaderData = namedtuple("ShaderData", ["name", "words", "function_offsets", "filename"])
 
+def find_executable(path):
+    if shutil.which(path):
+        return path
+    if sys.platform == 'win32' and not path.endswith('.exe'):
+        exe_path = path + '.exe'
+        if shutil.which(exe_path):
+            return exe_path
+    return None
+
 def identifierize(s):
     # translate invalid chars
     s = re.sub("[^0-9a-zA-Z_]", "_", s)
@@ -282,16 +291,20 @@ def main():
     glslang = common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslang'))
     if args.glslang:
         glslang = args.glslang
-    if not shutil.which(glslang):
-        print("Cannot find glslangValidator " + glslang)
+
+    glslang = find_executable(glslang)
+    if not glslang:
+        print("Cannot find glslang")
         return
 
     # default spirv-opt path
-    spirv_opt =  common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
+    spirv_opt = common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
     if args.spirv_opt:
         spirv_opt = args.spirv_opt
-    if not shutil.which(spirv_opt):
-        print("Cannot find spirv-opt " + spirv_opt)
+
+    spirv_opt = find_executable(spirv_opt)
+    if not spirv_opt:
+        print("Cannot find spirv-opt")
         return
 
     # compile shaders

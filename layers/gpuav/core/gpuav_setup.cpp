@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include <array>
 #include <string>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
@@ -289,8 +290,8 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = global_indices_buffer_.Create(&buffer_info, &alloc_info);
-        if (!success) {
+        result = global_indices_buffer_.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
             return;
         }
 
@@ -301,39 +302,39 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             indices_ptr[offset] = i;
         }
     }
+}
 
-    // Create our own Descriptor Buffer we will bind if the user decides to use it
-    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+vko::Buffer& Validator::GetGlobalDescriptorBuffer() {
+    if (global_resource_descriptor_buffer_.IsDestroyed()) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize * cst::total_internal_descriptors;
         buffer_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = global_resource_descriptor_buffer_.Create(&buffer_info, &alloc_info);
-        if (!success) {
+        const VkResult result = global_resource_descriptor_buffer_.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
             InternalVmaError(device, result, "Failed to create an internal resource Descriptor Buffer.");
-            return;
         }
     }
+    return global_resource_descriptor_buffer_;
+}
 
-    // Create our own Descriptor Heap if the user wont bind one
-    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        VkDeviceSize bytes_to_reserve = Align(phys_dev_ext_props.descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings,
-                                              phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
-        bytes_to_reserve = Align(bytes_to_reserve, phys_dev_ext_props.descriptor_heap_props.resourceHeapAlignment);
+vko::Buffer& Validator::GetGlobalDescriptorHeap() {
+    if (global_resource_descriptor_heap_.IsDestroyed()) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.size = bytes_to_reserve + phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange;
-        buffer_info.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        buffer_info.size = resource_heap_reserved_bytes_ + phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange;
+        buffer_info.usage =
+            VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = global_resource_descriptor_heap_.Create(&buffer_info, &alloc_info);
-        if (!success) {
+        const VkResult result = global_resource_descriptor_heap_.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
             InternalVmaError(device, result, "Failed to create an internal resource Descriptor Heap.");
-            return;
         }
     }
+    return global_resource_descriptor_heap_;
 }
 
 namespace setting {
