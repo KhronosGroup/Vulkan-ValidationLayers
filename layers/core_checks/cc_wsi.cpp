@@ -1280,8 +1280,8 @@ bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
         if ((pPastPresentationTimingInfo->flags & VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT) != 0) {
             uint32_t max = 0;
             for (const auto &query : swapchain_state->present_timing_stage_queries) {
-                if (query.second > max) {
-                    max = query.second;
+                if (query.second.num_present_stage_queries > max) {
+                    max = query.second.num_present_stage_queries;
                 }
             }
             for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
@@ -1299,8 +1299,9 @@ bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
             for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
                 uint32_t max = 0;
                 for (const auto &query : swapchain_state->present_timing_stage_queries) {
-                    if (query.first == pPastPresentationTimingProperties->pPresentationTimings[i].presentId && query.second > max) {
-                        max = query.second;
+                    if (query.first == pPastPresentationTimingProperties->pPresentationTimings[i].presentId &&
+                        query.second.num_present_stage_queries > max) {
+                        max = query.second.num_present_stage_queries;
                     }
                 }
                 if (pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount < max) {
@@ -1544,8 +1545,8 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQN
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 bool core::Instance::PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
-                                                                                    uint32_t queueFamilyIndex, IDirectFB* dfb,
-                                                                                    const ErrorObject& error_obj) const {
+                                                                                    uint32_t queueFamilyIndex, IDirectFB *dfb,
+                                                                                    const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-queueFamilyIndex-04119",
@@ -1664,7 +1665,7 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool core::Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                  uint32_t queueFamilyIndex,
-                                                                                 const ErrorObject& error_obj) const {
+                                                                                 const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
@@ -1760,8 +1761,8 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkP
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char* vuid,
-                                                          const Location& loc) const {
+bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
+                                                          const Location &loc) const {
     bool skip = false;
 
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);

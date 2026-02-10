@@ -138,7 +138,11 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     std::vector<std::shared_ptr<vvl::Semaphore>> old_swapchain_present_wait_semaphores;
 
     // Number of bits set in VkPresentTimingInfoEXT::presentStageQueries for each present that hasn't been completed
-    std::deque<std::pair<uint64_t, uint32_t>> present_timing_stage_queries;
+    struct PresentTimingInfo {
+        uint32_t num_present_stage_queries;
+        SubmissionReference present_submission_ref;
+    };
+    std::deque<std::pair<uint64_t, PresentTimingInfo>> present_timing_stage_queries;
     // Present timing queue size for the swapchain set by vkSetSwapchainPresentTimingQueueSizeEXT
     uint32_t present_timing_queue_size = 0;
     // Present timing id to domain map
