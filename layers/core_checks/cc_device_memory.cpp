@@ -385,7 +385,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                  pAllocateInfo->allocationSize, phys_dev_props_core11.maxMemoryAllocationSize);
     }
 
-    if (!enabled_features.tileMemoryHeap && HasTileMemoryType(pAllocateInfo->memoryTypeIndex)) {
+    /* HasTileMemoryType requires that the index be valid */
+    if (!enabled_features.tileMemoryHeap && pAllocateInfo->memoryTypeIndex < phys_dev_mem_props.memoryTypeCount &&
+        HasTileMemoryType(pAllocateInfo->memoryTypeIndex)) {
         skip |= LogError("VUID-vkAllocateMemory-tileMemoryHeap-10976", device, allocate_info_loc.dot(Field::memoryTypeIndex),
                          "(%" PRIu32
                          ") identifies a memory type that corresponds to a VkMemoryHeap with the"
@@ -848,6 +850,7 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const ui
 }
 
 bool CoreChecks::HasTileMemoryType(uint32_t memory_type_index) const {
+    assert(memory_type_index < phys_dev_mem_props.memoryTypeCount);
     const uint32_t memory_heap_index = phys_dev_mem_props.memoryTypes[memory_type_index].heapIndex;
     return (phys_dev_mem_props.memoryHeaps[memory_heap_index].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
 }
