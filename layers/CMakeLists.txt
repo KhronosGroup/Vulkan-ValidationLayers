@@ -231,6 +231,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_query.cpp
     core_checks/cc_queue.cpp
     core_checks/cc_ray_tracing.cpp
+    core_checks/cc_ray_tracing_micromap.cpp
+    core_checks/cc_ray_tracing_nv.cpp
     core_checks/cc_render_pass.cpp
     core_checks/cc_spirv.cpp
     core_checks/cc_shader_interface.cpp
@@ -431,6 +433,8 @@ target_sources(vvl PRIVATE
     stateless/sl_instance_device.cpp
     stateless/sl_pipeline.cpp
     stateless/sl_ray_tracing.cpp
+    stateless/sl_ray_tracing_micromap.cpp
+    stateless/sl_ray_tracing_nv.cpp
     stateless/sl_render_pass.cpp
     stateless/sl_shader_object.cpp
     stateless/sl_spirv.cpp
