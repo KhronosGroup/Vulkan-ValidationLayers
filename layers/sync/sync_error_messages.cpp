@@ -236,7 +236,6 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
 
 std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description) const {
-    // TODO: revisit error message when this function is covered by the tests.
     return Error(hazard, cb_context, command, resource_description, "RenderPassAttachmentError");
 }
 
@@ -321,7 +320,6 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
 
 std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description) const {
-    // TODO: rework error message and maybe refactor ValidateResolveAction helper when this function is covered by the tests.
     return Error(hazard, cb_context, command, resource_description, "RenderPassResolveError");
 }
 
