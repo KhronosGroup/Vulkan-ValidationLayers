@@ -206,6 +206,33 @@ void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb
     }
 }
 
+void UpdateInstrumentationDescHeap(Validator &gpuav, CommandBufferSubState &cb_state, VkDeviceAddress *indirect_memory,
+                                   uint32_t action_command_index_offset, uint32_t resource_index_offset,
+                                   const LastBound &last_bound, const Location &loc,
+                                   CommonInstrumentationErrorInfo &out_error_info) {
+    if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
+        // Error output buffer
+        indirect_memory[glsl::kBindingInstErrorBuffer] = cb_state.GetErrorOutputBufferRange().offset_address;
+
+        // Buffer holding action command index in command buffer
+        indirect_memory[glsl::kBindingInstActionIndex] = gpuav.global_indices_buffer_.Address() + action_command_index_offset;
+
+        // Buffer holding a resource index from the per command buffer command resources list
+        indirect_memory[glsl::kBindingInstCmdResourceIndex] = gpuav.global_indices_buffer_.Address() + resource_index_offset;
+
+        // Errors count buffer
+        indirect_memory[glsl::kBindingInstCmdErrorsCount] = cb_state.cmd_errors_counts_buffer_.Address();
+    }
+
+    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_heap_update_functions.size(); ++func_i) {
+        VkDeviceAddress device_address;
+        uint32_t binding = 0;
+        cb_state.on_instrumentation_desc_heap_update_functions[func_i](cb_state, last_bound.bind_point, loc, device_address,
+                                                                       binding);
+        indirect_memory[binding] = device_address;
+    }
+}
+
 void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                   VkDescriptorSet instrumentation_desc_set, const Location &loc,
                                   CommonInstrumentationErrorInfo &out_error_info) {
@@ -487,17 +514,40 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
 
 void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, CommandBufferSubState &cb_state,
                                                               const LastBound &last_bound, const Location &loc) {
-    if (!gpuav.gpuav_settings.debug_printf_enabled) {
-        return;  // currently only thing enabled
-    }
     const auto &heap_buffer = gpuav.GetGlobalDescriptorHeap();
-    VkDeviceAddress *resource_heap_memory = static_cast<VkDeviceAddress *>(heap_buffer.GetMappedPtr());
+    VkDeviceAddress *indirect_memory = static_cast<VkDeviceAddress *>(heap_buffer.GetMappedPtr());
 
-    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_heap_update_functions.size(); ++func_i) {
-        VkDeviceAddress device_address;
-        cb_state.on_instrumentation_desc_heap_update_functions[func_i](cb_state, last_bound.bind_point, device_address);
-        resource_heap_memory[0] = device_address;
+    CommonInstrumentationErrorInfo error_info;
+    error_info.action_command_index = cb_state.GetActionCommandIndex(last_bound.bind_point);
+    error_info.pipeline_bind_point = last_bound.bind_point;
+
+    const uint32_t error_logger_index = cb_state.GetErrorLoggerIndex();
+
+    assert(error_logger_index < gpuav.gpuav_settings.indices_buffer_count);
+    assert(error_info.action_command_index < gpuav.gpuav_settings.indices_buffer_count);
+    const uint32_t action_command_index_offset = error_info.action_command_index * gpuav.indices_buffer_alignment_;
+    const uint32_t resource_index_offset = error_logger_index * gpuav.indices_buffer_alignment_;
+
+    UpdateInstrumentationDescHeap(gpuav, cb_state, indirect_memory, action_command_index_offset, resource_index_offset, last_bound,
+                                  loc, error_info);
+
+    std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
+    for (size_t i = 0; i < cb_state.on_instrumentation_error_logger_register_functions.size(); ++i) {
+        const CommandBufferSubState::OnInstrumentationErrorLoggerRegister &error_logger_register =
+            cb_state.on_instrumentation_error_logger_register_functions[i];
+
+        error_loggers.emplace_back(error_logger_register(gpuav, cb_state, last_bound));
     }
+
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, error_info, error_loggers = std::move(error_loggers)](
+                                                              const uint32_t *error_record, const Location &loc_with_debug_region,
+                                                              const LogObjectList &objlist) {
+        bool skip = false;
+        skip |= LogInstrumentationError(gpuav, cb_state, objlist, error_info, error_record, loc_with_debug_region, error_loggers);
+        return skip;
+    };
+
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 
     VkDeviceAddress gpuav_data_address = heap_buffer.Address();
     VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
