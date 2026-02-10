@@ -7968,7 +7968,8 @@ TEST_F(NegativeDynamicRendering, RenderingAttachmentDynamicRenderingLocalRead) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicRendering, RenderingAttachmentFeedbackLoopMissingFlags) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11644
+TEST_F(NegativeDynamicRendering, DISABLED_RenderingAttachmentFeedbackLoopMissingFlags) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance10);

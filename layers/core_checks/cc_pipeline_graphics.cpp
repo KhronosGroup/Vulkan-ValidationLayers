@@ -3588,7 +3588,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, vuid);
-    skip |= ValidateDrawPipelineDynamicRenderingAttachmentFlags(last_bound_state, pipeline, rp_state, vuid);
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11644
+    // skip |= ValidateDrawPipelineDynamicRenderingAttachmentFlags(last_bound_state, pipeline, rp_state, vuid);
     return skip;
 }
 
