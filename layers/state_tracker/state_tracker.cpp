@@ -49,7 +49,7 @@
 // Used for debugging
 #include "utils/keyboard.h"
 
-#include "utils/image_utils.h" // GetExternalFormat
+#include "utils/image_utils.h"  // GetExternalFormat
 #include "utils/sync_utils.h"
 #include "chassis/chassis.h"
 
@@ -580,18 +580,20 @@ std::shared_ptr<vvl::DataGraphPipelineSession> DeviceState::CreateDataGraphPipel
     return std::make_shared<vvl::DataGraphPipelineSession>(*this, handle, pCreateInfo);
 }
 
-void DeviceState::PostCallRecordCreateDataGraphPipelineSessionARM(
-    VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkDataGraphPipelineSessionARM *pSession, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                                  const VkDataGraphPipelineSessionCreateInfoARM *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator,
+                                                                  VkDataGraphPipelineSessionARM *pSession,
+                                                                  const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
     std::shared_ptr<vvl::DataGraphPipelineSession> pipeline_session_state =
         CreateDataGraphPipelineSessionState(*pSession, pCreateInfo);
     Add(std::move(pipeline_session_state));
 }
 
-void DeviceState::PostCallRecordBindDataGraphPipelineSessionMemoryARM(
-    VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM *pBindInfos,
-    const RecordObject &record_obj) {
+void DeviceState::PostCallRecordBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                                      const VkBindDataGraphPipelineSessionMemoryInfoARM *pBindInfos,
+                                                                      const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) {
         return;
     }
@@ -600,7 +602,7 @@ void DeviceState::PostCallRecordBindDataGraphPipelineSessionMemoryARM(
         auto session_state = Get<vvl::DataGraphPipelineSession>(bind_info.session);
         if (session_state) {
             auto mem_info = std::shared_ptr<vvl::DeviceMemory>(Get<vvl::DeviceMemory>(bind_info.memory));
-            vvl::MemoryBinding binding = { mem_info, bind_info.memoryOffset, 0 };
+            vvl::MemoryBinding binding = {mem_info, bind_info.memoryOffset, 0};
             session_state->AddBoundMemory(bind_info.bindPoint, binding);
         }
     }
@@ -1780,7 +1782,7 @@ void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT sha
                                                 const RecordObject &record_obj) {
     // Don't do state lookup if not needed
     if (enabled_features.descriptorHeap) {
-        if (const auto& shader_state = Get<ShaderObject>(shader)) {
+        if (const auto &shader_state = Get<ShaderObject>(shader)) {
             if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
                 descriptor_heap_global_embedded_sampler_count_ -= shader_state->descriptor_heap_embedded_samplers_count;
             }
@@ -1794,7 +1796,7 @@ void DeviceState::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipel
                                                const RecordObject &record_obj) {
     // Don't do state lookup if not needed
     if (enabled_features.descriptorHeap) {
-        if (const auto& pipeline_state = Get<Pipeline>(pipeline)) {
+        if (const auto &pipeline_state = Get<Pipeline>(pipeline)) {
             if (pipeline_state->descriptor_heap_embedded_samplers_count > 0) {
                 descriptor_heap_global_embedded_sampler_count_ -= pipeline_state->descriptor_heap_embedded_samplers_count;
             }
@@ -2167,8 +2169,8 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
 
 // TODO - Add tests and pass down StatelessData
 std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateNV(const VkRayTracingPipelineCreateInfoNV *create_info,
-                                                                     std::shared_ptr<const PipelineCache> pipeline_cache,
-                                                                     std::shared_ptr<const PipelineLayout> &&layout) const {
+                                                                       std::shared_ptr<const PipelineCache> pipeline_cache,
+                                                                       std::shared_ptr<const PipelineLayout> &&layout) const {
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout));
 }
 
@@ -2209,9 +2211,9 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
 
 // TODO - Add tests and pass down StatelessData
 std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateKHR(const VkRayTracingPipelineCreateInfoKHR *create_info,
-                                                                     std::shared_ptr<const PipelineCache> pipeline_cache,
-                                                                     std::shared_ptr<const PipelineLayout> &&layout,
-                                                                     std::vector<spirv::StatelessData> &stateless_data) const {
+                                                                        std::shared_ptr<const PipelineCache> pipeline_cache,
+                                                                        std::shared_ptr<const PipelineLayout> &&layout,
+                                                                        std::vector<spirv::StatelessData> &stateless_data) const {
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), &stateless_data);
 }
 
@@ -2226,8 +2228,8 @@ bool DeviceState::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, V
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        pipeline_states.push_back(
-           CreateRayTracingPipelineStateKHR(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), chassis_state.stateless_data));
+        pipeline_states.push_back(CreateRayTracingPipelineStateKHR(
+            &pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), chassis_state.stateless_data));
     }
     return false;
 }
@@ -2286,16 +2288,19 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
     }
 }
 
-std::shared_ptr<vvl::Pipeline> DeviceState::CreateDataGraphPipelineState(
-    const VkDataGraphPipelineCreateInfoARM *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-    std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
+std::shared_ptr<vvl::Pipeline> DeviceState::CreateDataGraphPipelineState(const VkDataGraphPipelineCreateInfoARM *pCreateInfo,
+                                                                         std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+                                                                         std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                                                                         spirv::StatelessData *stateless_data) const {
     return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
-bool DeviceState::PreCallValidateCreateDataGraphPipelinesARM(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
-    const VkDataGraphPipelineCreateInfoARM *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const ErrorObject &error_obj, PipelineStates &pipeline_states, chassis::CreateDataGraphPipelinesARM &chassis_state) const {
+bool DeviceState::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             VkPipelineCache pipelineCache, uint32_t count,
+                                                             const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
+                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                             const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                             chassis::CreateDataGraphPipelinesARM &chassis_state) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
@@ -2306,10 +2311,12 @@ bool DeviceState::PreCallValidateCreateDataGraphPipelinesARM(
     return false;
 }
 
-void DeviceState::PostCallRecordCreateDataGraphPipelinesARM(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
-    const VkDataGraphPipelineCreateInfoARM *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateDataGraphPipelinesARM &chassis_state) {
+void DeviceState::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t count,
+                                                            const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                            const RecordObject &record_obj, PipelineStates &pipeline_states,
+                                                            chassis::CreateDataGraphPipelinesARM &chassis_state) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
@@ -2320,8 +2327,7 @@ void DeviceState::PostCallRecordCreateDataGraphPipelinesARM(
     pipeline_states.clear();
 }
 
-void DeviceState::PostCallRecordCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer,
-                                                        VkDataGraphPipelineSessionARM session,
+void DeviceState::PostCallRecordCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
                                                         const VkDataGraphPipelineDispatchInfoARM *pInfo,
                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -3129,14 +3135,14 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                            VkPipelineBindPoint pipelineBindPoint,
                                                                            VkPipelineLayout layout, uint32_t set,
-                                                                           const RecordObject& record_obj) {
+                                                                           const RecordObject &record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
     cb_state->SetDescriptorMode(DescriptorModeBuffer);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
-    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
-    const RecordObject& record_obj) {
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
+    const RecordObject &record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
     cb_state->SetDescriptorMode(DescriptorModeBuffer);
 }
@@ -3869,9 +3875,9 @@ void DeviceState::RecordGetExternalSemaphoreState(Semaphore &semaphore_state, Vk
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                        const RecordObject& record_obj) {
+void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                        const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -3879,7 +3885,7 @@ void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, con
 }
 
 void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                                  const RecordObject& record_obj) {
+                                                                  const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -3889,7 +3895,7 @@ void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice devic
 }
 
 void DeviceState::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                                  const RecordObject& record_obj) {
+                                                                  const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -3936,8 +3942,8 @@ void DeviceState::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const Vk
     RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType, record_obj.location);
 }
 
-void DeviceState::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                                        HANDLE* pHandle, const RecordObject& record_obj) {
+void DeviceState::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                        HANDLE *pHandle, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -4254,6 +4260,16 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
 
+        // If the present timing queue reports as full, any waits would have been enqueued and therefore need to
+        // be tracked here, however the presentation will be dropped
+        if (local_result == VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT) {
+            queue_state->Notify(result.submission_seq);
+            for (const auto &semaphore : present_wait_semaphores) {
+                semaphore->ClearSwapchainWaitInfo();
+            }
+            continue;
+        }
+
         // Mark the image as having been released to the WSI
         uint64_t present_id = 0;
         // TODO - need to know what happens if both are included
@@ -4264,9 +4280,10 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             present_id = present_id_info->pPresentIds[i];
         }
 
-        if (present_timings_info) {
-            const uint32_t present_timing_stage_queries = GetBitSetCount(present_timings_info->pTimingInfos->presentStageQueries);
-            swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_stage_queries});
+        if (present_timings_info && present_timings_info->pTimingInfos->presentStageQueries) {
+            const Swapchain::PresentTimingInfo presentTimingInfo{
+                GetBitSetCount(present_timings_info->pTimingInfos->presentStageQueries), present_submission_ref};
+            swapchain_data->present_timing_stage_queries.push_back({present_id, presentTimingInfo});
         }
 
         // spec: "However, if the presentation request is rejected by the presentation engine with an error
@@ -4326,6 +4343,9 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
         auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
             for (uint32_t j = 0; j < pPastPresentationTimingProperties->pPresentationTimings->reportComplete; ++j) {
+                const SubmissionReference present_submission_ref =
+                    swapchain->present_timing_stage_queries.front().second.present_submission_ref;
+                present_submission_ref.queue->NotifyAndWait(record_obj.location, present_submission_ref.seq);
                 swapchain->present_timing_stage_queries.pop_front();
             }
         }
@@ -6347,12 +6367,12 @@ struct CommandBufferReservedAddressInfillUpdateOps {
     using Mapped = typename Map::mapped_type;
     using Range = typename Map::key_type;
 
-    void infill(Map& map, const Iterator& pos, const Range& infill_range) const {
+    void infill(Map &map, const Iterator &pos, const Range &infill_range) const {
         map.insert(pos, Value(infill_range, insert_value));
     }
 
-    void update(const Iterator& pos) const {
-        auto& current_buffer_list = pos->second;
+    void update(const Iterator &pos) const {
+        auto &current_buffer_list = pos->second;
         assert(!current_buffer_list.empty());
         const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), insert_value[0]);
         if (buffer_found_it == current_buffer_list.end()) {
@@ -6362,14 +6382,14 @@ struct CommandBufferReservedAddressInfillUpdateOps {
             current_buffer_list.emplace_back(insert_value[0]);
         }
     }
-    const Mapped& insert_value;
+    const Mapped &insert_value;
 };
 
 struct CommandBufferReservedAddressRemoveOps {
     using Map = DeviceState::DescriptorHeapReservedAddress::RangeMap;
     using Mapped = Map::mapped_type;
 
-    bool operator()(Mapped& cmd_buffer_list) const {
+    bool operator()(Mapped &cmd_buffer_list) const {
         auto it = std::find(cmd_buffer_list.begin(), cmd_buffer_list.end(), removed_value);
         if (it != cmd_buffer_list.end()) {
             if (cmd_buffer_list.size() == 1) {
@@ -6387,18 +6407,18 @@ struct CommandBufferReservedAddressRemoveOps {
         return false;
     }
 
-    const vvl::CommandBuffer* removed_value;
+    const vvl::CommandBuffer *removed_value;
 };
 
-void DeviceState::UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state,
-                                                            const vvl::range<VkDeviceAddress>& new_range, bool is_sampler) {
+void DeviceState::UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer *cb_state,
+                                                            const vvl::range<VkDeviceAddress> &new_range, bool is_sampler) {
     assert(cb_state != nullptr);
 
     WriteLockGuard guard(descriptor_heap_reserved_address.lock);
 
-    const vvl::range<VkDeviceAddress>& existing_range =
+    const vvl::range<VkDeviceAddress> &existing_range =
         is_sampler ? cb_state->descriptor_heap.sampler_reserved : cb_state->descriptor_heap.resource_reserved;
-    DescriptorHeapReservedAddress::RangeMap& cmd_buffer_map =
+    DescriptorHeapReservedAddress::RangeMap &cmd_buffer_map =
         is_sampler ? descriptor_heap_reserved_address.sampler_map : descriptor_heap_reserved_address.resource_map;
 
     if (existing_range.non_empty()) {
@@ -6412,26 +6432,26 @@ void DeviceState::UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* 
     }
 }
 
-void DeviceState::RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state) {
+void DeviceState::RemoveCommandBufferHeapReservedAddressMap(vvl::CommandBuffer *cb_state) {
     assert(cb_state != nullptr);
 
     WriteLockGuard guard(descriptor_heap_reserved_address.lock);
 
-    const vvl::range<VkDeviceAddress>& resource_existing_range = cb_state->descriptor_heap.resource_reserved;
+    const vvl::range<VkDeviceAddress> &resource_existing_range = cb_state->descriptor_heap.resource_reserved;
     if (resource_existing_range.non_empty()) {
         CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
         descriptor_heap_reserved_address.resource_map.erase_range_or_touch(resource_existing_range, remove_ops);
     }
 
-    const vvl::range<VkDeviceAddress>& sampler_existing_range = cb_state->descriptor_heap.sampler_reserved;
+    const vvl::range<VkDeviceAddress> &sampler_existing_range = cb_state->descriptor_heap.sampler_reserved;
     if (sampler_existing_range.non_empty()) {
         CommandBufferReservedAddressRemoveOps remove_ops{cb_state};
         descriptor_heap_reserved_address.sampler_map.erase_range_or_touch(sampler_existing_range, remove_ops);
     }
 }
 
-void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
-                                                      const RecordObject& record_obj) {
+void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
+                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->descriptor_heap.sampler_bound = true;
 
@@ -6450,8 +6470,8 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
     cb_state->SetDescriptorMode(DescriptorModeHeap);
 }
 
-void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
-                                                       const RecordObject& record_obj) {
+void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
+                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->descriptor_heap.resource_bound = true;
 
@@ -6470,8 +6490,8 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
     cb_state->SetDescriptorMode(DescriptorModeHeap);
 }
 
-void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
-                                               const RecordObject& record_obj) {
+void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,
+                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     ASSERT_AND_RETURN(cb_state);
     cb_state->RecordCmdPushDataEXT(*pPushDataInfo, record_obj.location);
