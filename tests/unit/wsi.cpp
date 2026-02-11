@@ -1958,8 +1958,6 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
 TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentMode) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
@@ -1994,8 +1992,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentMode) {
 
 TEST_F(NegativeWsi, SwapchainMaintenanceWrongPresentMode2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2047,8 +2043,6 @@ TEST_F(NegativeWsi, SwapchainMaintenanceWrongPresentMode2) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1NonCompatiblePresentMode) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2091,8 +2085,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1NonCompatiblePresentMode) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1PresentScaling) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2119,8 +2111,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1PresentScaling) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1PresentGravity) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2165,8 +2155,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1PresentGravity) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2224,8 +2212,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2311,8 +2297,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling2) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2388,8 +2372,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2496,8 +2478,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedGravity2) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1ReleaseImage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -2524,136 +2504,110 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ReleaseImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
-    TEST_DESCRIPTION("Test swapchain and surface Maintenance1 extensions.");
-    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+TEST_F(NegativeWsi, SwapchainMaintenance1DeferredNoAcquire) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     AddSurfaceExtension();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    // Add this after check, surfacless checks are done conditionally
-    AddOptionalExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
-
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
-    InitSwapchainInfo();
 
-    uint32_t count;
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR;
+    m_swapchain.Init(*m_device, swapchain_ci);
 
-    // Call CreateSwapChain with a VkSwapchainPresentModesCreateInfoEXT struct W/O calling getcompatibleModes/getScalingCaps
-    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
-    swapchain_create_info.surface = m_surface;
-    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
-    swapchain_create_info.imageFormat = m_surface_formats[0].format;
-    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
-    swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
-    swapchain_create_info.clipped = VK_FALSE;
-    swapchain_create_info.oldSwapchain = 0;
-    swapchain_create_info.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = m_swapchain;
 
-    VkPresentModeKHR old_present_mode = m_surface_non_shared_present_mode;
-    VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
-    swapchain_create_info.pNext = &present_modes_ci;
-    present_modes_ci.presentModeCount = 1;
-    present_modes_ci.pPresentModes = &old_present_mode;
-
-    m_swapchain.Init(*m_device, swapchain_create_info);
-
-    const auto swapchain_images = m_swapchain.GetImages();
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = m_surface_formats[0].format;
-    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
-    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
-    image_swapchain_create_info.swapchain = m_swapchain;
-    image_create_info.pNext = &image_swapchain_create_info;
-
-    vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
-
-    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
-    bind_info.image = image_from_swapchain;
-    bind_info.memory = VK_NULL_HANDLE;
-    bind_info.memoryOffset = 0;
+    const VkExtent2D extent = swapchain_info.surface_capabilities.minImageExtent;
+    const VkFormat format = swapchain_info.surface_formats[0].format;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(extent.width, extent.height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.pNext = &image_swapchain_ci;
+    vkt::Image image_from_swapchain(*m_device, image_ci, vkt::no_mem);
 
     VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
     bind_swapchain_info.imageIndex = 0;
-    bind_info.pNext = &bind_swapchain_info;
     bind_swapchain_info.swapchain = m_swapchain;
 
-    // SwapchainMaint1 enabled + deferred_memory_alloc but image not acquired:
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
+    bind_info.image = image_from_swapchain;
+
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756");
-    vk::BindImageMemory2KHR(device(), 1, &bind_info);
+    vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
+}
 
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> present_modes(count);
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface, &count, present_modes.data());
+TEST_F(NegativeWsi, SwapchainMaintenance1MissingPNext) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
+    // Missing VkSurfacePresentModeKHR in surface info pNext
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     surface_info.surface = m_surface;
 
-    VkSurfacePresentModeEXT present_mode = vku::InitStructHelper();
-    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = vku::InitStructHelper();
-    present_mode.presentMode = present_modes[0];
-    surface_caps.pNext = &present_mode_compatibility;
+    VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
 
-    // Leave VkSurfacePresentMode off of the pNext chain
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
+}
 
-    surface_info.pNext = &present_mode;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+TEST_F(NegativeWsi, SwapchainMaintenance1MissingPNext2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
-    std::vector<VkPresentModeKHR> compatible_present_modes(present_mode_compatibility.presentModeCount);
-    present_mode_compatibility.pPresentModes = compatible_present_modes.data();
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    // Missing VkSurfacePresentModeKHR in surface info pNext
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface;
 
     VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
-    surface_caps.pNext = &scaling_capabilities;
-    surface_info.pNext = nullptr;
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_capabilities);
+
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
+}
 
-    if (IsExtensionsEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
-        surface_info.pNext = &present_mode;
-        surface_info.surface = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778");
-        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
-        m_errorMonitor->VerifyFound();
+TEST_F(NegativeWsi, SwapchainMaintenance1InvalidSurface) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    // This allows null surface in some context but VUIDs bellow still need valid surface
+    AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
 
-        surface_caps.pNext = &present_mode_compatibility;
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779");
-        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
-        m_errorMonitor->VerifyFound();
-    }
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
+    present_mode.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.pNext = &present_mode;
+    surface_info.surface = VK_NULL_HANDLE;
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+
+    VkSurfacePresentModeCompatibilityKHR present_mode_compatibility = vku::InitStructHelper();
+    surface_caps.pNext = &present_mode_compatibility;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778");
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    m_errorMonitor->VerifyFound();
+
+    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities = vku::InitStructHelper();
+    surface_caps.pNext = &scaling_capabilities;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779");
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    m_errorMonitor->VerifyFound();
 }
 
 // TODO: investigate why if we replace layout transition code with SetPresentImageLayout helper
