@@ -2426,6 +2426,14 @@ VkResult Surface::Init(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR 
 }
 #endif
 
+std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice physical_device) const {
+    uint32_t count{};
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(physical_device, handle_, &count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(physical_device, handle_, &count, present_modes.data());
+    return present_modes;
+}
+
 struct DummyAlloc {
     static VKAPI_ATTR void *VKAPI_CALL allocFunction(void *, size_t size, size_t, VkSystemAllocationScope) { return malloc(size); };
     static VKAPI_ATTR void *VKAPI_CALL realloc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };

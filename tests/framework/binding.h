@@ -1495,6 +1495,8 @@ class Surface {
         instance_ = VK_NULL_HANDLE;
     }
 
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice physical_device) const;
+
   private:
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR handle_ = VK_NULL_HANDLE;
