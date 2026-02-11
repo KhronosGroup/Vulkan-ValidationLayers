@@ -155,35 +155,45 @@ class LegacyGenerator(BaseGenerator):
 
         ''')
 
+        command_count = 0
         for command in [x for x in self.vk.commands.values() if x.legacy and x.instance]:
+            command_count += 1
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
 
-        out.append('''
-            };
+        out.append(f'''
+            private:
+                mutable bool reported[{command_count}] = {{ false }};
+            }};
 
-            class Device : public vvl::base::Device {
+            class Device : public vvl::base::Device {{
                 using BaseClass = vvl::base::Device;
 
             public:
                 Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-                    : BaseClass(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {}
-                ~Device() {}
+                    : BaseClass(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {{}}
+                ~Device() {{}}
                 Instance *instance;
 
         ''')
 
         out.append('\n')
 
+        command_count = 0
         for command in [x for x in self.vk.commands.values() if x.legacy and x.device]:
             # There is really no good use to warn developer both the create and destroy are superseded
             if command.name.startswith('vkDestroy'):
                 continue
 
+            command_count += 1
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
+        out.append(f'''
+            private:
+                mutable bool reported[{command_count}] = {{ false }};
+        ''')
 
         out.append('};')
         out.append('}  // namespace legacy')
@@ -197,11 +207,20 @@ class LegacyGenerator(BaseGenerator):
             namespace legacy {
         ''')
 
+        command_count_instance = 0
+        command_count_device = 0
         for command in [x for x in self.vk.commands.values() if x.legacy]:
             # There is really no good use to warn developer both the create and destroy are superseded
             if command.name.startswith('vkDestroy'):
                 continue
 
+            command_count = 0
+            if command.device:
+                command_count = command_count_device
+                command_count_device += 1
+            else:
+                command_count = command_count_instance
+                command_count_instance += 1
             className = 'Device' if command.device else 'Instance'
             handleName = 'VkDevice' if command.device else 'VkInstance'
             objName = 'device' if command.device else 'physicalDevice'
@@ -211,8 +230,7 @@ class LegacyGenerator(BaseGenerator):
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'''
                 bool {className}::PreCallValidate{prePrototype} const {{
-                    static bool reported = false;
-                    if (reported) return false;
+                    if (reported[{command_count}]) return false;
                 ''')
 
             firstCheck = True
@@ -226,7 +244,7 @@ class LegacyGenerator(BaseGenerator):
 
                 out.append(f'''
                     {logic} (api_version >= {command.legacy.version.nameApi}) {{
-                        reported = true;
+                        reported[{command_count}] = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
                             "{command.name} is a legacy command and this {handleName} was created with {command.legacy.version.name} {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
@@ -241,7 +259,7 @@ class LegacyGenerator(BaseGenerator):
 
                 out.append(f'''
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
-                        reported = true;
+                        reported[{command_count}] = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
                             "{command.name} is a legacy command and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')

@@ -28,17 +28,16 @@ namespace legacy {
 
 bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
                                                         const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[0]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[0] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
                    "contains vkGetPhysicalDeviceFeatures2 that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[0] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFeatures2KHR that can be "
@@ -51,17 +50,16 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
 bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                 VkFormatProperties* pFormatProperties,
                                                                 const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[1]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[1] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
                    "which contains vkGetPhysicalDeviceFormatProperties2 that can be used instead.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[1] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceFormatProperties2KHR that "
@@ -76,18 +74,17 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
                                                                      VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                      VkImageFormatProperties* pImageFormatProperties,
                                                                      const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[2]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[2] = true;
         LogWarning(
             "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
             "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
             "which contains vkGetPhysicalDeviceImageFormatProperties2 that can be used instead.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[2] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceImageFormatProperties2KHR "
@@ -99,17 +96,16 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
 
 bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties,
                                                           const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[3]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[3] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
                    "contains vkGetPhysicalDeviceProperties2 that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[3] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceProperties2KHR that can be "
@@ -123,18 +119,17 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
                                                                      uint32_t* pQueueFamilyPropertyCount,
                                                                      VkQueueFamilyProperties* pQueueFamilyProperties,
                                                                      const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[4]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[4] = true;
         LogWarning(
             "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
             "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
             "which contains vkGetPhysicalDeviceQueueFamilyProperties2 that can be used instead.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[4] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceQueueFamilyProperties2KHR "
@@ -147,17 +142,16 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
 bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceMemoryProperties* pMemoryProperties,
                                                                 const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[5]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[5] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
                    "which contains vkGetPhysicalDeviceMemoryProperties2 that can be used instead.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[5] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains vkGetPhysicalDeviceMemoryProperties2KHR that "
@@ -169,8 +163,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
 
 bool Instance::PreCallValidateEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                              VkLayerProperties* pProperties, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[6]) return false;
 
     LogWarning("WARNING-legacy-devicelayers", physicalDevice, error_obj.location,
                "vkEnumerateDeviceLayerProperties is a legacy command.\nSee more information about this superseding in the "
@@ -185,18 +178,17 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
                                                                            uint32_t* pPropertyCount,
                                                                            VkSparseImageFormatProperties* pProperties,
                                                                            const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[7]) return false;
 
     if (api_version >= VK_API_VERSION_1_1) {
-        reported = true;
+        reported[7] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceSparseImageFormatProperties is a legacy command and this VkInstance was created with "
                    "VK_VERSION_1_1 which contains vkGetPhysicalDeviceSparseImageFormatProperties2 that can be used instead.\nSee "
                    "more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-        reported = true;
+        reported[7] = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
                    "vkGetPhysicalDeviceSparseImageFormatProperties is a legacy command and this VkInstance enabled the "
                    "VK_KHR_get_physical_device_properties2 extension which contains "
@@ -209,11 +201,10 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
 bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                              const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[0]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[0] = true;
         LogWarning("WARNING-legacy-resource-objects", device, error_obj.location,
                    "vkCreateBufferView is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -225,11 +216,10 @@ bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferView
 bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                                  const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[1]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[1] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCreatePipelineLayout is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -241,11 +231,10 @@ bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipeli
 bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                           const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[2]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[2] = true;
         LogWarning("WARNING-legacy-resource-objects", device, error_obj.location,
                    "vkCreateSampler is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -257,11 +246,10 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
 bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
                                                       const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[3]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[3] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCreateDescriptorSetLayout is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -273,11 +261,10 @@ bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkD
 bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                                  const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[4]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[4] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCreateDescriptorPool is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -288,11 +275,10 @@ bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescri
 
 bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                                 const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[5]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[5] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkResetDescriptorPool is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -303,11 +289,10 @@ bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPoo
 
 bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                    VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[6]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[6] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkAllocateDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -318,11 +303,10 @@ bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDesc
 
 bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[7]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[7] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkFreeDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -334,11 +318,10 @@ bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool
 bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                  const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                                  const VkCopyDescriptorSet* pDescriptorCopies, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[8]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[8] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkUpdateDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -351,11 +334,10 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
                                                   VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                   const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                                   const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[9]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[9] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdBindDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -367,11 +349,10 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
 bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                              uint32_t offset, uint32_t size, const void* pValues,
                                              const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[10]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[10] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdPushConstants is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -383,17 +364,16 @@ bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPi
 bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                               const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[11]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[11] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCreateFramebuffer is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[11] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCreateFramebuffer is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -405,17 +385,16 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
 bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                              const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[12]) return false;
 
     if (api_version >= VK_API_VERSION_1_2) {
-        reported = true;
+        reported[12] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCreateRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCreateRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
-        reported = true;
+        reported[12] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCreateRenderPass is a legacy command and this VkDevice enabled the VK_KHR_create_renderpass2 extension which "
                    "contains vkCreateRenderPass2KHR that can be used instead.\nSee more information about this legacy in the "
@@ -426,17 +405,16 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
 
 bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity,
                                                      const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[13]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[13] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkGetRenderAreaGranularity is a legacy command and this VkDevice was created with VK_VERSION_1_4 which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[13] = true;
         LogWarning(
             "WARNING-legacy-dynamicrendering", device, error_obj.location,
             "vkGetRenderAreaGranularity is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
@@ -448,17 +426,16 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
 
 bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                VkSubpassContents contents, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[14]) return false;
 
     if (api_version >= VK_API_VERSION_1_2) {
-        reported = true;
+        reported[14] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdBeginRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdBeginRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
-        reported = true;
+        reported[14] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdBeginRenderPass is a legacy command and this VkDevice enabled the VK_KHR_create_renderpass2 extension "
                    "which contains vkCmdBeginRenderPass2KHR that can be used instead.\nSee more information about this legacy in "
@@ -469,17 +446,16 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 
 bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                            const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[15]) return false;
 
     if (api_version >= VK_API_VERSION_1_2) {
-        reported = true;
+        reported[15] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdNextSubpass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdNextSubpass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
-        reported = true;
+        reported[15] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdNextSubpass is a legacy command and this VkDevice enabled the VK_KHR_create_renderpass2 extension which "
                    "contains vkCmdNextSubpass2KHR that can be used instead.\nSee more information about this legacy in the "
@@ -489,17 +465,16 @@ bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubp
 }
 
 bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[16]) return false;
 
     if (api_version >= VK_API_VERSION_1_2) {
-        reported = true;
+        reported[16] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdEndRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdEndRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
-        reported = true;
+        reported[16] = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
                    "vkCmdEndRenderPass is a legacy command and this VkDevice enabled the VK_KHR_create_renderpass2 extension which "
                    "contains vkCmdEndRenderPass2KHR that can be used instead.\nSee more information about this legacy in the "
@@ -511,17 +486,16 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                               const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[17]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[17] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCreateRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[17] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCreateRenderPass2 is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -532,17 +506,16 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
 
 bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                 const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[18]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[18] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdBeginRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[18] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdBeginRenderPass2 is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -553,17 +526,16 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
 
 bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                             const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[19]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[19] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdNextSubpass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the new "
                    "feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[19] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdNextSubpass2 is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -574,17 +546,16 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
 
 bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                               const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[20]) return false;
 
     if (api_version >= VK_API_VERSION_1_4) {
-        reported = true;
+        reported[20] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdEndRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
-        reported = true;
+        reported[20] = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
                    "vkCmdEndRenderPass2 is a legacy command and this VkDevice enabled the VK_KHR_dynamic_rendering_local_read "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -596,11 +567,10 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
 bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                                    const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[21]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[21] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdBindDescriptorSets2 is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -611,11 +581,10 @@ bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer
 
 bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
                                               const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[22]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[22] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdPushConstants2 is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -627,11 +596,10 @@ bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, con
 bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
     const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[23]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[23] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdSetDescriptorBufferOffsets2EXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -643,11 +611,10 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
 bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[24]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[24] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT is a legacy command and this VkDevice enabled the "
@@ -659,11 +626,10 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 
 bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                           VkDeviceSize* pLayoutSizeInBytes, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[25]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[25] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkGetDescriptorSetLayoutSizeEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -674,11 +640,10 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDes
 
 bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
                                                                    VkDeviceSize* pOffset, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[26]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[26] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetDescriptorSetLayoutBindingOffsetEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -690,11 +655,10 @@ bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice devi
 
 bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
                                              void* pDescriptor, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[27]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[27] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkGetDescriptorEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
@@ -706,11 +670,10 @@ bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptor
 bool Device::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                         const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                         const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[28]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[28] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdBindDescriptorBuffersEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -723,11 +686,10 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer com
                                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                              const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
                                                              const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[29]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[29] = true;
         LogWarning("WARNING-legacy-descriptor-sets", device, error_obj.location,
                    "vkCmdSetDescriptorBufferOffsetsEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
                    "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
@@ -740,11 +702,10 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommand
                                                                        VkPipelineBindPoint pipelineBindPoint,
                                                                        VkPipelineLayout layout, uint32_t set,
                                                                        const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[30]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[30] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkCmdBindDescriptorBufferEmbeddedSamplersEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -757,11 +718,10 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommand
 bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                     const VkBufferCaptureDescriptorDataInfoEXT* pInfo, void* pData,
                                                                     const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[31]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[31] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetBufferOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -774,11 +734,10 @@ bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice dev
 bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                    const VkImageCaptureDescriptorDataInfoEXT* pInfo, void* pData,
                                                                    const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[32]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[32] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetImageOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -791,11 +750,10 @@ bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice devi
 bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                        const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
                                                                        void* pData, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[33]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[33] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetImageViewOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -808,11 +766,10 @@ bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice 
 bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                      const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
                                                                      void* pData, const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[34]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[34] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetSamplerOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap "
@@ -825,11 +782,10 @@ bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice de
 bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
     const ErrorObject& error_obj) const {
-    static bool reported = false;
-    if (reported) return false;
+    if (reported[35]) return false;
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        reported = true;
+        reported[35] = true;
         LogWarning(
             "WARNING-legacy-descriptor-sets", device, error_obj.location,
             "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the "

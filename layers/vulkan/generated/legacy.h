@@ -85,6 +85,9 @@ class Instance : public vvl::base::Instance {
                                                                      uint32_t* pPropertyCount,
                                                                      VkSparseImageFormatProperties* pProperties,
                                                                      const ErrorObject& error_obj) const override;
+
+  private:
+    mutable bool reported[8] = {false};
 };
 
 class Device : public vvl::base::Device {
@@ -193,6 +196,9 @@ class Device : public vvl::base::Device {
     bool PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
         VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
         const ErrorObject& error_obj) const override;
+
+  private:
+    mutable bool reported[36] = {false};
 };
 }  // namespace legacy
 // NOLINTEND
