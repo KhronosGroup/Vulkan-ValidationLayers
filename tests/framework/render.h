@@ -108,8 +108,9 @@ class VkRenderFramework : public VkTestFramework {
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
     VkResult CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance = VK_NULL_HANDLE);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
-    static VkSwapchainCreateInfoKHR GetDefaultSwapchainCreateInfo(VkSurfaceKHR surface, const SurfaceInformation &surface_info,
-                                                                  VkImageUsageFlags image_usage);
+    static VkSwapchainCreateInfoKHR GetDefaultSwapchainCreateInfo(
+        VkSurfaceKHR surface, const SurfaceInformation &surface_info,
+        VkImageUsageFlags image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::Swapchain CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags image_usage, VkSurfaceTransformFlagBitsKHR pre_transform,
                                    VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
