@@ -1153,8 +1153,9 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_STORAGE_BIT))
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_STORAGE_BIT)) {
         GTEST_SKIP() << "Image create info not compatible on device";
+    }
 
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
