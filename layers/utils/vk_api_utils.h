@@ -33,7 +33,7 @@ static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
     VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 
-static inline uint32_t IndexTypeSize(VkIndexType index_type) {
+static inline uint32_t IndexTypeByteSize(VkIndexType index_type) {
     switch (index_type) {
         case VK_INDEX_TYPE_UINT16:
             return 2;

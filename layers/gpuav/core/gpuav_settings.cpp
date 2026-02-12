@@ -85,7 +85,7 @@ void GpuAVSettings::SetOnlyDebugPrintf() {
     DisableShaderInstrumentationAndOptions();
     SetBufferValidationEnabled(false);
 
-    // Turn on the minmal settings for DebugPrintf
+    // Turn on the minimal settings for DebugPrintf
     debug_printf_enabled = true;
     debug_printf_only = true;
 }
@@ -110,7 +110,8 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TracyMessageStream("  validate_buffer_copies: " << validate_buffer_copies);
     VVL_TracyMessageStream("  validate_copy_memory_indirect: " << validate_copy_memory_indirect);
     VVL_TracyMessageStream("  validate_index_buffers: " << validate_index_buffers);
-    VVL_TracyMessageStream("  validate_build_acceleration_structures: " << validate_acceleration_structures_builds);
+    VVL_TracyMessageStream("  validate_acceleration_structures_builds: " << validate_acceleration_structures_builds);
+    VVL_TracyMessageStream("  ray_tracing_index_buffer_consistency: " << ray_tracing_index_buffer_consistency);
     VVL_TracyMessageStream("  validate_image_layout: " << validate_image_layout);
     VVL_TracyMessageStream("  vma_linear_output: " << vma_linear_output);
     VVL_TracyMessageStream("  debug_validate_instrumented_shaders: " << debug_validate_instrumented_shaders);

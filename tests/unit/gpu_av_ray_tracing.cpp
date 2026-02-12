@@ -20,7 +20,6 @@
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
 TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
-    TEST_DESCRIPTION("Test debug printf in raygen shader.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
@@ -2670,4 +2669,417 @@ TEST_F(NegativeGpuAVRayTracing, BuildAccelerationStructuresList2) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate) {
+    TEST_DESCRIPTION("Use an updated index buffer in an AS build update.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+    std::array<uint32_t, 3 * 2 * 6> indices = {
+        {3, 0, 4, 4, 7, 3, 0, 4, 5, 0, 5, 1, 4, 5, 6, 4, 6, 7, 1, 6, 5, 1, 2, 6, 2, 6, 7, 2, 7, 3, 0, 1, 3, 1, 3, 2}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    std::copy(indices.begin(), indices.end(), index_buffer_ptr);
+    index_buffer.Memory().Unmap();
+
+    cube.SetTrianglesDeviceIndexBuffer(std::move(index_buffer));
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+    cube_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    cube_blas.SetSrcAS(cube_blas.GetDstAS());
+    cube_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    {
+        SCOPED_TRACE("Update index buffer values");
+        index_buffer_ptr = static_cast<uint32_t *>(cube_blas.GetGeometries()[0].GetTrianglesDeviceIndexBuffer().Memory().Map());
+
+        index_buffer_ptr[0] = 0;
+        index_buffer_ptr[5] = 2;
+        index_buffer_ptr[indices.size() - 1] = 1;
+
+        cube_blas.GetGeometries()[0].GetTrianglesDeviceIndexBuffer().Memory().Unmap();
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 0 original index was 3, but updated index at same offset is 0");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        SCOPED_TRACE("Change index buffer, use it an offset through using primitiveOffset, and also update index values");
+        constexpr uint32_t index_buffer_2_byte_offset = 64;
+        constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
+
+        index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
+        index_buffer_2_ptr[5 + index_buffer_2_dword_offset] = 2;
+        index_buffer_2_ptr[indices.size() - 1 + index_buffer_2_dword_offset] = 1;
+
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[0].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2));
+        auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[0].primitiveOffset = index_buffer_2_byte_offset;
+        cube_blas.SetBuildRanges(build_range_infos);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 0 original index was 3, but updated index at same offset is 0");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+
+        build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[0].primitiveOffset = 0;
+        cube_blas.SetBuildRanges(build_range_infos);
+    }
+}
+
+TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2) {
+    TEST_DESCRIPTION("Use an updated index buffer in an AS build update.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    constexpr std::array<uint32_t, 3 * 2 * 6> indices = {
+        {3, 0, 4, 4, 7, 3, 0, 4, 5, 0, 5, 1, 4, 5, 6, 4, 6, 7, 1, 6, 5, 1, 2, 6, 2, 6, 7, 2, 7, 3, 0, 1, 3, 1, 3, 2}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    auto get_cube = [&]() {
+        vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+        vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+        auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_ptr);
+        index_buffer.Memory().Unmap();
+
+        cube.SetTrianglesDeviceIndexBuffer(std::move(index_buffer));
+
+        return cube;
+    };
+
+    vkt::as::GeometryKHR cube_0 = get_cube();
+    vkt::as::GeometryKHR cube_1 = get_cube();
+
+    vkt::as::BuildGeometryInfoKHR cube_blas =
+        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube_0));
+    cube_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    cube_blas.GetGeometries().emplace_back(std::move(cube_1));
+    cube_blas.SetBuildRanges(cube_blas.GetBuildRangeInfosFromGeometries());
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    cube_blas.SetSrcAS(cube_blas.GetDstAS());
+    cube_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    {
+        SCOPED_TRACE("Update index buffer values");
+        auto index_buffer_ptr =
+            static_cast<uint32_t *>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
+        index_buffer_ptr[0] = 0;
+        index_buffer_ptr[5] = 2;
+        index_buffer_ptr[indices.size() - 1] = 1;
+        cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Unmap();
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 0 original index was 3, but updated index at same offset is 0");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        SCOPED_TRACE("Change index buffer, use it an offset through using primitiveOffset, and also update index values");
+        constexpr uint32_t index_buffer_2_byte_offset = 64;
+        constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
+
+        index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
+        index_buffer_2_ptr[5 + index_buffer_2_dword_offset] = 2;
+        index_buffer_2_ptr[indices.size() - 1 + index_buffer_2_dword_offset] = 1;
+
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[1].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2));
+        auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[1].primitiveOffset = index_buffer_2_byte_offset;
+        cube_blas.SetBuildRanges(build_range_infos);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 0 original index was 3, but updated index at same offset is 0");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+
+        build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[1].primitiveOffset = 0;
+        cube_blas.SetBuildRanges(build_range_infos);
+    }
+
+    {
+        SCOPED_TRACE(
+            "Change index buffer, use it an offset through changing base index data address, and also update index values");
+        constexpr uint32_t index_buffer_2_byte_offset = 64;
+        constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
+
+        index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
+        index_buffer_2_ptr[5 + index_buffer_2_dword_offset] = 2;
+        index_buffer_2_ptr[indices.size() - 1 + index_buffer_2_dword_offset] = 1;
+
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[1].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2));
+        const VkDeviceAddress index_buffer_addr = cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Address();
+        cube_blas.GetGeometries()[1].SetTrianglesIndexBufferDeviceAddress(index_buffer_addr + index_buffer_2_byte_offset);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 0 original index was 3, but updated index at same offset is 0");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2Uint16) {
+    TEST_DESCRIPTION("Use an updated index buffer in an AS build update. Use uint16");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    constexpr std::array<uint16_t, 3 * 2 * 6> indices = {
+        {3, 0, 4, 4, 7, 3, 0, 4, 5, 0, 5, 1, 4, 5, 6, 4, 6, 7, 1, 6, 5, 1, 2, 6, 2, 6, 7, 2, 7, 3, 0, 1, 3, 1, 3, 2}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    auto get_cube = [&]() {
+        vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+        vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+        auto index_buffer_ptr = static_cast<uint16_t *>(index_buffer.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_ptr);
+        index_buffer.Memory().Unmap();
+
+        cube.SetTrianglesDeviceIndexBuffer(std::move(index_buffer), VK_INDEX_TYPE_UINT16);
+
+        return cube;
+    };
+
+    vkt::as::GeometryKHR cube_0 = get_cube();
+    vkt::as::GeometryKHR cube_1 = get_cube();
+
+    vkt::as::BuildGeometryInfoKHR cube_blas =
+        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube_0));
+    cube_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    cube_blas.GetGeometries().emplace_back(std::move(cube_1));
+    cube_blas.SetBuildRanges(cube_blas.GetBuildRangeInfosFromGeometries());
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    cube_blas.SetSrcAS(cube_blas.GetDstAS());
+    cube_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    {
+        SCOPED_TRACE("Update index buffer values");
+        auto index_buffer_ptr =
+            static_cast<uint16_t *>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
+        index_buffer_ptr[5] = 2;
+        index_buffer_ptr[indices.size() - 1] = 1;
+        cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Unmap();
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        SCOPED_TRACE("Change index buffer, use it an offset through using primitiveOffset, and also update index values");
+        constexpr uint32_t index_buffer_2_byte_offset = 64;
+        constexpr uint32_t index_buffer_2_word_offset = index_buffer_2_byte_offset / sizeof(uint16_t);
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint16_t *>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_word_offset);
+
+        index_buffer_2_ptr[5 + index_buffer_2_word_offset] = 2;
+        index_buffer_2_ptr[indices.size() - 1 + index_buffer_2_word_offset] = 1;
+
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[1].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2), VK_INDEX_TYPE_UINT16);
+        auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[1].primitiveOffset = index_buffer_2_byte_offset;
+        cube_blas.SetBuildRanges(build_range_infos);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+
+        build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[1].primitiveOffset = 0;
+        cube_blas.SetBuildRanges(build_range_infos);
+    }
+
+    {
+        SCOPED_TRACE(
+            "Change index buffer, use it an offset through changing base index data address, and also update index values");
+        constexpr uint32_t index_buffer_2_byte_offset = 64;
+        constexpr uint32_t index_buffer_2_word_offset = index_buffer_2_byte_offset / sizeof(uint16_t);
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint16_t *>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_word_offset);
+
+        index_buffer_2_ptr[5 + index_buffer_2_word_offset] = 2;
+        index_buffer_2_ptr[indices.size() - 1 + index_buffer_2_word_offset] = 1;
+
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[1].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2), VK_INDEX_TYPE_UINT16);
+        const VkDeviceAddress index_buffer_addr = cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Address();
+        cube_blas.GetGeometries()[1].SetTrianglesIndexBufferDeviceAddress(index_buffer_addr + index_buffer_2_byte_offset);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 5 original index was 3, but updated index at same offset is 2");
+        m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03768",
+                                             "At offset 35 original index was 2, but updated index at same offset is 1");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    }
 }

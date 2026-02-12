@@ -59,7 +59,9 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     // Query things here to make sure we don't attempt to add a feature this is just not supported
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature = vku::InitStructHelper();
     VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper(&supported_coop_mat_feature);
-    VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
+    VkPhysicalDeviceShaderFloat16Int8Features supported_shader_float16_int8_feature =
+        vku::InitStructHelper(&supported_robustness2_feature);
+    VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_shader_float16_int8_feature);
     VkPhysicalDevice16BitStorageFeatures supported_16bit_feature = vku::InitStructHelper(&supported_8bit_feature);
     VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_16bit_feature);
     VkPhysicalDeviceScalarBlockLayoutFeatures supported_scalar_feature = vku::InitStructHelper(&supported_bda_feature);
@@ -105,6 +107,10 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                 !modified_features->robustBufferAccess) {
                 adjustment_warnings += "\tForcing robustBufferAccess to VK_TRUE\n";
                 modified_features->robustBufferAccess = VK_TRUE;
+            }
+            if (supported_features.shaderInt16 && !modified_features->shaderInt16) {
+                adjustment_warnings += "\tForcing shaderInt16 to VK_TRUE\n";
+                modified_features->shaderInt16 = VK_TRUE;
             }
         }
     }
@@ -298,6 +304,42 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         }
     }
 
+    if (supported_shader_float16_int8_feature.shaderInt8) {
+        auto add_int8 = [modified_create_info, &adjustment_warnings]() {
+            // Add shaderInt8 feature
+            if (auto *sixteen_bit_access_feature = const_cast<VkPhysicalDeviceShaderFloat16Int8Features *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceShaderFloat16Int8Features>(modified_create_info))) {
+                if (!sixteen_bit_access_feature->shaderInt8) {
+                    adjustment_warnings += "\tForcing VkPhysicalDeviceShaderFloat16Int8Features::shaderInt8 to VK_TRUE\n";
+                    sixteen_bit_access_feature->shaderInt8 = VK_TRUE;
+                }
+            } else {
+                adjustment_warnings +=
+                    "\tAdding a VkPhysicalDeviceShaderFloat16Int8Features to pNext with shaderInt8 "
+                    "set to VK_TRUE\n";
+                VkPhysicalDeviceShaderFloat16Int8Features new_16bit_features = vku::InitStructHelper();
+                new_16bit_features.shaderInt8 = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_16bit_features);
+            }
+        };
+
+        if (api_version >= VK_API_VERSION_1_2) {
+            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+                if (!features12->shaderInt8) {
+                    adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::shaderInt8 to VK_TRUE\n";
+                    features12->shaderInt8 = VK_TRUE;
+                }
+            } else {
+                add_int8();
+            }
+        } else if (IsExtensionAvailable(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, available_extensions)) {
+            // Only adds if not found already
+            vku::AddExtension(*modified_create_info, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+            add_int8();
+        }
+    }
+
     if (supported_16bit_feature.storageBuffer16BitAccess) {
         auto add_16bit_access = [modified_create_info, &adjustment_warnings]() {
             // Add storageBuffer16BitAccess feature
@@ -317,12 +359,12 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             }
         };
 
-        if (api_version >= VK_API_VERSION_1_2) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan11Features *>(
+        if (api_version >= VK_API_VERSION_1_1) {
+            if (auto *features11 = const_cast<VkPhysicalDeviceVulkan11Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(modified_create_info->pNext))) {
-                if (!features12->storageBuffer16BitAccess) {
+                if (!features11->storageBuffer16BitAccess) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan11Features::storageBuffer16BitAccess to VK_TRUE\n";
-                    features12->storageBuffer16BitAccess = VK_TRUE;
+                    features11->storageBuffer16BitAccess = VK_TRUE;
                 }
             } else {
                 add_16bit_access();

@@ -197,6 +197,7 @@ const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X = 8;
 const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y = 9;
 const int kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z = 10;
 const int kErrorSubCode_PreBuildAccelerationStructures_Transform = 11;
+const int kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated = 12;
 
 #ifdef __cplusplus
 }  // namespace glsl

@@ -268,7 +268,8 @@ void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange &
                                &barrier_read_before_write, 0, nullptr);
 }
 
-GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
+GpuResourcesManager::GpuResourcesManager(Validator &gpuav, bool thread_safe_buffer_caches)
+    : gpuav_(gpuav), buffer_caches_(thread_safe_buffer_caches) {
     const bool force_host_access = gpuav.IsAllDeviceLocalMappable();
 
     {
@@ -393,6 +394,10 @@ vko::BufferRange GpuResourcesManager::GetDeviceLocalBufferRange(VkDeviceSize siz
     return buffer_caches_.device_local.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
+void GpuResourcesManager::ReturnDeviceLocalBufferRange(const vko::BufferRange &buffer_range) {
+    buffer_caches_.device_local.ReturnBufferRange(buffer_range);
+}
+
 vko::BufferRange GpuResourcesManager::GetDeviceLocalIndirectBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"
     constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
@@ -432,6 +437,11 @@ void GpuResourcesManager::DestroyResources() {
 }
 
 void GpuResourcesManager::BufferCache::Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci) {
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    if (thread_safe_) {
+        lock.lock();
+    }
+
     buffer_usage_flags_ = buffer_usage_flags;
     allocation_ci_ = allocation_ci;
 }
@@ -440,6 +450,11 @@ GpuResourcesManager::BufferCache::~BufferCache() { DestroyBuffers(); }
 
 vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpuav, VkDeviceSize byte_size, VkDeviceSize alignment,
                                                                   VkDeviceSize min_buffer_block_byte_size) {
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    if (thread_safe_) {
+        lock.lock();
+    }
+
     // Try to find a cached buffer block big enough to sub-allocate from it
     if (total_available_byte_size_ >= byte_size) {
         for (size_t i = 0; i < cached_buffers_blocks_.size(); ++i) {
@@ -486,7 +501,9 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
     // Did not find a cached buffer, create one, cache it and return its handle
     Buffer buffer(gpuav);
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = std::max(min_buffer_block_byte_size, Align<VkDeviceSize>(byte_size + alignment, buffer_address_alignment));
+    const VkDeviceSize aligned_size_1 = Align<VkDeviceSize>(byte_size, alignment);
+    const VkDeviceSize aligned_size_2 = Align<VkDeviceSize>(aligned_size_1, buffer_address_alignment);
+    buffer_ci.size = std::max(min_buffer_block_byte_size, aligned_size_2);
     buffer_ci.usage = buffer_usage_flags_;
     const VkResult result = buffer.Create(&buffer_ci, &allocation_ci_);
     if (result != VK_SUCCESS) {
@@ -507,7 +524,34 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
             cached_buffer_block.buffer.Allocation()};
 }
 
+void GpuResourcesManager::BufferCache::ReturnBufferRange(const vko::BufferRange &buffer_range) {
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    if (thread_safe_) {
+        lock.lock();
+    }
+
+    for (CachedBufferBlock &cached_buffer_block : cached_buffers_blocks_) {
+        if (buffer_range.buffer != cached_buffer_block.buffer.VkHandle()) {
+            continue;
+        }
+
+        const VkDeviceAddress buffer_range_end_addr = buffer_range.offset_address + buffer_range.size;
+        if (buffer_range_end_addr != cached_buffer_block.used_range.end) {
+            continue;
+        }
+
+        cached_buffer_block.used_range.end -= buffer_range.size;
+        total_available_byte_size_ += buffer_range.size;
+        return;
+    }
+}
+
 void GpuResourcesManager::BufferCache::ReturnBuffers() {
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    if (thread_safe_) {
+        lock.lock();
+    }
+
     total_available_byte_size_ = 0;
     for (CachedBufferBlock &cached_buffer_block : cached_buffers_blocks_) {
         cached_buffer_block.used_range = {cached_buffer_block.buffer.Address(), cached_buffer_block.buffer.Address()};
@@ -516,6 +560,11 @@ void GpuResourcesManager::BufferCache::ReturnBuffers() {
 }
 
 void GpuResourcesManager::BufferCache::DestroyBuffers() {
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    if (thread_safe_) {
+        lock.lock();
+    }
+
     for (CachedBufferBlock &cached_buffer_block : cached_buffers_blocks_) {
         cached_buffer_block.buffer.Destroy();
     }

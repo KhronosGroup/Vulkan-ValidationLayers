@@ -528,7 +528,7 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.Handle(), *buffer_state, loc.dot(Field::buffer), vuid);
 
-    const uint32_t index_type_size = IndexTypeSize(indexType);
+    const uint32_t index_type_size = IndexTypeByteSize(indexType);
     if (!IsIntegerMultipleOf(offset, index_type_size)) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset),
@@ -564,7 +564,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffe
         auto buffer_state = Get<vvl::Buffer>(buffer);
         if (!buffer_state) return skip;  // if using nullDescriptors
 
-        const uint32_t index_type_size = IndexTypeSize(indexType);
+        const uint32_t index_type_size = IndexTypeByteSize(indexType);
         if (!IsIntegerMultipleOf(size, index_type_size)) {
             const LogObjectList objlist(commandBuffer, buffer);
             skip |= LogError("VUID-vkCmdBindIndexBuffer2-size-08767", objlist, error_obj.location.dot(Field::size),

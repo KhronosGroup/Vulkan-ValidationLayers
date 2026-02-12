@@ -100,7 +100,7 @@ void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange &
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
 class GpuResourcesManager {
   public:
-    explicit GpuResourcesManager(Validator &gpuav);
+    explicit GpuResourcesManager(Validator &gpuav, bool thread_safe_buffer_caches);
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
@@ -109,6 +109,7 @@ class GpuResourcesManager {
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
     vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size);
+    void ReturnDeviceLocalBufferRange(const vko::BufferRange &buffer_range);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
     vko::BufferRange GetStagingBufferRange(VkDeviceSize size);
 
@@ -129,9 +130,10 @@ class GpuResourcesManager {
     };
     std::vector<LayoutToSets> cache_layouts_to_sets_;
 
+    // Set "thread_safe" to true if the caches needs to be.
     class BufferCache {
       public:
-        BufferCache() = default;
+        BufferCache(bool thread_safe) : thread_safe_(thread_safe) {}
         void Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci);
         vko::BufferRange GetBufferRange(Validator &gpuav, VkDeviceSize byte_size, VkDeviceSize alignment,
                                         VkDeviceSize min_buffer_block_byte_size = 0);
@@ -141,6 +143,7 @@ class GpuResourcesManager {
         void DestroyBuffers();
 
       private:
+        bool thread_safe_ = false;
         VkBufferUsageFlags buffer_usage_flags_{};
         VmaAllocationCreateInfo allocation_ci_{};
 
@@ -149,7 +152,7 @@ class GpuResourcesManager {
             vvl::range<VkDeviceAddress> total_range;
             vvl::range<VkDeviceAddress> used_range;
         };
-
+        mutable std::mutex mtx;
         std::vector<CachedBufferBlock> cached_buffers_blocks_{};
         VkDeviceSize total_available_byte_size_ = 0;
         size_t next_avail_buffer_pos_hint_ = 0;
@@ -157,6 +160,13 @@ class GpuResourcesManager {
 
     // One cache per buffer type: having them mixed in just one would make cache lookups worse
     struct BufferCaches {
+        BufferCaches(bool thread_safe)
+            : host_coherent(thread_safe),
+              host_cached(thread_safe),
+              device_local(thread_safe),
+              device_local_indirect(thread_safe),
+              staging(thread_safe) {}
+
         // Will have HOST_VISIBLE and HOST_COHERENT (may be HOST_CACHED)
         BufferCache host_coherent;
         // Will have HOST_VISIBLE and HOST_CACHED (may be HOST_COHERENT)

@@ -32,7 +32,7 @@
 namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
-    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav), cmd_errors_counts_buffer_(gpuav), gpuav_(gpuav) {
+    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav, false), cmd_errors_counts_buffer_(gpuav), gpuav_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }

@@ -130,6 +130,11 @@ khronos_validation.gpuav_mesh_shading = true
 # Track which descriptor indexes were used in shader to run normal validation afterwards
 khronos_validation.gpuav_post_process_descriptor_indexing = true
 
+# Ray tracing index buffer consistency
+# =====================
+# Validate that between a BLAS build and its update, triangle geometries using index buffer keep its content identical (VUID 03768). Warning: a record of index buffers will be maintained in device local memory, so validation can be GPU memory heavy.
+khronos_validation.gpuav_ray_tracing_index_buffer_consistency = false
+
 # Safe Mode
 # =====================
 # Will have GPU-AV try and prevent crashes, but will be much slower to validate. If using Safe Mode, consider using selective shader instrumentation, to only instrument the shaders/pipelines causing issues.

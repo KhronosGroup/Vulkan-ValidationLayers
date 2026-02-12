@@ -35,6 +35,7 @@ struct GpuAVSettings {
     bool validate_copy_memory_indirect = true;
     bool validate_index_buffers = true;
     bool validate_acceleration_structures_builds = true;
+    bool ray_tracing_index_buffer_consistency = false;
 
     // Currently turned of due to some false positives still observed
     bool validate_image_layout = false;

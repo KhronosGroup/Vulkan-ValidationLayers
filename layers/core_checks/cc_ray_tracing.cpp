@@ -497,13 +497,13 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
     for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
         const Location p_geom_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
         const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
-        const VkAccelerationStructureGeometryKHR &geom_data = rt::GetGeometry(info, geom_i);
+        const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(info, geom_i);
         const uint32_t geometry_build_range_primitive_count =
             geometry_build_ranges ? geometry_build_ranges[geom_i].primitiveCount : 0;
 
-        if (geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+        if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
             const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
-            const auto& triangles = geom_data.geometry.triangles;
+            const auto &triangles = geom.geometry.triangles;
 
             if (geometry_build_range_primitive_count > 0) {
                 if (triangles.vertexData.deviceAddress == 0) {
@@ -585,11 +585,11 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                         cb_objlist, micromap->indexBuffer.deviceAddress);
                 }
             }
-        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+        } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             if (geometry_build_range_primitive_count > 0) {
                 const Location instances_loc = p_geom_geom_loc.dot(Field::instances);
                 const Location instances_data_loc = instances_loc.dot(Field::data);
-                const auto& instances = geom_data.geometry.instances;
+                const auto &instances = geom.geometry.instances;
                 if (instances.data.deviceAddress == 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03813"),
@@ -598,11 +598,11 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
 
                 skip |= buffer_check(instances.data, instances_data_loc);
             }
-        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
+        } else if (geom.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
             if (geometry_build_range_primitive_count > 0) {
                 const Location aabbs_loc = p_geom_geom_loc.dot(Field::aabbs);
                 const Location aabbs_data_loc = aabbs_loc.dot(Field::data);
-                const auto& aabbs = geom_data.geometry.aabbs;
+                const auto &aabbs = geom.geometry.aabbs;
 
                 if (aabbs.data.deviceAddress == 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811",
@@ -612,9 +612,9 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
 
                 skip |= buffer_check(aabbs.data, aabbs_data_loc);
             }
-        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+        } else if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
             const Location p_geom_geom_spheres_loc = p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV);
-            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom_data.pNext);
+            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom.pNext);
             ASSERT_AND_RETURN_SKIP(sphere_struct);
 
             if (geometry_build_range_primitive_count > 0) {
@@ -675,11 +675,11 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                                  string_VkFormat(sphere_struct->radiusFormat),
                                  string_VkFormatFeatureFlags2(radius_properties.bufferFeatures).c_str());
             }
-        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+        } else if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
             const Location p_geom_geom_linear_spheres_loc =
                 p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV);
             auto sphere_linear_struct =
-                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom_data.pNext);
+                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom.pNext);
             ASSERT_AND_RETURN_SKIP(sphere_linear_struct);
 
             if (geometry_build_range_primitive_count > 0) {

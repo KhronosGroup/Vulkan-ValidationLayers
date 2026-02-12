@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_GPUAV_MAX_INDICES_COUNT, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_MESH_SHADING, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
+        else if (strcmp(VK_LAYER_GPUAV_RAY_TRACING_INDEX_BUFFER_CONSISTENCY, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_SAFE_MODE, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }

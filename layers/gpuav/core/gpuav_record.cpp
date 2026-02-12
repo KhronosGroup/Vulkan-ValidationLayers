@@ -67,6 +67,15 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
         }
     }
 
+    if (gpuav_settings.validate_acceleration_structures_builds &&
+        (in_usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+        if (flags2) {
+            const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
+        } else {
+            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        }
+    }
+
     // Align index buffer size to 4: validation shader reads DWORDS
     if (gpuav_settings.IsBufferValidationEnabled() && (in_usage & (VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
@@ -289,6 +298,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     DestroySubstate();
 
     shared_resources_cache.Clear();
+    gpu_resources_manager_.DestroyResources();
 
     global_indices_buffer_.Destroy();
     global_resource_descriptor_buffer_.Destroy();
