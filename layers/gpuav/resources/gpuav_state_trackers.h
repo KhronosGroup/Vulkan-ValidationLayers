@@ -320,6 +320,8 @@ class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSub
 
     DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
     std::optional<DescriptorIdTracker> id_tracker;
+    // sized by geometryCount supplied during build
+    std::vector<vko::BufferRange> index_buffer_copies{};
 };
 static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStructureKHR &obj) {
     return *static_cast<AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));

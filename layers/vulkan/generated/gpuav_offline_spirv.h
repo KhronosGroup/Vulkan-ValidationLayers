@@ -115,6 +115,9 @@ extern const uint32_t validation_cmd_draw_mesh_indirect_comp[];
 extern const uint32_t validation_cmd_first_instance_comp_size;
 extern const uint32_t validation_cmd_first_instance_comp[];
 
+extern const uint32_t validation_cmd_memcmp_comp_size;
+extern const uint32_t validation_cmd_memcmp_comp[];
+
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp_size;
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp[];
 

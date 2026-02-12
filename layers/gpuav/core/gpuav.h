@@ -76,7 +76,8 @@ class Validator : public GpuShaderInstrumentor {
         : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted),
           global_indices_buffer_(*this),
           global_resource_descriptor_buffer_(*this),
-          global_resource_descriptor_heap_(*this) {}
+          global_resource_descriptor_heap_(*this),
+          gpu_resources_manager_(*this, true) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -293,6 +294,9 @@ class Validator : public GpuShaderInstrumentor {
 
     // Make sure we call the right versions of any timeline semaphore functions.
     bool timeline_khr_{false};
+
+  public:
+    vko::GpuResourcesManager gpu_resources_manager_;
 };
 
 }  // namespace gpuav

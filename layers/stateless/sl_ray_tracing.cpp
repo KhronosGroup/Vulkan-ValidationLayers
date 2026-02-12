@@ -896,7 +896,7 @@ bool Device::ValidateAccelerationStructureGeometryDevice(const Context& context,
 
     if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
         const VkAccelerationStructureGeometryTrianglesDataKHR& triangles = geom.geometry.triangles;
-        const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
+        const uint32_t index_type_size = IndexTypeByteSize(triangles.indexType);
         if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
             if (!IsPointerAligned(triangles.indexData.deviceAddress, index_type_size)) {
                 skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712",
@@ -963,7 +963,7 @@ bool Device::ValidateAccelerationStructureBuildRangeInfo(const Context& context,
 
     if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
         const VkAccelerationStructureGeometryTrianglesDataKHR& triangles = geom.geometry.triangles;
-        const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
+        const uint32_t index_type_size = IndexTypeByteSize(triangles.indexType);
         if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
             if (!IsIntegerMultipleOf(build_range.primitiveOffset, index_type_size)) {
                 skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-primitiveOffset-03656", context.error_obj.handle,

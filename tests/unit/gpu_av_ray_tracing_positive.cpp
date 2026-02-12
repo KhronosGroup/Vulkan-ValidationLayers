@@ -957,7 +957,9 @@ TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubes) {
     vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
 
     m_command_buffer.Begin();
-    cube_blas.BuildCmdBuffer(m_command_buffer);
+    for (int i = 0; i < 3; ++i) {
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+    }
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -1427,4 +1429,93 @@ TEST_F(PositiveGpuAVRayTracing, OutOfBoundsIndex2) {
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
+}
+
+TEST_F(PositiveGpuAVRayTracing, IndexBufferUpdate) {
+    TEST_DESCRIPTION("Use another index buffer in an AS build update, with a content identical to the original one.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+
+    std::array<uint32_t, 3 * 2 * 6> indices = {
+        {3, 0, 4, 4, 7, 3, 0, 4, 5, 0, 5, 1, 4, 5, 6, 4, 6, 7, 1, 6, 5, 1, 2, 6, 2, 6, 7, 2, 7, 3, 0, 1, 3, 1, 3, 2}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto index_buffer_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
+    std::copy(indices.begin(), indices.end(), index_buffer_ptr);
+    index_buffer.Memory().Unmap();
+
+    cube.SetTrianglesDeviceIndexBuffer(std::move(index_buffer));
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube));
+    cube_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    cube_blas.SetSrcAS(cube_blas.GetDstAS());
+    cube_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    // Index buffer 2 identical to index_buffer
+    {
+        vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps,
+                                   &alloc_flags);
+        auto index_buffer_2_ptr = static_cast<uint32_t*>(index_buffer_2.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_2_ptr);
+        index_buffer_2.Memory().Unmap();
+
+        cube_blas.GetGeometries()[0].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_2));
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_default_queue->SubmitAndWait(m_command_buffer);
+    }
+
+    // Index buffer 3 identical to index_buffer, but starting at an offset
+    {
+        constexpr uint32_t index_buffer_3_byte_offset = 64;
+        constexpr uint32_t index_buffer_3_dword_offset = index_buffer_3_byte_offset / sizeof(uint32_t);
+        vkt::Buffer index_buffer_3(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_3_byte_offset, buffer_usage,
+                                   kHostVisibleMemProps, &alloc_flags);
+        auto index_buffer_3_ptr = static_cast<uint32_t*>(index_buffer_3.Memory().Map());
+        std::copy(indices.begin(), indices.end(), index_buffer_3_ptr + index_buffer_3_dword_offset);
+        index_buffer_3.Memory().Unmap();
+
+        cube_blas.GetGeometries()[0].SetTrianglesDeviceIndexBuffer(std::move(index_buffer_3));
+        auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[0].primitiveOffset = index_buffer_3_byte_offset;
+        cube_blas.SetBuildRanges(build_range_infos);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_default_queue->SubmitAndWait(m_command_buffer);
+    }
 }

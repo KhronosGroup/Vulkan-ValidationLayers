@@ -1,0 +1,140 @@
+// Copyright (c) 2022-2026 The Khronos Group Inc.
+// Copyright (c) 2022-2026 Valve Corporation
+// Copyright (c) 2022-2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int8 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
+#extension GL_EXT_debug_printf : enable
+
+#include "common.h"
+#include "memcmp.h"
+
+layout(push_constant, scalar)
+uniform PushConstants {
+    MemShaderPushData pc;
+};
+
+// CPU will try to dispatch `primitive_count` threads
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(buffer_reference, scalar) buffer ArrayUVec4 { uvec4 array[]; };
+layout(buffer_reference, scalar) buffer ArrayU32 { uint array[]; };
+layout(buffer_reference, scalar) buffer ArrayU16 { uint16_t array[]; };
+layout(buffer_reference, scalar) buffer ArrayU8 { uint8_t array[]; };
+
+const uint sizeof_u32 = 4;
+const uint sizeof_u16 = 2;
+const uint sizeof_u8 = 1;
+const uint sizeof_uvec4 = 4 * sizeof_u32;
+
+void main() {
+    const uint gid = gl_GlobalInvocationID.x;
+
+    // First work on as many uvec4 as possible
+    if (gid < pc.uvec4_count) {
+        //debugPrintfEXT("[%u] In uvec4\n", gid);
+        ArrayUVec4 updated_indices_uvec4 = ArrayUVec4(pc.updated_indices);
+        ArrayUVec4 original_indices_uvec4 = ArrayUVec4(pc.original_indices);
+        const uvec4 updated_indices = updated_indices_uvec4.array[gid];
+        const uvec4 original_indices = original_indices_uvec4.array[gid];
+        if (updated_indices != original_indices) {
+            uint updated_indices_diff = 0;
+            uint original_indices_diff = 0;
+            uint uint_diff_i = 0;
+            for (uint i = 0; i < 4; ++i) {
+                if (updated_indices[i] != original_indices[i]) {
+                    updated_indices_diff = updated_indices[i];
+                    original_indices_diff = original_indices[i];
+                    uint_diff_i = i;
+                }
+            }
+            //debugPrintfEXT("[%u] Diff in uvec4: gid * sizeof_uvec4 + uint_diff_i * sizeof_u32 = %u\n", gid, gid * sizeof_uvec4 + uint_diff_i * sizeof_u32);
+            GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
+                           pc.error_info_i,
+                           gid * sizeof_uvec4 + uint_diff_i * sizeof_u32,
+                           kMemcmp_uvec4_diff,
+                           updated_indices_diff,
+                           original_indices_diff);
+        }
+        return;
+    }
+
+    // Then look at trailing u32(s)
+    if (gid < (pc.u32_count + pc.uvec4_count)) {
+        const uint u32_i = gid - pc.uvec4_count;
+        const uint u32_start_byte_offset = pc.uvec4_count * sizeof_uvec4;
+        ArrayU32 updated_indices_uint = ArrayU32(pc.updated_indices + u32_start_byte_offset);
+        ArrayU32 original_indices_uint = ArrayU32(pc.original_indices + u32_start_byte_offset);
+        const uint updated_indices = updated_indices_uint.array[u32_i];
+        const uint original_indices = original_indices_uint.array[u32_i];
+        //debugPrintfEXT("[%u] In u32, u32_i = %u, u32_start_byte_offset = %u, updated_indices = %u, original_indices = %u\n", gid, u32_i, u32_start_byte_offset, updated_indices, original_indices);
+        if (updated_indices != original_indices) {
+            //debugPrintfEXT("[%u] Diff in u32: u32_start_byte_offset = %u u32_i = %u\n", gid, u32_start_byte_offset, u32_i);
+            GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
+                           pc.error_info_i,
+                           u32_start_byte_offset + u32_i * sizeof_u32,
+                           kMemcmp_u32_diff,
+                           updated_indices,
+                           original_indices);
+        }
+        return;
+    }
+
+    // Then look at trailing u16
+    if (gid < (pc.u32_count + pc.uvec4_count + pc.u16_count)) {
+        //debugPrintfEXT("[%u] In u16\n", gid);
+        const uint u16_i = gid - pc.uvec4_count - pc.u32_count;
+        const uint u16_start_byte_offset = pc.uvec4_count * sizeof_uvec4 + pc.u32_count * sizeof_u32;
+        //debugPrintfEXT("[%u] In u16, u16_i = %u, u16_start_byte_offset = %u\n", gid, u16_i, u16_start_byte_offset);
+        ArrayU16 updated_indices_u16 = ArrayU16(pc.updated_indices + u16_start_byte_offset);
+        ArrayU16 original_indices_u16 = ArrayU16(pc.original_indices + u16_start_byte_offset);
+        const uint16_t updated_indices = updated_indices_u16.array[u16_i];
+        const uint16_t original_indices = original_indices_u16.array[u16_i];
+        if (updated_indices != original_indices) {
+            GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
+                           pc.error_info_i,
+                           u16_start_byte_offset + u16_i * sizeof_u16,
+                           kMemcmp_u16_diff,
+                           uint(updated_indices),
+                           uint(original_indices));
+        }
+        return;
+    }
+
+    if (gid >= (pc.u32_count + pc.uvec4_count + pc.u16_count + pc.u8_count)) {
+        return;
+    }
+
+    // Then look at last u8
+    const uint u8_start_byte_offset = pc.uvec4_count * sizeof_uvec4 + pc.u32_count * sizeof_u32 + pc.u16_count * sizeof_u16;
+    const uint u8_i = gid - pc.uvec4_count - pc.u32_count - pc.u16_count;
+    //debugPrintfEXT("[%u] In u8, u8_i = %u, u8_start_byte_offset = %u\n", gid, u8_i, u8_start_byte_offset);
+    ArrayU8 updated_indices_u8 = ArrayU8(pc.updated_indices + u8_start_byte_offset);
+    ArrayU8 original_indices_u8 = ArrayU8(pc.original_indices + u8_start_byte_offset);
+    if (updated_indices_u8.array[u8_i] != original_indices_u8.array[u8_i]) {
+        GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
+                       kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
+                       pc.error_info_i,
+                       u8_start_byte_offset + u8_i * sizeof_u8,
+                       kMemcmp_u8_diff,
+                       uint(updated_indices_u8.array[gid]),
+                       uint(original_indices_u8.array[gid]));
+    }
+}

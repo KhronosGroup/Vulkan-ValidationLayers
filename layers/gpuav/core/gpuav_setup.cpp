@@ -411,10 +411,25 @@ struct AccelerationStructuresBuild : public Setting {
     }
     void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
     std::string DisableMessage() {
-        return "\t structure builds validation option was enabled, but the shaderInt64 or storageBuffer8BitAccess or "
+        return "\tAcceleration structure builds validation option was enabled, but the shaderInt64 or storageBuffer8BitAccess or "
                "storageBuffer16BitAccess features are not "
                "supported. [Disabling "
                "gpuav_acceleration_structures_builds]\n";
+    }
+};
+
+struct RayTracingIndexBufferConsistency : public Setting {
+    bool IsEnabled(const GpuAVSettings& settings) { return settings.ray_tracing_index_buffer_consistency; }
+    // Validation shader branches on a push constant value to fetch different descriptors
+    bool HasRequiredFeatures(const DeviceFeatures &features) {
+        return features.shaderInt64 && features.shaderInt16 && features.shaderInt8;
+    }
+    void Disable(GpuAVSettings& settings) { settings.ray_tracing_index_buffer_consistency = false; }
+    std::string DisableMessage() {
+        return "\tRay tracing index buffer consistency option was enabled, but the shaderInt64 or shaderInt16 or shaderInt8 "
+               "features are not "
+               "supported. [Disabling "
+               "gpuav_ray_tracing_index_buffer_consistency]\n";
     }
 };
 }  // namespace setting
@@ -429,8 +444,10 @@ void Validator::InitSettings(const Location &loc) {
     setting::BufferCopies buffer_copies;
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
-    std::array<setting::Setting *, 7> all_settings = {&buffer_device_address, &ray_query,      &ray_hit_object,
-                                                      &mesh_shading,          &buffer_copies,  &buffer_content, &as_builds};
+    setting::RayTracingIndexBufferConsistency rt_index_buffer_consistency;
+    std::array<setting::Setting *, 8> all_settings = {
+        &buffer_device_address, &ray_query,      &ray_hit_object, &mesh_shading,
+        &buffer_copies,         &buffer_content, &as_builds,      &rt_index_buffer_consistency};
 
     std::string adjustment_warnings;
     for (auto &setting_object : all_settings) {

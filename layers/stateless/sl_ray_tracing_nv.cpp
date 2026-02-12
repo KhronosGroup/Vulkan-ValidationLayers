@@ -54,7 +54,7 @@ bool Device::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles,
         triangles.indexType != VK_INDEX_TYPE_NONE_NV) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexType-02433", object_handle, loc, "is invalid.");
     } else {
-        const uint32_t index_type_size = IndexTypeSize(triangles.indexType);
+        const uint32_t index_type_size = IndexTypeByteSize(triangles.indexType);
         if (index_type_size > 0 && !IsIntegerMultipleOf(triangles.indexOffset, index_type_size)) {
             skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02432", object_handle, loc, "is invalid.");
         }
