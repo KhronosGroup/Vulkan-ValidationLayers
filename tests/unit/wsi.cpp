@@ -2083,7 +2083,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1NonCompatiblePresentMode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1PresentScaling) {
+TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentScaling) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
@@ -2091,25 +2091,28 @@ TEST_F(NegativeWsi, SwapchainMaintenance1PresentScaling) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    const VkSurfacePresentScalingCapabilitiesKHR scaling_caps =
+        m_surface.GetScalingCapabilities(Gpu(), swapchain_info.surface_non_shared_present_mode);
+
+    if (scaling_caps.supportedPresentScaling == 0) {
+        GTEST_SKIP() << "Present scaling not supported";
     }
 
     VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
+    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
+    present_scaling_info.presentGravityX = 0;
+    present_scaling_info.presentGravityY = 0;
 
-    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
-    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
     swapchain_ci.pNext = &present_scaling_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767");
-    present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
-    present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
-    present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1PresentGravity) {
+TEST_F(NegativeWsi, SwapchainMaintenance1WrongPresentGravity) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
@@ -2117,15 +2120,18 @@ TEST_F(NegativeWsi, SwapchainMaintenance1PresentGravity) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    const VkSurfacePresentScalingCapabilitiesKHR scaling_caps =
+        m_surface.GetScalingCapabilities(Gpu(), swapchain_info.surface_non_shared_present_mode);
+
+    if (scaling_caps.supportedPresentScaling == 0) {
+        GTEST_SKIP() << "Present scaling not supported";
     }
 
     VkSwapchainPresentScalingCreateInfoKHR present_scaling_info = vku::InitStructHelper();
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
 
-    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
-    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
     swapchain_ci.pNext = &present_scaling_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07765");

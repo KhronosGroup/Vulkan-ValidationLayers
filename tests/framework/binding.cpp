@@ -2434,6 +2434,20 @@ std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice physical
     return present_modes;
 }
 
+VkSurfacePresentScalingCapabilitiesKHR Surface::GetScalingCapabilities(VkPhysicalDevice physical_device,
+                                                                       VkPresentModeKHR present_mode) const {
+    VkSurfacePresentModeKHR surface_present_mode = vku::InitStructHelper();
+    surface_present_mode.presentMode = present_mode;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
+    surface_info.surface = handle_;
+
+    VkSurfacePresentScalingCapabilitiesKHR scaling_caps = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_caps);
+
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(physical_device, &surface_info, &surface_caps);
+    return scaling_caps;
+}
+
 struct DummyAlloc {
     static VKAPI_ATTR void *VKAPI_CALL allocFunction(void *, size_t size, size_t, VkSystemAllocationScope) { return malloc(size); };
     static VKAPI_ATTR void *VKAPI_CALL realloc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
