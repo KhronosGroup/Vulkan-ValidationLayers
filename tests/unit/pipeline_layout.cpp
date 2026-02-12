@@ -183,7 +183,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, mps_samplers);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");
-    if ((max_samplers - mps_combined) < mps_samplers) vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");
+    if ((max_samplers - mps_combined) < mps_samplers) {
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");
+    }
     test_excess_descriptors(this, data, vuids);
     vuids.clear();
     data.clear();
@@ -210,8 +212,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");
     if ((max_sampled_images - mps_sampled_images < mps_sampled_images) ||
-        (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images)
+        (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");
+    }
     test_excess_descriptors(this, data, vuids);
     vuids.clear();
     data.clear();
@@ -220,8 +223,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, mps_storage_images);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, mps_storage_images);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");
-    if (max_storage_images - mps_storage_images < mps_storage_images)
+    if (max_storage_images - mps_storage_images < mps_storage_images) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");
+    }
     test_excess_descriptors(this, data, vuids);
     vuids.clear();
     data.clear();
@@ -230,8 +234,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, mps_input_attachments);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, mps_input_attachments);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");
-    if ((max_input_attachments - mps_input_attachments) < mps_input_attachments)
+    if ((max_input_attachments - mps_input_attachments) < mps_input_attachments) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");
+    }
     test_excess_descriptors(this, data, vuids);
     vuids.clear();
     data.clear();
@@ -270,7 +275,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptorsIndexing) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, mps_samplers);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-    if ((max_samplers - mps_combined) < mps_samplers) vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
+    if ((max_samplers - mps_combined) < mps_samplers) {
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
+    }
     test_excess_descriptors(this, data, vuids, true);
     vuids.clear();
     data.clear();
@@ -297,8 +304,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptorsIndexing) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
     if ((max_sampled_images - mps_sampled_images < mps_sampled_images) ||
-        (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images)
+        (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
+    }
     test_excess_descriptors(this, data, vuids, true);
     vuids.clear();
     data.clear();
@@ -307,8 +315,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptorsIndexing) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, mps_storage_images);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, mps_storage_images);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
-    if (max_storage_images - mps_storage_images < mps_storage_images)
+    if (max_storage_images - mps_storage_images < mps_storage_images) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
+    }
     test_excess_descriptors(this, data, vuids, true);
     vuids.clear();
     data.clear();
@@ -317,8 +326,9 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptorsIndexing) {
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, mps_input_attachments);
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, mps_input_attachments);
     vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
-    if ((max_input_attachments - mps_input_attachments) < mps_input_attachments)
+    if ((max_input_attachments - mps_input_attachments) < mps_input_attachments) {
         vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043");
+    }
     test_excess_descriptors(this, data, vuids, true);
     vuids.clear();
     data.clear();
