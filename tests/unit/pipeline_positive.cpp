@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1153,10 +1153,9 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    VkImageFormatProperties format_props;
-    if (VK_SUCCESS != GetImageFormatProps(Gpu(), image_create_info, format_props)) {
-        GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
-    }
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_STORAGE_BIT))
+        GTEST_SKIP() << "Image create info not compatible on device";
+
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 

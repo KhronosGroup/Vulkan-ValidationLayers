@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,8 +101,8 @@ TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Extension) {
         // Works locally
         GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
     }
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    GTEST_SKIP() << "Android doesn't unload VVL and static reported bool is not reset";
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_METAL_EXT)
+    GTEST_SKIP() << "Android/macOS doesn't unload VVL and static reported bool is not reset";
 #endif
 
     m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
@@ -128,8 +128,8 @@ TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Version) {
         // Works locally
         GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
     }
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    GTEST_SKIP() << "Android doesn't unload VVL and static reported bool is not reset";
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(VK_USE_PLATFORM_METAL_EXT)
+    GTEST_SKIP() << "Android/macOS doesn't unload VVL and static reported bool is not reset";
 #endif
 
     m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
