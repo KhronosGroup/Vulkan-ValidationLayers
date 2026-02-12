@@ -36,8 +36,6 @@ static constexpr VkPipelineStageFlags2 kAllTransferExpandBits = VK_PIPELINE_STAG
 
 // Fake stages and accesses for acquire present support
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000800000000000ULL;
-static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x0800000000000000ULL;
-static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x1000000000000000ULL;
 // Unique number for each  stage/access combination
 enum SyncAccessIndex {
     SYNC_ACCESS_INDEX_NONE = 0,
