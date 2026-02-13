@@ -106,7 +106,7 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
 
 // Return true if extension name is found and spec value is >= requested spec value
 // WARNING: for simplicity, does not cover layers' extensions
-bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
+bool VkRenderFramework::InstanceExtensionSupported(const char* const extension_name, const uint32_t spec_version) {
     // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by layers
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
@@ -154,7 +154,11 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     VkInstanceCreateInfo info = vku::InitStructHelper();
     info.pNext = m_errorMonitor->GetDebugCreateInfo();
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    const auto IsTheQueriedExtension = [](const char* extension_name) {
+        return strncmp(extension_name, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE) == 0;
+    };
+    if (std::any_of(m_instance_extension_names.begin(), m_instance_extension_names.end(), IsTheQueriedExtension))
+        info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
     info.pApplicationInfo = &app_info_;
     info.enabledLayerCount = size32(instance_layers_);
@@ -195,7 +199,10 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     // Beginning with the 1.3.216 Vulkan SDK, the VK_KHR_PORTABILITY_subset extension is mandatory.
 #ifdef VK_USE_PLATFORM_METAL_EXT
     AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    // VK_KHR_portability_subset requires VK_KHR_get_physical_device_properties2. We always request it since we don't know if we
+    // will be using KK or MoltenVK until device selection, so if we wouldn't enable it, we would have to recreate the instance...
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+        AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 #else
     // Note by default VK_KHRONOS_PROFILES_EMULATE_PORTABILITY is true.
     if (auto str = GetEnvironment("VK_KHRONOS_PROFILES_EMULATE_PORTABILITY"); !str.empty() && str != "false") {
@@ -311,6 +318,11 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     if (used_version < m_target_api_version) {
         GTEST_SKIP() << "At least Vulkan version 1." << m_target_api_version.Minor() << " is required";
     }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (DeviceExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        AddRequestedDeviceExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#endif
 
     for (const auto &ext : m_required_extensions) {
         AddRequestedDeviceExtensions(ext);
