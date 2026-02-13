@@ -2119,7 +2119,7 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const 
         static_cast<VkDeviceSize>(std::ceil(std::max(region.bufferImageHeight, region.imageExtent.height) / block_extent.height)) *
         row_extent;
     const VkDeviceSize layer_extent =
-        static_cast<VkDeviceSize>(std::ceil(region.imageExtent.depth / block_extent.height)) * slice_extent;
+        static_cast<VkDeviceSize>(std::ceil(region.imageExtent.depth / block_extent.depth)) * slice_extent;
 
     const VkDeviceSize x_value = static_cast<VkDeviceSize>(std::floor(last_x / block_extent.width)) * block_size;
     const VkDeviceSize y_value = static_cast<VkDeviceSize>(std::floor(last_y / block_extent.height)) * row_extent;
