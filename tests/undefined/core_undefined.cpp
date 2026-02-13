@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,4 +62,22 @@ TEST_F(UndefinedCore, BindInvalidPipelineLayout) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(UndefinedCore, RetireSignaledFence) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11531");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Fence fence(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, fence);
+    m_default_queue->Wait();
+
+    // This allows to run PreRecord during Submit for already signaled fence
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkQueueSubmit-fence-00063");
+    m_default_queue->Submit(vkt::no_cmd, fence);
+
+    // In the original issue this called Fence::Retire for the fence that was not reset (by vkResetFences)
+    // so it had its std::promise set, which led to crash during retire (promise was double set).
+    // The fix ensures that std::promise is always re-initialized when the fence is enqueued.
+    m_default_queue->Wait();
 }
