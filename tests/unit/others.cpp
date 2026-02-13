@@ -24,6 +24,10 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
     TEST_DESCRIPTION("Validate that promoted APIs are not valid in old versions.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    GTEST_SKIP() << "VK_KHR_get_physical_device_properties2 is enabled due to VK_KHR_portability_subset";
+#endif
+
     RETURN_IF_SKIP(Init());
 
     // TODO - Currently not working on MockICD with Profiles using 1.0
