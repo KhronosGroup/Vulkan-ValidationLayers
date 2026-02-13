@@ -148,33 +148,26 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
                              string_VkPresentModeKHR(swapchain_present_mode));
         }
 
-        if (std::find(present_modes.begin(), present_modes.end(), swapchain_present_mode) == present_modes.end()) {
-            if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
-                         "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                skip |= true;
-            }
+        if (!vvl::Contains(present_modes, swapchain_present_mode)) {
+            skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
+                             "%s is a non-supported presentMode.", string_VkPresentModeKHR(swapchain_present_mode));
         }
 
-        if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), swapchain_present_mode) ==
-            compatible_present_modes.end()) {
-            if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
-                         "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode))) {
-                skip |= true;
-            }
+        if (!vvl::Contains(compatible_present_modes, swapchain_present_mode)) {
+            skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::pPresentModes, i),
+                             "%s is a non-compatible presentMode.", string_VkPresentModeKHR(swapchain_present_mode));
         }
 
         const bool has_present_mode = (swapchain_present_modes_ci->pPresentModes[i] == present_mode);
         found_swapchain_modes_ci_present_mode |= has_present_mode;
     }
     if (!found_swapchain_modes_ci_present_mode) {
-        if (LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764", device, create_info_loc,
-                     "was called with a present mode (%s) that was not included in the set of present modes specified in "
-                     "the vkSwapchainPresentModesCreateInfoKHR structure included in its pNext chain.",
-                     string_VkPresentModeKHR(present_mode))) {
-            skip |= true;
-        }
+        skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764", device, create_info_loc,
+                         "was called with a present mode (%s) that was not included in the set of present modes specified in "
+                         "the vkSwapchainPresentModesCreateInfoKHR structure included in its pNext chain.",
+                         string_VkPresentModeKHR(present_mode));
     }
     return skip;
 }
