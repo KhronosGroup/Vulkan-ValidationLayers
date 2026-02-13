@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2025 LunarG, Inc. -->
+<!-- Copyright 2015-2026 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -18,7 +18,14 @@ It is important to acknowledge there are a few [limitations](./limitations.md) f
 
 ## Configuring the Validation Layer
 
-There are 4 ways to configure the settings: *Vulkan Configurator*, `application defined`, `vk_layer_settings.txt`, `environment variables` as described in the [layers configuration](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) documentation and described in the [Configuring Vulkan Layers](https://www.lunarg.com/wp-content/uploads/2024/04/Configuring-Vulkan-Layers-LunarG-Christophe-Riccio-04-11-2024.pdf) whitepaper.
+There are 4 ways to configure the settings:
+
+1. *Vulkan Configurator* tool found in the SDK (most recommended)
+2. `application defined` (at instance creation time)
+3. `vk_layer_settings.txt`
+4. `environment variables`
+
+> These are all described in the [layers configuration](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) documentation and more details in the [Configuring Vulkan Layers](https://www.lunarg.com/wp-content/uploads/2024/04/Configuring-Vulkan-Layers-LunarG-Christophe-Riccio-04-11-2024.pdf) whitepaper.
 
 ## *Vulkan Configurator*
 
