@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,8 +80,7 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.SetViewMask(0x2);
     rp.CreateRenderPass();
     vkt::Image image(*m_device, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);

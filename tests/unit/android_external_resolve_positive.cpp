@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,10 +63,8 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -139,10 +137,8 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -329,10 +325,8 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
     rp.AddAttachmentDescription(VK_FORMAT_UNDEFINED);
     rp.SetAttachmentDescriptionPNext(0, &external_format);
     rp.SetAttachmentDescriptionPNext(1, &external_format);
-    rp.AddAttachmentReference(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddColorAttachment(0);
-    rp.AddResolveAttachment(1);
+    rp.AddColorAttachment(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
     rp.AddSubpassDependency();
     rp.CreateRenderPass();
 

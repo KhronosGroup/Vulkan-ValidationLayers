@@ -49,12 +49,6 @@ class InterfaceRenderPassSingleSubpass {
                                           VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                           VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL) = 0;
 
-    // Pass in index to VkAttachmentReference
-    virtual void AddInputAttachment(uint32_t index) = 0;
-    virtual void AddColorAttachment(uint32_t index) = 0;
-    virtual void AddResolveAttachment(uint32_t index) = 0;
-    virtual void AddDepthStencilAttachment(uint32_t index) = 0;
-
     virtual void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                       VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                       VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -142,19 +136,20 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
     // Have a seperate set function to keep AddAttachmentDescription simple (very few things extend the AttachmentDescription)
     void SetAttachmentDescriptionPNext(uint32_t index, void *pNext);
 
-    void AddAttachmentReference(uint32_t attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
-                                void *pNext = nullptr);
-
-    // Pass in index to VkAttachmentReference
-    void AddInputAttachment(uint32_t index);
-    void AddColorAttachment(uint32_t index);
-    void AddResolveAttachment(uint32_t index);
-    void AddDepthStencilAttachment(uint32_t index);
+    // Pass in index to attachment description
+    void AddInputAttachment(uint32_t attachment_index, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
+                            void *pNext = nullptr);
+    void AddColorAttachment(uint32_t attachment_index, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
+                            void *pNext = nullptr);
+    void AddResolveAttachment(uint32_t attachment_index, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
+                              void *pNext = nullptr);
+    void AddDepthStencilAttachment(uint32_t attachment_index, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
+                                   void *pNext = nullptr);
     // VK_KHR_depth_stencil_resolve
-    void AddDepthStencilResolveAttachment(uint32_t index, VkResolveModeFlagBits depth_resolve_mode,
+    void AddDepthStencilResolveAttachment(uint32_t attachment_index, VkImageLayout layout, VkResolveModeFlagBits depth_resolve_mode,
                                           VkResolveModeFlagBits stencil_resolve_mode);
     // VK_KHR_fragment_shading_rate
-    void AddFragmentShadingRateAttachment(uint32_t index, VkExtent2D texel_size);
+    void AddFragmentShadingRateAttachment(uint32_t attachment_index, VkImageLayout layout, VkExtent2D texel_size);
 
     void SetViewMask(uint32_t view_mask) { subpass_description_.viewMask = view_mask; }
 
@@ -171,15 +166,16 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
     VkRenderPassCreateInfo2 rp_create_info_;
 
     std::vector<VkAttachmentDescription2> attachment_descriptions_;
-
-    std::vector<VkAttachmentReference2> attachments_references_;  // global pool
     std::vector<VkAttachmentReference2> input_attachments_;
     std::vector<VkAttachmentReference2> color_attachments_;
     VkAttachmentReference2 resolve_attachment_;
     VkAttachmentReference2 ds_attachment_;
 
-    VkSubpassDescriptionDepthStencilResolve ds_attachment_resolve_;
-    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment_;
+    VkSubpassDescriptionDepthStencilResolve ds_resolve_;
+    VkAttachmentReference2 ds_resolve_attachment_;
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment_info_;
+    VkAttachmentReference2 fsr_attachment_;
 
     VkSubpassDescription2 subpass_description_;
     std::vector<VkSubpassDependency2> subpass_dependencies_;

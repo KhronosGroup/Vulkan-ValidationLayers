@@ -550,7 +550,6 @@ TEST_F(NegativeTileMemoryHeap, TileProperties) {
 
     RenderPass2SingleSubpass rp2(*this);
     rp2.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp2.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
 
     m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
     rp2.CreateRenderPass(&tile_memory_size_info);
@@ -558,7 +557,6 @@ TEST_F(NegativeTileMemoryHeap, TileProperties) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
 
     m_errorMonitor->SetDesiredError("VUID-VkTileMemorySizeInfoQCOM-size-10729");
     rp.CreateRenderPass(&tile_memory_size_info);

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
@@ -1063,8 +1063,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.SetViewMask(0x3u);
     rp.CreateRenderPass();
 
