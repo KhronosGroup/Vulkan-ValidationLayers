@@ -240,7 +240,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                          "(%s) is not among the scaling methods for the surface as returned in "
                          "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for the specified presentMode: (%s).",
                          string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
-                         string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
+                         string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
                 skip |= true;
             }
         }
