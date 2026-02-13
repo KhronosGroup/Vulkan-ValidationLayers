@@ -1427,9 +1427,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         RenderPass2SingleSubpass rp(*this);
         rp.AddAttachmentDescription(depth_stencil_format, depth_initial_layout, VK_IMAGE_LAYOUT_GENERAL);
         rp.SetAttachmentDescriptionPNext(0, &stencil_layout);
-        rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                                  &stencil_ref);
-        rp.AddInputAttachment(0);
+        rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, &stencil_ref);
         rp.CreateRenderPass();
 
         const uint32_t fb_width = input_image.Width();
@@ -1662,10 +1660,8 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(0);
-    rp.AddDepthStencilResolveAttachment(1, depth_resolve_mode, stencil_resolve_mode);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, depth_resolve_mode, stencil_resolve_mode);
     rp.CreateRenderPass();
 
     // Depth resolve attachment, mismatched image usage
@@ -2431,10 +2427,9 @@ TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UNORM, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(ds_format, VK_SAMPLE_COUNT_4_BIT);           // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(1);
-    rp.AddDepthStencilResolveAttachment(0, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+    rp.AddDepthStencilAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+                                        VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651");
     rp.CreateRenderPass();

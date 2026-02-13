@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,16 +224,16 @@ TEST_F(PositiveImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
     // Render Pass with view mask (0x4)
     RenderPass2SingleSubpass rp_view_mask(*this);
     rp_view_mask.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp_view_mask.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp_view_mask.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp_view_mask.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL,
+                                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp_view_mask.SetViewMask(0x4);
     rp_view_mask.CreateRenderPass();
 
     // Render Pass without view mask
     RenderPass2SingleSubpass rp_no_view_mask(*this);
     rp_no_view_mask.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp_no_view_mask.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp_no_view_mask.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp_no_view_mask.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL,
+                                                     fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp_no_view_mask.SetViewMask(0);
     rp_no_view_mask.CreateRenderPass();
 

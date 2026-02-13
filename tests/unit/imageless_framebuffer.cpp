@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -680,10 +680,8 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
     rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddDepthStencilAttachment(0);
-    rp.AddDepthStencilResolveAttachment(1, depth_resolve_mode, stencil_resolve_mode);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddDepthStencilResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, depth_resolve_mode, stencil_resolve_mode);
     rp.SetViewMask(0x3u);
     rp.CreateRenderPass();
 
@@ -752,8 +750,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     VkFormat view_format = VK_FORMAT_R8_UINT;
@@ -798,8 +795,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.CreateRenderPass();
 
     VkFormat view_format = VK_FORMAT_R8_UINT;
@@ -865,8 +861,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
-    rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.SetViewMask(0x4);
     rp.CreateRenderPass();
 
