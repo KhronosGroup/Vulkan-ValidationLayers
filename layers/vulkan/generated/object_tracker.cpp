@@ -33,66 +33,72 @@ WriteLockGuard Device::WriteLock() { return WriteLockGuard(validation_object_mut
 // ObjectTracker undestroyed objects validation function
 bool Instance::ReportUndestroyedObjects(const Location& loc) const {
     bool skip = false;
-    const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
-    skip |= ReportLeakedObjects(kVulkanObjectTypeSurfaceKHR, error_code, loc);
-    // No destroy API or implicitly freed/destroyed -- do not report: skip |= ReportLeakedObjects(kVulkanObjectTypeDisplayKHR,
-    // error_code, loc); No destroy API or implicitly freed/destroyed -- do not report: skip |=
-    // ReportLeakedObjects(kVulkanObjectTypeDisplayModeKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDebugReportCallbackEXT, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDebugUtilsMessengerEXT, error_code, loc);
+    std::vector<VulkanTypedHandle> leaked_list;
+    FindLeakedObjects(kVulkanObjectTypeSurfaceKHR, leaked_list);
+    // No destroy API or implicitly freed/destroyed -- do not report: FindLeakedObjects(kVulkanObjectTypeDisplayKHR, leaked_list);
+    // No destroy API or implicitly freed/destroyed -- do not report: FindLeakedObjects(kVulkanObjectTypeDisplayModeKHR,
+    // leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDebugReportCallbackEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDebugUtilsMessengerEXT, leaked_list);
+    if (!leaked_list.empty()) {
+        skip |= ReportLeakedObjects(leaked_list, loc);
+    }
     return skip;
 }
 
 bool Device::ReportUndestroyedObjects(const Location& loc) const {
     bool skip = false;
-    const std::string error_code = "VUID-vkDestroyDevice-device-05137";
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCommandBuffer, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeBuffer, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeImage, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeSemaphore, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeFence, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDeviceMemory, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeQueryPool, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeImageView, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCommandPool, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeRenderPass, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeFramebuffer, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeEvent, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeBufferView, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeShaderModule, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePipelineCache, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePipelineLayout, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePipeline, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDescriptorSetLayout, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeSampler, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDescriptorSet, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDescriptorPool, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDescriptorUpdateTemplate, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeSamplerYcbcrConversion, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePrivateDataSlot, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeSwapchainKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeVideoSessionKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeVideoSessionParametersKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDeferredOperationKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePipelineBinaryKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCuModuleNVX, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCuFunctionNVX, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeTensorARM, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeValidationCacheEXT, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeAccelerationStructureNV, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypePerformanceConfigurationINTEL, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutNV, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCudaModuleNV, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeCudaFunctionNV, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeAccelerationStructureKHR, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeMicromapEXT, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeTensorViewARM, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeOpticalFlowSessionNV, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeShaderEXT, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, error_code, loc);
-    skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, error_code, loc);
+    std::vector<VulkanTypedHandle> leaked_list;
+    FindLeakedObjects(kVulkanObjectTypeCommandBuffer, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeBuffer, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeImage, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeSemaphore, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeFence, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDeviceMemory, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeQueryPool, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeImageView, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeCommandPool, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeRenderPass, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeFramebuffer, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeEvent, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeBufferView, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeShaderModule, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePipelineCache, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePipelineLayout, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePipeline, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDescriptorSetLayout, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeSampler, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDescriptorSet, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDescriptorPool, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDescriptorUpdateTemplate, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeSamplerYcbcrConversion, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePrivateDataSlot, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeSwapchainKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeVideoSessionKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeVideoSessionParametersKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDeferredOperationKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePipelineBinaryKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeCuModuleNVX, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeCuFunctionNVX, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeTensorARM, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeValidationCacheEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeAccelerationStructureNV, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePerformanceConfigurationINTEL, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutNV, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeCudaModuleNV, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeCudaFunctionNV, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeAccelerationStructureKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeMicromapEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeTensorViewARM, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeOpticalFlowSessionNV, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeShaderEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, leaked_list);
+    if (!leaked_list.empty()) {
+        skip |= ReportLeakedObjects(leaked_list, loc);
+    }
     return skip;
 }
 

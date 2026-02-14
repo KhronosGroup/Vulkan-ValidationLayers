@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,8 +163,9 @@ class Instance : public vvl::base::Instance {
 
     void DestroyLeakedObjects();
     bool ReportUndestroyedObjects(const Location &loc) const;
-    bool ReportLeakedObjects(VulkanObjectType object_type, const std::string &error_code,
-                                     const Location &loc) const;
+    void FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanTypedHandle>& leaked_list) const;
+    bool ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const;
+
     void AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location &loc);
 
     // helper methods for tracker
@@ -218,8 +219,8 @@ class Device : public vvl::base::Device {
 
     void DestroyLeakedObjects();
     bool ReportUndestroyedObjects(const Location &loc) const;
-    bool ReportLeakedObjects(VulkanObjectType object_type, const std::string &error_code,
-                                     const Location &loc) const;
+    void FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanTypedHandle>& leaked_list) const;
+    bool ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const;
 
     void CreateQueue(VkQueue vkObj, const Location &loc);
     void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level,
