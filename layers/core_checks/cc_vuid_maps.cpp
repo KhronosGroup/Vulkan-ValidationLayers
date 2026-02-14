@@ -598,6 +598,92 @@ const std::string &GetImageImageLayoutVUID(const Location &loc) {
     return result;
 }
 
+const char* GetBuildASVUID(const Location& loc, BuildASError error) {
+    // clang-format off
+    switch (error) {
+        case BuildASError::IsBuilt_03667:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03667" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03667" :
+                kVUIDUndefined;
+        case BuildASError::SameCount_03758:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03758" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03758" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03758" :
+                kVUIDUndefined;
+        case BuildASError::SameFlags_03759:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03759" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03759" :
+                kVUIDUndefined;
+        case BuildASError::SameType_03760:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03760" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03760" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03760" :
+                kVUIDUndefined;
+        case BuildASError::SameType_03761:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03761" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03761" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03761" :
+                kVUIDUndefined;
+        case BuildASError::SameFlags_03762:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03762" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03762" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03762" :
+                kVUIDUndefined;
+        case BuildASError::TriangleVertexFormat_03763:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03763" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03763" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03763" :
+                kVUIDUndefined;
+        case BuildASError::TriangleMaxVertex_03764:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03764" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03764" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03764" :
+                kVUIDUndefined;
+        case BuildASError::TriangleIndexType_03765:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03765" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03765" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03765" :
+                kVUIDUndefined;
+        case BuildASError::TriangleTransformData_03766:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03766" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03766" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03766" :
+                kVUIDUndefined;
+        case BuildASError::TriangleTransformData_03767:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03767" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03767" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03767" :
+                kVUIDUndefined;
+        case BuildASError::DstTop_03699:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03699" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03699" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03699" :
+                kVUIDUndefined;
+        case BuildASError::DstBottom_03700:
+            return
+                loc.function == Func::vkBuildAccelerationStructuresKHR  ? "VUID-vkBuildAccelerationStructuresKHR-pInfos-03700" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresKHR  ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03700" :
+                loc.function == Func::vkCmdBuildAccelerationStructuresIndirectKHR  ? "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03700" :
+                kVUIDUndefined;
+    }
+    return "UNASSIGNED-CoreChecks-unhandled-build-as";
+    // clang-format on
+}
+
 const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error) {
     static const std::map<SubresourceRangeError, std::array<Entry, 6>> errors{
         {SubresourceRangeError::BaseMip_01486,

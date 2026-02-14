@@ -99,6 +99,23 @@ const std::string &GetImageMipLevelVUID(const Location &loc);
 const std::string &GetImageArrayLayerRangeVUID(const Location &loc);
 const std::string &GetImageImageLayoutVUID(const Location &loc);
 
+enum class BuildASError {
+    IsBuilt_03667,
+    SameCount_03758,
+    SameFlags_03759,
+    SameType_03760,
+    SameType_03761,
+    SameFlags_03762,
+    TriangleVertexFormat_03763,
+    TriangleMaxVertex_03764,
+    TriangleIndexType_03765,
+    TriangleTransformData_03766,
+    TriangleTransformData_03767,
+    DstTop_03699,
+    DstBottom_03700,
+};
+const char* GetBuildASVUID(const Location& loc, BuildASError error);
+
 enum class SubresourceRangeError {
     BaseMip_01486,
     MipCount_01724,
