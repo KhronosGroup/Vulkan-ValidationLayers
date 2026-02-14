@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2095,16 +2095,13 @@ TEST_F(VkBestPracticesLayerTest, BadDestroy) {
     vk::AllocateCommandBuffers(leaky_device, &command_buffer_allocate_info, &command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyDevice-device-05137");
-    m_errorMonitor->SetDesiredError("VUID-vkDestroyDevice-device-05137");
     // Those 2 will come from self validation if it is enabled
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 
     // There's no way we can destroy the command pool at this point. Even though DestroyDevice failed, the loader has already
     // removed references to the device
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyInstance-instance-00629");
 }
