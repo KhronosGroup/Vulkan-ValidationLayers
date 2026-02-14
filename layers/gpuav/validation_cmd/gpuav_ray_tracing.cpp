@@ -457,7 +457,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             const bool is_buffer_destroyed = as->buffer_state && !as->buffer_state->Destroyed();
             const bool is_buffer_bound_to_memory = is_buffer_destroyed && as->buffer_state->IsMemoryBound();
             metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed);
-            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->create_info.type);
+            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->GetType());
             metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
             as_metadatas_ptr[written_count] = metadata;
             const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->device_address_range;
@@ -647,7 +647,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidASType: {
                 std::stringstream ss_as_type;
                 if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {
-                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->create_info.type)
+                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->GetType())
                                << ". ";
                 }
                 const std::string ss_as_type_str = ss_as_type.str();
