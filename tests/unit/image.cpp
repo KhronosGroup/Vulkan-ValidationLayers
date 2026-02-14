@@ -4416,7 +4416,8 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only supported by MockICD";
     }
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
