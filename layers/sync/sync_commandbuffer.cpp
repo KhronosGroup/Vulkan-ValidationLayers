@@ -654,8 +654,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (!accel || !accel->buffer_state) {
                             continue;
                         }
-                        const AccessRange range =
-                            MakeRange(*accel->buffer_state, accel->create_info.offset, accel->create_info.size);
+                        const AccessRange range = MakeRange(*accel->buffer_state, accel->GetOffset(), accel->GetSize());
                         auto hazard = current_context_->DetectHazard(*accel->buffer_state, sync_index, range);
                         // TODO: figure out what is the purpose of SuppressedBoundDescriptorWAW and do we still need it?
                         if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
@@ -794,8 +793,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (!accel || !accel->buffer_state) {
                             continue;
                         }
-                        const AccessRange range =
-                            MakeRange(*accel->buffer_state, accel->create_info.offset, accel->create_info.size);
+                        const AccessRange range = MakeRange(*accel->buffer_state, accel->GetOffset(), accel->GetSize());
                         const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, accel->Handle());
                         current_context_->UpdateAccessState(*accel->buffer_state, sync_index, range, tag_ex);
                         break;

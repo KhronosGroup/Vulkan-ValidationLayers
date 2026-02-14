@@ -3087,7 +3087,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         }
         // Validate access to source acceleration structure
         if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
-            const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
             auto hazard = context.DetectHazard(*src_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
             if (hazard.IsHazard()) {
@@ -3101,7 +3101,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         }
         // Validate access to the acceleration structure being built
         if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
-            const AccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            const AccessRange dst_range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
             auto hazard = context.DetectHazard(*dst_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
             if (hazard.IsHazard()) {
@@ -3194,14 +3194,14 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
         // If the source is the same as the destination then no need to record READ
         // (destination update will replace access with WRITE anyway).
         if (src_accel && src_accel != dst_accel) {
-            const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
             const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
             context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ,
                                       range, tag_ex);
         }
         // Record destination acceleration structure access (WRITE)
         if (dst_accel) {
-            const AccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            const AccessRange dst_range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
             const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
             context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
                                       dst_range, dst_tag_ex);
@@ -3262,7 +3262,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         auto hazard =
             context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
         if (hazard.IsHazard()) {
@@ -3274,7 +3274,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
         }
     }
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         auto hazard =
             context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
@@ -3299,13 +3299,13 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffe
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
         context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
                                   tag_ex);
     }
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
         context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
                                   tag_ex);
@@ -3324,7 +3324,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCom
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         auto hazard =
             context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
         if (hazard.IsHazard()) {
@@ -3355,7 +3355,7 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkComm
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        const AccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const AccessRange range = MakeRange(src_accel->GetOffset(), src_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
         context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range,
                                   tag_ex);
@@ -3374,7 +3374,7 @@ bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCom
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         auto hazard =
             context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
@@ -3405,7 +3405,7 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        const AccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const AccessRange range = MakeRange(dst_accel->GetOffset(), dst_accel->GetSize());
         const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
         context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range,
                                   tag_ex);

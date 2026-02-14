@@ -2054,12 +2054,12 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
             continue;
         }
 
-        if (as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
-            as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
+        if (as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
+            as_state->GetType() != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", as_state->Handle(),
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
-                         "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->create_info.type));
+                         "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->GetType()));
         }
     }
 
@@ -3114,12 +3114,12 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
 
     if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
         if (auto acceleration_structure_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
-            if (!(acceleration_structure_state->create_info.createFlags &
+            if (!(acceleration_structure_state->GetCreateFlags() &
                   VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-                skip |= LogError(
-                    "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructure-08091",
-                    pInfo->accelerationStructure, error_obj.location, "pInfo->accelerationStructure was %s.",
-                    string_VkAccelerationStructureCreateFlagsKHR(acceleration_structure_state->create_info.createFlags).c_str());
+                skip |=
+                    LogError("VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructure-08091",
+                             pInfo->accelerationStructure, error_obj.location, "pInfo->accelerationStructure was %s.",
+                             string_VkAccelerationStructureCreateFlagsKHR(acceleration_structure_state->GetCreateFlags()).c_str());
             }
         }
 
