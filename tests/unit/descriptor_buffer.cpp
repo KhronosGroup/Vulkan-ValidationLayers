@@ -494,7 +494,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplayAS) {
     m_errorMonitor->VerifyFound();
 
     asci.pNext = &ocddci;
-    asci.createFlags &= ~VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
+    asci.createFlags = 0;
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109");
     vk::CreateAccelerationStructureKHR(device(), &asci, NULL, &as);
     m_errorMonitor->VerifyFound();

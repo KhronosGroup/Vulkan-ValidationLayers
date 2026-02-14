@@ -112,7 +112,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
           buffer_state(buf_state),
           buffer_device_address(buffer_device_address),
-          createFlags(pCreateInfo->createFlags),
+          create_flags(pCreateInfo->createFlags),
           offset(pCreateInfo->offset),
           size(pCreateInfo->size),
           type(pCreateInfo->type),
@@ -151,7 +151,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         }
     }
 
-    VkAccelerationStructureCreateFlagsKHR GetCreateFlags() const { return createFlags; }
+    VkAccelerationStructureCreateFlagsKHR GetCreateFlags() const { return create_flags; }
     VkBuffer GetBuffer() const { return buffer_state->VkHandle(); }
     VkDeviceSize GetOffset() const { return offset; }
     VkDeviceSize GetSize() const { return size; }
@@ -169,7 +169,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     bool is_built = false;
 
   private:
-    const VkAccelerationStructureCreateFlagsKHR createFlags = 0;
+    const VkAccelerationStructureCreateFlagsKHR create_flags = 0;
     const VkDeviceSize offset = 0;
     const VkDeviceSize size = 0;
     const VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;

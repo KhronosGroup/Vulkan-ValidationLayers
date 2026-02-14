@@ -1811,13 +1811,20 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                  const ErrorObject& error_obj) const override;
     bool ValidateAccelerationVertex(VkFormat vertex_format, VkDeviceOrHostAddressConstKHR vertex_data, VkDeviceSize vertex_stride,
                                     const LogObjectList& objlist, const Location& loc) const;
-    // Validate buffers accessed using a device address
-    bool ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_t info_i,
-                                     const VkAccelerationStructureBuildGeometryInfoKHR& info,
-                                     const VkAccelerationStructureBuildRangeInfoKHR* geometry_build_ranges,
-                                     const Location& info_loc) const;
-    bool CommonBuildAccelerationStructureValidation(const VkAccelerationStructureBuildGeometryInfoKHR& info,
-                                                    const Location& info_loc, LogObjectList object_list) const;
+    bool ValidateAccelerationStructureBuildGeometryInfoDevice(VkCommandBuffer cmd_buffer, uint32_t info_i,
+                                                              const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                              const VkAccelerationStructureBuildRangeInfoKHR* geometry_build_ranges,
+                                                              const Location& info_loc) const;
+    bool ValidateAccelerationStructureBuildScratch(VkCommandBuffer cmd_buffer,
+                                                   const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                   const VkAccelerationStructureBuildRangeInfoKHR* geometry_build_ranges,
+                                                   const Location& info_loc) const;
+    bool ValidateAccelerationStructureBuildGeometryInfoUpdate(const vvl::AccelerationStructureKHR& src_as_state,
+                                                              const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                              const Location& info_loc, const VulkanTypedHandle& handle) const;
+    bool ValidateAccelerationStructureBuildDst(const vvl::AccelerationStructureKHR& dst_as_state,
+                                               const VkAccelerationStructureBuildGeometryInfoKHR& info, const Location& info_loc,
+                                               const VulkanTypedHandle& handle) const;
     bool ValidateAccelerationStructuresMemoryAlisasing(const LogObjectList& objlist, uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, uint32_t info_i,
                                                        const ErrorObject& error_obj) const;
