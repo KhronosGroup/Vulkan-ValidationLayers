@@ -502,10 +502,8 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddInputAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddInputAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
@@ -575,18 +573,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
-    // index 0 is unused
-    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
-    // index 1 is is valid (for both color and input)
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    // index 2 and 3 point to same image as index 1
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
-    rp.AddInputAttachment(1);
-    rp.AddInputAttachment(2);
-    rp.AddInputAttachment(3);
-    rp.AddColorAttachment(1);
+    rp.AddInputAttachment(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     // use static array of 2 and index into element 1 to read
@@ -681,18 +672,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
-    // index 0 is unused
-    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
-    // index 1 is is valid (for both color and input)
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    // index 2 and 3 point to same image as index 1
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
-    rp.AddInputAttachment(1);
-    rp.AddInputAttachment(2);
-    rp.AddInputAttachment(3);
-    rp.AddColorAttachment(1);
+    rp.AddInputAttachment(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     // use OpTypeRuntimeArray and index into it
@@ -729,14 +713,10 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
     rp.AddAttachmentDescription(ds_format);
-    // index 0 = color | index 1 = depth | index 2 = stencil
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
-    rp.AddInputAttachment(1);
-    rp.AddInputAttachment(2);
-    rp.AddColorAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddInputAttachment(1, VK_IMAGE_LAYOUT_GENERAL);  // depth
+    rp.AddInputAttachment(1, VK_IMAGE_LAYOUT_GENERAL);  // stencil
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     // Depth and Stencil use same index, but valid because differnet image aspect masks
@@ -1389,10 +1369,8 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
-    rp.AddColorAttachment(1);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddColorAttachment(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     VkPipelineColorBlendAttachmentState cb_as[2];
@@ -1458,8 +1436,7 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);

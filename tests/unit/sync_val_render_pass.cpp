@@ -36,8 +36,7 @@ TEST_F(NegativeSyncValRenderPass, ClearColorAttachmentWAW) {
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(color_format, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_LOAD_OP_NONE,
                                          VK_ATTACHMENT_STORE_OP_NONE);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddColorAttachment(0);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -88,8 +87,7 @@ TEST_F(NegativeSyncValRenderPass, ClearDepthAspectWAW) {
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(depth_stencil_format, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
                                          VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_NONE);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -149,8 +147,7 @@ TEST_F(NegativeSyncValRenderPass, ClearStencilAspectWAW) {
 
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(attachment);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);
@@ -210,8 +207,7 @@ TEST_F(NegativeSyncValRenderPass, ClearDepthCopyStencilWAW) {
 
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(attachment);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    render_pass.AddDepthStencilAttachment(0);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), width, height);

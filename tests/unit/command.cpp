@@ -209,8 +209,7 @@ TEST_F(NegativeCommand, ClearAttachment64Bit) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R64G64B64A64_SFLOAT);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
@@ -2961,8 +2960,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     rp.CreateRenderPass();
 
     VkPipelineDepthStencilStateCreateInfo depth_state_info = vku::InitStructHelper();
@@ -3761,8 +3759,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
 
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
-        rp.AddDepthStencilAttachment(0);
+        rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         rp.CreateRenderPass();
 
         vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());

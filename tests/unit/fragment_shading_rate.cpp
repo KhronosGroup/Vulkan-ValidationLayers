@@ -3560,8 +3560,7 @@ TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayers) {
         const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
         rp.CreateRenderPass(nullptr, VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE);
 
         auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, fdm_properties.maxFragmentDensityMapLayers + 1,

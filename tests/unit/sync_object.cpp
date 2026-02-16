@@ -246,10 +246,9 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     // Add a token self-dependency for this test to avoid unexpected errors
-    rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
+    rp.AddSubpassSelfDependency(stage_flags, stage_flags, access_flags, access_flags);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &color_view.handle());
 
@@ -759,10 +758,9 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     // Add a token self-dependency for this test to avoid unexpected errors
-    rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
+    rp.AddSubpassSelfDependency(stage_flags, stage_flags, access_flags, access_flags);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &color_view.handle());
 
@@ -4034,9 +4032,8 @@ TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
-    rp.AddSubpassDependency();
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddSubpassSelfDependency();
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

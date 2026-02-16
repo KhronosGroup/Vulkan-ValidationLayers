@@ -15,59 +15,32 @@
 #include "layer_validation_tests.h"
 #include <vector>
 
-// Helper designed to quickly make a renderPass/framebuffer that only has a single Subpass.
-// The goal is to keep the class simple as possible.
-//
-// Interface:
-//   We use a seperate class for RenderPass1 and RenderPass2, but want to not have them diverage, so we keep an interface class
-//
-// Common usage:
-//   RenderPassSingleSubpass rp(*this);
-//   rp.AddAttachmentDescription(input_format); // sets description[0]
-//   rp.AddAttachmentDescription(color_format); // sets description[1]
-//   rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});                  // sets reference[0]
-//   rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}); // sets reference[1]
-//   rp.AddInputAttachment(0); // index maps to reference[0]
-//   rp.AddColorAttachment(1); // index maps to reference[1]
-//   rp.CreateRenderPass();
-class InterfaceRenderPassSingleSubpass {
+class RenderPassHelperBase {
   public:
-    InterfaceRenderPassSingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
-    virtual ~InterfaceRenderPassSingleSubpass() { Destroy(); }
+    RenderPassHelperBase(VkLayerTest &test, vkt::Device *device = nullptr);
+    ~RenderPassHelperBase() { Destroy(); }
 
     const VkRenderPass &Handle() const { return render_pass_.handle(); }
     operator VkRenderPass() const { return render_pass_; }
-
-    // Parameters are ordered from most likely to be custom values
-    // Most tests don't need to worry about the Load/Store ops as we never read the values
-    virtual void AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                          VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                          VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                          VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE) = 0;
-    // Overload for setting samples count
-    virtual void AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples,
-                                          VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
-                                          VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL) = 0;
-
-    virtual void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                      VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                      VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                      VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                      VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT) = 0;
-
-    virtual void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0) = 0;
 
     // Explicit destroy for those tests that need to test render pass lifetime
     void Destroy() { render_pass_.Destroy(); };
 
   protected:
-    VkLayerTest &layer_test_;
     vkt::Device *device_;
-
     vkt::RenderPass render_pass_;
 };
 
-class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
+// Helper designed to quickly make a renderPass/framebuffer that only has a single Subpass.
+//
+// Common usage:
+//   RenderPassSingleSubpass rp(*this);
+//   rp.AddAttachmentDescription(input_format); // add attachment description 0
+//   rp.AddAttachmentDescription(color_format); // add attachment description 1
+//   rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL); // input attachment based on attachment description 0
+//   rp.AddColorAttachment(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL); // color attachment bazsed on attachment description 1
+//   rp.CreateRenderPass();
+class RenderPassSingleSubpass : public RenderPassHelperBase {
   public:
     RenderPassSingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
 
@@ -85,20 +58,18 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
     // Use already initialized object
     void AddAttachmentDescription(const VkAttachmentDescription &attachment_description);
 
-    void AddAttachmentReference(VkAttachmentReference reference);
-
-    // Pass in index to VkAttachmentReference
-    void AddInputAttachment(uint32_t index);
-    void AddColorAttachment(uint32_t index);
-    void AddResolveAttachment(uint32_t index);
-    void AddDepthStencilAttachment(uint32_t index);
+    // Pass in index to attachment description
+    void AddInputAttachment(uint32_t attachment_index, VkImageLayout layout);
+    void AddColorAttachment(uint32_t attachment_index, VkImageLayout layout);
+    void AddResolveAttachment(uint32_t attachment_index, VkImageLayout layout);
+    void AddDepthStencilAttachment(uint32_t attachment_index, VkImageLayout layout);
 
     void AddSubpassDependency(VkSubpassDependency dependency);
-    void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
+    void AddSubpassSelfDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
     void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0);
 
@@ -106,8 +77,6 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
     VkRenderPassCreateInfo rp_create_info_;
 
     std::vector<VkAttachmentDescription> attachment_descriptions_;
-
-    std::vector<VkAttachmentReference> attachments_references_;  // global pool
     std::vector<VkAttachmentReference> input_attachments_;
     std::vector<VkAttachmentReference> color_attachments_;
     VkAttachmentReference resolve_attachment_;
@@ -117,7 +86,8 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
     std::vector<VkSubpassDependency> subpass_dependencies_;
 };
 
-class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
+// Helper for vkCreateRenderPass2 API, works similar to RenderPassSingleSubpass
+class RenderPass2SingleSubpass : public RenderPassHelperBase {
   public:
     RenderPass2SingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
 
@@ -154,11 +124,11 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
     void SetViewMask(uint32_t view_mask) { subpass_description_.viewMask = view_mask; }
 
     void AddSubpassDependency(VkSubpassDependency2 dependency);
-    void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
+    void AddSubpassSelfDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
     void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0);
 
