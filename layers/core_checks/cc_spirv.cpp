@@ -3345,7 +3345,9 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                         "(%s) is used to map descriptor %s with storage class %s, but it %s",
                         string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
                         string_SpvStorageClass(resource_variable.storage_class),
-                        !is_uniform ? "must be StorageClass Uniform" : "is not decorated with Block");
+                        !is_uniform ? "must be StorageClass Uniform (Uniform Buffers)\nHint: Did you mean to use "
+                                      "VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?"
+                                    : "is not decorated with Block");
                 } else if (resource_variable.storage_class == spv::StorageClassUniform && resource_variable.IsArray()) {
                     // Additional VU because we currently mark array of Block Structs the same in |resource_variable|
                     const char *vuid =
