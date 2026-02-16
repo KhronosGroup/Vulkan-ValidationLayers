@@ -1457,7 +1457,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             if (!module_state || !entry_point) {
                 continue;
             }
-            skip |= ValidateActionStateDescriptorHeapUntyped(cb_state, *module_state, *entry_point, bind_point, vuid);
+            skip |= ValidateActionStateDescriptorHeap(cb_state, *module_state, *entry_point, last_bound_state.GetDescriptorMode(),
+                                                      bind_point, vuid);
 
             // Only need to validate if we know there is a embedded sampler to check against
             if (pipeline.descriptor_heap_embedded_samplers_count > 0) {
@@ -1589,28 +1590,24 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     return skip;
 }
 
-bool CoreChecks::ValidateActionStateDescriptorHeapUntyped(const vvl::CommandBuffer& cb_state, const spirv::Module& module_state,
-                                                          const spirv::EntryPoint& entry_point,
-                                                          const VkPipelineBindPoint bind_point,
-                                                          const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateActionStateDescriptorHeap(const vvl::CommandBuffer &cb_state, const spirv::Module &module_state,
+                                                   const spirv::EntryPoint &entry_point, const vvl::DescriptorMode descriptor_mode,
+                                                   const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    if (!module_state.static_data_.has_descriptor_heap) {
-        return skip;
-    }
+    const char *msg = descriptor_mode != vvl::DescriptorModeUnknown
+                          ? " (The command buffer has called vkCmdBindDescriptorSets, vkCmdBindDescriptorSets2, "
+                            "vkCmdPushConstants, vkCmdPushConstants2, or vkCmdBindDescriptorBuffersEXT which invalidates heaps)"
+                          : "";
 
     for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
-        // If untyped, there will be no mapping to validate
-        if (resource_variable.decorations.IsDescriptorSet()) {
-            continue;
-        }
-        if (resource_variable.is_sampler_heap) {
+        if (resource_variable.is_sampler_heap || resource_variable.is_sampler) {
             if (cb_state.IsPrimary()) {
                 if (!cb_state.descriptor_heap.sampler_bound) {
                     skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
-                                     "SPIR-V (%s) uses %s, but a sampler heap was not bound (with vkCmdBindSamplerHeapEXT)",
+                                     "SPIR-V (%s) uses %s, but a sampler heap was not bound (with vkCmdBindSamplerHeapEXT).%s",
                                      string_SpvExecutionModel(entry_point.execution_model),
-                                     resource_variable.DescribeDescriptor().c_str());
+                                     resource_variable.DescribeDescriptor().c_str(), msg);
                 }
             } else {
                 if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
@@ -1621,13 +1618,13 @@ bool CoreChecks::ValidateActionStateDescriptorHeapUntyped(const vvl::CommandBuff
                                      resource_variable.DescribeDescriptor().c_str());
                 }
             }
-        } else if (resource_variable.is_resource_heap) {
+        } else {
             if (cb_state.IsPrimary()) {
                 if (!cb_state.descriptor_heap.resource_bound) {
                     skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(bind_point), vuid.loc(),
-                                     "SPIR-V (%s) uses %s, but a resource heap was not bound (with vkCmdBindResourceHeapEXT)",
+                                     "SPIR-V (%s) uses %s, but a resource heap was not bound (with vkCmdBindResourceHeapEXT).%s",
                                      string_SpvExecutionModel(entry_point.execution_model),
-                                     resource_variable.DescribeDescriptor().c_str());
+                                     resource_variable.DescribeDescriptor().c_str(), msg);
                 }
             } else {
                 if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
@@ -1722,9 +1719,10 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
     for (const auto &shader_state : last_bound_state.shader_object_states) {
         if (shader_state && shader_state->descriptor_heap_mode) {
             const spirv::Module* module_state = shader_state->spirv.get();
-            const spirv::EntryPoint* entry_point = shader_state->entrypoint.get();
+            const spirv::EntryPoint *entry_point = shader_state->entrypoint.get();
             if (module_state && entry_point) {
-                skip |= ValidateActionStateDescriptorHeapUntyped(cb_state, *module_state, *entry_point, bind_point, vuid);
+                skip |= ValidateActionStateDescriptorHeap(cb_state, *module_state, *entry_point,
+                                                          last_bound_state.GetDescriptorMode(), bind_point, vuid);
 
                 // Only need to validate if we know there is a embedded sampler to check against
                 if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
