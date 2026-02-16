@@ -174,8 +174,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     // A renderpass with one color attachment.
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     // A compatible framebuffer.
@@ -237,8 +236,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         RenderPassSingleSubpass rp(*this);
         rp.AddAttachmentDescription(image_ci.format, image_ci.samples, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-        rp.AddColorAttachment(0);
+        rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
         rp.CreateRenderPass();
 
         VkFramebufferCreateInfo fbci = vku::InitStructHelper();

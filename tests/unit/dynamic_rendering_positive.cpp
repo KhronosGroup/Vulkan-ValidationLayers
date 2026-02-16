@@ -509,8 +509,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this, &rendering_info);
@@ -540,8 +539,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_PREINITIALIZED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddInputAttachment(0);
+    rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);

@@ -116,8 +116,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachmentFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
@@ -712,8 +711,7 @@ TEST_F(PositiveImageLayout, FramebufferAttachmentFrom3dImageSlice) {
 
     RenderPassSingleSubpass render_pass(*this);
     render_pass.AddAttachmentDescription(image_ci.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    render_pass.AddColorAttachment(0);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     render_pass.CreateRenderPass();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 32, 32);
@@ -833,7 +831,6 @@ TEST_F(PositiveImageLayout, TransitionAll3dImageSlicesUsing2DArrayView) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
     rp.CreateRenderPass();
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();

@@ -29,8 +29,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
@@ -69,8 +68,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddColorAttachment(0);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -146,8 +144,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddDepthStencilAttachment(0);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
     VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();

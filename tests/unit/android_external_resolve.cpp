@@ -1103,7 +1103,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     rp.SetAttachmentDescriptionPNext(1, &external_format);
     rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
     rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddSubpassDependency();
+    rp.AddSubpassSelfDependency();
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1194,7 +1194,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
     rp.SetAttachmentDescriptionPNext(1, &external_format);
     rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_PLANE_0_BIT);
     rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT);
-    rp.AddSubpassDependency();
+    rp.AddSubpassSelfDependency();
     rp.CreateRenderPass();
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
