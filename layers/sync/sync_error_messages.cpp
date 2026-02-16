@@ -325,7 +325,6 @@ std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, co
     return Error(hazard, cb_context, command, resource_description, "RenderPassResolveError");
 }
 
-// TODO: this one also does not have tests!
 std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {

@@ -20,7 +20,7 @@
 
 struct PositiveSyncValRenderPass : public VkSyncValTest {};
 
-TEST_F(PositiveSyncValRenderPass, SyncInputAttachmentReadAndResolveWrite) {
+TEST_F(PositiveSyncValRenderPass, SyncInputAttachmentReadWithResolveWrite) {
     TEST_DESCRIPTION("Synchronize input attachment read with multisample resolve write");
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -118,4 +118,50 @@ TEST_F(PositiveSyncValRenderPass, SyncInputAttachmentReadAndResolveWrite) {
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, SyncStoreOpWriteWithPreviousRead) {
+    TEST_DESCRIPTION("Synchronize StoreOp writes with previous copy reads");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                         VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_STORE);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 64, 64);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+
+    // Prevent WAR
+    m_command_buffer.Barrier(barrier);
+
+    // There is no loadOp access (LOAD_OP_NONE)
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 64, 64);
+
+    m_command_buffer.EndRenderPass();
 }
