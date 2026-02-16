@@ -345,7 +345,6 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
                 }
             }
 
-            // TODO: this hazard is not triggered by the tests
             if (hazard.IsHazard()) {
                 const SyncValidator &sync_state = cb_context.GetSyncState();
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
