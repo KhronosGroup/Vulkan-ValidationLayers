@@ -1171,11 +1171,10 @@ void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure *create
     debug_printf_mapping.descriptorSet = instrumentation_desc_set_bind_index_;
     debug_printf_mapping.firstBinding = 0;
     debug_printf_mapping.bindingCount = 1;
-    debug_printf_mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
-    debug_printf_mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
-    debug_printf_mapping.sourceData.pushIndex.heapOffset = 0;
-    debug_printf_mapping.sourceData.pushIndex.pushOffset = push_data_offset_;
-    debug_printf_mapping.sourceData.pushIndex.heapIndexStride = 1;
+    debug_printf_mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
+    debug_printf_mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    debug_printf_mapping.sourceData.indirectAddress.addressOffset = 0;
+    debug_printf_mapping.sourceData.indirectAddress.pushOffset = push_data_offset_;
 
     new_mappings[mapping_count - 1] = debug_printf_mapping;
 

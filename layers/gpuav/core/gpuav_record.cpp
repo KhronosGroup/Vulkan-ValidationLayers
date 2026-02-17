@@ -144,34 +144,6 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
     chassis_state.pBindInfos = reinterpret_cast<VkDescriptorBufferBindingInfoEXT *>(chassis_state.modified_binding_infos.data());
 }
 
-
-void Validator::PreCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
-                                                    const RecordObject &record_obj) {
-    const auto buffer_states = GetBuffersByAddress(pBindInfo->heapRange.address);
-    if (buffer_states.empty()) {
-        InternalError(commandBuffer, record_obj.location.dot(Field::pBindInfo), "address points to no VkBuffer");
-    } else {
-        if (buffer_states.size() > 1) {
-            InternalWarning(commandBuffer, record_obj.location.dot(Field::pBindInfo),
-                            "address points to multiple VkBuffer, taking first one");
-        }
-        resource_heap.buffer_state_ = buffer_states[0];
-    }
-    resource_heap.reserved_offset_ = pBindInfo->reservedRangeOffset;
-
-    auto modified_bind_heap_info = const_cast<VkBindHeapInfoEXT *>(pBindInfo);
-    modified_bind_heap_info->reservedRangeOffset += resource_heap_reserved_bytes_;
-    modified_bind_heap_info->reservedRangeSize -= resource_heap_reserved_bytes_;
-}
-
-void Validator::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
-                                                     const RecordObject &record_obj) {
-    // Revert adjustment so the user doesn't see it
-    auto modified_bind_heap_info = const_cast<VkBindHeapInfoEXT *>(pBindInfo);
-    modified_bind_heap_info->reservedRangeOffset -= resource_heap_reserved_bytes_;
-    modified_bind_heap_info->reservedRangeSize += resource_heap_reserved_bytes_;
-}
-
 void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -808,7 +780,7 @@ bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, con
                      "VkPhysicalDeviceDescriptorHeapPropertiesEXT::maxPushDataSize is %" PRIu32
                      ", however GPU-AV reserved 8 bytes at the end of the push data range for internal use. Therefore only %" PRIu32
                      " bytes are available to the application.",
-                     static_cast<uint32_t>(push_data_offset_ + 8u), push_data_offset_);
+                     static_cast<uint32_t>(push_data_offset_ + sizeof(VkDeviceAddress)), push_data_offset_);
     }
     return skip;
 }
