@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/validation_cmd/gpuav_draw.h"
+#include <vulkan/vulkan_core.h>
 
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
@@ -47,8 +48,8 @@ struct SharedDrawValidationResources {
         if (gpuav.IsAllDeviceLocalMappable()) {
             alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         }
-        const bool success = dummy_buffer.Create(&dummy_buffer_info, &alloc_info);
-        if (!success) {
+        const VkResult result = dummy_buffer.Create(&dummy_buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
             valid = false;
             return;
         }

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
@@ -196,9 +197,9 @@ class DummyBLAS {
             VmaAllocationCreateInfo alloc_ci = {};
             alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
             alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            const bool success = vertex_buffer.Create(&vertex_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's vertex buffer.");
+            const VkResult result = vertex_buffer.Create(&vertex_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's vertex buffer.");
                 return;
             }
             constexpr std::array vertices = {// Vertex 0
@@ -220,9 +221,9 @@ class DummyBLAS {
             VmaAllocationCreateInfo alloc_ci = {};
             alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
             alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-            const bool success = transform_buffer.Create(&transform_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's transform buffer.");
+            const VkResult result = transform_buffer.Create(&transform_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's transform buffer.");
                 return;
             }
             // clang-format off
@@ -272,9 +273,9 @@ class DummyBLAS {
             if (gpuav.IsAllDeviceLocalMappable()) {
                 alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             }
-            const bool success = scratch_buffer.Create(&scratch_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS's scratch buffer.");
+            const VkResult result = scratch_buffer.Create(&scratch_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS's scratch buffer.");
                 return;
             }
         }
@@ -289,9 +290,9 @@ class DummyBLAS {
             if (gpuav.IsAllDeviceLocalMappable()) {
                 alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
             }
-            const bool success = blas_buffer.Create(&blas_buffer_ci, &alloc_ci);
-            if (!success) {
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::Empty), "Failed to create dummy BLAS buffer.");
+            const VkResult result = blas_buffer.Create(&blas_buffer_ci, &alloc_ci);
+            if (result != VK_SUCCESS) {
+                gpuav.InternalVmaError(LogObjectList(), result, "Failed to create dummy BLAS buffer.");
                 return;
             }
         }

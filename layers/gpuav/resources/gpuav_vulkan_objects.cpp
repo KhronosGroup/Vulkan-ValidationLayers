@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include <vulkan/vulkan_core.h>
 
 #include "gpuav/core/gpuav.h"
 #include "generated/dispatch_functions.h"
@@ -157,12 +158,12 @@ void Buffer::InvalidateAllocation(VkDeviceSize offset, VkDeviceSize size) const 
     }
 }
 
-bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAllocationCreateInfo *allocation_create_info) {
+VkResult Buffer::Create(const VkBufferCreateInfo* buffer_create_info, const VmaAllocationCreateInfo* allocation_create_info) {
     VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, result, "Unable to allocate device memory for internal buffer.");
-        return false;
+        return result;
     }
     size = buffer_create_info->size;
 
@@ -171,7 +172,7 @@ bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAlloc
         device_address = gpuav.device_state->GetBufferDeviceAddressHelper(buffer, &gpuav.modified_extensions);
         if (device_address == 0) {
             gpuav.InternalVmaError(gpuav.device, VK_ERROR_UNKNOWN, "Failed to get address with DispatchGetBufferDeviceAddress.");
-            return false;
+            return VK_ERROR_UNKNOWN;
         }
     }
 
@@ -182,7 +183,7 @@ bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAlloc
         if (result != VK_SUCCESS) {
             mapped_ptr = nullptr;
             gpuav.InternalVmaError(gpuav.device, result, "Unable to map device memory.");
-            return false;
+            return result;
         }
     }
 #if defined(VVL_TRACY_GPU)
@@ -198,7 +199,7 @@ bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAlloc
     }
 #endif
 
-    return true;
+    return VK_SUCCESS;
 }
 
 void Buffer::Destroy() {
@@ -487,8 +488,8 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = std::max(min_buffer_block_byte_size, Align<VkDeviceSize>(byte_size + alignment, buffer_address_alignment));
     buffer_ci.usage = buffer_usage_flags_;
-    const bool success = buffer.Create(&buffer_ci, &allocation_ci_);
-    if (!success) {
+    const VkResult result = buffer.Create(&buffer_ci, &allocation_ci_);
+    if (result != VK_SUCCESS) {
         return {};
     }
     const VkDeviceAddress returned_addr = Align<VkDeviceAddress>(buffer.Address(), alignment);

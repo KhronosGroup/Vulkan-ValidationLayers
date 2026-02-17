@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vulkan/vulkan_core.h>
 #include "pass.h"
 
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -39,8 +40,8 @@ struct VertexAttributeFetchOff {
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = buffer.Create(&buffer_info, &alloc_info);
-        if (!success) {
+        const VkResult result = buffer.Create(&buffer_info, &alloc_info);
+        if (result != VK_SUCCESS) {
             valid = false;
             return;
         }
