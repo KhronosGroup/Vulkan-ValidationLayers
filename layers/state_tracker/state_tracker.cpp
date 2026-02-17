@@ -3013,7 +3013,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, no_push_desc,
                                             dynamicOffsetCount, pDynamicOffsets, record_obj.location);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
@@ -3049,7 +3049,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets, record_obj.location);
     }
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+    cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
@@ -3069,9 +3069,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuff
                                      record_obj.location);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
     }
 }
 
@@ -3106,9 +3106,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuf
     }
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
     }
 }
 
@@ -3137,7 +3137,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     // So really this should be set at vkCmdSetDescriptorBufferOffsetsEXT time where the bindpoint is known.
     // In practice, setting it here is better as if the app messes up, it might crash things.
-    cb_state->SetDescriptorMode(DescriptorModeBuffer);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
@@ -3145,14 +3145,14 @@ void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCom
                                                                            VkPipelineLayout layout, uint32_t set,
                                                                            const RecordObject &record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
-    cb_state->SetDescriptorMode(DescriptorModeBuffer);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject &record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
-    cb_state->SetDescriptorMode(DescriptorModeBuffer);
+    cb_state->SetDescriptorMode(DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
@@ -3166,7 +3166,7 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
 
     cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
@@ -3195,7 +3195,7 @@ void DeviceState::PostCallRecordCmdSetDescriptorBufferOffsets2EXT(
             pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
 
-    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+    cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -3208,7 +3208,7 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
     cb_state->RecordCommand(record_obj.location);
     cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
 
-    cb_state->InvalidateDescriptorMode(vvl::DescriptorModeHeap);
+    cb_state->InvalidateDescriptorMode(vvl::DescriptorModeHeap, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo *pPushConstantsInfo,
@@ -4950,9 +4950,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer
     auto pipeline_layout = Get<PipelineLayout>(layout);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
     }
 
     if (!template_state || !pipeline_layout) {
@@ -4983,9 +4983,9 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate2(
     auto pipeline_layout = Get<PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
 
     if (pipeline_layout->has_descriptor_buffer) {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeBuffer, record_obj.location.function);
     } else {
-        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic);
+        cb_state->SetDescriptorMode(vvl::DescriptorModeClassic, record_obj.location.function);
     }
 
     if (!template_state || !pipeline_layout) {
@@ -6483,7 +6483,7 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
     vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
     cb_state->descriptor_heap.sampler_range = range;
 
-    cb_state->SetDescriptorMode(DescriptorModeHeap);
+    cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
@@ -6503,7 +6503,7 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
     vvl::range<VkDeviceAddress> range = {pBindInfo->heapRange.address, pBindInfo->heapRange.address + pBindInfo->heapRange.size};
     cb_state->descriptor_heap.resource_range = range;
 
-    cb_state->SetDescriptorMode(DescriptorModeHeap);
+    cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,
@@ -6512,7 +6512,7 @@ void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, co
     ASSERT_AND_RETURN(cb_state);
     cb_state->RecordCmdPushDataEXT(*pPushDataInfo, record_obj.location);
 
-    cb_state->SetDescriptorMode(DescriptorModeHeap);
+    cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
 }
 
 }  // namespace vvl

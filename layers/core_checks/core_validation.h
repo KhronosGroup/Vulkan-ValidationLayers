@@ -753,9 +753,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
                                                    const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
                                                    const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateActionStateDescriptorHeapUntyped(const vvl::CommandBuffer& cb_state, const spirv::Module& module_state,
-                                                  const spirv::EntryPoint& entry_point, const VkPipelineBindPoint bind_point,
-                                                  const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
+                                           const spirv::EntryPoint& entry_point, const bool has_embedded_samplers,
+                                           const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,

@@ -20,6 +20,7 @@
 #include "last_bound_state.h"
 #include <vulkan/vulkan_core.h>
 #include <cassert>
+#include <string>
 #include "containers/container_utils.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/pipeline_state.h"
@@ -1016,4 +1017,33 @@ vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
     }
     // Not sure how to find it if in this situation, so resort to a safe choice
     return vvl::DescriptorModeClassic;
+}
+
+std::string LastBound::DescribeInvalidDescriptorMode() const {
+    std::stringstream ss;
+
+    // If it is unknown, the user has just never set any descriptors
+    if (previous_descriptor_mode != vvl::DescriptorModeUnknown) {
+        ss << "\nThe command buffer is currently in ";
+
+        if (descriptor_mode == vvl::DescriptorModeClassic) {
+            ss << "'Classic Descriptor'";
+        } else if (descriptor_mode == vvl::DescriptorModeBuffer) {
+            ss << "'Descriptor Buffer'";
+        } else if (descriptor_mode == vvl::DescriptorModeHeap) {
+            ss << "'Descriptor Heap'";
+        }
+        ss << " mode from previous call to " << String(set_descriptor_mode) << " which invalidated the previous ";
+
+        if (previous_descriptor_mode == vvl::DescriptorModeClassic) {
+            ss << "'Classic Descriptor'";
+        } else if (previous_descriptor_mode == vvl::DescriptorModeBuffer) {
+            ss << "'Descriptor Buffer'";
+        } else if (previous_descriptor_mode == vvl::DescriptorModeHeap) {
+            ss << "'Descriptor Heap'";
+        }
+        ss << " mode that was set with " << String(previous_set_descriptor_mode);
+    }
+
+    return ss.str();
 }
