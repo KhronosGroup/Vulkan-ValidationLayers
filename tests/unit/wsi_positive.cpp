@@ -2803,6 +2803,57 @@ TEST_F(PositiveWsi, DestroySwapchainBeforeLayoutValidation) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, PresentModeFifoLatestReady) {
+    TEST_DESCRIPTION("Create a swapchain with present mode VK_PRESENT_MODE_FIFO_LATEST_READY_KHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentModeFifoLatestReady);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkPresentModeKHR fifo_present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    for (size_t i = 0; i < m_surface_present_modes.size(); i++) {
+        const VkPresentModeKHR present_mode = m_surface_present_modes[i];
+        if (present_mode == VK_PRESENT_MODE_FIFO_LATEST_READY_KHR) {
+            fifo_present_mode = present_mode;
+            break;
+        }
+    }
+    if (fifo_present_mode == VK_PRESENT_MODE_FIFO_KHR) {
+        GTEST_SKIP() << "Cannot find supported FIFO present mode";
+    }
+
+    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    surface_present_mode.presentMode = fifo_present_mode;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
+    surface_info.surface = m_surface;
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
+                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = fifo_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+}
+
 TEST_F(PositiveWsi, PresentTimings) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
