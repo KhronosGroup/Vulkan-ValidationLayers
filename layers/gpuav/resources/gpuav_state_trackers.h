@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,8 +63,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
                                       VkDescriptorAddressInfoEXT &out_address_info, uint32_t &out_dst_binding),
                                  48>;
-    using OnInstrumentationDescHeapUpdate = stdext::inplace_function<
-        void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDeviceAddressRangeEXT &out_address_range), 48>;
+    using OnInstrumentationDescHeapUpdate =
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDeviceAddress &out_address), 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
