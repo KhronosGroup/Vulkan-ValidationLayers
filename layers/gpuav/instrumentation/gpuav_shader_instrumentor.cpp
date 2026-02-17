@@ -274,6 +274,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
     instrumentation_device_settings_.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     instrumentation_device_settings_.support_non_semantic_info =
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
+    instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
 }
 
 void GpuShaderInstrumentor::Cleanup() {
