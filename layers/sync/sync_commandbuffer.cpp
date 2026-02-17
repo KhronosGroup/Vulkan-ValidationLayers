@@ -928,8 +928,6 @@ bool CommandBufferAccessContext::ValidateDrawAttachment(const Location &loc) con
 }
 
 bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Location &location) const {
-    // TODO: Add tests. This is never called by existing tests.
-    // TODO: Check for opportunities to improve error message after this covered by the tests.
     bool skip = false;
     const auto &last_bound_state = cb_state_->GetLastBoundGraphics();
     const auto *pipe = last_bound_state.pipeline_state;
@@ -965,9 +963,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
-
-    const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-    for (uint32_t i = info.info.colorAttachmentCount; i < attachment_count; i++) {
+    for (size_t i = info.info.colorAttachmentCount; i < info.attachments.size(); i++) {
         const auto &attachment = info.attachments[i];
         bool writeable = attachment.IsWriteable(last_bound_state);
 
