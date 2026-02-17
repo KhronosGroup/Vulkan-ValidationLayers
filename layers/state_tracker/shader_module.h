@@ -403,6 +403,8 @@ struct StageInterfaceVariable : public VariableBase {
     const std::vector<spv::BuiltIn> built_in_block;
     uint32_t total_built_in_components = 0;
 
+    std::string Describe() const;
+
     StageInterfaceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
                            const ParsedInfo &parsed);
 

@@ -3731,8 +3731,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
                                      ? rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount
                                      : rp_state.inheritance_rendering_info.colorAttachmentCount;
     for (uint32_t i = 0; i < color_count; ++i) {
-        const bool statically_writes_to_color_attachment = pipeline.fragmentShader_writable_output_location_list.find(i) !=
-                                                           pipeline.fragmentShader_writable_output_location_list.end();
+        const bool statically_writes_to_color_attachment =
+            pipeline.fs_writable_output_location_list.find(i) != pipeline.fs_writable_output_location_list.end();
         const bool mask_and_write_enabled = last_bound_state.GetColorWriteMask(i) != 0 && last_bound_state.IsColorWriteEnabled(i);
         if (!statically_writes_to_color_attachment || !mask_and_write_enabled) {
             continue;

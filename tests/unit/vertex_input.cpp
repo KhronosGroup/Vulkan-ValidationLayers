@@ -1308,14 +1308,14 @@ TEST_F(NegativeVertexInput, AttributeNotProvided) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x; /* not provided */
         void main(){
            gl_Position = x;
         }
     )glsl";
-    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1374,10 +1374,11 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     //         layout(location = 4) vec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
+               OpName %_struct_3 "x_struct"
                OpMemberDecorate %_struct_3 0 Location 4
                OpMemberDecorate %_struct_3 1 Location 6
                OpDecorate %_struct_3 Block

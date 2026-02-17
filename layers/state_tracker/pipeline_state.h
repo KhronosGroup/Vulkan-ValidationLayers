@@ -125,7 +125,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     // create_info_shaders + linking_shaders
     const VkShaderStageFlags active_shaders = 0;
 
-    const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
+    const vvl::unordered_set<uint32_t> fs_writable_output_location_list;
 
     // NOTE: this map is used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map

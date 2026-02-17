@@ -549,7 +549,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
         return skip;
     }
 
-    const auto &list = pipe->fragmentShader_writable_output_location_list;
+    const auto& list = pipe->fs_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
     const auto &current_context = CurrentContext();
     const SyncValidator &sync_state = cb_context.GetSyncState();
@@ -644,7 +644,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 
-    const auto &list = pipe->fragmentShader_writable_output_location_list;
+    const auto& list = pipe->fs_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 
     auto &current_context = CurrentContext();

@@ -2136,6 +2136,8 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
     const bool dynamic_write_mask = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
     const bool dynamic_blend_constants = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_BLEND_CONSTANTS);
 
+    const spirv::EntryPoint* fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
         const auto *attachment = attachment_info.image_view;
@@ -2260,28 +2262,25 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
 
         // Validation needing access to spir-v information
         // ---
-        const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
         if (fragment_entry_point && last_bound_state.IsDualBlending(color_index)) {
-            const auto get_max_fragment_location = [fragment_entry_point]() {
-                uint32_t max_fragment_location = 0;
-                for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
-                    if (variable->storage_class != spv::StorageClassOutput) {
-                        continue;
-                    }
-                    if (variable->decorations.location != spirv::kInvalidValue) {
-                        max_fragment_location = std::max(max_fragment_location, variable->decorations.location);
+            // Can start at zero, Location zero can't be higher than maxFragmentDualSrcAttachments
+            uint32_t max_fragment_location = 0;
+            const spirv::StageInterfaceVariable* max_output_variable = nullptr;
+            for (const auto* variable : fragment_entry_point->user_defined_interface_variables) {
+                if (variable->storage_class == spv::StorageClassOutput && variable->decorations.location != spirv::kInvalidValue) {
+                    if (variable->decorations.location > max_fragment_location) {
+                        max_fragment_location = variable->decorations.location;
+                        max_output_variable = variable;
                     }
                 }
-                return max_fragment_location;
-            };
+            }
 
-            const uint32_t max_fragment_location = get_max_fragment_location();
             if (max_fragment_location >= phys_dev_props.limits.maxFragmentDualSrcAttachments) {
                 std::ostringstream ss;
                 ss << "color attachment index " << color_index << " (" << attachment_info.Describe(cb_state, i)
-                   << ") is using Dual-Source Blending, but the largest output fragment Location (" << max_fragment_location
-                   << ") is not less than maxFragmentDualSrcAttachments (" << phys_dev_props.limits.maxFragmentDualSrcAttachments
-                   << ").\n";
+                   << ") is using Dual-Source Blending, but the Fragment shader " << max_output_variable->Describe()
+                   << " Location must be less than maxFragmentDualSrcAttachments ("
+                   << phys_dev_props.limits.maxFragmentDualSrcAttachments << ").\n";
                 if (max_fragment_location == 1 && phys_dev_props.limits.maxFragmentDualSrcAttachments == 1) {
                     // maxFragmentDualSrcAttachments is basically 1 for everyone and common case of trying to use dual-blending
                     // incorrectly

@@ -19,6 +19,8 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <spirv/unified1/spirv.hpp>
+#include <sstream>
+#include <string>
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "error_message/error_strings.h"
@@ -924,13 +926,31 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                              DynamicStatesToString(update_pipeline->dynamic_state).c_str());
             }
 
-            if (initial_pipeline->fragmentShader_writable_output_location_list !=
-                update_pipeline->fragmentShader_writable_output_location_list) {
+            if (initial_pipeline->fs_writable_output_location_list != update_pipeline->fs_writable_output_location_list) {
                 LogObjectList objlist(initial_pipeline->Handle(), update_pipeline->Handle());
+                std::stringstream ss;
+                ss << "was created with a fragment shader output interface using Locations [";
+                bool first = true;
+                for (const uint32_t& locations : initial_pipeline->fs_writable_output_location_list) {
+                    if (!first) {
+                        ss << ", ";
+                    }
+                    ss << locations;
+                    first = false;
+                }
+                ss << "], but it doesn't match the initial Fragment shader in initialPipeline which statically wrote to output "
+                      "Locations [";
+                first = true;
+                for (const uint32_t& locations : update_pipeline->fs_writable_output_location_list) {
+                    if (!first) {
+                        ss << ", ";
+                    }
+                    ss << locations;
+                    first = false;
+                }
+                ss << ']';
                 skip |= LogError("VUID-vkUpdateIndirectExecutionSetPipelineEXT-initialPipeline-11147", objlist,
-                                 set_write_loc.dot(Field::pipeline),
-                                 "was created with a fragment shader interface different from the one specified in "
-                                 "initialPipeline. The fragment shaders statically write to different locations.");
+                                 set_write_loc.dot(Field::pipeline), "%s", ss.str().c_str());
             }
 
             // Default to false incase there is not fragment shader
@@ -1084,8 +1104,9 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
         const auto initial_fragment_shader_object = indirect_execution_set->initial_fragment_shader_object;
         if (initial_fragment_shader_object && update_shader_object->create_info.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
             if (update_shader_object->entrypoint && initial_fragment_shader_object->entrypoint) {
-                vvl::unordered_set<uint32_t> update_shader_output_locations;
-                vvl::unordered_set<uint32_t> initial_shader_output_locations;
+                // Ordered to provide a faster comparison and better error message, these should be small sets.
+                std::set<uint32_t> update_shader_output_locations;
+                std::set<uint32_t> initial_shader_output_locations;
 
                 // From GetFSOutputLocations()
                 for (const auto* variable : update_shader_object->entrypoint->user_defined_interface_variables) {
@@ -1103,10 +1124,28 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
 
                 if (update_shader_output_locations != initial_shader_output_locations) {
                     LogObjectList objlist(initial_fragment_shader_object->Handle(), update_shader_object->Handle());
-                    skip |=
-                        LogError("VUID-vkUpdateIndirectExecutionSetShaderEXT-None-11148", objlist, set_write_loc.dot(Field::shader),
-                                 "was created with a fragment shader interface different from the initial Fragment VkShaderEXT. "
-                                 "The fragment shaders statically write to different locations.");
+                    std::stringstream ss;
+                    ss << "was created with a fragment shader output interface using Locations [";
+                    bool first = true;
+                    for (const uint32_t& locations : update_shader_output_locations) {
+                        if (!first) {
+                            ss << ", ";
+                        }
+                        ss << locations;
+                        first = false;
+                    }
+                    ss << "], but it doesn't match the initial Fragment VkShaderEXT statically wrote to output Locations [";
+                    first = true;
+                    for (const uint32_t& locations : initial_shader_output_locations) {
+                        if (!first) {
+                            ss << ", ";
+                        }
+                        ss << locations;
+                        first = false;
+                    }
+                    ss << ']';
+                    skip |= LogError("VUID-vkUpdateIndirectExecutionSetShaderEXT-None-11148", objlist,
+                                     set_write_loc.dot(Field::shader), "%s", ss.str().c_str());
                 }
 
                 const bool initial_shader_frag_depth =
