@@ -82,25 +82,25 @@ void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
     const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : pCreateInfo->usage;
 
     if (in_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        resource_descriptor_buffer_handles_.emplace(*pBuffer);
+        descriptor_buffer.resource_handles_.emplace(*pBuffer);
     }
 }
 
 void Validator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
-    resource_descriptor_buffer_handles_.erase(buffer);
+    descriptor_buffer.resource_handles_.erase(buffer);
 }
 
 void Validator::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator,
                                         const RecordObject &record_obj) {
-    if (resource_descriptor_buffer_memory_handles_.find(memory) != resource_descriptor_buffer_memory_handles_.end()) {
-        resource_descriptor_buffer_memory_handles_.erase(memory);
+    if (descriptor_buffer.resource_memory_handles_.find(memory) != descriptor_buffer.resource_memory_handles_.end()) {
+        descriptor_buffer.resource_memory_handles_.erase(memory);
     }
 }
 
 void Validator::BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset) {
-    if (resource_descriptor_buffer_handles_.find(buffer) != resource_descriptor_buffer_handles_.end()) {
-        resource_descriptor_buffer_memory_handles_.emplace(memory);
+    if (descriptor_buffer.resource_handles_.find(buffer) != descriptor_buffer.resource_handles_.end()) {
+        descriptor_buffer.resource_memory_handles_.emplace(memory);
     }
 }
 
@@ -134,7 +134,7 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
 
     vku::safe_VkDescriptorBufferBindingInfoEXT &modified_binding_info = chassis_state.modified_binding_infos[bufferCount];
     modified_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    modified_binding_info.address = global_resource_descriptor_buffer_.Address();
+    modified_binding_info.address = GetGlobalDescriptorBuffer().Address();
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     CommandBufferSubState &gpuav_cb_state = SubState(*cb_state);
@@ -155,9 +155,9 @@ void Validator::PreCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffe
             InternalWarning(commandBuffer, record_obj.location.dot(Field::pBindInfo),
                             "address points to multiple VkBuffer, taking first one");
         }
-        resource_heap_buffer_state_ = buffer_states[0];
+        resource_heap.buffer_state_ = buffer_states[0];
     }
-    resource_heap_reserved_offset_ = pBindInfo->reservedRangeOffset;
+    resource_heap.reserved_offset_ = pBindInfo->reservedRangeOffset;
 
     auto modified_bind_heap_info = const_cast<VkBindHeapInfoEXT *>(pBindInfo);
     modified_bind_heap_info->reservedRangeOffset += resource_heap_reserved_bytes_;

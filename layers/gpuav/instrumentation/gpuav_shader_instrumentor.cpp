@@ -195,16 +195,17 @@ void GpuShaderInstrumentor::SetupDescriptorBuffers(const Location &loc) {
 }
 
 void GpuShaderInstrumentor::SetupDescriptorHeap(const Location &loc) {
-    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        const VkPhysicalDeviceDescriptorHeapPropertiesEXT &descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
-        VkDeviceSize bytes_to_reserve = Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings,
-                                              descriptor_heap_props.bufferDescriptorAlignment);
-        bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
-
-        resource_heap_reserved_bytes_ = bytes_to_reserve;
-        buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
-        push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        return;
     }
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
+    VkDeviceSize bytes_to_reserve =
+        Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings, descriptor_heap_props.bufferDescriptorAlignment);
+    bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
+
+    resource_heap_reserved_bytes_ = bytes_to_reserve;
+    buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
+    push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
