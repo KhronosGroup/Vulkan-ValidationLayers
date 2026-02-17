@@ -1154,11 +1154,6 @@
                     "descriptorBindingStorageTensorUpdateAfterBind": true,
                     "tensors": true
                 },
-                "VkPhysicalDeviceDescriptorHeapTensorPropertiesARM": {
-                    "tensorDescriptorSize": 256,
-                    "tensorDescriptorAlignment": 256,
-                    "tensorCaptureReplayOpaqueDataSize": 8
-                },
                 "VkPhysicalDevicePresentTimingFeaturesEXT": {
                     "presentTiming": true,
                     "presentAtAbsoluteTime": true,
@@ -1527,8 +1522,8 @@
                     "imageCaptureReplayOpaqueDataSize": 8,
                     "maxDescriptorHeapEmbeddedSamplers": 2032,
                     "samplerYcbcrConversionCount": 3,
-                    "sparseDescriptorHeaps": 0,
-                    "protectedDescriptorHeaps": 0
+                    "sparseDescriptorHeaps": false,
+                    "protectedDescriptorHeaps": false
                 },
                 "VkPhysicalDevicePushConstantBankPropertiesNV": {
                     "maxGraphicsPushConstantBanks": 4096,
@@ -2122,6 +2117,11 @@
                 "VkPhysicalDeviceExtendedDynamicState3PropertiesEXT": {
                     "dynamicPrimitiveTopologyUnrestricted": true
                 },
+                "VkPhysicalDeviceDescriptorHeapTensorPropertiesARM": {
+                    "tensorDescriptorSize": 256,
+                    "tensorDescriptorAlignment": 256,
+                    "tensorCaptureReplayOpaqueDataSize": 8
+                },
                 "VkPhysicalDeviceRobustness2PropertiesEXT": {},
                 "VkPhysicalDevicePortabilitySubsetPropertiesKHR": {},
                 "VkPhysicalDeviceFragmentShadingRatePropertiesKHR": {
@@ -2275,9 +2275,6 @@
                         "height": 64
                     },
                     "maxRenderPassStripes": 32
-                },
-                "VkPhysicalDevicePresentationPropertiesOHOS": {
-                    "sharedImage": true
                 },
                 "VkPhysicalDevicePipelineBinaryPropertiesKHR": {
                     "pipelineBinaryInternalCache": true,
@@ -2500,8 +2497,6 @@
                 "VK_EXT_vertex_attribute_divisor": 1,
                 "VK_EXT_vertex_input_dynamic_state": 1,
                 "VK_EXT_vertex_attribute_robustness": 1,
-                "VK_EXT_video_encode_h264": 1,
-                "VK_EXT_video_encode_h265": 1,
                 "VK_EXT_ycbcr_2plane_444_formats": 1,
                 "VK_EXT_ycbcr_image_arrays": 1,
                 "VK_EXT_zero_initialize_device_memory": 1,
@@ -2748,7 +2743,6 @@
                 "VK_QNX_screen_surface": 1,
                 "VK_OHOS_surface": 1,
                 "VK_OHOS_external_memory": 1,
-                "VK_OHOS_native_buffer": 1,
                 "VK_SEC_amigo_profiling": 1,
                 "VK_SEC_pipeline_cache_incremental_mode": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
@@ -9222,7 +9216,7 @@
                             ]
                         },
                         "VkVideoDecodeVP9CapabilitiesKHR": {
-                            "maxLevel": "STD_VIDEO_VP9_LEVEL_3_2"
+                            "maxLevel": "STD_VIDEO_VP9_LEVEL_6_2"
                         }
                     }
                 },
@@ -9679,7 +9673,6 @@
                             "maxBPictureL0ReferenceCount": 3,
                             "maxL1ReferenceCount": 2,
                             "maxSubLayerCount": 1,
-                            "expectDyadicTemporalLayerPattern": false,
                             "minQp": 16,
                             "maxQp": 32,
                             "prefersGopRemainingFrames": false,
@@ -9760,7 +9753,6 @@
                             "maxBPictureL0ReferenceCount": 0,
                             "maxL1ReferenceCount": 0,
                             "maxSubLayerCount": 1,
-                            "expectDyadicTemporalLayerPattern": false,
                             "minQp": 0,
                             "maxQp": 51,
                             "prefersGopRemainingFrames": true,
@@ -9843,7 +9835,6 @@
                             "maxBPictureL0ReferenceCount": 2,
                             "maxL1ReferenceCount": 2,
                             "maxSubLayerCount": 4,
-                            "expectDyadicTemporalLayerPattern": true,
                             "minQp": 16,
                             "maxQp": 51,
                             "prefersGopRemainingFrames": true,
