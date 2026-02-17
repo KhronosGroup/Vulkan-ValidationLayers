@@ -7146,6 +7146,12 @@ TEST_F(NegativeShaderObject, EmbeddedSamplerReservedArea) {
 
     m_command_buffer.Begin();
 
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = resource_heap.AddressRange();
+    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &create_info.stage, &compShader.handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-pBindInfo-11375");

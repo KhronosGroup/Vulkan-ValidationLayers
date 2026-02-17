@@ -586,8 +586,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } descriptor_heap;
 
-    void SetDescriptorMode(vvl::DescriptorMode new_mode);
-    void InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode);
+    void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function);
+    void InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::Func function);
 
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }

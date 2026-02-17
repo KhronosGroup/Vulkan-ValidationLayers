@@ -3994,6 +3994,12 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
 
         m_command_buffer.Begin();
 
+        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+        bind_resource_info.heapRange = resource_heap.AddressRange();
+        bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
         vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-pBindInfo-11375");
@@ -4166,6 +4172,13 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
         pipe.CreateComputePipeline(false);
 
         m_command_buffer.Begin();
+
+        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+        bind_resource_info.heapRange = resource_heap.AddressRange();
+        bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         if (i != 0) {
             vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
@@ -4237,6 +4250,13 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
         const vkt::Shader comp_shader(*m_device, shader_ci);
 
         m_command_buffer.Begin();
+
+        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+        bind_resource_info.heapRange = resource_heap.AddressRange();
+        bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+
         if (i != 0) {
             vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
         }
@@ -4747,6 +4767,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0u, 16u, src_data);
     push_data_info1.data.size = 8u;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdPushDataEXT(m_command_buffer, &push_data_info1);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
@@ -6254,7 +6275,6 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -6263,7 +6283,6 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
 
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -6353,7 +6372,6 @@ TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1u, &descriptor_buffer_binding_info);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11308");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();

@@ -33,7 +33,6 @@
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "state_tracker/event_map.h"
 #include "state_tracker/subresource_adapter.h"
-#include "state_tracker/descriptor_mode.h"
 
 #include "containers/custom_containers.h"
 
@@ -754,9 +753,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
                                                    const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
                                                    const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateActionStateDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::Module& module_state,
-                                           const spirv::EntryPoint& entry_point, const vvl::DescriptorMode descriptor_mode,
-                                           const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
+                                           const spirv::EntryPoint& entry_point, const bool has_embedded_samplers,
+                                           const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,
