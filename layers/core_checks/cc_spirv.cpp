@@ -80,17 +80,22 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state
 
     // VUID 06061 requires dynamicRenderingLocalRead and if they have, we can just check the colorAttachmentCount
     if (rp_state->UsesDynamicRendering()) {
-        const uint32_t color_count = rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
-        for (const auto i : variable.input_attachment_index_read) {
-            // offsets by the InputAttachmentIndex decoration
-            const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
-            if (input_attachment_index >= color_count) {
-                const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
+        const bool has_input_attachment_remapping_info =
+            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline.GetCreateInfoPNext());
+        if (!has_input_attachment_remapping_info) {
+            const uint32_t color_count = rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
+            for (const auto i : variable.input_attachment_index_read) {
+                // offsets by the InputAttachmentIndex decoration
+                const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+                if (input_attachment_index >= color_count) {
+                    const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
                                  "%s which is not less than VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
                                  ")\nIf VkRenderingInputAttachmentIndexInfo is provided, the index can be set, but without it, it "
                                  "uses the default index values.",
                                  print_index(input_attachment_index).c_str(), color_count);
+                }
             }
         }
     } else {
