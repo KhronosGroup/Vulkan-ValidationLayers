@@ -42,6 +42,8 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     std::vector<VkShaderEXT> linked_shaders;
     const bool descriptor_heap_mode;
     const uint32_t descriptor_heap_embedded_samplers_count;
+    const bool uses_resource_heap;
+    const bool uses_sampler_heap;
 
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map

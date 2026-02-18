@@ -1453,7 +1453,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             }
             const bool has_embedded_samplers = pipeline.descriptor_heap_embedded_samplers_count != 0;
 
-            skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, has_embedded_samplers, vuid);
+            skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, stage_state.uses_resource_heap,
+                                                      stage_state.uses_sampler_heap, has_embedded_samplers, vuid);
 
             // Only need to validate if we know there is a embedded sampler to check against
             if (has_embedded_samplers) {
@@ -1586,9 +1587,10 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     return skip;
 }
 
-bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
-                                                   const spirv::EntryPoint& entry_point, const bool has_embedded_samplers,
-                                                   const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound &last_bound_state, const spirv::Module &module_state,
+                                                   const spirv::EntryPoint &entry_point, const bool uses_resource_heap,
+                                                   const bool uses_sampler_heap, const bool has_embedded_samplers,
+                                                   const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -1601,12 +1603,12 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
         return skip;
     }
 
-    for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
-        // TODO - Currently at this level we don't know if the sampler is embedded or not
-        // If there is only embedded samplers, the sampler heap isn't required to be bound
-        if ((resource_variable.is_sampler_heap || resource_variable.is_sampler) && !has_embedded_samplers) {
-            if (cb_state.IsPrimary()) {
-                if (!cb_state.descriptor_heap.sampler_bound) {
+    // TODO - Currently at this level we don't know if the sampler is embedded or not
+    // If there is only embedded samplers, the sampler heap isn't required to be bound
+    if (uses_sampler_heap && !has_embedded_samplers) {
+        if (cb_state.IsPrimary()) {
+            if (!cb_state.descriptor_heap.sampler_bound) {
+                for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
                     skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
                                      "SPIR-V (%s) uses %s, but a sampler heap was not bound (with vkCmdBindSamplerHeapEXT).%s",
                                      string_SpvExecutionModel(entry_point.execution_model),
@@ -1614,7 +1616,9 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                                      last_bound_state.DescribeInvalidDescriptorMode().c_str());
                     break;  // don't spam every descriptor
                 }
-            } else if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+            }
+        } else if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
+            for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
                 skip |=
                     LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
                              "SPIR-V (%s) uses %s, but "
@@ -1622,9 +1626,11 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                              string_SpvExecutionModel(entry_point.execution_model), resource_variable.DescribeDescriptor().c_str());
                 break;  // don't spam every descriptor
             }
-        } else {
-            if (cb_state.IsPrimary()) {
-                if (!cb_state.descriptor_heap.resource_bound) {
+        }
+    } else if (uses_resource_heap) {
+        if (cb_state.IsPrimary()) {
+            if (!cb_state.descriptor_heap.resource_bound) {
+                for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
                     skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
                                      "SPIR-V (%s) uses %s, but a resource heap was not bound (with vkCmdBindResourceHeapEXT).%s",
                                      string_SpvExecutionModel(entry_point.execution_model),
@@ -1632,7 +1638,9 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                                      last_bound_state.DescribeInvalidDescriptorMode().c_str());
                     break;  // don't spam every descriptor
                 }
-            } else if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+            }
+        } else if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
+            for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
                 skip |=
                     LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
                              "SPIR-V (%s) uses %s, but "
@@ -1723,13 +1731,14 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
     // Check if the current shader objects are compatible for the maximum used set with the bound sets.
     for (const auto &shader_state : last_bound_state.shader_object_states) {
         if (shader_state && shader_state->descriptor_heap_mode) {
-            const spirv::Module* module_state = shader_state->spirv.get();
+            const spirv::Module *module_state = shader_state->spirv.get();
             const spirv::EntryPoint *entry_point = shader_state->entrypoint.get();
             if (module_state && entry_point) {
                 const bool has_embedded_samplers = shader_state->descriptor_heap_embedded_samplers_count != 0;
 
-                skip |=
-                    ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, has_embedded_samplers, vuid);
+                skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point,
+                                                          shader_state->uses_resource_heap, shader_state->uses_sampler_heap,
+                                                          has_embedded_samplers, vuid);
 
                 // Only need to validate if we know there is a embedded sampler to check against
                 if (has_embedded_samplers) {

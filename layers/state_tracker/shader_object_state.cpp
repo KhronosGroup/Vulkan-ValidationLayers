@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 #include "shader_module.h"
 #include "state_tracker/state_tracker.h"
+#include "utils/shader_utils.h"
 
 namespace vvl {
 static DescriptorSetLayoutList GetSetLayouts(DeviceState &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
@@ -38,6 +39,10 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
       entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
       descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
       descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
+      uses_resource_heap(
+          ResourceHeapIsUsed(safe_create_info.pNext, entrypoint, spirv ? spirv->static_data_.has_descriptor_heap : false)),
+      uses_sampler_heap(
+          SamplerHeapIsUsed(safe_create_info.pNext, entrypoint, spirv ? spirv->static_data_.has_descriptor_heap : false)),
       active_slots(GetActiveSlots(entrypoint)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       set_layouts(GetSetLayouts(dev_data, create_info)),

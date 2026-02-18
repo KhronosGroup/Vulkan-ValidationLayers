@@ -58,6 +58,8 @@ struct ShaderStageState {
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
     // Because this can come from a different struct depending on the Pipeline type, have it passed on creation
     const bool descriptor_heap_mode;
+    const bool uses_resource_heap;
+    const bool uses_sampler_heap;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
                      const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
