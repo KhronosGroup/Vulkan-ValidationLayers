@@ -636,11 +636,17 @@ void Instance::FindLeakedObjects(VulkanObjectType object_type, std::vector<Vulka
 bool Instance::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
     std::stringstream ss;
     ss << FormatHandle(instance) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
+    const uint32_t limit = debug_report->duplicate_message_limit;
+    if (leaked_list.size() > limit) {
+        // Feels like spam after this, user should have zero anyway
+        ss << "(Only printing the first " << limit
+           << " objects, but can be increased by raising the VK_LAYER_DUPLICATE_MESSAGE_LIMIT/'duplicate_message_limit' setting "
+              "value)\n";
+    }
+
     uint32_t count = 0;
     for (const auto& object : leaked_list) {
-        if (count >= 64) {
-            // Feels like spam after this, user should have zero anyway
-            ss << "\n(Only printing the first 64 objects)";
+        if (count >= limit) {
             break;
         }
         if (count != 0) {
@@ -663,11 +669,17 @@ void Device::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanT
 bool Device::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
     std::stringstream ss;
     ss << FormatHandle(device) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
+    const uint32_t limit = debug_report->duplicate_message_limit;
+    if (leaked_list.size() > limit) {
+        // Feels like spam after this, user should have zero anyway
+        ss << "(Only printing the first " << limit
+           << " objects, but can be increased by raising the VK_LAYER_DUPLICATE_MESSAGE_LIMIT/'duplicate_message_limit' setting "
+              "value)\n";
+    }
+
     uint32_t count = 0;
     for (const auto& object : leaked_list) {
-        if (count >= 64) {
-            // Feels like spam after this, user should have zero anyway
-            ss << "\n(Only printing the first 64 objects)";
+        if (count >= limit) {
             break;
         }
         if (count != 0) {
