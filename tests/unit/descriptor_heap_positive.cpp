@@ -3721,3 +3721,79 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    const uint32_t read_offset = 48u;
+    const uint32_t indirect_offset = 288u;
+
+    vkt::Buffer read_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
+    uint32_t* read_data = static_cast<uint32_t*>(read_buffer.Memory().Map());
+    for (uint32_t i = 0; i < 4; ++i) {
+        read_data[i] = i + 1;
+    }
+    vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
+    uint8_t* indirect_data = static_cast<uint8_t*>(indirect_buffer.Memory().Map());
+    VkDeviceAddress* indirect_data_address = reinterpret_cast<VkDeviceAddress*>(indirect_data + indirect_offset);
+    *indirect_data_address = read_buffer.Address();
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+    mapping.sourceData.indirectAddress.pushOffset = static_cast<uint32_t>(read_offset);
+    mapping.sourceData.indirectAddress.addressOffset = static_cast<uint32_t>(indirect_offset);
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* vert_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ReadData {
+            vec4 pos;
+        };
+        void main() {
+            gl_Position = pos;
+            gl_PointSize = 1.0f;
+        }
+    )glsl";
+
+    VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkPipelineShaderStageCreateInfo stages[2];
+    stages[0] = vert_module.GetStageCreateInfo();
+    stages[0].pNext = &mapping_info;
+    stages[1] = frag_module.GetStageCreateInfo();
+
+    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
+    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
+    descriptor_heap_pipe.gp_ci_.pStages = stages;
+    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+
+    VkDeviceAddress indirect_address = indirect_buffer.Address();
+
+    VkPushDataInfoEXT push_data = vku::InitStructHelper();
+    push_data.offset = read_offset;
+    push_data.data.address = &indirect_address;
+    push_data.data.size = sizeof(indirect_address);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
+    vk::CmdPushDataEXT(m_command_buffer, &push_data);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
