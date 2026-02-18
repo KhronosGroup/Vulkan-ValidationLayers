@@ -365,22 +365,9 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
     return skip;
 }
 
-bool IsImageLayoutDepthWritable(VkImageLayout image_layout) {
-    return (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-}
-
-bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
-    return (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL);
-}
-
 bool IsDepthAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
     const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();
-    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsDepthOnly(format)) && depth_write_enable &&
-           IsImageLayoutDepthWritable(layout);
+    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsDepthOnly(format)) && depth_write_enable;
 }
 
 bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
@@ -388,8 +375,7 @@ bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFor
     //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
     //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
     const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
-    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsStencilOnly(format)) && stencil_test_enable &&
-           IsImageLayoutStencilWritable(layout);
+    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsStencilOnly(format)) && stencil_test_enable;
 }
 
 // Traverse the attachment resolves for this a specific subpass, and do action() to them.
@@ -677,14 +663,14 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
         const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && depth_write_enable && IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
+        if (has_depth && depth_write_enable) {
             depth_write = true;
         }
         // PHASE1 TODO: It needs to check if stencil is writable.
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_stencil && stencil_test_enable && IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
+        if (has_stencil && stencil_test_enable) {
             stencil_write = true;
         }
 
