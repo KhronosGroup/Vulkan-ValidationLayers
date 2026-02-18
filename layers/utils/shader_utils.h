@@ -26,6 +26,7 @@
 
 namespace spirv {
 struct ResourceInterfaceVariable;
+struct EntryPoint;
 }
 
 enum class ShaderObjectStage : uint32_t {
@@ -116,3 +117,8 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
                                 const spirv::ResourceInterfaceVariable& resource_variable);
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,
                                          const spirv::ResourceInterfaceVariable& resource_variable);
+
+bool ResourceHeapIsUsed(const void *pNext, const std::shared_ptr<const spirv::EntryPoint> &entry_point,
+                        const bool has_descriptor_heap);
+bool SamplerHeapIsUsed(const void *pNext, const std::shared_ptr<const spirv::EntryPoint> &entry_point,
+                       const bool has_descriptor_heap);

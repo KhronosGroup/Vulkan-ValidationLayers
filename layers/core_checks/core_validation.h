@@ -753,7 +753,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
                                                    const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
-                                           const spirv::EntryPoint& entry_point, const bool has_embedded_samplers,
+                                           const spirv::EntryPoint& entry_point, const bool uses_resource_heap,
+                                           const bool uses_sampler_heap, const bool has_embedded_samplers,
                                            const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;

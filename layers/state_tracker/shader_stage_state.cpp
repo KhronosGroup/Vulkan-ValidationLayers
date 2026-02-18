@@ -20,6 +20,7 @@
 #include "shader_stage_state.h"
 
 #include "state_tracker/shader_module.h"
+#include "utils/shader_utils.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 // Common for both Pipeline and Shader Object
@@ -77,9 +78,9 @@ const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
-                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
-                                   const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
+ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                                   const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout,
                                    bool descriptor_heap_mode)
@@ -90,4 +91,8 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(pipeline_layout),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
-      descriptor_heap_mode(descriptor_heap_mode) {}
+      descriptor_heap_mode(descriptor_heap_mode),
+      uses_resource_heap(
+          ResourceHeapIsUsed(GetPNext(), entrypoint, spirv_state ? spirv_state->static_data_.has_descriptor_heap : false)),
+      uses_sampler_heap(
+          SamplerHeapIsUsed(GetPNext(), entrypoint, spirv_state ? spirv_state->static_data_.has_descriptor_heap : false)) {}
