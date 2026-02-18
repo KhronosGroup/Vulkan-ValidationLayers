@@ -468,8 +468,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateCmdDrawInstance(const LastBound& last_bound_state, uint32_t instanceCount, uint32_t firstInstance,
                                  const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, const vvl::Buffer* index_buffer_state,
-                                    const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const vvl::DeviceMemory& mem_info,
                                    VkDeviceSize memoryOffset, const Location& loc) const;
@@ -1927,9 +1926,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
                                         uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
                                         const ErrorObject& error_obj) const override;
-    bool ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_state, const vvl::Buffer& index_buffer_state,
-                                          uint32_t indexCount, uint32_t firstIndex, const Location& loc,
-                                          const char* first_index_vuid) const;
+    bool ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_state, uint32_t indexCount, uint32_t firstIndex,
+                                          const Location& loc, const char* first_index_vuid) const;
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                        const ErrorObject& error_obj) const override;

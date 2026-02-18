@@ -31,6 +31,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
+#include "state_tracker/vertex_index_buffer_state.h"
 #include "utils/assert_utils.h"
 #include "utils/image_utils.h"
 #include "containers/container_utils.h"
@@ -345,7 +346,7 @@ void CommandBuffer::ResetCBState() {
         item.Reset();
     }
     active_framebuffer = VK_NULL_HANDLE;
-    index_buffer_binding.reset();
+    index_buffer_binding = {};
 
     tensor_barriers.clear();
 
@@ -2273,7 +2274,7 @@ void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderOb
 // "When multiview is enabled, at the beginning of each subpass all non-render pass state is undefined."
 void CommandBuffer::UnbindResources() {
     // Vertex and index buffers
-    index_buffer_binding.reset();
+    index_buffer_binding = {};
     current_vertex_buffer_binding_info.clear();
 
     // Push constants

@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,9 +138,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(const uint32_t *error_record, const Location &loc_with_debug_region,
-                                      const LogObjectList &objlist),
-                                 80 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
+        stdext::inplace_function<bool(const uint32_t* error_record, const Location& loc_with_debug_region,
+                                      const LogObjectList& objlist),
+                                 88 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     struct CommandErrorLogger {
         vvl::LocationCapture loc;
         LogObjectList objlist;
