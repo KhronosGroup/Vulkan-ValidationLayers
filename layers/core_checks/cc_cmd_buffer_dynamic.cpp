@@ -924,25 +924,25 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                     if (!enabled_features.legacyVertexAttributes || shader64) {
                         skip |= LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), vuid.loc(),
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
-                                         ", location %" PRIu32 ") with format %s but the vertex shader input is numeric type %s",
+                                         ", location %" PRIu32 ") with format %s but the vertex shader %s is numeric type %s",
                                          attrib->index, attrib->desc.binding, attrib->desc.location,
-                                         string_VkFormat(attrib->desc.format),
+                                         string_VkFormat(attrib->desc.format), variable_ptr->Describe().c_str(),
                                          vert_spirv_state->DescribeType(var_base_type_id).c_str());
                     }
                 } else if (attribute64 && !shader64) {
-                    skip |= LogError(
-                        vuid.vertex_input_format_08936, vert_spirv_state->handle(), vuid.loc(),
-                        "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
-                        ", location %" PRIu32 ") with a 64-bit format (%s) but the vertex shader input is 32-bit type (%s)",
-                        attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
-                        vert_spirv_state->DescribeType(var_base_type_id).c_str());
+                    skip |=
+                        LogError(vuid.vertex_input_format_08936, vert_spirv_state->handle(), vuid.loc(),
+                                 "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
+                                 ", location %" PRIu32 ") with a 64-bit format (%s) but the vertex shader %s is a 32-bit type (%s)",
+                                 attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
+                                 variable_ptr->Describe().c_str(), vert_spirv_state->DescribeType(var_base_type_id).c_str());
                 } else if (!attribute64 && shader64) {
-                    skip |= LogError(
-                        vuid.vertex_input_format_08937, vert_spirv_state->handle(), vuid.loc(),
-                        "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
-                        ", location %" PRIu32 ") with a 32-bit format (%s) but the vertex shader input is 64-bit type (%s)",
-                        attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
-                        vert_spirv_state->DescribeType(var_base_type_id).c_str());
+                    skip |=
+                        LogError(vuid.vertex_input_format_08937, vert_spirv_state->handle(), vuid.loc(),
+                                 "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
+                                 ", location %" PRIu32 ") with a 32-bit format (%s) but the vertex shader %s is a 64-bit type (%s)",
+                                 attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
+                                 variable_ptr->Describe().c_str(), vert_spirv_state->DescribeType(var_base_type_id).c_str());
                 } else if (attribute64 && shader64) {
                     const uint32_t attribute_components = vkuFormatComponentCount(attrib->desc.format);
                     const uint32_t input_components = vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type);
@@ -950,20 +950,20 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                         skip |= LogError(vuid.vertex_input_format_09203, vert_spirv_state->handle(), vuid.loc(),
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
                                          ", location %" PRIu32 ") with a %" PRIu32
-                                         "-wide 64-bit format (%s) but the vertex shader input is %" PRIu32
+                                         "-wide 64-bit format (%s) but the vertex shader %s is %" PRIu32
                                          "-wide. (64-bit vertex input don't have default values and require "
                                          "components to match what is used in the shader)",
                                          attrib->index, attrib->desc.binding, attrib->desc.location, attribute_components,
-                                         string_VkFormat(attrib->desc.format), input_components);
+                                         string_VkFormat(attrib->desc.format), variable_ptr->Describe().c_str(), input_components);
                     }
                 }
             }
             if (!location_provided && !enabled_features.vertexAttributeRobustness && !enabled_features.maintenance9) {
                 skip |= LogError(vuid.vertex_input_format_07939, vert_spirv_state->handle(), vuid.loc(),
-                                 "Vertex shader uses input at location %" PRIu32
+                                 "Vertex shader %s is using Location %" PRIu32
                                  ", but it was not provided with vkCmdSetVertexInputEXT(). (This can be valid if "
                                  "either the vertexAttributeRobustness or maintenance9 feature is enabled)",
-                                 variable_ptr->decorations.location);
+                                 variable_ptr->Describe().c_str(), variable_ptr->decorations.location);
             }
         }
     }

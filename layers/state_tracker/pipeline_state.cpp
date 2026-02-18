@@ -913,7 +913,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
       create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, state_data)),
       active_shaders(create_info_shaders | linking_shaders),
-      fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_states)),
+      fs_writable_output_location_list(GetFSOutputLocations(stage_states)),
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetGraphicsDynamicState(*this)),

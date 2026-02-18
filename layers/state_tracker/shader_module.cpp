@@ -1964,6 +1964,34 @@ std::string ResourceInterfaceVariable::DescribeDescriptor() const {
     return ss.str();
 }
 
+std::string StageInterfaceVariable::Describe() const {
+    assert(!is_built_in);
+    std::ostringstream ss;
+    ss << "[" << string_SpvStorageClass(storage_class) << " variable";
+
+    if (type_struct_info) {
+        // is a struct where each field has it's own location
+        if (!debug_name.empty()) {
+            ss << " \"" << debug_name << "\"";
+        }
+        // TODO - We don't track details about the member variables here (Location, Name)
+        // GLSL/HLSL/Slang seem to all generate non-structs anyway in practice
+        // If we decide to add, various test targeting VU 08733 can be used
+        ss << " is a struct with " << type_struct_info->members.size() << " members";
+    } else if (decorations.location != spirv::kInvalidValue) {
+        ss << ", Location " << decorations.location;
+        if (!debug_name.empty()) {
+            ss << ", \"" << debug_name << "\"";
+        }
+    } else {
+        assert(false);
+        ss << "INVALID, no location or struct";
+    }
+
+    ss << "]";
+    return ss.str();
+}
+
 bool StageInterfaceVariable::IsPerTaskNV(const StageInterfaceVariable& variable) {
     // will always be in a struct member
     if (variable.type_struct_info &&

@@ -933,7 +933,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return skip;
 
-    const auto &list = pipe->fragmentShader_writable_output_location_list;
+    const auto& list = pipe->fs_writable_output_location_list;
     const auto &access_context = *GetCurrentAccessContext();
 
     const DynamicRenderingInfo &info = *dynamic_rendering_info_;
@@ -1000,7 +1000,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 
-    const auto &list = pipe->fragmentShader_writable_output_location_list;
+    const auto& list = pipe->fs_writable_output_location_list;
     auto &access_context = *GetCurrentAccessContext();
 
     const DynamicRenderingInfo &info = *dynamic_rendering_info_;
