@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -19,10 +19,11 @@
  */
 #pragma once
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan_core.h>
 
 namespace vvl {
 class Buffer;
+class DeviceState;
 
 // Data for a given binding, that can be updated by calls like vkCmdBindVertexBuffers and vkCmdSetVertexInputEXT
 struct VertexBufferBinding {
@@ -41,20 +42,37 @@ struct VertexBufferBinding {
     void reset() { *this = VertexBufferBinding(); }
 };
 
-struct IndexBufferBinding {
-    // buffer might be VK_NULL_HANDLE because it was set or by default, we need to actually know if the command buffer binds or not
-    bool bound;
+class IndexBufferBinding {
+  public:
+    IndexBufferBinding() = default;  // reset state
 
-    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using maintenance6
-    VkDeviceSize size;
-    VkDeviceSize offset;
-    VkIndexType index_type;
-
-    IndexBufferBinding() : bound(false), buffer(VK_NULL_HANDLE), size(0), offset(0), index_type(static_cast<VkIndexType>(0)) {}
     IndexBufferBinding(VkBuffer buffer_, VkDeviceSize size_, VkDeviceSize offset_, VkIndexType index_type_)
-        : bound(true), buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
+        : bound(true), size(size_), index_type(index_type_), buffer(buffer_), offset(offset_), address(0) {}
+    IndexBufferBinding(VkDeviceAddress address_, VkDeviceSize size_, VkIndexType index_type_)
+        : bound(true), size(size_), index_type(index_type_), buffer(VK_NULL_HANDLE), offset(0), address(address_) {}
 
-    void reset() { *this = IndexBufferBinding(); }
+    // buffer might be VK_NULL_HANDLE because it was set or by default, we need to actually know if the command buffer binds or not
+    bool bound = false;
+
+    VkDeviceSize size{0};
+
+    VkIndexType index_type = static_cast<VkIndexType>(0);
+
+    // Will look both in VkDeviceAddress and VkBuffer
+    VkBuffer Handle(const vvl::DeviceState& device) const;
+
+    bool HasNonNullBuffer() const { return buffer != VK_NULL_HANDLE || address != 0; }
+
+    VkBuffer Buffer() const { return buffer; }
+    VkDeviceSize BufferOffset() const { return offset; }
+
+  private:
+    // Only |buffer| or |address| can be non-null
+    // Both can be null if using nullDescriptor
+    VkBuffer buffer{VK_NULL_HANDLE};  // VK_NULL_HANDLE is valid if using maintenance6
+    VkDeviceSize offset{0};           // only tied to the VkBuffer case
+
+    VkDeviceAddress address{0};
 };
 
 }  // namespace vvl

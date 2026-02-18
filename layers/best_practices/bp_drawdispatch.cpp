@@ -175,7 +175,8 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBufferSubState
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
-    const auto ib_state = Get<vvl::Buffer>(cb_state.base.index_buffer_binding.buffer);
+    // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    const auto ib_state = Get<vvl::Buffer>(cb_state.base.index_buffer_binding.Buffer());
     // If the maintenance6 feature is enabled, buffer can be VK_NULL_HANDLE. If buffer is VK_NULL_HANDLE and the nullDescriptor
     // feature is enabled, every index fetched results in a value of zero.
     if (!ib_state) {

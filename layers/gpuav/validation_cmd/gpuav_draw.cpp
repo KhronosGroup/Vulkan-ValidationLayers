@@ -815,7 +815,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         return;
     }
 
-    if (!cb_state.base.index_buffer_binding.buffer) {
+    if (!cb_state.base.index_buffer_binding.HasNonNullBuffer()) {
         return;
     }
 
@@ -1012,8 +1012,8 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                     gpuav.FormatHandle(api_buffer).c_str(), api_offset,
 
                     // Index buffer binding info
-                    gpuav.FormatHandle(index_buffer_binding.buffer).c_str(), string_VkIndexType(index_buffer_binding.index_type),
-                    index_buffer_binding.offset, index_buffer_binding.size, max_indices_in_buffer,
+                    gpuav.FormatHandle(index_buffer_binding.Buffer()).c_str(), string_VkIndexType(index_buffer_binding.index_type),
+                    index_buffer_binding.BufferOffset(), index_buffer_binding.size, max_indices_in_buffer,
                     string_VkIndexType(index_buffer_binding.index_type),
 
                     // VkDrawIndexedIndirectCommand info

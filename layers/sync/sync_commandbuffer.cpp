@@ -872,11 +872,12 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t firstIndex, const Location &loc) const {
     bool skip = false;
     const auto &index_binding = cb_state_->index_buffer_binding;
-    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
+    // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
     if (!index_buf_state) return skip;
 
     const uint32_t index_size = IndexTypeSize(index_binding.index_type);
-    const AccessRange range = MakeRangeForIndexData(index_binding.offset, firstIndex, index_count, index_size);
+    const AccessRange range = MakeRangeForIndexData(index_binding.BufferOffset(), firstIndex, index_count, index_size);
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
@@ -901,11 +902,12 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
 void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
     const auto &index_binding = cb_state_->index_buffer_binding;
-    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
+    // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
     if (!index_buf_state) return;
 
     const uint32_t index_size = IndexTypeSize(index_binding.index_type);
-    const AccessRange range = MakeRangeForIndexData(index_binding.offset, firstIndex, indexCount, index_size);
+    const AccessRange range = MakeRangeForIndexData(index_binding.BufferOffset(), firstIndex, indexCount, index_size);
     const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
     current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range, tag_ex);
 

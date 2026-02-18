@@ -287,13 +287,13 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
                 const uint32_t max_indices_in_buffer =
                     static_cast<uint32_t>(local_error_info->index_buffer_binding->size / index_byte_size);
                 out_error_msg += "Index Buffer (";
-                out_error_msg += gpuav.FormatHandle(local_error_info->index_buffer_binding->buffer);
+                out_error_msg += gpuav.FormatHandle(local_error_info->index_buffer_binding->Buffer());
                 out_error_msg += ") binding info:\n";
                 out_error_msg += "  - Type: ";
                 out_error_msg += string_VkIndexType(local_error_info->index_buffer_binding->index_type);
                 out_error_msg += '\n';
                 out_error_msg += "  - Offset: ";
-                out_error_msg += std::to_string(local_error_info->index_buffer_binding->offset);
+                out_error_msg += std::to_string(local_error_info->index_buffer_binding->BufferOffset());
                 out_error_msg += " bytes\n";
                 out_error_msg += "  - Size: ";
                 out_error_msg += std::to_string(local_error_info->index_buffer_binding->size);
