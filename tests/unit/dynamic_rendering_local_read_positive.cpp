@@ -601,3 +601,27 @@ TEST_F(PositiveDynamicRenderingLocalRead, InputAttachmentIndexArray2) {
     pipe.gp_ci_.pColorBlendState = &cbi;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicRenderingLocalRead, InputAttachmentIndexDepth) {
+    TEST_DESCRIPTION("Use depth attachment as input attachment");
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    // Use depth attachment as input attachment 0
+    uint32_t zero = 0;
+    VkRenderingInputAttachmentIndexInfo input_attachment_info = vku::InitStructHelper();
+    input_attachment_info.pDepthInputAttachmentIndex = &zero;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info_read = vku::InitStructHelper(&input_attachment_info);
+    pipeline_rendering_info_read.depthAttachmentFormat = depth_format;
+
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info_read);
+    pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.CreateGraphicsPipeline();
+}
