@@ -634,6 +634,57 @@ TEST_F(PositiveSyncVal, SyncStoreOpWriteWithPreviousRead) {
     vk::CmdEndRendering(m_command_buffer);
 }
 
+TEST_F(PositiveSyncVal, MultisampleResolveReadAfterWrite) {
+    TEST_DESCRIPTION("Implicit ordering between rendering to multisample attachment and then reading it by resolve operation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo multi_sample_image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    multi_sample_image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image multi_sample_image(*m_device, multi_sample_image_ci);
+    vkt::ImageView multi_sample_image_view = multi_sample_image.CreateView();
+
+    VkImageCreateInfo single_sample_image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image single_sample_image(*m_device, single_sample_image_ci);
+    vkt::ImageView single_sample_image_view = single_sample_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = multi_sample_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = single_sample_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    // TODO: write good comment how raster order or resolve happen-after allow resolve
+    // read and previous clear's write work without barrier
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncVal, SyncDepthInputAttachmentRead) {
     TEST_DESCRIPTION("Read depth input attachment then render to the same depth attachment");
     SetTargetApiVersion(VK_API_VERSION_1_4);
