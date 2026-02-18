@@ -21,11 +21,25 @@
 
 namespace vvl {
 
+VkBuffer VertexBufferBinding::Handle(const vvl::DeviceState& device) const {
+    if (address != 0) {
+        const auto buffer_states = device.GetBuffersByAddress(address);
+        for (const auto buffer_state : buffer_states) {
+            // Only return a buffer that makes sense
+            if (buffer_state && ((buffer_state->usage & VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT) != 0)) {
+                return buffer_state->VkHandle();
+            }
+        }
+    }
+    return buffer;  // acts as "null" if |address| isn't set
+}
+
 VkBuffer IndexBufferBinding::Handle(const vvl::DeviceState& device) const {
     if (address != 0) {
         const auto buffer_states = device.GetBuffersByAddress(address);
         for (const auto buffer_state : buffer_states) {
-            if (buffer_state) {
+            // Only return a buffer that makes sense
+            if (buffer_state && ((buffer_state->usage & VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT) != 0)) {
                 return buffer_state->VkHandle();
             }
         }

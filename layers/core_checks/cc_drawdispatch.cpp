@@ -20,6 +20,7 @@
 #include <sstream>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
@@ -2547,7 +2548,7 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
 
         // This means the app actively set the buffer to null
         // Going to hit VUID-vkCmdBindVertexBuffers-pBuffers-04001 first anyway
-        if (vertex_buffer_binding->buffer == VK_NULL_HANDLE) {
+        if (!vertex_buffer_binding->HasNonNullBuffer()) {
             if (!enabled_features.nullDescriptor) {
                 skip |=
                     LogError(vuid.vertex_binding_null_04008, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -2555,15 +2556,15 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
                              print_binding(binding_description).c_str());
             }
             continue;
-        }
-
-        const auto vertex_buffer_state = Get<vvl::Buffer>(vertex_buffer_binding->buffer);
-        if (!vertex_buffer_state) {
-            skip |= LogError(
-                vuid.vertex_binding_04007, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                "%s which has an invalid/destroyed buffer bound from a vkCmdBindVertexBuffers call in this command buffer.",
-                print_binding(binding_description).c_str());
-            continue;
+        } else if (vertex_buffer_binding->Buffer() != VK_NULL_HANDLE) {
+            const auto vertex_buffer_state = Get<vvl::Buffer>(vertex_buffer_binding->Buffer());
+            if (!vertex_buffer_state) {
+                skip |= LogError(
+                    vuid.vertex_binding_04007, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                    "%s which has an invalid/destroyed buffer bound from a vkCmdBindVertexBuffers call in this command buffer.",
+                    print_binding(binding_description).c_str());
+                continue;
+            }
         }
 
         for (const auto &location : binding_description.locations) {
@@ -2583,8 +2584,9 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
                 }
             }
 
-            if (!enabled_features.robustBufferAccess && !robust_pipeline) {
-                const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->offset;
+            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+            if (!enabled_features.robustBufferAccess && !robust_pipeline && vertex_buffer_binding->Buffer() != VK_NULL_HANDLE) {
+                const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->BufferOffset();
 
                 // Use 1 as vertex/instance index to use buffer stride as well
                 const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_binding->stride + attr_desc.offset;
@@ -2601,7 +2603,7 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
 
                 if (!IsPointerAligned(attrib_address, vtx_attrib_req_alignment)) {
                     LogObjectList objlist(last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS));
-                    objlist.add(vertex_buffer_state->Handle());
+                    objlist.add(vertex_buffer_binding->Buffer());
                     skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
                                      "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (0x%" PRIx64
                                      ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32

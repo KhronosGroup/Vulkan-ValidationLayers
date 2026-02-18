@@ -204,13 +204,13 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
             auto add_vertex_buffer_binding_info =
                 [&gpuav, error_sub_code](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit, std::string &out) {
                     out += "Vertex Buffer (";
-                    out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.buffer);
+                    out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.Buffer());
                     out += ") binding info:\n";
                     out += "  - Binding: ";
                     out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
                     out += '\n';
                     out += "  - Offset: ";
-                    out += std::to_string(vertex_attribute_fetch_limit.binding_info.offset);
+                    out += std::to_string(vertex_attribute_fetch_limit.binding_info.BufferOffset());
                     out += " bytes\n";
                     out += "  - Effective Size: ";
                     out += std::to_string(vertex_attribute_fetch_limit.binding_info.effective_size);

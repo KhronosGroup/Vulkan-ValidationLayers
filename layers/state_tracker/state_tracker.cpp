@@ -3279,11 +3279,8 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<Buffer>(pBuffers[i]);
         // the stride is set from the pipeline or dynamic state
-        vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
-        vertex_buffer_binding.bound = true;
-        vertex_buffer_binding.buffer = pBuffers[i];
-        vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.effective_size = Buffer::GetRegionSize(buffer_state, vertex_buffer_binding.offset, VK_WHOLE_SIZE);
+        const VkDeviceSize effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
+        cb_state->current_vertex_buffer_binding_info[i + firstBinding].Set(pBuffers[i], effective_size, pOffsets[i], nullptr);
 
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i] && !disabled[command_buffer_state]) {
@@ -5638,15 +5635,11 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
-        vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
-        vertex_buffer_binding.bound = true;
-        vertex_buffer_binding.buffer = pBuffers[i];
-        vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
 
-        if (pStrides) {
-            vertex_buffer_binding.stride = pStrides[i];
-        }
+        const VkDeviceSize* stride_ptr = pStrides ? &pStrides[i] : nullptr;
+        const VkDeviceSize effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
+
+        cb_state->current_vertex_buffer_binding_info[i + firstBinding].Set(pBuffers[i], effective_size, pOffsets[i], stride_ptr);
 
         // Add binding for this vertex buffer to this commandbuffer
         if (!disabled[command_buffer_state] && pBuffers[i]) {

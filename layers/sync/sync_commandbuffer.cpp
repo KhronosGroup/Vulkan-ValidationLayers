@@ -826,10 +826,12 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
             continue;
         }
         if (const vvl::VertexBufferBinding *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
-            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->buffer);
+            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const AccessRange range = MakeRangeForVertexData(vertex_buffer->offset, firstVertex, vertexCount, binding_state);
+            const AccessRange range =
+                MakeRangeForVertexData(vertex_buffer->BufferOffset(), firstVertex, vertexCount, binding_state);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
@@ -859,10 +861,12 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
             continue;
         }
         if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
-            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->buffer);
+            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const AccessRange range = MakeRangeForVertexData(vertex_buffer->offset, firstVertex, vertexCount, binding_state);
+            const AccessRange range =
+                MakeRangeForVertexData(vertex_buffer->BufferOffset(), firstVertex, vertexCount, binding_state);
             const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range, tag_ex);
         }
