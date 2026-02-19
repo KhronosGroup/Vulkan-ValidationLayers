@@ -127,8 +127,8 @@ bool Buffer::CompareCreateInfo(const Buffer &other) const {
 
 std::string Buffer::Describe(const Logger& dev_data) const {
     std::stringstream ss;
-    ss << dev_data.FormatHandle(Handle()) << ", size " << std::to_string(create_info.size) << ", range "
-       << string_range_hex(DeviceAddressRange());
+    ss << dev_data.FormatHandle(Handle()) << ", size: " << std::to_string(create_info.size)
+       << " bytes, range: " << string_range_hex(DeviceAddressRange());
     return ss.str();
 }
 
