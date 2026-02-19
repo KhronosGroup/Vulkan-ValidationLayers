@@ -174,11 +174,11 @@ def VerifyCommitMessageFormat(commit):
                         CPrint('ERR_MSG', "The first word of the subject line after the ':' character must be capitalized.")
                         CPrint('CONTENT',  f"     '{msg_line_text}'\n")
                         retval = 1
-            # Check that first character of subject line is not capitalized
-            if msg_line_text[0].isupper():
-                CPrint('ERR_MSG', "The first word of the subject line must be lower case.")
-                CPrint('CONTENT', f"     '{msg_line_text}'\n")
-                retval = 1
+                # Check that first character of subject line is not capitalized
+                if msg_line_text[0].isupper():
+                    CPrint('ERR_MSG', "The first word of the subject line must be lower case.")
+                    CPrint('CONTENT', f"     '{msg_line_text}'\n")
+                    retval = 1
         elif msg_cur_line == 2:
             # Commit message must have a blank line between subject and body
             if line_length != 0:
