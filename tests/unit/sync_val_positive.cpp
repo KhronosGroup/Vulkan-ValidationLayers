@@ -4003,3 +4003,102 @@ TEST_F(PositiveSyncVal, FenceWaitSynchronizesAnotherQueue3) {
 
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncVal, ExampleShaderAccessesHeuristicCausesFalsePositive) {
+    // This test passes with shader_accesses_heuristic enabled (which is true for VVL tests).
+    // But with heuristic option disabled (use vkconfig), which is a default value, we get can
+    // a new class a false positives due to ignored shader accesses.
+    // The barriers designed around shader accesses (DST barrier side) won't be applied to those
+    // accesses if they are not tracked, and this will leave the original accesses (SRC barier part)
+    // unprotected, so they can hazard with subsequent accesses.
+    TEST_DESCRIPTION("https://chat.google.com/app/chat/AAAAjAbLrxk/topic/ckiibqdddLs/message/LogRO7TQvaA");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkImageCreateInfo resolve_image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image resolve_image(*m_device, resolve_image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = image_view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    attachment.resolveImageView = resolve_image_view;
+    attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &attachment;
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineMultisampleStateCreateInfo multisample_ci = vku::InitStructHelper();
+    multisample_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_read_resolve(*m_device, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_read_resolve(*this, &pipeline_rendering_info);
+    pipe_read_resolve.shader_stages_ = {vs.GetStageCreateInfo(), fs_read_resolve.GetStageCreateInfo()};
+    pipe_read_resolve.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe_read_resolve.ms_ci_ = multisample_ci;
+    pipe_read_resolve.CreateGraphicsPipeline();
+    pipe_read_resolve.descriptor_set_->WriteDescriptorImageInfo(0, resolve_image_view, VK_NULL_HANDLE,
+                                                                VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
+    pipe_read_resolve.descriptor_set_->UpdateDescriptorSets();
+
+    VkMemoryBarrier2 transfer_barrier = vku::InitStructHelper();
+    transfer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    transfer_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transfer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    transfer_barrier.dstAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+
+    VkMemoryBarrier2 attachment_barrier = vku::InitStructHelper();
+    attachment_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    attachment_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    attachment_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    attachment_barrier.dstAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, resolve_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.Barrier(transfer_barrier);
+
+    m_command_buffer.BeginRendering(rendering_info);
+
+    // Read resolve image as input attachment and render to multisample image
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read_resolve);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read_resolve.pipeline_layout_, 0, 1,
+                              &pipe_read_resolve.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+
+    m_command_buffer.Barrier(attachment_barrier, VK_DEPENDENCY_BY_REGION_BIT);
+
+    // Resolve multisample attachment into resolve image
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
