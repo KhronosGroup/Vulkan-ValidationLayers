@@ -38,7 +38,6 @@ layout(buffer_reference, scalar) buffer ArrayU8 { uint8_t array[]; };
 
 const uint sizeof_u32 = 4;
 const uint sizeof_u16 = 2;
-const uint sizeof_u8 = 1;
 const uint sizeof_uvec4 = 4 * sizeof_u32;
 
 void main() {
@@ -118,23 +117,7 @@ void main() {
         return;
     }
 
-    if (gid >= (pc.u32_count + pc.uvec4_count + pc.u16_count + pc.u8_count)) {
+    if (gid >= (pc.u32_count + pc.uvec4_count + pc.u16_count)) {
         return;
-    }
-
-    // Then look at last u8
-    const uint u8_start_byte_offset = pc.uvec4_count * sizeof_uvec4 + pc.u32_count * sizeof_u32 + pc.u16_count * sizeof_u16;
-    const uint u8_i = gid - pc.uvec4_count - pc.u32_count - pc.u16_count;
-    //debugPrintfEXT("[%u] In u8, u8_i = %u, u8_start_byte_offset = %u\n", gid, u8_i, u8_start_byte_offset);
-    ArrayU8 updated_indices_u8 = ArrayU8(pc.updated_indices + u8_start_byte_offset);
-    ArrayU8 original_indices_u8 = ArrayU8(pc.original_indices + u8_start_byte_offset);
-    if (updated_indices_u8.array[u8_i] != original_indices_u8.array[u8_i]) {
-        GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
-                       kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
-                       pc.error_info_i,
-                       u8_start_byte_offset + u8_i * sizeof_u8,
-                       kMemcmp_u8_diff,
-                       uint(updated_indices_u8.array[gid]),
-                       uint(original_indices_u8.array[gid]));
     }
 }

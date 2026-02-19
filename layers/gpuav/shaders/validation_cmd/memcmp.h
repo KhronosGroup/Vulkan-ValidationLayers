@@ -42,7 +42,6 @@ using uint = uint32_t;
 const uint kMemcmp_uvec4_diff = 0;
 const uint kMemcmp_u32_diff = 1;
 const uint kMemcmp_u16_diff = 2;
-const uint kMemcmp_u8_diff = 3;
 
 struct MemShaderPushData {
     uint64_t updated_indices;
@@ -50,7 +49,6 @@ struct MemShaderPushData {
     uint uvec4_count;
     uint u32_count;
     uint u16_count;
-    uint u8_count;
     uint error_info_i;
 };
 

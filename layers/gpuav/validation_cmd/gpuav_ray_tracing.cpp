@@ -878,7 +878,8 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                             index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u32_count * sizeof(uint32_t);
                             memcmp_shader_resources.push_constants.u16_count = index_buffer_bytes_leftover / sizeof(uint16_t);
                             index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u16_count * sizeof(uint16_t);
-                            memcmp_shader_resources.push_constants.u8_count = index_buffer_bytes_leftover;
+                            (void)index_buffer_bytes_leftover;
+                            assert(index_buffer_bytes_leftover == 0);
 
                             memcmp_shader_resources.push_constants.error_info_i = uint32_t(error_infos.size() - 1);
 
@@ -892,8 +893,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
                             const uint32_t shader_threads_count = memcmp_shader_resources.push_constants.uvec4_count +
                                                                   memcmp_shader_resources.push_constants.u32_count +
-                                                                  memcmp_shader_resources.push_constants.u16_count +
-                                                                  memcmp_shader_resources.push_constants.u8_count;
+                                                                  memcmp_shader_resources.push_constants.u16_count;
                             const uint32_t wg_count_x =
                                 shader_threads_count / shader_wg_size_x + uint32_t((shader_threads_count % shader_wg_size_x) > 0);
                             DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
@@ -1243,14 +1243,6 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                                         error_info.build_range_info.primitiveOffset + u32_diff_byte_offset;
                         updated_index = updated_index_dword;
                         original_index = original_index_dword;
-                        break;
-                    }
-                    case VK_INDEX_TYPE_UINT8: {
-                        index_buffer_pos = u32_diff_byte_offset + diff_byte_i;
-                        index_address = error_info.geom.triangles.indexData.deviceAddress +
-                                        error_info.build_range_info.primitiveOffset + u32_diff_byte_offset + diff_byte_i;
-                        updated_index = (updated_index_dword >> diff_byte_i) & 0xff;
-                        original_index = (original_index_dword >> diff_byte_i) & 0xff;
                         break;
                     }
                     default:
