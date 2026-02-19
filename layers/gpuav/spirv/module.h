@@ -97,6 +97,7 @@ class Module {
     const InstrumentationInterface& interface_;
 
     bool use_bda_ = false;
+    bool spec_constants_frozen = false;
 
     const DeviceFeatures& enabled_features_;
 
@@ -123,6 +124,9 @@ class Module {
     // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
     // Will be set in the LogErrorPass
     uint32_t error_payload_variable_id_ = 0;
+
+    // Used by SharedMemoryDataRacePass, linked by Module::LinkFunctions
+    uint32_t shared_memory_shadow_variable_id_ = 0;
 
   private:
     // This is here to emulate the

@@ -126,7 +126,16 @@ BasicBlock& Function::InsertNewBlockEnd() {
 
 const Instruction* Function::FindInstruction(uint32_t id) const {
     auto it = inst_map_.find(id);
-    return (it == inst_map_.end()) ? nullptr : it->second;
+    if (it != inst_map_.end()) {
+        return it->second;
+    }
+    if (auto ret = module_.type_manager_.FindConstantById(id)) {
+        return &ret->inst_;
+    }
+    if (auto ret = module_.type_manager_.FindVariableById(id)) {
+        return &ret->inst_;
+    }
+    return nullptr;
 }
 
 void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id) {

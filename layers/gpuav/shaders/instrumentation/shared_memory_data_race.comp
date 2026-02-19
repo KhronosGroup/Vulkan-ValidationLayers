@@ -1,0 +1,148 @@
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_KHR_memory_scope_semantics : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+// Implement a state machine to detect data races on shared memory load/stores.
+// Assign a logical index to each shared memory location (one per scalar element).
+// Reserve a dword of shared memory for each index. Call this "shadow".
+// The goal of the state machine is to determine whether different threads store
+// and load the same element between barriers.
+// At the start of a shader: Initialize all elements of shadow[] to SENTINEL using
+// atomic store, then barrier.
+// For each OpControlBarrier (with workgroup scope): Split into two barriers, reset
+// shadow[] to all SENTINEL in between.
+// For each OpStore/OpLoad/OpAtomic* to shared memory, call functions that
+// use atomicExchange to track accesses to each shared memory location as being either
+// stored by a thread, loaded by a thread, loaded by multiple threads, or accessed
+// by an atomic. If there is a conflicting load/store, report an error.
+
+// Limitations: This does not handle mixing atomics and non-atomics on the same
+// locations without a barrier in between, this could lead to false positives.
+// This assumes barrier() is used for all shared memory synchronization.
+
+const uint STORE_BIT = 0x80000000;
+const uint ATOMIC_BIT = 0x40000000;
+const uint MULTI_LOAD_BIT = 0x20000000;
+const uint SENTINEL = 0x1FFFFFFF;
+
+// This array has a placeholder size and the whole array is replaced in LinkFunctions
+shared uint shadow[99999];
+
+void init_shadow(const in uint length, const in uvec3 workgroupsize) {
+    barrier();
+    const uint wg_size = workgroupsize.x * workgroupsize.y * workgroupsize.z;
+    for (uint i = gl_LocalInvocationIndex; i < length; i += wg_size) {
+        shadow[i] = SENTINEL;
+    }
+    barrier();
+}
+
+void do_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+    uint thread_id = gl_LocalInvocationIndex;
+    uint ret = atomicExchange(shadow[start + idx], thread_id | STORE_BIT);
+    if (ret != SENTINEL && ret != thread_id && ret != (thread_id | STORE_BIT)) {
+        if ((ret & ATOMIC_BIT) != 0) {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        } else {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnStore << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        }
+    }
+}
+
+void do_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+    uint thread_id = gl_LocalInvocationIndex;
+
+    uint ret = atomicLoad(shadow[start + idx], gl_ScopeDevice, 0, 0);
+    if ((ret & (STORE_BIT | ATOMIC_BIT)) == 0 &&
+        ((ret & MULTI_LOAD_BIT) != 0 || ret == SENTINEL || ret == thread_id)) {
+        return;
+    }
+
+    ret = atomicExchange(shadow[start + idx], thread_id);
+    if ((ret & ATOMIC_BIT) != 0) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic << kErrorSubCode_Shift),
+                        thread_id,
+                        ret,
+                        variable_idx
+                    );
+    } else if (ret == (thread_id | STORE_BIT)) {
+        ret = atomicExchange(shadow[start + idx], thread_id | STORE_BIT);
+        if (ret != thread_id) {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        }
+    } else if ((ret & STORE_BIT) != 0) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
+                        thread_id,
+                        ret,
+                        variable_idx
+                    );
+    } else if ((ret & MULTI_LOAD_BIT) != 0 || (ret & ~MULTI_LOAD_BIT) != thread_id) {
+        ret = atomicOr(shadow[start + idx], MULTI_LOAD_BIT);
+        if ((ret & (STORE_BIT | ATOMIC_BIT)) != 0) {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        }
+    }
+}
+
+void do_atomic(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+    uint thread_id = gl_LocalInvocationIndex;
+    uint ret = atomicExchange(shadow[start + idx], ATOMIC_BIT);
+    if (ret != SENTINEL && ret != ATOMIC_BIT) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic << kErrorSubCode_Shift),
+                        thread_id,
+                        ret,
+                        variable_idx
+                    );
+    }
+}

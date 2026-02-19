@@ -688,6 +688,8 @@ struct Module {
         std::vector<const Instruction*> decoration_inst;
         // Find all variable instructions to build faster LUT
         std::vector<const Instruction *> variable_inst;
+        // All workgroup memory variables
+        std::vector<const Instruction *> shared_memory_variables;
         // Both variables and instruction explicitly accessing untyped variables
         std::vector<const Instruction *> explicit_memory_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT

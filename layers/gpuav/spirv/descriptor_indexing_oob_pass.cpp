@@ -147,7 +147,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 
         const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(image_texel_ptr_inst->Operand(0));
-        if (access_chain_inst) {
+        if (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
             variable = type_manager_.FindVariableById(access_chain_inst->Operand(0));
         } else {
             // if no array, will point right to a variable

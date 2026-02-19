@@ -710,6 +710,8 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
         output_variables_.push_back(new_variable);
     } else if (new_variable->StorageClass() == spv::StorageClassPushConstant) {
         push_constant_variable_ = new_variable;
+    } else if (new_variable->StorageClass() == spv::StorageClassWorkgroup) {
+        shared_memory_variables_.push_back(new_variable);
     }
 
     return *new_variable;
@@ -750,6 +752,32 @@ bool Type::Is64Bit() const {
     return false;
 }
 
+uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
+    switch (type.spv_type_) {
+        case SpvType::kStruct:
+            return GetNumScalarElementsBeforeCompositeMember(type, type.inst_.Length() - 2);
+        case SpvType::kArray: {
+            const Constant* count = FindConstantById(type.inst_.Operand(1));
+            // TODO - Need to handle spec constant here, for now return zero to have things not blowup
+            assert(count && !count->is_spec_constant_);
+            const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 0;
+
+            return array_length * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
+        }
+        case SpvType::kVector:
+            return type.inst_.Word(3);
+        case SpvType::kMatrix:
+            return type.inst_.Word(3) * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
+        case SpvType::kInt:
+        case SpvType::kFloat:
+        case SpvType::kBool:
+            return 1;
+        default:
+            assert(0);
+            return 0;
+    }
+}
+
 uint32_t Constant::GetValueUint32() const {
     assert(inst_.Opcode() == spv::OpConstant || inst_.Opcode() == spv::OpConstantNull);
     return inst_.Opcode() == spv::OpConstantNull ? 0 : inst_.Word(3);
@@ -780,6 +808,38 @@ void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
 }
 
 bool TypeManager::IsUndef(uint32_t id) const { return undef_ids_.find(id) != undef_ids_.end(); }
+
+const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
+    switch (type.spv_type_) {
+        case SpvType::kPointer:
+            assert(idx == 0);
+            return FindTypeById(type.inst_.Word(3));
+        case SpvType::kStruct:
+            return FindTypeById(type.inst_.Word(idx + 2));
+        case SpvType::kArray:
+            assert(idx == 0);
+            return FindTypeById(type.inst_.Word(2));
+        case SpvType::kVector:
+        case SpvType::kMatrix:
+            assert(idx == 0);
+            return FindTypeById(type.inst_.Word(2));
+        case SpvType::kInt:
+        case SpvType::kFloat:
+        case SpvType::kBool:
+            return nullptr;
+        default:
+            assert(0);
+            return nullptr;
+    }
+}
+
+uint32_t TypeManager::GetNumScalarElementsBeforeCompositeMember(const Type& type, uint32_t idx) const {
+    uint32_t ret = 0;
+    for (uint32_t i = 0; i < idx; ++i) {
+        ret += GetNumScalarElements(*FindChildType(type, i));
+    }
+    return ret;
+}
 
 }  // namespace spirv
 }  // namespace gpuav

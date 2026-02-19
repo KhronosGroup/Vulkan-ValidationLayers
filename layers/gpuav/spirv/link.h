@@ -27,6 +27,8 @@ enum LinkFlags {
     ZeroInitializeUintPrivateVariables = 0x00000001,
     // Swap the private ErrorPayload struct variable with error_payload_variable_id
     UseErrorPayloadVariable = 0x00000002,
+    // Replace shared memory array with shared_memory_shadow_variable_id_
+    SharedMemoryDataRace = 0x00000004,
 };
 
 // SPIR-V module to link in

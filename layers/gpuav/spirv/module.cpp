@@ -764,6 +764,15 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 // Variable already is in shader, just mark the new result ID
                 AddInterfaceVariables(error_payload_variable_id_, storage_class);
                 id_swap_map[old_result_id] = error_payload_variable_id_;
+            } else if (pointer_type->spv_type_ == SpvType::kArray && storage_class == spv::StorageClassWorkgroup &&
+                       ((info.module.flags & SharedMemoryDataRace) != 0)) {
+                id_swap_map[old_result_id] = shared_memory_shadow_variable_id_;
+                AddInterfaceVariables(shared_memory_shadow_variable_id_, storage_class);
+            } else if (storage_class == spv::StorageClassInput && ((info.module.flags & SharedMemoryDataRace) != 0)) {
+                // Can't have duplicate builtin inputs. The only builtin input used in the
+                // SharedMemoryDataRace pass is localinvocationindex
+                auto local_invocation_index = GetBuiltInVariable(spv::BuiltInLocalInvocationIndex);
+                id_swap_map[old_result_id] = local_invocation_index.Id();
             } else {
                 const uint32_t new_result_id = TakeNextId();
                 AddInterfaceVariables(new_result_id, storage_class);
@@ -905,6 +914,22 @@ void Module::LinkFunctions(const LinkInfo& info) {
         } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
             // only should be one DescriptorSet to update
             decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);
+        } else if (decoration->Word(2) == spv::DecorationBuiltIn && decoration->Word(3) == spv::BuiltInLocalInvocationIndex) {
+            // look for a duplicate decoration and don't apply it if found
+            auto id = decoration->Word(1);
+            id = id_swap_map[id];
+            bool found = false;
+            for (const auto& annotation : annotations_) {
+                if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
+                    spv::Decoration(annotation->Word(2)) == decoration->Word(2) &&
+                    spv::Decoration(annotation->Word(3)) == decoration->Word(3)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
         }
 
         decoration->ReplaceLinkedId(id_swap_map);
@@ -971,6 +996,56 @@ void Module::InternalError(const char* tag, const std::string& message) {
     } else {
         std::cerr << "[" << tag << "] " << message << '\n';
     }
+}
+
+const Variable& Module::GetBuiltInVariable(uint32_t built_in) {
+    uint32_t variable_id = 0;
+    for (const auto& annotation : annotations_) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(2) == spv::DecorationBuiltIn &&
+            annotation->Word(3) == built_in) {
+            variable_id = annotation->Word(1);
+            break;
+        }
+    }
+
+    if (variable_id == 0) {
+        variable_id = TakeNextId();
+        auto new_inst = std::make_unique<Instruction>(4, spv::OpDecorate);
+        new_inst->Fill({variable_id, spv::DecorationBuiltIn, built_in});
+        annotations_.emplace_back(std::move(new_inst));
+    }
+
+    // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by both Input and
+    // Output storage classes
+    const Variable* built_in_variable = type_manager_.FindVariableById(variable_id);
+    if (!built_in_variable) {
+        const Type& pointer_type = type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
+        auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
+        new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
+        built_in_variable = &type_manager_.AddVariable(std::move(new_inst), pointer_type);
+        AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
+    } else {
+        // Slang with the --preserve-params option will leave built-in variables that aren't in any interface.
+        const uint32_t built_in_variable_id = built_in_variable->Id();
+        const Instruction* entry_point = GetTargetEntryPoint();
+
+        bool found_variable = false;
+        uint32_t word = entry_point->GetEntryPointInterfaceStart();
+        const uint32_t total_words = entry_point->Length();
+        for (; word < total_words; word++) {
+            const uint32_t interface_id = entry_point->Word(word);
+            if (interface_id == built_in_variable_id) {
+                found_variable = true;
+                break;
+            }
+        }
+
+        if (!found_variable) {
+            AddInterfaceVariables(variable_id, spv::StorageClassInput);
+        }
+    }
+
+    return *built_in_variable;
 }
 
 }  // namespace spirv

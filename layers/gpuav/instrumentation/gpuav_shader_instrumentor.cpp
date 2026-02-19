@@ -41,6 +41,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/descriptor_mode.h"
+#include "state_tracker/shader_module.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 
 #include "gpuav/spirv/module.h"
@@ -51,11 +52,14 @@
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/ray_hit_object_pass.h"
+#include "gpuav/spirv/shared_memory_data_race_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
 #include "gpuav/spirv/sanitizer_pass.h"
+
+#include "spirv-tools/optimizer.hpp"
 
 #include <cassert>
 #include <string>
@@ -277,6 +281,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     instrumentation_device_settings_.error_buffer_data_length = glsl::kErrorBufferDataLength;
     instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
+    instrumentation_device_settings_.maxComputeSharedMemorySize = phys_dev_props.limits.maxComputeSharedMemorySize;
 }
 
 void GpuShaderInstrumentor::Cleanup() {
@@ -1625,7 +1630,103 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
-    spirv::Module module(input_spirv, debug_report, instrumentation_device_settings_, interface, modified_features);
+    bool has_spec_constants = false;
+    bool has_workgroup_memory = false;
+    size_t offset = 5;
+    while (offset < input_spirv.size()) {
+        uint32_t opcode = input_spirv[offset] & 0xFFFF;
+        uint32_t length = input_spirv[offset] >> 16;
+        switch (opcode) {
+            case spv::Op::OpSpecConstantTrue:
+            case spv::Op::OpSpecConstantFalse:
+            case spv::Op::OpSpecConstant:
+            case spv::Op::OpSpecConstantComposite:
+            case spv::Op::OpSpecConstantCompositeReplicateEXT:
+            case spv::Op::OpSpecConstantOp:
+            case spv::Op::OpSpecConstantArchitectureINTEL:
+            case spv::Op::OpSpecConstantTargetINTEL:
+            case spv::Op::OpSpecConstantCapabilitiesINTEL:
+                has_spec_constants = true;
+                break;
+            case spv::Op::OpVariable:
+                if (input_spirv[offset + 3] == spv::StorageClassWorkgroup) {
+                    has_workgroup_memory = true;
+                }
+                break;
+            case spv::Op::OpFunction:
+                // early exit, no more constant instructions
+                offset = input_spirv.size();
+                continue;
+            default:
+                break;
+        }
+        offset += length;
+    }
+
+    // workgroup memory variables can be sized by spec constants, the data race pass needs
+    // the constants to be frozen.
+    bool need_spec_constant_freeze =
+        gpuav_settings.shader_instrumentation.shared_memory_data_race && has_spec_constants && has_workgroup_memory;
+    std::vector<uint32_t> specialized_spirv;
+
+    vvl::span<const uint32_t> maybe_optimized_spirv = input_spirv;
+
+    if (need_spec_constant_freeze) {
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
+
+        spvtools::Optimizer optimizer(spirv_environment);
+        auto const &specialization_info = interface.specialization_info;
+        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
+
+        if (specialization_info != nullptr && specialization_info->mapEntryCount > 0 &&
+            specialization_info->pMapEntries != nullptr) {
+            ::spirv::Module m(input_spirv);
+            auto module_state_ptr = &m;
+
+            // Gather the specialization-constant values.
+            auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
+            id_value_map.reserve(specialization_info->mapEntryCount);
+
+            // spirv-val makes sure every OpSpecConstant has a OpDecoration.
+            for (const auto &[result_id, spec_id] : module_state_ptr->static_data_.id_to_spec_id) {
+                VkSpecializationMapEntry map_entry = {::spirv::kInvalidValue, 0, 0};
+                for (uint32_t i = 0; i < specialization_info->mapEntryCount; i++) {
+                    if (specialization_info->pMapEntries[i].constantID == spec_id) {
+                        map_entry = specialization_info->pMapEntries[i];
+                        break;
+                    }
+                }
+
+                // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the
+                // behavior of the pipeline."
+                if (map_entry.constantID == ::spirv::kInvalidValue) {
+                    continue;
+                }
+
+                if ((map_entry.offset + map_entry.size) <= specialization_info->dataSize) {
+                    // Allocate enough room for ceil(map_entry.size / 4) to store entries
+                    std::vector<uint32_t> entry_data((map_entry.size + 4 - 1) / 4, 0);
+                    uint8_t *out_p = reinterpret_cast<uint8_t *>(entry_data.data());
+                    const uint8_t *const start_in_p = specialization_data + map_entry.offset;
+                    const uint8_t *const end_in_p = start_in_p + map_entry.size;
+
+                    std::copy(start_in_p, end_in_p, out_p);
+                    id_value_map.emplace(map_entry.constantID, std::move(entry_data));
+                }
+            }
+            optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
+        }
+        optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
+        optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
+
+        [[maybe_unused]] auto const optimized =
+            optimizer.Run(input_spirv.data(), input_spirv.size(), &specialized_spirv, spvtools::ValidatorOptions(), true);
+        assert(optimized);
+        maybe_optimized_spirv = vvl::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size());
+    }
+
+    spirv::Module module(maybe_optimized_spirv, debug_report, instrumentation_device_settings_, interface, modified_features);
+    module.spec_constants_frozen = need_spec_constant_freeze;
 
     bool modified = false;
 
@@ -1664,6 +1765,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
 
     if (gpuav_settings.shader_instrumentation.ray_hit_object) {
         spirv::RayHitObjectPass pass(module);
+        modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.shared_memory_data_race) {
+        spirv::SharedMemoryDataRacePass pass(module, maybe_optimized_spirv);
         modified |= pass.Run();
     }
 
