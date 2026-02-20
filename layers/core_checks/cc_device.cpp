@@ -232,7 +232,8 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
         const VkQueueFamilyProperties requested_queue_family_props = pd_state.queue_family_properties[requested_queue_family];
 
         // if using protected flag, make sure queue supports it
-        if ((flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) && ((requested_queue_family_props.queueFlags & VK_QUEUE_PROTECTED_BIT) == 0)) {
+        if ((flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) &&
+            ((requested_queue_family_props.queueFlags & VK_QUEUE_PROTECTED_BIT) == 0)) {
             skip |= LogError("VUID-VkDeviceQueueCreateInfo-flags-06449", pd_state.Handle(), info_loc.dot(Field::queueFamilyIndex),
                              "(%" PRIu32 ") does not have VK_QUEUE_PROTECTED_BIT supported, but pQueueCreateInfos[%" PRIu32
                              "].flags has VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
@@ -697,11 +698,19 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
     std::vector<VkTimeDomainKHR> valid_time_domains(count);
     query_function(physical_device, &count, valid_time_domains.data());
 
-    vvl::unordered_map<VkTimeDomainKHR, uint32_t> time_domain_map;
+    vvl::unordered_map<VkTimeDomainKHR, VkPresentStageFlagsEXT> time_domain_map;
     for (uint32_t i = 0; i < timestampCount; i++) {
         const VkTimeDomainKHR time_domain = pTimestampInfos[i].timeDomain;
+
+        // The VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT domain can be duplicated if the present stage is different
+        const auto *present_stage_info =
+            vku::FindStructInPNextChain<VkSwapchainCalibratedTimestampInfoEXT>(pTimestampInfos[i].pNext);
+        const VkPresentStageFlagsEXT present_stage = (time_domain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT && present_stage_info)
+                                                         ? present_stage_info->presentStage
+                                                         : vvl::kU32Max;
+
         auto it = time_domain_map.find(time_domain);
-        if (it != time_domain_map.end()) {
+        if (it != time_domain_map.end() && (it->second & present_stage) != 0) {
             skip |= LogError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246", device,
                              error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain),
                              "and pTimestampInfos[%" PRIu32 "].timeDomain are both %s.", it->second,
@@ -712,7 +721,7 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
                              error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain), "is %s.",
                              string_VkTimeDomainKHR(time_domain));
         }
-        time_domain_map[time_domain] = i;
+        time_domain_map[time_domain] |= present_stage;
     }
     return skip;
 }
@@ -814,7 +823,6 @@ bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkPipelineBinaryHandlesInfoKHR *pBinaries,
                                                           const ErrorObject &error_obj) const {
-
     bool skip = false;
 
     uint32_t pointerCount = 0;

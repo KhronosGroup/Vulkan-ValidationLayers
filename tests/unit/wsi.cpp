@@ -5725,7 +5725,8 @@ TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains2) {
 
     VkSwapchainCalibratedTimestampInfoEXT swapchain_timestamp_info = vku::InitStructHelper();
     swapchain_timestamp_info.swapchain = swapchain;
-    swapchain_timestamp_info.presentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT | VK_PRESENT_STAGE_REQUEST_DEQUEUED_BIT_EXT;
+    swapchain_timestamp_info.presentStage =
+        VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT | VK_PRESENT_STAGE_REQUEST_DEQUEUED_BIT_EXT;
 
     VkCalibratedTimestampInfoKHR timestamp_info = vku::InitStructHelper(&swapchain_timestamp_info);
     timestamp_info.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
@@ -5733,6 +5734,71 @@ TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains2) {
     uint64_t max_deviation;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCalibratedTimestampInfoEXT-timeDomain-12228");
     vk::GetCalibratedTimestampsKHR(device(), 1u, &timestamp_info, &timestamp, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains3) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    uint32_t time_domain_count = 0u;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu_, &time_domain_count, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &time_domain_count, time_domains.data());
+
+    bool found = false;
+    for (uint32_t i = 0; i < time_domain_count; ++i) {
+        if (time_domains[i] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT not supported";
+    }
+
+    std::array<VkPresentStageFlagBitsEXT, 3> present_stages_to_test{VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT,
+                                                                    VK_PRESENT_STAGE_REQUEST_DEQUEUED_BIT_EXT,
+                                                                    VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT};
+    std::vector<VkSwapchainCalibratedTimestampInfoEXT> swapchain_timestamp_infos(present_stages_to_test.size());
+    std::vector<VkCalibratedTimestampInfoKHR> timestamp_infos(swapchain_timestamp_infos.size());
+    for (size_t i = 0; i < swapchain_timestamp_infos.size(); i++) {
+        swapchain_timestamp_infos[i] = vku::InitStructHelper();
+        swapchain_timestamp_infos[i].swapchain = swapchain;
+        swapchain_timestamp_infos[i].presentStage = present_stages_to_test[i];
+
+        timestamp_infos[i] = vku::InitStructHelper(&swapchain_timestamp_infos[i]);
+        timestamp_infos[i].timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+    }
+
+    std::vector<uint64_t> timestamps(timestamp_infos.size());
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246");
+    vk::GetCalibratedTimestampsKHR(device(), timestamp_infos.size(), timestamp_infos.data(), timestamps.data(), &max_deviation);
     m_errorMonitor->VerifyFound();
 }
 
