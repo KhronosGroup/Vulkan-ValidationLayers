@@ -317,6 +317,8 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
         }
 
         // Finally, we have "pipeline" level information and can do validation we normally do at pipeline creation time
+        // TODO - We duplicate this at state tracking time because Pipeline are hacked and create their state object prior to
+        // validating the create info
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const bool descriptor_heap_mode = (create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0;
         const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE,
