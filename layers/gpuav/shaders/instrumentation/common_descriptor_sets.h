@@ -1,6 +1,6 @@
-// Copyright (c) 2024-2025 The Khronos Group Inc.
-// Copyright (c) 2024-2025 Valve Corporation
-// Copyright (c) 2024-2025 LunarG, Inc.
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, scalar) buffer OutputBuffer {
     uint flags;
     uint written_count;
+    // Use SpecConstantInstErrorBufferLengthId instead of data.length()
+    // This allows us to use VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT for heaps
     uint data[];
 }
 inst_errors_buffer;
@@ -51,3 +53,4 @@ inst_cmd_errors_count_buffer;
 // When linking we can apply the constant fold for it
 // (The constant_id doesn't matter, it easier to just hot swap the known default constant value)
 layout(constant_id = 0) const uint SpecConstantLinkShaderId = kLinkShaderId;
+layout(constant_id = 1) const uint SpecConstantInstErrorBufferLengthId = kInstErrorBufferLengthId;

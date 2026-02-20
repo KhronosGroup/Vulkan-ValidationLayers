@@ -52,7 +52,7 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
         if (max_cmd_errors_count_reached) return;
 
         uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= SpecConstantInstErrorBufferLengthId;
 
         if (errors_buffer_not_filled) {
             const uint error = valid_vertex_attribute_fetch_vertex_input_rate ? kErrorSubCode_IndexedDraw_OOBInstanceIndex : kErrorSubCode_IndexedDraw_OOBVertexIndex;

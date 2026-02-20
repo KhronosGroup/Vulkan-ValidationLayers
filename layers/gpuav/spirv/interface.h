@@ -100,6 +100,7 @@ struct DeviceSettings {
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
     // Lets us embed the size instead of calling OpArrayLength
+    uint32_t error_buffer_data_length;
     uint32_t debug_printf_buffer_size;
 };
 

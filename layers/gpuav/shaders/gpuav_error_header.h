@@ -165,6 +165,8 @@ const int kValCmd_ErrorPayloadDword_4 = kHeaderSize + 4;
 const int kErrorRecordSize = kHeaderSize + 5;
 const int kErrorRecordCounts = 4096;  // Maximum number of errors a command buffer can hold. Arbitrary value
 const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4;  // 2 * 4 bytes to store flags and errors count
+// We know the size of the uint32_t array for SpecConstantInstErrorBufferLengthId
+const int kErrorBufferDataLength = kErrorRecordSize * kErrorRecordCounts;
 
 #ifdef __cplusplus
 }  // namespace glsl
