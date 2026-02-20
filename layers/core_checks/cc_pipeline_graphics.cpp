@@ -3571,7 +3571,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     if (pipeline_rp_state->VkHandle() != VK_NULL_HANDLE) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), pipeline_rp_state->Handle());
         skip |= LogError(vuid.dynamic_rendering_06198, objlist, vuid.loc(),
-                         "Currently bound pipeline %s must have been created with a "
+                         "The last bound pipeline (%s) must have been created with a "
                          "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
                          FormatHandle(pipeline).c_str());
         return skip;
@@ -3584,7 +3584,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     if (rp_state.use_dynamic_rendering && pipeline_rendering_ci.viewMask != rendering_view_mask) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
         skip |= LogError(vuid.dynamic_rendering_view_mask_06178, objlist, vuid.loc(),
-                         "Currently bound pipeline %s viewMask (0x%" PRIx32
+                         "The last bound pipeline (%s) viewMask (0x%" PRIx32
                          ") must be equal to VkRenderingInfo::viewMask (0x%" PRIx32 ")",
                          FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
     }
@@ -4432,7 +4432,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
                                      "the vkCmdBeginRendering set layerCount to %" PRIu32
-                                     " which is greater than the bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
+                                     " which is greater than the last bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
                                      rp_state.dynamic_rendering_begin_rendering_info.layerCount,
                                      fragment_density_map_layered->maxFragmentDensityMapLayers);
                 }
@@ -4442,11 +4442,11 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                 if (cb_state.active_framebuffer->create_info.layers > fragment_density_map_layered->maxFragmentDensityMapLayers) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle(),
                                                 cb_state.active_framebuffer->Handle());
-                    skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
-                                     "the bound VkFramebuffer was created with %" PRIu32
-                                     " layers which is greater than the bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
-                                     cb_state.active_framebuffer->create_info.layers,
-                                     fragment_density_map_layered->maxFragmentDensityMapLayers);
+                    skip |= LogError(
+                        vuid.fdm_layered_10831, objlist, vuid.loc(),
+                        "the bound VkFramebuffer was created with %" PRIu32
+                        " layers which is greater than the last bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
+                        cb_state.active_framebuffer->create_info.layers, fragment_density_map_layered->maxFragmentDensityMapLayers);
                 }
             }
         }

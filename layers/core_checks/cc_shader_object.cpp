@@ -840,6 +840,7 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             bool found = false;  // find duplicate set layouts
             for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
                 for (uint32_t j = 0; j < first->create_info.setLayoutCount; ++j) {
+                    // TODO - this is checking the handles, should check if identically defined
                     if (shader_state->create_info.pSetLayouts[i] == first->create_info.pSetLayouts[j]) {
                         found = true;
                         break;
@@ -848,7 +849,7 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                 if (!found) {
                     const LogObjectList objlist(cb_state.Handle(), first->Handle(), shader_state->Handle());
                     skip |= LogError(vuid.shaders_descriptor_layouts_08879, objlist, vuid.loc(),
-                                     "The bound %s and %s shader have different descriptor set layouts.",
+                                     "The bound %s and %s shader have different VkDescriptorSetLayout.",
                                      string_VkShaderStageFlagBits(first->create_info.stage),
                                      string_VkShaderStageFlagBits(shader_state->create_info.stage));
                     break;
