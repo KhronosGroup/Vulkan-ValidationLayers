@@ -294,6 +294,14 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
         {spv::CapabilityLongVectorEXT, {0, &DeviceFeatures::longVector, nullptr, ""}},
         {spv::CapabilityDescriptorHeapEXT, {0, &DeviceFeatures::descriptorHeap, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityDotProductFloat16AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat32, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityDotProductFloat16AccFloat16VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat16, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityDotProductBFloat16AccVALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductBFloat16Acc, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -430,6 +438,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_EXT_shader_64bit_indexing", {0, nullptr, &DeviceExtensions::vk_ext_shader_64bit_indexing, ""}},
         {"SPV_EXT_long_vector", {0, nullptr, &DeviceExtensions::vk_ext_shader_long_vector, ""}},
         {"SPV_EXT_descriptor_heap", {0, nullptr, &DeviceExtensions::vk_ext_descriptor_heap, ""}},
+        {"SPV_VALVE_mixed_float_dot_product", {0, nullptr, &DeviceExtensions::vk_valve_shader_mixed_float_dot_product, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1368,6 +1377,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_EXT_shader_64bit_indexing", {{vvl::Extension::_VK_EXT_shader_64bit_indexing}}},
     {"SPV_EXT_long_vector", {{vvl::Extension::_VK_EXT_shader_long_vector}}},
     {"SPV_EXT_descriptor_heap", {{vvl::Extension::_VK_EXT_descriptor_heap}}},
+    {"SPV_VALVE_mixed_float_dot_product", {{vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product}}},
     };
 
     // VUs before catch unknown extensions

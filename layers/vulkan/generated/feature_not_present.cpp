@@ -3065,6 +3065,32 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE: {
+                VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *>(current);
+                if (enabling->shaderMixedFloatDotProductFloat16AccFloat32 &&
+                    !supported.shaderMixedFloatDotProductFloat16AccFloat32) {
+                    ss << "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat32 is "
+                          "not supported\n";
+                }
+                if (enabling->shaderMixedFloatDotProductFloat16AccFloat16 &&
+                    !supported.shaderMixedFloatDotProductFloat16AccFloat16) {
+                    ss << "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat16 is "
+                          "not supported\n";
+                }
+                if (enabling->shaderMixedFloatDotProductBFloat16Acc && !supported.shaderMixedFloatDotProductBFloat16Acc) {
+                    ss << "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductBFloat16Acc is not "
+                          "supported\n";
+                }
+                if (enabling->shaderMixedFloatDotProductFloat8AccFloat32 && !supported.shaderMixedFloatDotProductFloat8AccFloat32) {
+                    ss << "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32 is "
+                          "not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT: {
                 VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

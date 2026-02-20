@@ -904,6 +904,14 @@ struct DeviceFeatures {
     bool longVector;
     // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
     bool shaderMaximalReconvergence;
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    bool shaderMixedFloatDotProductBFloat16Acc;
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    bool shaderMixedFloatDotProductFloat16AccFloat16;
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    bool shaderMixedFloatDotProductFloat16AccFloat32;
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    bool shaderMixedFloatDotProductFloat8AccFloat32;
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     bool shaderModuleIdentifier;
     // VkPhysicalDeviceShaderObjectFeaturesEXT

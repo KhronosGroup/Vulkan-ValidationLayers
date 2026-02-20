@@ -9191,9 +9191,8 @@ VkResult Instance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCr
 }
 
 VkBool32 Instance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                              struct ubm_device* ubm_device) {
-    VkBool32 result =
-        instance_dispatch_table.GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+                                                              struct ubm_device* device) {
+    VkBool32 result = instance_dispatch_table.GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device);
 
     return result;
 }

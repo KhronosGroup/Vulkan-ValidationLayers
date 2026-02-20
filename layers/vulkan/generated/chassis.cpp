@@ -34574,8 +34574,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const Vk
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t queueFamilyIndex,
-                                                                          struct ubm_device* ubm_device) {
+                                                                          uint32_t queueFamilyIndex, struct ubm_device* device) {
     VVL_ZoneScoped;
 
     auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
@@ -34588,8 +34587,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
             if (!vo) {
                 continue;
             }
-            skip |= vo->PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device,
-                                                                                  error_obj);
+            skip |=
+                vo->PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device, error_obj);
             if (skip) return VK_FALSE;
         }
     }
@@ -34600,13 +34599,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
             if (!vo) {
                 continue;
             }
-            vo->PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device, record_obj);
+            vo->PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device, record_obj);
         }
     }
     VkBool32 result;
     {
         VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceUbmPresentationSupportSEC");
-        result = instance_dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+        result = instance_dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device);
     }
     {
         VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceUbmPresentationSupportSEC");
@@ -34614,7 +34613,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
             if (!vo) {
                 continue;
             }
-            vo->PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device, record_obj);
+            vo->PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device, record_obj);
         }
     }
     return result;

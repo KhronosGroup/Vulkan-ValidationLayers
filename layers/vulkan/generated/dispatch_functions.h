@@ -4647,10 +4647,9 @@ static inline VkResult DispatchCreateUbmSurfaceSEC(VkInstance instance, const Vk
 }
 
 static inline VkBool32 DispatchGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t queueFamilyIndex,
-                                                                          struct ubm_device* ubm_device) {
+                                                                          uint32_t queueFamilyIndex, struct ubm_device* device) {
     auto dispatch = vvl::dispatch::GetData(physicalDevice);
-    return dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, ubm_device);
+    return dispatch->GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device);
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
 

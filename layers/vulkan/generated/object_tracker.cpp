@@ -50,11 +50,11 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     bool skip = false;
     std::vector<VulkanTypedHandle> leaked_list;
     FindLeakedObjects(kVulkanObjectTypeCommandBuffer, leaked_list);
-    FindLeakedObjects(kVulkanObjectTypeBuffer, leaked_list);
-    FindLeakedObjects(kVulkanObjectTypeImage, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeSemaphore, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeFence, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeDeviceMemory, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeBuffer, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeImage, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeQueryPool, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeImageView, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCommandPool, leaked_list);
@@ -64,8 +64,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     FindLeakedObjects(kVulkanObjectTypeBufferView, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeShaderModule, leaked_list);
     FindLeakedObjects(kVulkanObjectTypePipelineCache, leaked_list);
-    FindLeakedObjects(kVulkanObjectTypePipelineLayout, leaked_list);
     FindLeakedObjects(kVulkanObjectTypePipeline, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypePipelineLayout, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeDescriptorSetLayout, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeSampler, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeDescriptorSet, leaked_list);
@@ -114,11 +114,11 @@ void Instance::DestroyLeakedObjects() {
 void Device::DestroyLeakedObjects() {
     const Location loc = Func::vkDestroyDevice;
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer, loc);
-    DestroyUndestroyedObjects(kVulkanObjectTypeBuffer, loc);
-    DestroyUndestroyedObjects(kVulkanObjectTypeImage, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeSemaphore, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeFence, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeDeviceMemory, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeBuffer, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeImage, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeQueryPool, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeImageView, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandPool, loc);
@@ -128,8 +128,8 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferView, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeShaderModule, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineCache, loc);
-    DestroyUndestroyedObjects(kVulkanObjectTypePipelineLayout, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypePipeline, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypePipelineLayout, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSetLayout, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeSampler, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSet, loc);
