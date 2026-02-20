@@ -1373,16 +1373,14 @@ virtual void PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUbmS
                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                       struct ubm_device* ubm_device,
+                                                                       struct ubm_device* device,
                                                                        const ErrorObject& error_obj) const {
     return false;
 }
 virtual void PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                     struct ubm_device* ubm_device,
-                                                                     const RecordObject& record_obj) {}
+                                                                     struct ubm_device* device, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                      struct ubm_device* ubm_device,
-                                                                      const RecordObject& record_obj) {}
+                                                                      struct ubm_device* device, const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_UBM_SEC
 
 // NOLINTEND

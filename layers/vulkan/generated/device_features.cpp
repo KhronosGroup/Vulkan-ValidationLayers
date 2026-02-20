@@ -1958,6 +1958,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderSubgroupPartitioned |= enabled->shaderSubgroupPartitioned == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE: {
+                const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE *>(pNext);
+                features->shaderMixedFloatDotProductFloat16AccFloat32 |=
+                    enabled->shaderMixedFloatDotProductFloat16AccFloat32 == VK_TRUE;
+                features->shaderMixedFloatDotProductFloat16AccFloat16 |=
+                    enabled->shaderMixedFloatDotProductFloat16AccFloat16 == VK_TRUE;
+                features->shaderMixedFloatDotProductBFloat16Acc |= enabled->shaderMixedFloatDotProductBFloat16Acc == VK_TRUE;
+                features->shaderMixedFloatDotProductFloat8AccFloat32 |=
+                    enabled->shaderMixedFloatDotProductFloat8AccFloat32 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(pNext);

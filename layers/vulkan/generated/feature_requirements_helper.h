@@ -894,6 +894,14 @@ enum class Feature {
     longVector,
     // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
     shaderMaximalReconvergence,
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    shaderMixedFloatDotProductBFloat16Acc,
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    shaderMixedFloatDotProductFloat16AccFloat16,
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    shaderMixedFloatDotProductFloat16AccFloat32,
+    // VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE
+    shaderMixedFloatDotProductFloat8AccFloat32,
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
     shaderModuleIdentifier,
     // VkPhysicalDeviceShaderObjectFeaturesEXT

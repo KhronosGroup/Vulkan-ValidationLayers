@@ -26,11 +26,11 @@ Counter<VkQueue> c_VkQueue;
 Counter<VkCommandBuffer> c_VkCommandBuffer;
 Counter<VkExternalComputeQueueNV> c_VkExternalComputeQueueNV;
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
-Counter<VkBuffer> c_VkBuffer;
-Counter<VkImage> c_VkImage;
 Counter<VkSemaphore> c_VkSemaphore;
 Counter<VkFence> c_VkFence;
 Counter<VkDeviceMemory> c_VkDeviceMemory;
+Counter<VkBuffer> c_VkBuffer;
+Counter<VkImage> c_VkImage;
 Counter<VkQueryPool> c_VkQueryPool;
 Counter<VkImageView> c_VkImageView;
 Counter<VkCommandPool> c_VkCommandPool;
@@ -40,8 +40,8 @@ Counter<VkEvent> c_VkEvent;
 Counter<VkBufferView> c_VkBufferView;
 Counter<VkShaderModule> c_VkShaderModule;
 Counter<VkPipelineCache> c_VkPipelineCache;
-Counter<VkPipelineLayout> c_VkPipelineLayout;
 Counter<VkPipeline> c_VkPipeline;
+Counter<VkPipelineLayout> c_VkPipelineLayout;
 Counter<VkDescriptorSetLayout> c_VkDescriptorSetLayout;
 Counter<VkSampler> c_VkSampler;
 Counter<VkDescriptorSet> c_VkDescriptorSet;
@@ -86,11 +86,11 @@ WRAPPER_PARENT_INSTANCE(VkInstance)
 WRAPPER_PARENT_INSTANCE(VkPhysicalDevice)
 WRAPPER_PARENT_INSTANCE(VkDevice)
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
-WRAPPER(VkBuffer)
-WRAPPER(VkImage)
 WRAPPER(VkSemaphore)
 WRAPPER(VkFence)
 WRAPPER(VkDeviceMemory)
+WRAPPER(VkBuffer)
+WRAPPER(VkImage)
 WRAPPER(VkQueryPool)
 WRAPPER(VkImageView)
 WRAPPER(VkCommandPool)
@@ -100,8 +100,8 @@ WRAPPER(VkEvent)
 WRAPPER(VkBufferView)
 WRAPPER(VkShaderModule)
 WRAPPER(VkPipelineCache)
-WRAPPER(VkPipelineLayout)
 WRAPPER(VkPipeline)
+WRAPPER(VkPipelineLayout)
 WRAPPER(VkDescriptorSetLayout)
 WRAPPER(VkSampler)
 WRAPPER(VkDescriptorSet)
@@ -151,11 +151,11 @@ void InitCounters() {
     c_VkCommandBuffer.Init(kVulkanObjectTypeCommandBuffer, this);
     c_VkExternalComputeQueueNV.Init(kVulkanObjectTypeExternalComputeQueueNV, this);
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
-    c_VkBuffer.Init(kVulkanObjectTypeBuffer, this);
-    c_VkImage.Init(kVulkanObjectTypeImage, this);
     c_VkSemaphore.Init(kVulkanObjectTypeSemaphore, this);
     c_VkFence.Init(kVulkanObjectTypeFence, this);
     c_VkDeviceMemory.Init(kVulkanObjectTypeDeviceMemory, this);
+    c_VkBuffer.Init(kVulkanObjectTypeBuffer, this);
+    c_VkImage.Init(kVulkanObjectTypeImage, this);
     c_VkQueryPool.Init(kVulkanObjectTypeQueryPool, this);
     c_VkImageView.Init(kVulkanObjectTypeImageView, this);
     c_VkCommandPool.Init(kVulkanObjectTypeCommandPool, this);
@@ -165,8 +165,8 @@ void InitCounters() {
     c_VkBufferView.Init(kVulkanObjectTypeBufferView, this);
     c_VkShaderModule.Init(kVulkanObjectTypeShaderModule, this);
     c_VkPipelineCache.Init(kVulkanObjectTypePipelineCache, this);
-    c_VkPipelineLayout.Init(kVulkanObjectTypePipelineLayout, this);
     c_VkPipeline.Init(kVulkanObjectTypePipeline, this);
+    c_VkPipelineLayout.Init(kVulkanObjectTypePipelineLayout, this);
     c_VkDescriptorSetLayout.Init(kVulkanObjectTypeDescriptorSetLayout, this);
     c_VkSampler.Init(kVulkanObjectTypeSampler, this);
     c_VkDescriptorSet.Init(kVulkanObjectTypeDescriptorSet, this);

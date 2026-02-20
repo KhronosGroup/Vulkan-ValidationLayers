@@ -1697,6 +1697,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderLongVectorFeaturesEXT", 44},
     {"VkPhysicalDeviceShaderLongVectorPropertiesEXT", 46},
     {"VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR", 54},
+    {"VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE", 56},
     {"VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT", 50},
     {"VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT", 52},
     {"VkPhysicalDeviceShaderObjectFeaturesEXT", 40},
@@ -4876,6 +4877,10 @@ const char* String(Field field) {
     {"shaderIntegerFunctions2", 24},
     {"shaderMaximalReconvergence", 27},
     {"shaderMeshEnqueue", 18},
+    {"shaderMixedFloatDotProductBFloat16Acc", 38},
+    {"shaderMixedFloatDotProductFloat16AccFloat16", 44},
+    {"shaderMixedFloatDotProductFloat16AccFloat32", 44},
+    {"shaderMixedFloatDotProductFloat8AccFloat32", 43},
     {"shaderModule", 13},
     {"shaderModuleIdentifier", 23},
     {"shaderModuleIdentifierAlgorithmUUID", 36},
@@ -5280,8 +5285,6 @@ const char* String(Field field) {
     {"type", 5},
     {"tz", 3},
     {"u64", 4},
-    {"ubm_device", 11},
-    {"ubm_surface", 12},
     {"uint32", 7},
     {"uint64", 7},
     {"uncompressedHeaderOffset", 25},
@@ -6209,6 +6212,7 @@ const char* String(Extension extension) {
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
+    {"VK_VALVE_shader_mixed_float_dot_product", 40},
     {"VK_VALVE_video_encode_rgb_conversion", 37},
     };
     return table[(int)extension].data();
@@ -6219,6 +6223,7 @@ bool IsFieldPointer(Field field) {
     case Field::address:
     case Field::connection:
     case Field::context:
+    case Field::device:
     case Field::dfb:
     case Field::displayName:
     case Field::dpy:
@@ -6835,8 +6840,6 @@ bool IsFieldPointer(Field field) {
     case Field::ppGeometries:
     case Field::ppMaxPrimitiveCounts:
     case Field::ppUsageCounts:
-    case Field::ubm_device:
-    case Field::ubm_surface:
     case Field::valueString:
         return true;
     default:
@@ -6846,12 +6849,6 @@ bool IsFieldPointer(Field field) {
 
 Struct StypeToStruct(VkStructureType stype) {
     switch (stype) {
-    case VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER:
-       return Struct::VkBufferMemoryBarrier;
-    case VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER:
-       return Struct::VkImageMemoryBarrier;
-    case VK_STRUCTURE_TYPE_MEMORY_BARRIER:
-       return Struct::VkMemoryBarrier;
     case VK_STRUCTURE_TYPE_APPLICATION_INFO:
        return Struct::VkApplicationInfo;
     case VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO:
@@ -6888,6 +6885,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkCommandBufferInheritanceInfo;
     case VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO:
        return Struct::VkCommandBufferBeginInfo;
+    case VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER:
+       return Struct::VkBufferMemoryBarrier;
+    case VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER:
+       return Struct::VkImageMemoryBarrier;
+    case VK_STRUCTURE_TYPE_MEMORY_BARRIER:
+       return Struct::VkMemoryBarrier;
     case VK_STRUCTURE_TYPE_EVENT_CREATE_INFO:
        return Struct::VkEventCreateInfo;
     case VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO:
@@ -6914,24 +6917,24 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDescriptorSetLayoutCreateInfo;
     case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET:
        return Struct::VkWriteDescriptorSet;
-    case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO:
-       return Struct::VkPipelineVertexInputStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO:
-       return Struct::VkPipelineInputAssemblyStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO:
-       return Struct::VkPipelineTessellationStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO:
-       return Struct::VkPipelineViewportStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO:
-       return Struct::VkPipelineRasterizationStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO:
-       return Struct::VkPipelineMultisampleStateCreateInfo;
-    case VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO:
-       return Struct::VkPipelineDepthStencilStateCreateInfo;
     case VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO:
        return Struct::VkPipelineColorBlendStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO:
+       return Struct::VkPipelineDepthStencilStateCreateInfo;
     case VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO:
        return Struct::VkPipelineDynamicStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO:
+       return Struct::VkPipelineInputAssemblyStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO:
+       return Struct::VkPipelineMultisampleStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO:
+       return Struct::VkPipelineRasterizationStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO:
+       return Struct::VkPipelineTessellationStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO:
+       return Struct::VkPipelineVertexInputStateCreateInfo;
+    case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO:
+       return Struct::VkPipelineViewportStateCreateInfo;
     case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
        return Struct::VkGraphicsPipelineCreateInfo;
     case VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO:
@@ -7070,6 +7073,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMultiviewProperties;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES:
        return Struct::VkPhysicalDeviceShaderDrawParametersFeatures;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES:
+       return Struct::VkPhysicalDeviceDriverProperties;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES:
        return Struct::VkPhysicalDeviceVulkan11Features;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES:
@@ -7080,8 +7085,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceVulkan12Properties;
     case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO:
        return Struct::VkImageFormatListCreateInfo;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES:
-       return Struct::VkPhysicalDeviceDriverProperties;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES:
        return Struct::VkPhysicalDeviceVulkanMemoryModelFeatures;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES:
@@ -7144,12 +7147,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkSubpassDescription2;
     case VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2:
        return Struct::VkSubpassDependency2;
-    case VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2:
-       return Struct::VkRenderPassCreateInfo2;
     case VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO:
        return Struct::VkSubpassBeginInfo;
     case VK_STRUCTURE_TYPE_SUBPASS_END_INFO:
        return Struct::VkSubpassEndInfo;
+    case VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2:
+       return Struct::VkRenderPassCreateInfo2;
     case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE:
        return Struct::VkSubpassDescriptionDepthStencilResolve;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES:
@@ -7160,10 +7163,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceImagelessFramebufferFeatures;
     case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO:
        return Struct::VkFramebufferAttachmentImageInfo;
-    case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO:
-       return Struct::VkFramebufferAttachmentsCreateInfo;
     case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO:
        return Struct::VkRenderPassAttachmentBeginInfo;
+    case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO:
+       return Struct::VkFramebufferAttachmentsCreateInfo;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES:
        return Struct::VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures;
     case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT:
@@ -7294,12 +7297,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMaintenance5Features;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES:
        return Struct::VkPhysicalDeviceMaintenance5Properties;
+    case VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2:
+       return Struct::VkSubresourceLayout2;
     case VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2:
        return Struct::VkImageSubresource2;
     case VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO:
        return Struct::VkDeviceImageSubresourceInfo;
-    case VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2:
-       return Struct::VkSubresourceLayout2;
     case VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO:
        return Struct::VkBufferUsageFlags2CreateInfo;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES:
@@ -9128,6 +9131,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
     case VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC:
        return Struct::VkUbmSurfaceCreateInfoSEC;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:
+       return Struct::VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

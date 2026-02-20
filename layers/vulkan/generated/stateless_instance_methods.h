@@ -399,7 +399,7 @@ bool PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceC
                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                               struct ubm_device* ubm_device,
+                                                               struct ubm_device* device,
                                                                const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_UBM_SEC
 

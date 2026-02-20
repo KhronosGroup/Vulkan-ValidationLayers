@@ -3421,6 +3421,28 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE: {  // Covers
+                                                                                                 // VUID-VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE);
+                VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE* structure =
+                    (VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMixedFloatDotProductFloat16AccFloat32),
+                                       structure->shaderMixedFloatDotProductFloat16AccFloat32);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMixedFloatDotProductFloat16AccFloat16),
+                                       structure->shaderMixedFloatDotProductFloat16AccFloat16);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMixedFloatDotProductBFloat16Acc),
+                                       structure->shaderMixedFloatDotProductBFloat16Acc);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMixedFloatDotProductFloat8AccFloat32),
+                                       structure->shaderMixedFloatDotProductFloat8AccFloat32);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -4069,6 +4091,17 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkRenderPassAttachmentBeginInfo structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {  // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
+                VkRenderPassAttachmentBeginInfo* structure = (VkRenderPassAttachmentBeginInfo*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::attachmentCount), pNext_loc.dot(Field::pAttachments),
+                                      structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined,
+                                      "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
+            }
+        } break;
+
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: {  // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
             if (is_const_param) {
@@ -4110,17 +4143,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                                         "VUID-VkFramebufferAttachmentImageInfo-pViewFormats-parameter");
                     }
                 }
-            }
-        } break;
-
-        // Validation code for VkRenderPassAttachmentBeginInfo structure members
-        case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {  // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
-                VkRenderPassAttachmentBeginInfo* structure = (VkRenderPassAttachmentBeginInfo*)header;
-                skip |= ValidateArray(pNext_loc.dot(Field::attachmentCount), pNext_loc.dot(Field::pAttachments),
-                                      structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined,
-                                      "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
             }
         } break;
 
@@ -8551,7 +8573,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 259> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 260> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -8758,6 +8780,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR,
@@ -8853,11 +8876,6 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                               "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-parameter");
             }
         }
-
-        skip |= context.ValidateStringArray(pCreateInfo_loc.dot(Field::enabledLayerCount),
-                                            pCreateInfo_loc.dot(Field::ppEnabledLayerNames), pCreateInfo->enabledLayerCount,
-                                            pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
-                                            "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
 
         skip |= context.ValidateStringArray(pCreateInfo_loc.dot(Field::enabledExtensionCount),
                                             pCreateInfo_loc.dot(Field::ppEnabledExtensionNames), pCreateInfo->enabledExtensionCount,
@@ -28128,7 +28146,7 @@ bool Instance::PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkU
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                         struct ubm_device* ubm_device,
+                                                                         struct ubm_device* device,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
 
@@ -28136,8 +28154,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysi
     Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_sec_ubm_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_SEC_ubm_surface});
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::ubm_device), ubm_device,
-                                            "VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-ubm_device-parameter");
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::device), device,
+                                            "VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-device-parameter");
     return skip;
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC

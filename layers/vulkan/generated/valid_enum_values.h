@@ -22,8 +22,6 @@
 
 // NOLINTBEGIN
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const;
@@ -35,6 +33,8 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkQueryType value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSharingMode value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkComponentSwizzle value) const;
 template <>
@@ -52,9 +52,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const;
 template <>
@@ -68,15 +68,15 @@ ValidValue stateless::Context::IsValidEnumValue(VkDynamicState value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFrontFace value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkLogicOp value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkStencilOp value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVertexInputRate value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkPrimitiveTopology value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkPolygonMode value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkStencilOp value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkLogicOp value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAttachmentLoadOp value) const;
 template <>
