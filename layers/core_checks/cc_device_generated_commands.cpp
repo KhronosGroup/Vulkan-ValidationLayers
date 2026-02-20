@@ -931,7 +931,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                 std::stringstream ss;
                 ss << "was created with a fragment shader output interface using Locations [";
                 bool first = true;
-                for (const uint32_t& locations : initial_pipeline->fs_writable_output_location_list) {
+                for (const uint32_t& locations : update_pipeline->fs_writable_output_location_list) {
                     if (!first) {
                         ss << ", ";
                     }
@@ -941,7 +941,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                 ss << "], but it doesn't match the initial Fragment shader in initialPipeline which statically wrote to output "
                       "Locations [";
                 first = true;
-                for (const uint32_t& locations : update_pipeline->fs_writable_output_location_list) {
+                for (const uint32_t& locations : initial_pipeline->fs_writable_output_location_list) {
                     if (!first) {
                         ss << ", ";
                     }
