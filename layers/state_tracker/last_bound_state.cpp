@@ -658,29 +658,29 @@ VkPrimitiveTopology LastBound::ClipSpaceTopology() const {
     } else {  // shader object
         if (mesh_shader_bound) {
             vvl::ShaderObject *mesh_shader = GetShaderObjectState(ShaderObjectStage::MESH);
-            if (mesh_shader && mesh_shader->entrypoint) {
-                return mesh_shader->entrypoint->execution_mode.GetGeometryMeshOutputTopology();
+            if (mesh_shader && mesh_shader->stage.entrypoint) {
+                return mesh_shader->stage.entrypoint->execution_mode.GetGeometryMeshOutputTopology();
             }
         } else if (geom_shader_bound) {
             vvl::ShaderObject *geom_shader = GetShaderObjectState(ShaderObjectStage::GEOMETRY);
-            if (geom_shader && geom_shader->entrypoint) {
-                return geom_shader->entrypoint->execution_mode.GetGeometryMeshOutputTopology();
+            if (geom_shader && geom_shader->stage.entrypoint) {
+                return geom_shader->stage.entrypoint->execution_mode.GetGeometryMeshOutputTopology();
             }
         } else if (tesc_shader_bound || tese_shader_bound) {
             VkPrimitiveTopology tess_output_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
             vvl::ShaderObject *tesc_shader = GetShaderObjectState(ShaderObjectStage::TESSELLATION_CONTROL);
-            if (tesc_shader && tesc_shader->entrypoint) {
-                if (tesc_shader->entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
+            if (tesc_shader && tesc_shader->stage.entrypoint) {
+                if (tesc_shader->stage.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 }
             }
 
             vvl::ShaderObject *tese_shader = GetShaderObjectState(ShaderObjectStage::TESSELLATION_EVALUATION);
-            if (tese_shader && tese_shader->entrypoint) {
-                if (tese_shader->entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
+            if (tese_shader && tese_shader->stage.entrypoint) {
+                if (tese_shader->stage.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 } else {
-                    tess_output_topology = tese_shader->entrypoint->execution_mode.GetTessellationEvalOutputTopology();
+                    tess_output_topology = tese_shader->stage.entrypoint->execution_mode.GetTessellationEvalOutputTopology();
                 }
             }
 
@@ -973,7 +973,7 @@ const spirv::EntryPoint *LastBound::GetVertexEntryPoint() const {
         }
         return nullptr;
     } else if (const auto *shader_object = GetShaderObjectState(ShaderObjectStage::VERTEX)) {
-        return shader_object->entrypoint.get();
+        return shader_object->stage.entrypoint.get();
     }
     return nullptr;
 }
@@ -982,7 +982,7 @@ const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
     if (pipeline_state && pipeline_state->fragment_shader_state) {
         return pipeline_state->fragment_shader_state->fragment_entry_point.get();
     } else if (const auto *shader_object = GetShaderObjectState(ShaderObjectStage::FRAGMENT)) {
-        return shader_object->entrypoint.get();
+        return shader_object->stage.entrypoint.get();
     }
     return nullptr;
 }

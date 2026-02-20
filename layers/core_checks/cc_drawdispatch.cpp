@@ -41,6 +41,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/shader_stage_state.h"
 #include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
@@ -1445,24 +1446,17 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
     if (pipeline.descriptor_heap_mode) {
-        for (const auto& stage_state : pipeline.stage_states) {
-            const spirv::Module* module_state = stage_state.spirv_state.get();
-            const spirv::EntryPoint* entry_point = stage_state.entrypoint.get();
-            if (!module_state || !entry_point) {
+        for (const ShaderStageState& stage_state : pipeline.stage_states) {
+            if (!stage_state.HasSpirv()) {
                 continue;
             }
             const bool has_embedded_samplers = pipeline.descriptor_heap_embedded_samplers_count != 0;
 
-            skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, stage_state,
-                                                      has_embedded_samplers, vuid);
+            skip |= ValidateActionStateDescriptorHeap(last_bound_state, stage_state, has_embedded_samplers, vuid);
 
             // Only need to validate if we know there is a embedded sampler to check against
             if (has_embedded_samplers) {
-                if (const auto* mapping_info =
-                        vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(stage_state.GetPNext())) {
-                    skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, *mapping_info, *module_state, *entry_point,
-                                                                      bind_point, vuid);
-                }
+                skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, stage_state, bind_point, vuid);
             }
         }
     }
@@ -1587,8 +1581,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     return skip;
 }
 
-bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
-                                                   const spirv::EntryPoint& entry_point, const ShaderStageState& stage_state,
+bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const ShaderStageState& stage_state,
                                                    const bool has_embedded_samplers, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
@@ -1601,6 +1594,8 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
         return skip;
     }
+
+    const spirv::EntryPoint& entry_point = *stage_state.entrypoint;
 
     // TODO - Currently at this level we don't know if the sampler is embedded or not
     // If there is only embedded samplers, the sampler heap isn't required to be bound
@@ -1652,9 +1647,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
     return skip;
 }
 
-bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state,
-                                                           const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
-                                                           const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
+bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
                                                            const VkPipelineBindPoint bind_point,
                                                            const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
@@ -1663,6 +1656,16 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
     if (cb_state.descriptor_heap.sampler_reserved.empty() || !cb_state.descriptor_heap.sampler_reserved.valid()) {
         return skip;
     }
+
+    const auto* mapping_info_ptr =
+        vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(stage_state.GetPNext());
+    if (!mapping_info_ptr) {
+        return skip;
+    }
+    const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info = *mapping_info_ptr;
+
+    const spirv::Module& module_state = *stage_state.spirv_state;
+    const spirv::EntryPoint& entry_point = *stage_state.entrypoint;
 
     // First loop mappings, likely there might be 100+ mappings, but only 1 or 2 using embedded samplers
     for (uint32_t i = 0; i < mapping_info.mappingCount; i++) {
@@ -1728,35 +1731,33 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     // Check if the current shader objects are compatible for the maximum used set with the bound sets.
-    for (const auto &shader_state : last_bound_state.shader_object_states) {
-        if (shader_state && shader_state->descriptor_heap_mode) {
-            const spirv::Module *module_state = shader_state->spirv.get();
-            const spirv::EntryPoint *entry_point = shader_state->entrypoint.get();
-            if (module_state && entry_point) {
-                const bool has_embedded_samplers = shader_state->descriptor_heap_embedded_samplers_count != 0;
+    for (const auto& shader_object_ptr : last_bound_state.shader_object_states) {
+        if (!shader_object_ptr) {
+            continue;
+        }
+        const vvl::ShaderObject& shader_object = *shader_object_ptr;
 
-                skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, shader_state->stage,
-                                                          has_embedded_samplers, vuid);
+        if (shader_object.descriptor_heap_mode) {
+            if (shader_object.stage.HasSpirv()) {
+                const bool has_embedded_samplers = shader_object.descriptor_heap_embedded_samplers_count != 0;
+
+                skip |= ValidateActionStateDescriptorHeap(last_bound_state, shader_object.stage, has_embedded_samplers, vuid);
 
                 // Only need to validate if we know there is a embedded sampler to check against
                 if (has_embedded_samplers) {
-                    if (const auto* mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(
-                            shader_state->safe_create_info.pNext)) {
-                        skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, *mapping_info, *module_state, *entry_point,
-                                                                          bind_point, vuid);
-                    }
+                    skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, shader_object.stage, bind_point, vuid);
                 }
             }
             continue;
         }
 
         // If the shader is not using any descriptors, then any descriptor state set can be ignored
-        if (!shader_state || shader_state->active_slots.empty()) {
+        if (shader_object.active_slots.empty()) {
             continue;
         }
 
-        if (!last_bound_state.IsBoundSetCompatible(shader_state->max_active_slot, *shader_state)) {
-            LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
+        if (!last_bound_state.IsBoundSetCompatible(shader_object.max_active_slot, shader_object)) {
+            LogObjectList objlist(cb_state.Handle(), shader_object.Handle());
 
             if (!last_bound_state.desc_set_pipeline_layout) {
                 // If they never bound any descriptors
@@ -1765,41 +1766,41 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                                  ", but because a descriptor was never bound, the pipeline layouts are not compatible.\nIf using "
                                  "a descriptor, make sure to call one of vkCmdBindDescriptorSets, vkCmdPushDescriptorSet, "
                                  "vkCmdSetDescriptorBufferOffset, etc for %s",
-                                 FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot,
+                                 FormatHandle(shader_object.Handle()).c_str(), shader_object.max_active_slot,
                                  string_VkPipelineBindPoint(bind_point));
 
             } else {
                 objlist.add(last_bound_state.desc_set_pipeline_layout->Handle());
-                std::string range = shader_state->max_active_slot == 0
+                std::string range = shader_object.max_active_slot == 0
                                         ? "set 0 is"
-                                        : "all sets 0 to " + std::to_string(shader_state->max_active_slot) + " are";
+                                        : "all sets 0 to " + std::to_string(shader_object.max_active_slot) + " are";
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                  "The %s statically uses descriptor set %" PRIu32
                                  " but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
-                                 FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot, range.c_str(),
+                                 FormatHandle(shader_object.Handle()).c_str(), shader_object.max_active_slot, range.c_str(),
                                  String(last_bound_state.desc_set_bound_command),
                                  FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle()).c_str(),
-                                 last_bound_state.DescribeNonCompatibleSet(shader_state->max_active_slot, *shader_state).c_str());
+                                 last_bound_state.DescribeNonCompatibleSet(shader_object.max_active_slot, shader_object).c_str());
             }
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
-            for (const auto &[set_index, binding_req_map] : shader_state->active_slots) {
+            for (const auto& [set_index, binding_req_map] : shader_object.active_slots) {
                 std::string error_string;
                 const auto ds_slot = last_bound_state.ds_slots[set_index];
                 if (!ds_slot.ds_state) {
-                    const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
+                    const LogObjectList objlist(cb_state.Handle(), shader_object.Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                      "%s uses set %" PRIu32 " but that set is not bound.",
-                                     FormatHandle(shader_state->Handle()).c_str(), set_index);
-                } else if (shader_state->set_layouts.list[set_index] &&
-                           !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *shader_state->set_layouts.list[set_index],
+                                     FormatHandle(shader_object.Handle()).c_str(), set_index);
+                } else if (shader_object.set_layouts.list[set_index] &&
+                           !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *shader_object.set_layouts.list[set_index],
                                                              error_string)) {
                     // Set is bound but not compatible w/ corresponding VkShaderCreateInfoEXT::pSetLayouts
                     VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
-                    const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->Handle());
+                    const LogObjectList objlist(cb_state.Handle(), set_handle, shader_object.Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                      "%s bound as set %" PRIu32 " is not compatible with corresponding %s\n%s",
-                                     FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->Handle()).c_str(),
+                                     FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_object.Handle()).c_str(),
                                      error_string.c_str());
                 } else {  // Valid set is bound and layout compatible, validate that it's updated
                     // Pull the set node
@@ -1810,7 +1811,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                         NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                     if (need_validate) {
                         skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid,
-                                                  LogObjectList(shader_state->Handle()));
+                                                  LogObjectList(shader_object.Handle()));
                     }
                 }
             }
@@ -1911,20 +1912,21 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
         }
     } else {
         if (!cb_state.push_constant_ranges_layout) {
-            for (const auto &stage : last_bound_state.shader_object_states) {
-                if (!stage || !stage->entrypoint || !stage->entrypoint->push_constant_variable) {
+            for (const auto& shader_object : last_bound_state.shader_object_states) {
+                if (!shader_object || !shader_object->stage.entrypoint ||
+                    !shader_object->stage.entrypoint->push_constant_variable) {
                     continue;
                 }
-                if (stage->descriptor_heap_mode) {
-                    skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage->entrypoint.get(),
+                if (shader_object->descriptor_heap_mode) {
+                    skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, shader_object->stage.entrypoint.get(),
                                                                           last_bound_state.bind_point, vuid);
                 } else {
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
-                        const LogObjectList objlist(cb_state.Handle(), stage->Handle());
+                        const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                         skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
-                                         string_VkShaderStageFlags(stage->create_info.stage).c_str());
+                                         string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
                     }
                 }
             }
@@ -1951,12 +1953,13 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
             }
         }
     } else {
-        for (const auto &stage : last_bound_state.shader_object_states) {
-            if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
-                const LogObjectList objlist(cb_state.Handle(), stage->Handle());
+        for (const auto& shader_object : last_bound_state.shader_object_states) {
+            if (shader_object && shader_object->stage.spirv_state &&
+                shader_object->stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
+                const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                 skip |= LogError(vuid.ray_query_04617, objlist, vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
-                                 string_VkShaderStageFlags(stage->create_info.stage).c_str());
+                                 string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
             }
         }
     }
@@ -2076,8 +2079,8 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
     } else {
         for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
             const auto shader_object = last_bound_state.GetShaderObjectState(static_cast<ShaderObjectStage>(stage));
-            if (shader_object && shader_object->entrypoint &&
-                shader_object->entrypoint->written_built_in_primitive_shading_rate_khr) {
+            if (shader_object && shader_object->stage.entrypoint &&
+                shader_object->stage.entrypoint->written_built_in_primitive_shading_rate_khr) {
                 if (cb_state.dynamic_state_value.viewport_count != 1) {
                     skip |= LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), vuid.loc(),
                                      "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
@@ -2413,12 +2416,12 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
         }
     } else {
         const auto tesc_shader = last_bound_state.GetShaderObjectState(ShaderObjectStage::TESSELLATION_CONTROL);
-        if (tesc_shader && tesc_shader->entrypoint) {
-            tesc_execution_mode = &tesc_shader->entrypoint->execution_mode;
+        if (tesc_shader && tesc_shader->stage.entrypoint) {
+            tesc_execution_mode = &tesc_shader->stage.entrypoint->execution_mode;
         }
         const auto tese_shader = last_bound_state.GetShaderObjectState(ShaderObjectStage::TESSELLATION_EVALUATION);
-        if (tese_shader && tese_shader->entrypoint) {
-            tese_execution_mode = &tese_shader->entrypoint->execution_mode;
+        if (tese_shader && tese_shader->stage.entrypoint) {
+            tese_execution_mode = &tese_shader->stage.entrypoint->execution_mode;
         }
     }
 

@@ -36,6 +36,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/shader_stage_state.h"
 #include "utils/math_utils.h"
 #include "utils/vk_api_utils.h"
 #include "containers/container_utils.h"
@@ -892,8 +893,8 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
             }
         }
     } else if (const auto& vertex_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::VERTEX)) {
-        vert_spirv_state = vertex_state->spirv.get();
-        vert_entrypoint = vertex_state->entrypoint.get();
+        vert_spirv_state = vertex_state->stage.spirv_state.get();
+        vert_entrypoint = vertex_state->stage.entrypoint.get();
     }
     if (!vert_spirv_state || !vert_entrypoint) {
         return skip;  // Mesh shader
@@ -1013,7 +1014,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
             }
         }
     } else if (const auto& fragment_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::FRAGMENT)) {
-        frag_spirv_state = fragment_state->spirv.get();
+        frag_spirv_state = fragment_state->stage.spirv_state.get();
     }
     if (!frag_spirv_state) {
         return skip;  // no fragment shader used

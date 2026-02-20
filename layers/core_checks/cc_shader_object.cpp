@@ -751,7 +751,9 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
     for (const auto stage : graphics_stages) {
         if (skip) break;
         consumer = last_bound_state.GetShaderObjectState(VkShaderStageToShaderObjectStage(stage));
-        if (!consumer) continue;
+        if (!consumer) {
+            continue;
+        }
         if (next_stage != VK_SHADER_STAGE_ALL && consumer->create_info.stage != next_stage) {
             const LogObjectList objlist(cb_state.Handle(), consumer->Handle());
             skip |= LogError(vuid.linked_shaders_08699, cb_state.Handle(), loc,
@@ -774,9 +776,8 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
             }
         }
 
-        if (producer && consumer->spirv && producer->spirv && consumer->entrypoint && producer->entrypoint) {
-            skip |= ValidateInterfaceBetweenStages(*producer->spirv, *producer->entrypoint, *consumer->spirv, *consumer->entrypoint,
-                                                   loc);
+        if (producer) {
+            skip |= ValidateInterfaceBetweenStages(producer->stage, consumer->stage, loc);
         }
         producer = consumer;
     }
@@ -944,10 +945,11 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
                     FormatHandle(mesh_shader_handle).c_str(), FormatHandle(task_shader_handle).c_str());
             }
 
-            if (mesh_state->entrypoint) {
+            if (mesh_state->stage.entrypoint) {
                 const vvl::ShaderObject* task_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::TASK);
-                const spirv::Module* task_module = (task_state && task_state->spirv) ? task_state->spirv.get() : nullptr;
-                skip |= ValidateTaskPayload(task_module, *mesh_state->entrypoint, vuid.loc());
+                const spirv::Module* task_module =
+                    (task_state && task_state->stage.spirv_state) ? task_state->stage.spirv_state.get() : nullptr;
+                skip |= ValidateTaskPayload(task_module, *mesh_state->stage.entrypoint, vuid.loc());
             }
         }
     }

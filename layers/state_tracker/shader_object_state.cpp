@@ -35,16 +35,14 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),
       create_info(*safe_create_info.ptr()),
-      spirv(spirv_module),
-      entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
-      descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
-      descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
-      active_slots(GetActiveSlots(entrypoint)),
-      max_active_slot(GetMaxActiveSlot(active_slots)),
       set_layouts(GetSetLayouts(dev_data, create_info)),
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)),
-      stage(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE, descriptor_heap_mode) {
+      descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
+      descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
+      stage(nullptr, &safe_create_info, &set_layouts, nullptr, spirv_module, VK_NULL_HANDLE, descriptor_heap_mode),
+      active_slots(GetActiveSlots(stage.entrypoint)),
+      max_active_slot(GetMaxActiveSlot(active_slots)) {
     // We need to update handle, but if using VK_SHADER_CODE_TYPE_SPIRV_EXT, it will be null
     if (spirv_module) {
         spirv_module->handle_ = handle_;

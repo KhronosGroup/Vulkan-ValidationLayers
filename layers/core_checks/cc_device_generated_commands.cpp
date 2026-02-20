@@ -1103,19 +1103,19 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
 
         const auto initial_fragment_shader_object = indirect_execution_set->initial_fragment_shader_object;
         if (initial_fragment_shader_object && update_shader_object->create_info.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            if (update_shader_object->entrypoint && initial_fragment_shader_object->entrypoint) {
+            if (update_shader_object->stage.entrypoint && initial_fragment_shader_object->stage.entrypoint) {
                 // Ordered to provide a faster comparison and better error message, these should be small sets.
                 std::set<uint32_t> update_shader_output_locations;
                 std::set<uint32_t> initial_shader_output_locations;
 
                 // From GetFSOutputLocations()
-                for (const auto* variable : update_shader_object->entrypoint->user_defined_interface_variables) {
+                for (const auto* variable : update_shader_object->stage.entrypoint->user_defined_interface_variables) {
                     if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
                         continue;  // not an output interface
                     }
                     update_shader_output_locations.insert(variable->interface_slots[0].Location());
                 }
-                for (const auto* variable : initial_fragment_shader_object->entrypoint->user_defined_interface_variables) {
+                for (const auto* variable : initial_fragment_shader_object->stage.entrypoint->user_defined_interface_variables) {
                     if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
                         continue;  // not an output interface
                     }
@@ -1149,17 +1149,18 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
                 }
 
                 const bool initial_shader_frag_depth =
-                    initial_fragment_shader_object->entrypoint->HasBuiltIn(spv::BuiltInFragDepth);
+                    initial_fragment_shader_object->stage.entrypoint->HasBuiltIn(spv::BuiltInFragDepth);
                 const bool initial_shader_sample_mask =
-                    initial_fragment_shader_object->entrypoint->HasBuiltIn(spv::BuiltInSampleMask);
+                    initial_fragment_shader_object->stage.entrypoint->HasBuiltIn(spv::BuiltInSampleMask);
                 const bool initial_shader_stencil_export =
-                    initial_fragment_shader_object->spirv &&
-                    initial_fragment_shader_object->spirv->HasCapability(spv::CapabilityStencilExportEXT);
+                    initial_fragment_shader_object->stage.spirv_state &&
+                    initial_fragment_shader_object->stage.spirv_state->HasCapability(spv::CapabilityStencilExportEXT);
 
-                const bool ies_shader_frag_depth = update_shader_object->entrypoint->HasBuiltIn(spv::BuiltInFragDepth);
-                const bool ies_shader_sample_mask = update_shader_object->entrypoint->HasBuiltIn(spv::BuiltInSampleMask);
+                const bool ies_shader_frag_depth = update_shader_object->stage.entrypoint->HasBuiltIn(spv::BuiltInFragDepth);
+                const bool ies_shader_sample_mask = update_shader_object->stage.entrypoint->HasBuiltIn(spv::BuiltInSampleMask);
                 const bool ies_shader_stencil_export =
-                    update_shader_object->spirv && update_shader_object->spirv->HasCapability(spv::CapabilityStencilExportEXT);
+                    update_shader_object->stage.spirv_state &&
+                    update_shader_object->stage.spirv_state->HasCapability(spv::CapabilityStencilExportEXT);
 
                 if (initial_shader_frag_depth != ies_shader_frag_depth) {
                     LogObjectList objlist(initial_fragment_shader_object->Handle(), update_shader_object->Handle());

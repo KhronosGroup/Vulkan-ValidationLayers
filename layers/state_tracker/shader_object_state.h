@@ -37,26 +37,25 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;
     const VkShaderCreateInfoEXT &create_info;
 
-    std::shared_ptr<const spirv::Module> spirv;
-    std::shared_ptr<const spirv::EntryPoint> entrypoint;
-    std::vector<VkShaderEXT> linked_shaders;
+    const DescriptorSetLayoutList set_layouts;
+    const PushConstantRangesId push_constant_ranges;
+    const std::vector<PipelineLayoutCompatId> set_compat_ids;
+
     const bool descriptor_heap_mode;
     const uint32_t descriptor_heap_embedded_samplers_count;
+
+    // We use this to make things more unified with Pipelines, which need a list of these for each stage
+    // Basically the rule is:
+    //   If there is state that pipeline ties to a single shader stage, it should go here
+    const ShaderStageState stage;
+
+    std::vector<VkShaderEXT> linked_shaders;
 
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
     const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
-
-    const DescriptorSetLayoutList set_layouts;
-    const PushConstantRangesId push_constant_ranges;
-    const std::vector<PipelineLayoutCompatId> set_compat_ids;
-
-    // We use this to make things more unified with Pipelines, which need a list of these for each stage
-    // Basically the rule is:
-    //   If there is state that pipeline ties to a single shader stage, it should go here
-    const ShaderStageState stage;
 
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
