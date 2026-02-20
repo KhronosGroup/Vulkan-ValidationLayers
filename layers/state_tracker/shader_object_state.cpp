@@ -39,15 +39,12 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
       entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
       descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
       descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
-      uses_resource_heap(
-          ResourceHeapIsUsed(safe_create_info.pNext, entrypoint, spirv ? spirv->static_data_.has_descriptor_heap : false)),
-      uses_sampler_heap(
-          SamplerHeapIsUsed(safe_create_info.pNext, entrypoint, spirv ? spirv->static_data_.has_descriptor_heap : false)),
       active_slots(GetActiveSlots(entrypoint)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       set_layouts(GetSetLayouts(dev_data, create_info)),
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)) {
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)),
+      stage(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE, descriptor_heap_mode) {
     // We need to update handle, but if using VK_SHADER_CODE_TYPE_SPIRV_EXT, it will be null
     if (spirv_module) {
         spirv_module->handle_ = handle_;

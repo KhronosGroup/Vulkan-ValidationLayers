@@ -22,6 +22,7 @@
 #include "state_tracker/shader_module.h"
 #include "utils/shader_utils.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "containers/container_utils.h"
 
 // Common for both Pipeline and Shader Object
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
@@ -78,9 +79,73 @@ const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                                   const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                                   const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
+bool ShaderStageState::ResourceHeapIsUsed() {
+    if (!entrypoint || !spirv_state) {
+        return false;
+    }
+    const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(GetPNext());
+    if (!mapping_info && !spirv_state->static_data_.has_descriptor_heap) {
+        return false;  // if not using heaps at all
+    }
+
+    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
+        if (resource_variable.decorations.IsDescriptorSet() && !resource_variable.is_sampler && mapping_info) {
+            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
+                const auto& mapping = mapping_info->pMappings[i];
+                if (mapping.descriptorSet == resource_variable.decorations.set &&
+                    mapping.firstBinding <= resource_variable.decorations.binding &&
+                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
+                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
+                    return true;
+                }
+            }
+        } else if (resource_variable.is_resource_heap) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ShaderStageState::SamplerHeapIsUsed() {
+    if (!entrypoint || !spirv_state) {
+        return false;
+    }
+    const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(GetPNext());
+    if (!mapping_info && !spirv_state->static_data_.has_descriptor_heap) {
+        return false;  // if not using heaps at all
+    }
+
+    for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint->resource_interface_variables) {
+        if (resource_variable.is_sampler && mapping_info) {
+            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
+                const auto& mapping = mapping_info->pMappings[i];
+                if (mapping.descriptorSet == resource_variable.decorations.set &&
+                    mapping.firstBinding <= resource_variable.decorations.binding &&
+                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
+                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
+                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
+                    return true;
+                }
+            }
+        } else if (resource_variable.is_sampler_heap) {
+            return true;
+        }
+    }
+    return false;
+}
+
+ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
+                                   const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout,
                                    bool descriptor_heap_mode)
@@ -92,7 +157,5 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       pipeline_layout(pipeline_layout),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
       descriptor_heap_mode(descriptor_heap_mode),
-      uses_resource_heap(
-          ResourceHeapIsUsed(GetPNext(), entrypoint, spirv_state ? spirv_state->static_data_.has_descriptor_heap : false)),
-      uses_sampler_heap(
-          SamplerHeapIsUsed(GetPNext(), entrypoint, spirv_state ? spirv_state->static_data_.has_descriptor_heap : false)) {}
+      uses_resource_heap(ResourceHeapIsUsed()),
+      uses_sampler_heap(SamplerHeapIsUsed()) {}

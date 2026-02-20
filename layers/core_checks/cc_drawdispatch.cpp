@@ -1453,8 +1453,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             }
             const bool has_embedded_samplers = pipeline.descriptor_heap_embedded_samplers_count != 0;
 
-            skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, stage_state.uses_resource_heap,
-                                                      stage_state.uses_sampler_heap, has_embedded_samplers, vuid);
+            skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, stage_state,
+                                                      has_embedded_samplers, vuid);
 
             // Only need to validate if we know there is a embedded sampler to check against
             if (has_embedded_samplers) {
@@ -1587,10 +1587,9 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     return skip;
 }
 
-bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound &last_bound_state, const spirv::Module &module_state,
-                                                   const spirv::EntryPoint &entry_point, const bool uses_resource_heap,
-                                                   const bool uses_sampler_heap, const bool has_embedded_samplers,
-                                                   const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
+                                                   const spirv::EntryPoint& entry_point, const ShaderStageState& stage_state,
+                                                   const bool has_embedded_samplers, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -1605,7 +1604,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound &last_bound_s
 
     // TODO - Currently at this level we don't know if the sampler is embedded or not
     // If there is only embedded samplers, the sampler heap isn't required to be bound
-    if (uses_sampler_heap && !has_embedded_samplers) {
+    if (stage_state.uses_sampler_heap && !has_embedded_samplers) {
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.sampler_bound) {
                 for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
@@ -1627,7 +1626,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound &last_bound_s
                 break;  // don't spam every descriptor
             }
         }
-    } else if (uses_resource_heap) {
+    } else if (stage_state.uses_resource_heap) {
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.resource_bound) {
                 for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point.resource_interface_variables) {
@@ -1736,8 +1735,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
             if (module_state && entry_point) {
                 const bool has_embedded_samplers = shader_state->descriptor_heap_embedded_samplers_count != 0;
 
-                skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point,
-                                                          shader_state->uses_resource_heap, shader_state->uses_sampler_heap,
+                skip |= ValidateActionStateDescriptorHeap(last_bound_state, *module_state, *entry_point, shader_state->stage,
                                                           has_embedded_samplers, vuid);
 
                 // Only need to validate if we know there is a embedded sampler to check against

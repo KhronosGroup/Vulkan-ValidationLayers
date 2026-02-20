@@ -45,6 +45,8 @@ class Instruction;
 // A good example is Descriptor Heap flags, we have a nice |descriptor_heap_mode| member we want to query, because it requires the
 // pipelineFlags2 pNext struct. Because we don't have the Pipeline/ShaderObject state object we have to basically reimplement
 // various state.
+// The core issue with this is we use it everything for Pipeline, but for ShaderObject, we only use at vkCreateShadersEXT()
+// Also for Pipeline, we create the state object prior to validating the vkCreatePipeline call
 struct ShaderStageState {
     // We use this over a spirv::Module because there are times we need to create empty objects
     std::shared_ptr<const vvl::ShaderModule> module_state;
@@ -72,6 +74,10 @@ struct ShaderStageState {
     VkShaderStageFlagBits GetStage() const;
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void* GetPNext() const;
+
+  private:
+    bool ResourceHeapIsUsed();
+    bool SamplerHeapIsUsed();
 };
 
 namespace spirv {

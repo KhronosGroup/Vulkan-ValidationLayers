@@ -22,7 +22,6 @@
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_tools_commit_id.h"
 #include "state_tracker/shader_module.h"
-#include "containers/container_utils.h"
 
 #include <cstring>
 #include <fstream>
@@ -281,68 +280,4 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     }
 
     return "[UNKNOWN]";
-}
-
-bool ResourceHeapIsUsed(const void *pNext, const std::shared_ptr<const spirv::EntryPoint> &entry_point,
-                        const bool has_descriptor_heap) {
-    if (!entry_point) {
-        return false;
-    }
-    const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext);
-    if (!mapping_info && !has_descriptor_heap) {
-        return false;
-    }
-    for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point->resource_interface_variables) {
-        if (resource_variable.decorations.IsDescriptorSet() && !resource_variable.is_sampler && mapping_info) {
-            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
-                const auto &mapping = mapping_info->pMappings[i];
-                if (mapping.descriptorSet == resource_variable.decorations.set &&
-                    mapping.firstBinding <= resource_variable.decorations.binding &&
-                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
-                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                    return true;
-                }
-            }
-        } else if (resource_variable.is_resource_heap) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool SamplerHeapIsUsed(const void *pNext, const std::shared_ptr<const spirv::EntryPoint> &entry_point,
-                       const bool has_descriptor_heap) {
-    if (!entry_point) {
-        return false;
-    }
-    const auto mapping_info = vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext);
-    if (!mapping_info && !has_descriptor_heap) {
-        return false;
-    }
-    for (const spirv::ResourceInterfaceVariable &resource_variable : entry_point->resource_interface_variables) {
-        if (resource_variable.is_sampler && mapping_info) {
-            for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
-                const auto &mapping = mapping_info->pMappings[i];
-                if (mapping.descriptorSet == resource_variable.decorations.set &&
-                    mapping.firstBinding <= resource_variable.decorations.binding &&
-                    ResourceTypeMatchesBinding(mapping.resourceMask, resource_variable) &&
-                    IsValueIn(mapping.source, {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT,
-                                               VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT})) {
-                    return true;
-                }
-            }
-        } else if (resource_variable.is_sampler_heap) {
-            return true;
-        }
-    }
-    return false;
 }
