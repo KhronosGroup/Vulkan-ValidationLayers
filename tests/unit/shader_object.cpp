@@ -2866,7 +2866,7 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSizee) {
+TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSize) {
     TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -2879,6 +2879,62 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSizee) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08878");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, DifferentMultiPushConstantRanges) {
+    TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    VkPushConstantRange push_ranges[2];
+    push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_ranges[0].offset = 0u;
+    push_ranges[0].size = 4u;
+    push_ranges[1].stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    push_ranges[1].offset = 4u;
+    push_ranges[1].size = 4u;
+
+    VkShaderCreateInfoEXT vert_create_info = vku::InitStructHelper();
+    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vert_create_info.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vert_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    vert_create_info.codeSize = vert_spv.size() * sizeof(vert_spv[0]);
+    vert_create_info.pCode = vert_spv.data();
+    vert_create_info.pName = "main";
+    vert_create_info.pushConstantRangeCount = 2u;
+    vert_create_info.pPushConstantRanges = push_ranges;
+
+    VkShaderCreateInfoEXT frag_create_info = vku::InitStructHelper();
+    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    frag_create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    frag_create_info.codeSize = frag_spv.size() * sizeof(frag_spv[0]);
+    frag_create_info.pCode = frag_spv.data();
+    frag_create_info.pName = "main";
+    frag_create_info.pushConstantRangeCount = 2u;
+    frag_create_info.pPushConstantRanges = push_ranges;
+
+    const vkt::Shader vert_shader(*m_device, vert_create_info);
+    push_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    const vkt::Shader frag_shader(*m_device, frag_create_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    VkShaderStageFlagBits tess_stages[2] = {VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT};
+    VkShaderEXT null_shaders[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer, 2u, tess_stages, null_shaders);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08878");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
