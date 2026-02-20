@@ -3038,6 +3038,102 @@ TEST_F(PositiveWsi, PresentTimings) {
     }
 }
 
+TEST_F(PositiveWsi, PresentTimingsCalibrateableTimeDomains) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
+    }
+
+    VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper();
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface;
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &capabilities2);
+
+    VkPresentTimingSurfaceCapabilitiesEXT present_timing_surface_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&present_timing_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &surface_capabilities);
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, nullptr);
+    if (present_mode_count == 0) {
+        GTEST_SKIP() << "No present modes supported";
+    }
+
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT | VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR;
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_modes[0];
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    uint32_t time_domain_count = 0u;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu_, &time_domain_count, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &time_domain_count, time_domains.data());
+
+    VkTimeDomainKHR non_present_stage_time_domain = VK_TIME_DOMAIN_MAX_ENUM_KHR;
+    bool found = false;
+    for (uint32_t i = 0; i < time_domain_count; ++i) {
+        if (time_domains[i] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
+            found = true;
+            break;
+        } else {
+            non_present_stage_time_domain = time_domains[i];
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT not supported";
+    }
+
+    std::vector<VkPresentStageFlagsEXT> present_stages_to_test{VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT,
+                                                               VK_PRESENT_STAGE_REQUEST_DEQUEUED_BIT_EXT};
+    if (non_present_stage_time_domain != VK_TIME_DOMAIN_MAX_ENUM_KHR) {
+        present_stages_to_test.push_back(0);
+    }
+
+    std::vector<VkSwapchainCalibratedTimestampInfoEXT> swapchain_timestamp_infos(present_stages_to_test.size());
+    std::vector<VkCalibratedTimestampInfoKHR> timestamp_infos(present_stages_to_test.size());
+    for (size_t i = 0; i < present_stages_to_test.size(); i++) {
+        swapchain_timestamp_infos[i] = vku::InitStructHelper();
+        swapchain_timestamp_infos[i].swapchain = swapchain;
+        swapchain_timestamp_infos[i].presentStage = present_stages_to_test[i];
+
+        timestamp_infos[i] = vku::InitStructHelper(&swapchain_timestamp_infos[i]);
+        timestamp_infos[i].timeDomain =
+            present_stages_to_test[i] ? VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT : non_present_stage_time_domain;
+    }
+
+    // Disable this error for now; the spec incorrectly labelled this VUIDs as implicit, when in-fact it
+    // only applies when VkSwapchainCalibratedTimestampInfoEXT::presentStage is VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCalibratedTimestampInfoEXT-presentStage-requiredbitmask");
+
+    std::vector<uint64_t> timestamps(present_stages_to_test.size());
+    uint64_t max_deviation{};
+    vk::GetCalibratedTimestampsKHR(device(), timestamp_infos.size(), timestamp_infos.data(), timestamps.data(), &max_deviation);
+}
+
 TEST_F(PositiveWsi, PresentTimingsFull) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
