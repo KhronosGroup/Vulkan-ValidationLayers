@@ -1511,7 +1511,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         if (!last_bound_state.desc_set_pipeline_layout) {
             skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
                              "The %s statically uses descriptor set %" PRIu32
-                             ", but because a descriptor was never bound, the pipeline layouts are not compatible.\nIf using a "
+                             ", but because a descriptor was never bound, the VkPipelineLayouts are not compatible.\nIf using a "
                              "descriptor, make sure to call one of vkCmdBindDescriptorSets, vkCmdPushDescriptorSet, "
                              "vkCmdSetDescriptorBufferOffset, etc for %s",
                              FormatHandle(pipeline).c_str(), pipeline.max_active_slot, string_VkPipelineBindPoint(bind_point));
@@ -1539,10 +1539,10 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             pipeline.max_active_slot == 0 ? "set 0 is" : "all sets 0 to " + std::to_string(pipeline.max_active_slot) + " are";
         skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                          "The %s (created with %s) statically uses descriptor set %" PRIu32
-                         ", but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
+                         ", but %s not compatible with the %s bound with %s\n%s",
                          FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot, range.c_str(),
-                         String(last_bound_state.desc_set_bound_command),
                          FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle()).c_str(),
+                         String(last_bound_state.desc_set_bound_command),
                          last_bound_state.DescribeNonCompatibleSet(pipeline.max_active_slot, *pipeline_layout).c_str());
     } else {
         // if the bound set is not compatible, the rest will just be extra redundant errors
@@ -1763,7 +1763,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                 // If they never bound any descriptors
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
                                  "The %s statically uses descriptor set %" PRIu32
-                                 ", but because a descriptor was never bound, the pipeline layouts are not compatible.\nIf using "
+                                 ", but because a descriptor was never bound, the VkPipelineLayouts are not compatible.\nIf using "
                                  "a descriptor, make sure to call one of vkCmdBindDescriptorSets, vkCmdPushDescriptorSet, "
                                  "vkCmdSetDescriptorBufferOffset, etc for %s",
                                  FormatHandle(shader_object.Handle()).c_str(), shader_object.max_active_slot,
@@ -1775,11 +1775,10 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                                         ? "set 0 is"
                                         : "all sets 0 to " + std::to_string(shader_object.max_active_slot) + " are";
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
-                                 "The %s statically uses descriptor set %" PRIu32
-                                 " but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
+                                 "The %s statically uses descriptor set %" PRIu32 " but %s not compatible with the %s with %s\n%s",
                                  FormatHandle(shader_object.Handle()).c_str(), shader_object.max_active_slot, range.c_str(),
-                                 String(last_bound_state.desc_set_bound_command),
                                  FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle()).c_str(),
+                                 String(last_bound_state.desc_set_bound_command),
                                  last_bound_state.DescribeNonCompatibleSet(shader_object.max_active_slot, shader_object).c_str());
             }
         } else {
@@ -1903,7 +1902,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
                         skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                         "pipeline layout %s.",
+                                         "%s bound by vkCmdBindPipeline.",
                                          string_VkShaderStageFlags(stage.GetStage()).c_str(),
                                          FormatHandle(pipeline_layout->Handle()).c_str());
                     }
@@ -2068,7 +2067,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
                 if (stage_state.entrypoint && stage_state.entrypoint->written_built_in_primitive_shading_rate_khr) {
                     skip |=
                         LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
-                                 "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
+                                 "the %s shader in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
                                  "but multiple viewports (%" PRIu32
                                  ") are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
@@ -2082,13 +2081,14 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
             if (shader_object && shader_object->stage.entrypoint &&
                 shader_object->stage.entrypoint->written_built_in_primitive_shading_rate_khr) {
                 if (cb_state.dynamic_state_value.viewport_count != 1) {
-                    skip |= LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), vuid.loc(),
-                                     "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
-                                     "but multiple viewports (%" PRIu32
-                                     ") are set by the last call to vkCmdSetViewportWithCountEXT,"
-                                     "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                     string_VkShaderStageFlagBits(shader_object->create_info.stage),
-                                     cb_state.dynamic_state_value.viewport_count);
+                    skip |=
+                        LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), vuid.loc(),
+                                 "the %s shader in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
+                                 "but multiple viewports (%" PRIu32
+                                 ") are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                 string_VkShaderStageFlagBits(shader_object->create_info.stage),
+                                 cb_state.dynamic_state_value.viewport_count);
                 }
                 break;
             }

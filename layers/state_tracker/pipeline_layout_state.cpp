@@ -80,9 +80,9 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
 std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutCompatDef &other) const {
     std::ostringstream ss;
     if (set != other.set) {
-        ss << "The set " << set << " is different from the non-compatible pipeline layout (" << other.set << ")\n";
+        ss << "The set " << set << " is different from the non-compatible VkPipelineLayout (" << other.set << ")\n";
     } else if (push_constant_ranges != other.push_constant_ranges) {
-        ss << "Pipeline layout pipeline bound with last call to vkCmdBindDescriptorSets has following push constant ranges:\n";
+        ss << "The VkPipelineLayout bound with last call to vkCmdBindDescriptorSets has following push constant ranges:\n";
         if (push_constant_ranges->empty()) {
             ss << "Empty\n";
         } else {
@@ -90,7 +90,7 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
                 ss << "VkPushConstantRange[" << pcr_i << "]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
-        ss << "But pipeline layout of last bound pipeline or last bound shaders has following push constant ranges:\n";
+        ss << "But the VkPipelineLayout layout of last vkCmdBindPipeline/vkCmdBindShader has following push constant ranges:\n";
         if (other.push_constant_ranges->empty()) {
             ss << "Empty\n";
         } else {
@@ -99,12 +99,12 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
             }
         }
     } else if (is_independent_sets != other.is_independent_sets) {
-        ss << "The pipeline layout used to bind set " << set;
+        ss << "The VkPipelineLayout used to bind set " << set;
         if (is_independent_sets) {
-            ss << " was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+            ss << " was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the VkPipelineLayout of last bound "
                   "pipeline was not.";
         } else {
-            ss << " was created without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+            ss << " was created without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the VkPipelineLayout of last bound "
                   "pipeline was.";
         }
     } else {

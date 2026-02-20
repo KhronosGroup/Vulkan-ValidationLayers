@@ -386,8 +386,10 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
     if (rp1_state.create_info.flags != rp2_state.create_info.flags) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |= LogError(vuid, objlist, loc,
-                         "VkRenderPassCreateFlags is incompatible between %s (from %s) and %s (from %s), "
-                         "%s != %s",
+                         "VkRenderPassCreateFlags is incompatible between %s (from %s) and %s (from %s)\n"
+                         "%s != %s\n"
+                         "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your VkPipeline and "
+                         "VkFramebuffer, but some things need to be the same.",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str(), string_VkRenderPassCreateFlags(rp1_state.create_info.flags).c_str(),
                          string_VkRenderPassCreateFlags(rp2_state.create_info.flags).c_str());
@@ -396,8 +398,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
     if (rp1_state.create_info.subpassCount != rp2_state.create_info.subpassCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |= LogError(vuid, objlist, loc,
-                         "subpassCount is incompatible between %s (from %s) and %s (from %s), "
-                         "%" PRIu32 " != %" PRIu32 "",
+                         "subpassCount is incompatible between %s (from %s) and %s (from %s)\n"
+                         "%" PRIu32 " != %" PRIu32
+                         "\n"
+                         "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your VkPipeline and "
+                         "VkFramebuffer, but some things need to be the same.",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.subpassCount, rp2_state.create_info.subpassCount);
     } else {
@@ -409,8 +414,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
     if (rp1_state.create_info.dependencyCount != rp2_state.create_info.dependencyCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |= LogError(vuid, objlist, loc,
-                         "dependencyCount is incompatible between %s (from %s) and %s (from %s), "
-                         "%" PRIu32 " != %" PRIu32 "",
+                         "dependencyCount is incompatible between %s (from %s) and %s (from %s)\n"
+                         "%" PRIu32 " != %" PRIu32
+                         "\n"
+                         "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your VkPipeline and "
+                         "VkFramebuffer, but some things need to be the same.",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.dependencyCount,
                          rp2_state.create_info.dependencyCount);
@@ -422,8 +430,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
     if (rp1_state.create_info.correlatedViewMaskCount != rp2_state.create_info.correlatedViewMaskCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |= LogError(vuid, objlist, loc,
-                         "correlatedViewMaskCount is incompatible between %s (from %s) and %s (from %s), "
-                         "%" PRIu32 " != %" PRIu32 "",
+                         "correlatedViewMaskCount is incompatible between %s (from %s) and %s (from %s)\n"
+                         "%" PRIu32 " != %" PRIu32
+                         "\n"
+                         "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your VkPipeline and "
+                         "VkFramebuffer, but some things need to be the same.",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.correlatedViewMaskCount,
                          rp2_state.create_info.correlatedViewMaskCount);
@@ -433,8 +444,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                 const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
                 skip |= LogError(vuid, objlist, loc,
                                  "pCorrelatedViewMasks[%" PRIu32
-                                 "] is incompatible between %s (from %s) and %s (from %s), "
-                                 "0x%" PRIx32 " != 0x%" PRIx32 "",
+                                 "] is incompatible between %s (from %s) and %s (from %s)\n"
+                                 "0x%" PRIx32 " != 0x%" PRIx32
+                                 "\n"
+                                 "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your "
+                                 "VkPipeline and VkFramebuffer, but some things need to be the same.",
                                  i, FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
                                  FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str(),
                                  rp1_state.create_info.pCorrelatedViewMasks[i], rp2_state.create_info.pCorrelatedViewMasks[i]);
