@@ -605,8 +605,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
 
         // We currently need to store a copy of the original, non-instrumented shader so if there is debug information.
         std::vector<uint32_t> code;
-        if (shader_object_state->spirv) {
-            code = shader_object_state->spirv->words_;
+        if (shader_object_state->stage.spirv_state) {
+            code = shader_object_state->stage.spirv_state->words_;
         }
 
         instrumented_shaders_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE,

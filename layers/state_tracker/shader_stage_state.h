@@ -53,6 +53,7 @@ struct ShaderStageState {
     std::shared_ptr<const spirv::Module> spirv_state;
     const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
     const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info;
+    // Can be null because GPL
     const vvl::DescriptorSetLayoutList *descriptor_set_layouts;
     // Will be NULL if coming from ShaderObject or Descriptor Heaps
     VkPipelineLayout pipeline_layout;
@@ -74,6 +75,9 @@ struct ShaderStageState {
     VkShaderStageFlagBits GetStage() const;
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void* GetPNext() const;
+
+    // Handles things like VK_EXT_shader_module_identifier and VK_SHADER_CODE_TYPE_SPIRV_EXT
+    bool HasSpirv() const { return spirv_state.get() != nullptr && entrypoint.get() != nullptr; }
 
   private:
     bool ResourceHeapIsUsed();

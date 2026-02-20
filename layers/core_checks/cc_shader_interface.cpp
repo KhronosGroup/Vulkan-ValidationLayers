@@ -275,10 +275,17 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, const spirv::EntryPoint &producer_entrypoint,
-                                                const spirv::Module &consumer, const spirv::EntryPoint &consumer_entrypoint,
-                                                const Location &create_info_loc) const {
+bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer, const ShaderStageState& consumer,
+                                                const Location& create_info_loc) const {
     bool skip = false;
+
+    if (!consumer.HasSpirv() || !producer.HasSpirv()) {
+        return skip;
+    }
+    const spirv::Module& producer_module = *producer.spirv_state;
+    const spirv::EntryPoint& producer_entrypoint = *producer.entrypoint;
+    const spirv::Module& consumer_module = *consumer.spirv_state;
+    const spirv::EntryPoint& consumer_entrypoint = *consumer.entrypoint;
 
     if (producer_entrypoint.has_passthrough) {
         return skip;  // PassthroughNV doesn't have to do Location matching
@@ -335,15 +342,16 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 // Only the OpType has to match, signed vs unsigned in not important
                 if ((component_info.output_type != component_info.input_type) ||
                     (component_info.output_width != component_info.input_width)) {
-                    const LogObjectList objlist(producer.handle(), consumer.handle());
+                    const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                     skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
                                      "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
                                      ", between\n\n%s stage:\n%s%s\n\n%s stage:\n%s%s\n\n",
                                      location, component, string_VkShaderStageFlagBits(producer_stage),
-                                     producer.DescribeVariable(output_var->id).c_str(),
-                                     producer.DescribeType(output_var->type_id).c_str(),
-                                     string_VkShaderStageFlagBits(consumer_stage), consumer.DescribeVariable(input_var->id).c_str(),
-                                     consumer.DescribeType(input_var->type_id).c_str());
+                                     producer_module.DescribeVariable(output_var->id).c_str(),
+                                     producer_module.DescribeType(output_var->type_id).c_str(),
+                                     string_VkShaderStageFlagBits(consumer_stage),
+                                     consumer_module.DescribeVariable(input_var->id).c_str(),
+                                     consumer_module.DescribeType(input_var->type_id).c_str());
                     break;  // Only need to report for the first component found
                 }
 
@@ -368,11 +376,11 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 if (!enabled_features.maintenance4 && output_var->base_type.IsVector() && input_var->base_type.IsVector()) {
                     // Note the "Component Count" in the VU refers to OpTypeVector's operand and NOT the "Component slot"
                     const uint32_t output_vec_size =
-                        producer.GetNumComponentsInBaseType(producer.FindDef(output_var->base_type.ResultId()));
+                        producer_module.GetNumComponentsInBaseType(producer_module.FindDef(output_var->base_type.ResultId()));
                     const uint32_t input_vec_size =
-                        consumer.GetNumComponentsInBaseType(consumer.FindDef(input_var->base_type.ResultId()));
+                        consumer_module.GetNumComponentsInBaseType(consumer_module.FindDef(input_var->base_type.ResultId()));
                     if (output_vec_size > input_vec_size) {
-                        const LogObjectList objlist(producer.handle(), consumer.handle());
+                        const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                         skip |= LogError("VUID-RuntimeSpirv-maintenance4-06817", objlist, create_info_loc,
                                          "(SPIR-V Interface) starting at Location %" PRIu32 " Component %" PRIu32
                                          "\nThe output (%s) has a Vec%" PRIu32 "\nThe input (%s) has a Vec%" PRIu32
@@ -386,19 +394,19 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
 
                 if (producer_stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
                     if (input_var->is_per_primitive_ext != output_var->is_per_primitive_ext) {
-                        const LogObjectList objlist(producer.handle(), consumer.handle());
+                        const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                         std::ostringstream ss;
                         ss << "(SPIR-V Interface) at Location " << location << " Component " << component
                            << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not ")
                            << "decorated with PerPrimitiveEXT while the Fragment stage is "
                            << (input_var->is_per_primitive_ext ? "" : "not") << ".";
-                        if (consumer.static_data_.source_language == spv::SourceLanguageGLSL) {
+                        if (consumer_module.static_data_.source_language == spv::SourceLanguageGLSL) {
                             ss << "\nMake sure to use the 'perprimitiveEXT' attribute on your interface variables. The '#extension "
                                   "GL_EXT_mesh_shader' is also required, even in the fragment shader.";
-                        } else if (consumer.static_data_.source_language == spv::SourceLanguageHLSL) {
+                        } else if (consumer_module.static_data_.source_language == spv::SourceLanguageHLSL) {
                             ss << "\nThis currently is a known limitation in HLSL, but has a workaroud, see "
                                   "https://github.com/microsoft/DirectXShaderCompiler/issues/6862";
-                        } else if (consumer.static_data_.source_language == spv::SourceLanguageSlang) {
+                        } else if (consumer_module.static_data_.source_language == spv::SourceLanguageSlang) {
                             ss << "\nThis currently is a known limitation in Slang, see "
                                   "https://github.com/shader-slang/slang/issues/7019";
                         }
@@ -412,14 +420,14 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 // It is not an error if a stage does not consume all outputs from the previous stage
                 // Don't give any warning if maintenance4 with vectors
                 if (!enabled_features.maintenance4 && !output_var->base_type.IsVector()) {
-                    const LogObjectList objlist(producer.handle(), consumer.handle());
+                    const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                     skip |= LogPerformanceWarning(
                         "WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
                         "(SPIR-V Interface) %s has an Output value declared at Location %" PRIu32 " Component %" PRIu32
                         ", but there is no corresponding Input declared in %s.\nThis is not invalid, but might the write to to the "
                         "unused Output is discarded.\nThe Output variable is:\n  %s",
                         string_VkShaderStageFlagBits(producer_stage), location, component,
-                        string_VkShaderStageFlagBits(consumer_stage), producer.DescribeType(output_var->type_id).c_str());
+                        string_VkShaderStageFlagBits(consumer_stage), producer_module.DescribeType(output_var->type_id).c_str());
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot
@@ -428,13 +436,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                     (input_var->base_type.Opcode() == spv::OpTypeArray)) {
                     break;  // When going inbetween Tessellation or Geometry, array size can be different
                 }
-                const LogObjectList objlist(producer.handle(), consumer.handle());
+                const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                 skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-08743", objlist, create_info_loc,
                                  "(SPIR-V Interface) %s has a declared Input at Location %" PRIu32 " Component %" PRIu32
                                  " %s but the previous stage (%s) has no Output declared there.\nThe input variable is:\n  %s",
                                  string_VkShaderStageFlagBits(consumer_stage), location, component,
                                  input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage),
-                                 consumer.DescribeType(input_var->type_id).c_str());
+                                 consumer_module.DescribeType(input_var->type_id).c_str());
                 break;  // Only need to report for the first component found
             }
         }
@@ -490,7 +498,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
             msg << '\t' << i << ": " << string_SpvBuiltIn(input_built_in_block[i]) << '\n';
         }
         msg << "}\n";
-        const LogObjectList objlist(producer.handle(), consumer.handle());
+        const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
         skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
                          "(SPIR-V Interface) Mismatch in BuiltIn blocks:\n %s", msg.str().c_str());
     }
@@ -717,8 +725,8 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 module_state = pipeline->fragment_shader_state->fragment_shader->spirv.get();
             } else if (!pipeline) {
                 const vvl::ShaderObject *shader_object = last_bound_state.GetShaderObjectStateIfValid(ShaderObjectStage::FRAGMENT);
-                if (shader_object && shader_object->spirv) {
-                    module_state = shader_object->spirv.get();
+                if (shader_object && shader_object->stage.spirv_state) {
+                    module_state = shader_object->stage.spirv_state.get();
                 }
             }
             ASSERT_AND_CONTINUE(module_state);
@@ -933,18 +941,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
                 if (consumer_index != not_found) break;
             }
 
-            const auto &producer = pipeline.stage_states[producer_index];
-            const auto &consumer = pipeline.stage_states[consumer_index];
-
-            const std::shared_ptr<const spirv::Module> &producer_spirv =
-                producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
-            const std::shared_ptr<const spirv::Module> &consumer_spirv =
-                consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
-
-            if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
-                skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
-                                                       *consumer.entrypoint, create_info_loc);
-            }
+            const ShaderStageState& producer = pipeline.stage_states[producer_index];
+            const ShaderStageState& consumer = pipeline.stage_states[consumer_index];
+            skip |= ValidateInterfaceBetweenStages(producer, consumer, create_info_loc);
 
             producer_index = consumer_index;
         }

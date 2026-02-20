@@ -748,12 +748,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                 const vvl::Pipeline& pipeline, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                                     const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state,
-                                                   const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
-                                                   const spirv::Module& module_state, const spirv::EntryPoint& entry_point,
+    bool ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
                                                    const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const spirv::Module& module_state,
-                                           const spirv::EntryPoint& entry_point, const ShaderStageState& stage_state,
+    bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const ShaderStageState& stage_state,
                                            const bool has_embedded_samplers, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
@@ -968,8 +965,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateSpecializations(const vku::safe_VkSpecializationInfo* spec, const Location& loc) const;
-    bool ValidateInterfaceBetweenStages(const spirv::Module& producer, const spirv::EntryPoint& producer_entrypoint,
-                                        const spirv::Module& consumer, const spirv::EntryPoint& consumer_entrypoint,
+    bool ValidateInterfaceBetweenStages(const ShaderStageState& producer, const ShaderStageState& consumer,
                                         const Location& create_info_loc) const;
     bool ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const vvl::Pipeline& pipeline, uint32_t subpass_index,

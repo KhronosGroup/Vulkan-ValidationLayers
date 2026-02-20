@@ -190,7 +190,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     pipeline_state = gpuav.Get<vvl::Pipeline>(it->second.pipeline).get();
                 } else if (it->second.shader_object != VK_NULL_HANDLE) {
                     shader_object_state = gpuav.Get<vvl::ShaderObject>(it->second.shader_object).get();
-                    ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
+                    ASSERT_AND_CONTINUE(shader_object_state->stage.entrypoint);
                 } else {
                     assert(false);
                     continue;
@@ -225,10 +225,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                             }
                         }
                     } else if (shader_object_state) {
-                        ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
-                        auto variable_it =
-                            shader_object_state->entrypoint->resource_interface_variable_map.find(descriptor_access.variable_id);
-                        if (variable_it != shader_object_state->entrypoint->resource_interface_variable_map.end()) {
+                        ASSERT_AND_CONTINUE(shader_object_state->stage.entrypoint);
+                        auto variable_it = shader_object_state->stage.entrypoint->resource_interface_variable_map.find(
+                            descriptor_access.variable_id);
+                        if (variable_it != shader_object_state->stage.entrypoint->resource_interface_variable_map.end()) {
                             resource_variable = variable_it->second;
                         }
                     }
