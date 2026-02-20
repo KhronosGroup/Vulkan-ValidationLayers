@@ -809,8 +809,8 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                              string_VkShaderStageFlagBits(shader_state->create_info.stage),
                              shader_state->create_info.pushConstantRangeCount);
         } else {
-            bool found = false;  // find duplicate push constant ranges
             for (uint32_t i = 0; i < shader_state->create_info.pushConstantRangeCount; ++i) {
+                bool found = false;  // find duplicate push constant ranges
                 for (uint32_t j = 0; j < first->create_info.pushConstantRangeCount; ++j) {
                     if (shader_state->create_info.pPushConstantRanges[i] == first->create_info.pPushConstantRanges[j]) {
                         found = true;
