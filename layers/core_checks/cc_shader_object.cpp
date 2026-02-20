@@ -837,21 +837,16 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
                          string_VkShaderStageFlagBits(first->create_info.stage), first->create_info.setLayoutCount,
                          string_VkShaderStageFlagBits(shader_state->create_info.stage), shader_state->create_info.setLayoutCount);
         } else {
-            bool found = false;  // find duplicate set layouts
             for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
-                for (uint32_t j = 0; j < first->create_info.setLayoutCount; ++j) {
-                    // TODO - this is checking the handles, should check if identically defined
-                    if (shader_state->create_info.pSetLayouts[i] == first->create_info.pSetLayouts[j]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    const LogObjectList objlist(cb_state.Handle(), first->Handle(), shader_state->Handle());
-                    skip |= LogError(vuid.shaders_descriptor_layouts_08879, objlist, vuid.loc(),
-                                     "The bound %s and %s shader have different VkDescriptorSetLayout.",
-                                     string_VkShaderStageFlagBits(first->create_info.stage),
-                                     string_VkShaderStageFlagBits(shader_state->create_info.stage));
+                const auto first_layout = Get<vvl::DescriptorSetLayout>(first->create_info.pSetLayouts[i]);
+                const auto current_layout = Get<vvl::DescriptorSetLayout>(shader_state->create_info.pSetLayouts[i]);
+                if (std::string err_msg; !VerifyDescriptorSetLayoutIsCompatibile(*first_layout, *current_layout, err_msg)) {
+                    const LogObjectList objlist(cb_state.Handle(), first_layout->Handle(), current_layout->Handle());
+                    skip |= LogError(
+                        vuid.shaders_descriptor_layouts_08879, objlist, vuid.loc(),
+                        "The bound %s and %s shader are incompatible due to differently defined VkDescriptorSetLayouts.\n%s",
+                        string_VkShaderStageFlagBits(first->create_info.stage),
+                        string_VkShaderStageFlagBits(shader_state->create_info.stage), err_msg.c_str());
                     break;
                 }
             }
