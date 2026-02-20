@@ -164,7 +164,7 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
         }
         if (enabled_features.geometryShader == VK_FALSE && create_info.nextStage == VK_SHADER_STAGE_GEOMETRY_BIT) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08429", device, create_info_loc.dot(Field::nextStage),
-                             "is VK_SHADER_STAGE_GEOMETRY_BIT, but tessellationShader feature was not enabled.");
+                             "is VK_SHADER_STAGE_GEOMETRY_BIT, but geometryShader feature was not enabled.");
         }
         if (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT &&
             (create_info.nextStage & ~VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) > 0) {
