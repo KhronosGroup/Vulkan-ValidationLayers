@@ -613,8 +613,11 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 new_op_constant[0] = (4 << 16) | spv::OpConstant;
                 new_op_constant[1] = new_inst->Word(1);
                 new_op_constant[2] = new_inst->Word(2);
-                if (new_inst->Word(3) == glsl::kLinkShaderId) {
+                const uint32_t value = new_inst->Word(3);
+                if (value == glsl::kLinkShaderId) {
                     new_op_constant[3] = interface_.unique_shader_id;
+                } else if (value == glsl::kInstErrorBufferLengthId) {
+                    new_op_constant[3] = settings_.error_buffer_data_length;
                 }
                 new_inst.reset(new Instruction(new_op_constant, kLinkedInstruction));
             } else if (opcode == spv::OpSpecConstantOp) {

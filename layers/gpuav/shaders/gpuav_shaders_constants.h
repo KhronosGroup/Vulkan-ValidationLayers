@@ -43,6 +43,7 @@ const uint kMaxErrorsPerCmd = 6;
 // constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime.
 // (Basically our own implementaiton of Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
+const uint kInstErrorBufferLengthId = 0x0DEAD002;
 
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
 const int kInstDefaultDescriptorSet = 7;
