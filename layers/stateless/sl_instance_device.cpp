@@ -360,10 +360,16 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     const auto &error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-        skip |=
-            context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
-                                   "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
+    skip |= context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount),
+                                            create_info_loc.dot(Field::ppEnabledLayerNames), pCreateInfo->enabledLayerCount,
+                                            pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
+                                            "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
+    if (pCreateInfo->ppEnabledLayerNames) {
+        for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
+            skip |=
+                context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
+                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
+        }
     }
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
