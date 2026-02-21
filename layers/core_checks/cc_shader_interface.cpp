@@ -126,9 +126,9 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-07904", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions),
                                  "does not have a Location %" PRIu32
-                                 ", but vertex shader has %s at that Location. (This can be valid if "
+                                 ", but %s has %s at that Location. (This can be valid if "
                                  "either the vertexAttributeRobustness or maintenance9 feature is enabled)",
-                                 location, attribute_info.variable_ptr->Describe().c_str());
+                                 location, entrypoint.Describe().c_str(), attribute_info.variable_ptr->Describe().c_str());
             }
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
@@ -142,35 +142,39 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
 
             // Type checking
             if ((attribute_type & var_numeric_type) == 0) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
-                                 vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
-                                 "(%s) at Location %" PRIu32 " does not match vertex shader %s type (%s).",
-                                 string_VkFormat(attribute_format), location, attribute_info.variable_ptr->Describe().c_str(),
-                                 module_state.DescribeType(var_base_type_id).c_str());
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
+                             "(%s) at Location %" PRIu32 " does not match %s %s type of (%s).", string_VkFormat(attribute_format),
+                             location, entrypoint.Describe().c_str(), attribute_info.variable_ptr->Describe().c_str(),
+                             module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && !shader64) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
-                                 "(%s) is a 64-bit format, but the vertex shader %s at Location %" PRIu32 " is 32-bit type (%s).",
-                                 string_VkFormat(attribute_format), attribute_info.variable_ptr->Describe().c_str(), location,
+                                 "(%s) is a 64-bit format, but the %s %s at Location %" PRIu32 " is a 32-bit type of (%s).",
+                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(),
+                                 attribute_info.variable_ptr->Describe().c_str(), location,
                                  module_state.DescribeType(var_base_type_id).c_str());
             } else if (!attribute64 && shader64) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
-                                 "(%s) is a 64-bit format, but the vertex shader %s at Location %" PRIu32 " is 64-bit type (%s).",
-                                 string_VkFormat(attribute_format), attribute_info.variable_ptr->Describe().c_str(), location,
+                                 "(%s) is a 64-bit format, but the %s %s at Location %" PRIu32 " is a 64-bit type of (%s).",
+                                 string_VkFormat(attribute_format), entrypoint.Describe().c_str(),
+                                 attribute_info.variable_ptr->Describe().c_str(), location,
                                  module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && shader64) {
                 const uint32_t attribute_components = vkuFormatComponentCount(attribute_format);
                 const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
                 if (attribute_components < input_components) {
-                    skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
-                        vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
-                        "(%s) is a %" PRIu32 "-wide 64-bit format, but the vertex shader %s at Location %" PRIu32 " is %" PRIu32
-                        "-wide 64-bit type (%s). (64-bit vertex input don't have default values and require "
-                        "components to match what is used in the shader)",
-                        string_VkFormat(attribute_format), attribute_components, attribute_info.variable_ptr->Describe().c_str(),
-                        location, input_components, module_state.DescribeType(var_base_type_id).c_str());
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
+                                 vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
+                                 "(%s) is a %" PRIu32 "-wide 64-bit format, but the %s %s at Location %" PRIu32 " is %" PRIu32
+                                 "-wide 64-bit type of (%s). (64-bit vertex input don't have default values and require "
+                                 "components to match what is used in the shader)",
+                                 string_VkFormat(attribute_format), attribute_components, entrypoint.Describe().c_str(),
+                                 attribute_info.variable_ptr->Describe().c_str(), location, input_components,
+                                 module_state.DescribeType(var_base_type_id).c_str());
                 }
             }
         } else {            // !attrib && !input
@@ -189,8 +193,9 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
         if (!entrypoint.has_alpha_to_coverage_variable) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", module_state.handle(),
                              create_info_loc.dot(Field::pMultisampleState).dot(Field::alphaToCoverageEnable),
-                             "is VK_TRUE, but the fragment shader doesn't declare a variable that covers "
-                             "Location 0, Component 3 (alpha channel).");
+                             "is VK_TRUE, but the %s doesn't declare a variable that covers "
+                             "Location 0, Component 3 (alpha channel).",
+                             entrypoint.Describe().c_str());
         }
     }
     return skip;
@@ -215,10 +220,10 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module &module_state, const 
             const bool glsl_name = module_state.static_data_.source_language != spv::SourceLanguageHLSL &&
                                    module_state.static_data_.source_language != spv::SourceLanguageSlang;
             skip |= LogError(vuid, module_state.handle(), loc,
-                             "The SampleMask BuiltIn (%s) array sizes is %" PRIu32
+                             "shader %s SampleMask BuiltIn (%s) array sizes is %" PRIu32
                              " which exceeds "
                              "maxSampleMaskWords of %" PRIu32 ".",
-                             glsl_name ? "gl_SampleMask[]" : "SV_SampleMask", variable->array_size,
+                             entrypoint.Describe().c_str(), glsl_name ? "gl_SampleMask[]" : "SV_SampleMask", variable->array_size,
                              phys_dev_props.limits.maxSampleMaskWords);
             break;
         }
@@ -258,17 +263,19 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     if (has_tess) {
         if (!IsSameTopologyClass(geom_input_topology, tess_output_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
-                             "SPIR-V (Geometry stage) has declares in the shader input topology %s, but tessellation shader output "
+                             "shader %s has declares in the shader input topology %s, but tessellation shader output "
                              "topology is %s.",
-                             string_VkPrimitiveTopology(geom_input_topology), string_VkPrimitiveTopology(tess_output_topology));
+                             entrypoint.Describe().c_str(), string_VkPrimitiveTopology(geom_input_topology),
+                             string_VkPrimitiveTopology(tess_output_topology));
         }
     } else {
         VkPrimitiveTopology vertex_input_topology = pipeline.InputAssemblyState()->topology;
         if (!IsSameTopologyClass(geom_input_topology, vertex_input_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00738", module_state.handle(), loc,
-                             "SPIR-V (Geometry stage) has declares in the shader input topology %s, but pipeline was created with "
+                             "shader %s has declares in the shader input topology %s, but pipeline was created with "
                              "a vertex input primitive topology of %s.",
-                             string_VkPrimitiveTopology(geom_input_topology), string_VkPrimitiveTopology(vertex_input_topology));
+                             entrypoint.Describe().c_str(), string_VkPrimitiveTopology(geom_input_topology),
+                             string_VkPrimitiveTopology(vertex_input_topology));
         }
     }
 
@@ -290,9 +297,6 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
     if (producer_entrypoint.has_passthrough) {
         return skip;  // PassthroughNV doesn't have to do Location matching
     }
-
-    const VkShaderStageFlagBits producer_stage = producer_entrypoint.stage;
-    const VkShaderStageFlagBits consumer_stage = consumer_entrypoint.stage;
 
     // build up a mapping of which slots are used and then go through it and look for gaps
     struct ComponentInfo {
@@ -343,15 +347,15 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                 if ((component_info.output_type != component_info.input_type) ||
                     (component_info.output_width != component_info.input_width)) {
                     const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
-                    skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
-                                     "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
-                                     ", between\n\n%s stage:\n%s%s\n\n%s stage:\n%s%s\n\n",
-                                     location, component, string_VkShaderStageFlagBits(producer_stage),
-                                     producer_module.DescribeVariable(output_var->id).c_str(),
-                                     producer_module.DescribeType(output_var->type_id).c_str(),
-                                     string_VkShaderStageFlagBits(consumer_stage),
-                                     consumer_module.DescribeVariable(input_var->id).c_str(),
-                                     consumer_module.DescribeType(input_var->type_id).c_str());
+                    skip |=
+                        LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
+                                 "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
+                                 ", between\n\n%s\n%s%s\n\n%s\n%s%s\n\n",
+                                 location, component, producer_entrypoint.Describe().c_str(),
+                                 producer_module.DescribeVariable(output_var->id).c_str(),
+                                 producer_module.DescribeType(output_var->type_id).c_str(), consumer_entrypoint.Describe().c_str(),
+                                 consumer_module.DescribeVariable(input_var->id).c_str(),
+                                 consumer_module.DescribeType(input_var->type_id).c_str());
                     break;  // Only need to report for the first component found
                 }
 
@@ -383,22 +387,22 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                         const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                         skip |= LogError("VUID-RuntimeSpirv-maintenance4-06817", objlist, create_info_loc,
                                          "(SPIR-V Interface) starting at Location %" PRIu32 " Component %" PRIu32
-                                         "\nThe output (%s) has a Vec%" PRIu32 "\nThe input (%s) has a Vec%" PRIu32
+                                         "\nThe output %s has a Vec%" PRIu32 "\nThe input %s has a Vec%" PRIu32
                                          "\nThis mismatch between vector sizes is not allowed, but can be relaxed by enabling "
                                          "VK_KHR_maintenance4.",
-                                         location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
-                                         string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
+                                         location, component, producer_entrypoint.Describe().c_str(), output_vec_size,
+                                         consumer_entrypoint.Describe().c_str(), input_vec_size);
                         break;  // Only need to report for the first component found
                     }
                 }
 
-                if (producer_stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+                if (producer_entrypoint.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
                     if (input_var->is_per_primitive_ext != output_var->is_per_primitive_ext) {
                         const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
                         std::ostringstream ss;
-                        ss << "(SPIR-V Interface) at Location " << location << " Component " << component
-                           << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not ")
-                           << "decorated with PerPrimitiveEXT while the Fragment stage is "
+                        ss << "(SPIR-V Interface) at Location " << location << " Component " << component << " in "
+                           << producer_entrypoint.Describe() << " is " << (output_var->is_per_primitive_ext ? "" : "not ")
+                           << "decorated with PerPrimitiveEXT while the " << consumer_entrypoint.Describe() << " is "
                            << (input_var->is_per_primitive_ext ? "" : "not") << ".";
                         if (consumer_module.static_data_.source_language == spv::SourceLanguageGLSL) {
                             ss << "\nMake sure to use the 'perprimitiveEXT' attribute on your interface variables. The '#extension "
@@ -426,13 +430,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                         "(SPIR-V Interface) %s has an Output value declared at Location %" PRIu32 " Component %" PRIu32
                         ", but there is no corresponding Input declared in %s.\nThis is not invalid, but might the write to to the "
                         "unused Output is discarded.\nThe Output variable is:\n  %s",
-                        string_VkShaderStageFlagBits(producer_stage), location, component,
-                        string_VkShaderStageFlagBits(consumer_stage), producer_module.DescribeType(output_var->type_id).c_str());
+                        producer_entrypoint.Describe().c_str(), location, component, consumer_entrypoint.Describe().c_str(),
+                        producer_module.DescribeType(output_var->type_id).c_str());
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot
-                if ((consumer_stage & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) &&
+                if ((consumer_entrypoint.stage & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                                  VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) &&
                     (input_var->base_type.Opcode() == spv::OpTypeArray)) {
                     break;  // When going inbetween Tessellation or Geometry, array size can be different
                 }
@@ -440,8 +444,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                 skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-08743", objlist, create_info_loc,
                                  "(SPIR-V Interface) %s has a declared Input at Location %" PRIu32 " Component %" PRIu32
                                  " %s but the previous stage (%s) has no Output declared there.\nThe input variable is:\n  %s",
-                                 string_VkShaderStageFlagBits(consumer_stage), location, component,
-                                 input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage),
+                                 consumer_entrypoint.Describe().c_str(), location, component,
+                                 input_var->is_patch ? "(Tessellation Patch) " : "", producer_entrypoint.Describe().c_str(),
                                  consumer_module.DescribeType(input_var->type_id).c_str());
                 break;  // Only need to report for the first component found
             }
@@ -449,7 +453,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
     }
 
     // Need to check the BuiltIn interface (if not going into Fragment)
-    if (consumer_stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+    if (consumer_entrypoint.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         return skip;
     }
 
@@ -488,12 +492,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
     if (mismatch) {
         std::ostringstream msg;
-        msg << string_VkShaderStageFlagBits(producer_stage) << " Output Block {\n";
+        msg << producer_entrypoint.Describe() << " Output Block {\n";
         for (size_t i = 0; i < output_built_in_block.size(); i++) {
             msg << '\t' << i << ": " << string_SpvBuiltIn(output_built_in_block[i]) << '\n';
         }
         msg << "}\n";
-        msg << string_VkShaderStageFlagBits(consumer_stage) << " Input Block {\n";
+        msg << consumer_entrypoint.Describe() << " Input Block {\n";
         for (size_t i = 0; i < input_built_in_block.size(); i++) {
             msg << '\t' << i << ": " << string_SpvBuiltIn(input_built_in_block[i]) << '\n';
         }
@@ -571,19 +575,19 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         } else if (!attachment && output) {
             // With alphaToCoverage, the write is not "discarded" as the alpha mask is still updated
             if (!alpha_to_coverage_enabled || location != 0) {
-                skip |= LogUndefinedValue(
-                    "Undefined-Value-ShaderOutputNotConsumed", module_state.handle(), create_info_loc,
-                    "Inside the fragment shader, it writes to %s, but there is no VkSubpassDescription::pColorAttachments[%" PRIu32
-                    "] and this write is unused.\nSpec information at "
-                    "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
-                    output->Describe().c_str(), location);
+                skip |=
+                    LogUndefinedValue("Undefined-Value-ShaderOutputNotConsumed", module_state.handle(), create_info_loc,
+                                      "Inside %s, it writes to %s, but there is no VkSubpassDescription::pColorAttachments[%" PRIu32
+                                      "] and this write is unused.\nSpec information at "
+                                      "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
+                                      entrypoint.Describe().c_str(), output->Describe().c_str(), location);
             }
         } else if (attachment && output) {
             if (!output->IsWrittenTo()) {
                 const auto& attachment_states = pipeline.AttachmentStates();
                 if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
                     skip |= LogUndefinedValue("Undefined-Value-OutputNotWritten", module_state.handle(), create_info_loc,
-                                              "Inside the fragment shader, %s was never written to. This means anything future "
+                                              "Inside %s, %s was never written to. This means anything future "
                                               "VkSubpassDescription::pColorAttachments[%" PRIu32
                                               "] will have undefined values written to it.\nThe pipeline was created with "
                                               "pColorBlendState->pAttachments[%" PRIu32 "].colorWriteMask set to 0x%" PRIx32
@@ -591,7 +595,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                               "attachment.\nIf you have the output variable, but are not using it on purpose, "
                                               "removing it from being declared in the shader will remove the "
                                               "undefined value warning.",
-                                              output->Describe().c_str(), location, location,
+                                              entrypoint.Describe().c_str(), output->Describe().c_str(), location, location,
                                               attachment_states[location].colorWriteMask);
                 }
             } else {
@@ -602,14 +606,14 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                 if ((output_type & attachment_type) == 0) {
                     skip |= LogUndefinedValue(
                         "Undefined-Value-ShaderFragmentOutputMismatch", module_state.handle(), create_info_loc,
-                        "Inside the fragment shader, it writes to %s with a numeric type of %s but "
+                        "Inside %s, it writes to %s with a numeric type of %s but "
                         "VkSubpassDescription::pColorAttachments[%" PRIu32
                         "] pointing at VkRenderPassCreateInfo::pAttachments[%" PRIu32
                         "] is created with %s (numeric type of %s) which does not match and the resulting values "
                         "written will be undefined.\nSpec information at "
                         "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
-                        output->Describe().c_str(), spirv::string_NumericType(output_type), location, reference->attachment,
-                        string_VkFormat(attachment->format), spirv::string_NumericType(attachment_type));
+                        entrypoint.Describe().c_str(), output->Describe().c_str(), spirv::string_NumericType(output_type), location,
+                        reference->attachment, string_VkFormat(attachment->format), spirv::string_NumericType(attachment_type));
                 }
             }
         } else {            // !attachment && !output
@@ -689,7 +693,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                                              attachment_info.rendering_attachment_info->imageView == VK_NULL_HANDLE;
                 const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 std::ostringstream ss;
-                ss << "Inside the fragment shader, it writes to " << output->Describe();
+                ss << "Inside " << entrypoint->Describe() << " it writes to " << output->Describe();
                 if (location != mapped_loc) {
                     ss << " (which was remapped to Location/attachment " << mapped_loc << ")";
                 }
@@ -735,7 +739,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 const VkColorComponentFlags color_write_mask = last_bound_state.GetColorWriteMask(location);
                 if (color_write_mask != 0) {
                     std::ostringstream msg;
-                    msg << "Inside the fragment shader, " << output->Describe();
+                    msg << "Inside " << entrypoint->Describe() << " " << output->Describe();
                     if (location != mapped_loc) {
                         msg << " (which was remapped to Location/attachment " << mapped_loc << ")";
                     }
@@ -770,7 +774,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 if ((output_type & attachment_type) == 0) {
                     const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                     std::stringstream ss;
-                    ss << "Inside the fragment shader, " << output->Describe();
+                    ss << "Inside " << entrypoint->Describe() << " " << output->Describe();
                     if (location != mapped_loc) {
                         ss << " (which was remapped to Location/attachment " << mapped_loc << ")";
                     }

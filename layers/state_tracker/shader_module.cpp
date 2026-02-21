@@ -522,6 +522,8 @@ struct ParsedInfo {
     std::vector<const Instruction*> debug_global_variables;
 
     bool has_graph_constant_arm = false;  // detects if any are found OpGraphConstantARM
+
+    uint32_t total_entry_points = 0;
 };
 
 // Built-in can be both on the OpVariable or a inside a OpTypeStruct for Block built-in.
@@ -582,6 +584,23 @@ bool EntryPoint::HasBuiltIn(spv::BuiltIn built_in) const {
         }
     }
     return false;
+}
+
+std::string EntryPoint::Describe() const {
+    std::stringstream ss;
+    ss << "[";
+    // For the common single shader, listing the name is not useful
+    if (!only_entry_point) {
+        ss << "EntryPoint \"" << name << "\", ";
+    }
+
+    if (is_data_graph) {
+        ss << "DataGraph";
+    } else {
+        ss << string_VkShaderStageFlagBits(stage);
+    }
+    ss << ']';
+    return ss.str().c_str();
 }
 
 vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
@@ -838,7 +857,8 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       accessible_ids(GetAccessibleIds(module_state, *this)),
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, parsed)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)),
-      datagraph_constants(GetDataGraphConstants(module_state, *this, parsed)) {
+      datagraph_constants(GetDataGraphConstants(module_state, *this, parsed)),
+      only_entry_point(parsed.total_entry_points == 1) {
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
         resource_interface_variable_map[variable.id] = &variable;
@@ -1372,6 +1392,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     }
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
+    parsed.total_entry_points = (uint32_t)entry_point_instructions.size();
+    entry_points.reserve(parsed.total_entry_points);
     for (const auto& insn : entry_point_instructions) {
         entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn, parsed));
     }

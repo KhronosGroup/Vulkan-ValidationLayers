@@ -545,8 +545,8 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
         if (invocations > preferred_size) {
             skip |= LogPerformanceWarning(
                 "BestPractices-Mesh-MaxPreferredWorkGroupInvocations", module_state.handle(), loc,
-                "SPIR-V (%s) total invocation size of %" PRIu64 " (%s) is more than %s (%" PRIu32 ").",
-                string_SpvExecutionModel(entrypoint.execution_model), invocations, local_size.ToString().c_str(),
+                "shader %s has a total invocation size of %" PRIu64 " (%s) is more than %s (%" PRIu32 ").",
+                entrypoint.Describe().c_str(), invocations, local_size.ToString().c_str(),
                 is_task ? "maxPreferredTaskWorkGroupInvocations" : "maxPreferredMeshWorkGroupInvocations", preferred_size);
         }
     }
