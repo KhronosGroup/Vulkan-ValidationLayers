@@ -1625,30 +1625,30 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
             if (!cb_state.descriptor_heap.sampler_bound) {
                 skip |= LogError(
                     vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
-                    "SPIR-V (%s) uses sampler descriptors, but a sampler heap was not bound with vkCmdBindSamplerHeapEXT.%s%s",
-                    string_SpvExecutionModel(entry_point.execution_model), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                    "The shader %s uses sampler descriptors, but a sampler heap was not bound with vkCmdBindSamplerHeapEXT.%s%s",
+                    entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
                     print_used_variables(true).c_str());
             }
         } else if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
             skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
-                             "SPIR-V (%s) uses sampler descriptors, but "
+                             "The shader %s uses sampler descriptors, but "
                              "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo is NULL.%s",
-                             string_SpvExecutionModel(entry_point.execution_model), print_used_variables(true).c_str());
+                             entry_point.Describe().c_str(), print_used_variables(true).c_str());
         }
     } else if (stage_state.uses_resource_heap) {
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.resource_bound) {
                 skip |= LogError(
                     vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
-                    "SPIR-V (%s) uses resource descriptors, but a resource heap was not bound with vkCmdBindResourceHeapEXT.%s%s",
-                    string_SpvExecutionModel(entry_point.execution_model), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
+                    "The shader %s uses resource descriptors, but a resource heap was not bound with vkCmdBindResourceHeapEXT.%s%s",
+                    entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
                     print_used_variables(false).c_str());
             }
         } else if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
             skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
-                             "SPIR-V (%s) uses resource descriptors, but "
+                             "The shader %s uses resource descriptors, but "
                              "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo is NULL%s",
-                             string_SpvExecutionModel(entry_point.execution_model), print_used_variables(false).c_str());
+                             entry_point.Describe().c_str(), print_used_variables(false).c_str());
         }
     }
     return skip;
@@ -1714,17 +1714,16 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
 
             if (cb_state.descriptor_heap.sampler_reserved.distance() <
                 phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
-                skip |=
-                    LogError(vuid.descriptor_heap_11375, cb_state.GetObjectList(bind_point), vuid.loc(),
-                             "SPIR-V (%s) uses %s which is an embedded sampler set with pMappings[%" PRIu32
-                             "].sourceData.%s.pEmbeddedSampler\n"
-                             "The last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
-                             ", that is less than minSamplerHeapReservedRangeWithEmbedded (%" PRIu64 ").\n  %s\n",
-                             string_SpvExecutionModel(entry_point.execution_model), resource_variable.DescribeDescriptor().c_str(),
-                             i, String(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source)),
-                             cb_state.descriptor_heap.sampler_reserved.distance(),
-                             phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
-                             module_state.DescribeInstruction(*type).c_str());
+                skip |= LogError(vuid.descriptor_heap_11375, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                 "The shader %s uses %s which is an embedded sampler set with pMappings[%" PRIu32
+                                 "].sourceData.%s.pEmbeddedSampler\n"
+                                 "The last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
+                                 ", that is less than minSamplerHeapReservedRangeWithEmbedded (%" PRIu64 ").\n  %s\n",
+                                 entry_point.Describe().c_str(), resource_variable.DescribeDescriptor().c_str(), i,
+                                 String(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source)),
+                                 cb_state.descriptor_heap.sampler_reserved.distance(),
+                                 phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
+                                 module_state.DescribeInstruction(*type).c_str());
             }
         }
     }

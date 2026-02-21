@@ -941,9 +941,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                           const vvl::Pipeline* pipeline, const ShaderStageState& stage_state,
                                                           const Location& loc) const;
-    bool ValidateDescriptorHeapStructs(const spirv::Module& module_state, const Location& loc) const;
-    bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, VkShaderStageFlagBits stage,
-                                       const vvl::Pipeline& pipeline, const Location& loc) const;
+    bool ValidateDescriptorHeapStructs(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                       const Location& loc) const;
+    bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                       VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT& create_info, const Location& loc) const;
     bool ValidateWorkgroupSharedMemory(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        VkShaderStageFlagBits stage, const Location& loc) const;
@@ -955,9 +956,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                       const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
     bool ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
                                          const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const;
-    bool ValidateShaderInputAttachment(const spirv::Module& module_state, const ShaderStageState& stage_state,
-                                       const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
-                                       const Location& loc) const;
+    bool ValidateShaderInputAttachment(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                       const ShaderStageState& stage_state, const vvl::Pipeline& pipeline,
+                                       const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
     bool ValidatePushConstantUsage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline* pipeline, const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateBuiltInLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -987,13 +988,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                     const LogObjectList& objlist, const Location& loc) const;
     bool ValidateShader64BitIndexing(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                      const ShaderStageState& stage_state, const vvl::Pipeline* pipeline, const Location& loc) const;
-    bool ValidateVectorTypes(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateVectorTypes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint, const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;
     virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,
                                              const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
                                              const void* pipeline_ci_pnext, const Location& loc) const;
-    bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
+    bool ValidateImageWrite(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint, const Location& loc) const;
 
     bool ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const ImageCopyRegion& region,
                                                           const Location& region_loc) const;
@@ -2344,8 +2345,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue,
                                                  const ErrorObject& error_obj) const override;
-    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const ShaderStageState& stage_state, uint64_t invocations,
-                                      const spirv::LocalSize& local_size, const Location& loc) const;
+    bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                      const ShaderStageState& stage_state, uint64_t invocations, const spirv::LocalSize& local_size,
+                                      const Location& loc) const;
     bool ValidateComputeWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
                                        const Location& loc) const;

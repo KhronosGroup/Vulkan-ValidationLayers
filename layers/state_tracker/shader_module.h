@@ -609,6 +609,10 @@ struct EntryPoint {
 
     bool HasBuiltIn(spv::BuiltIn built_in) const;
 
+    // Used to provide a better, consistent error message
+    const bool only_entry_point;
+    std::string Describe() const;
+
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
