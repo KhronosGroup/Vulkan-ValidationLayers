@@ -121,13 +121,17 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
     ss << "because the following objects bound to the command buffer were invalidated\n";
     LogObjectList objlist(cb_state.Handle());
     for (const auto &entry : cb_state.broken_bindings) {
-        ss << " " << FormatHandle(entry.first) << " was ";
-        if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
-            ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
-        } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
-            ss << "destroyed or rerecorded\n";
+        if (entry.first.type == kVulkanObjectTypeDeviceAddress) {
+            ss << " The buffers (with relevant usage) from which " << FormatHandle(entry.first) << " was retrieved were destroyed";
         } else {
-            ss << "destroyed\n";
+            ss << " " << FormatHandle(entry.first) << " was ";
+            if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
+                ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
+            } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
+                ss << "destroyed or rerecorded\n";
+            } else {
+                ss << "destroyed\n";
+            }
         }
 
         for (const auto &obj : entry.second.object_list) {

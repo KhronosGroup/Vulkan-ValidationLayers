@@ -112,6 +112,31 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
+std::vector<vvl::Buffer *> DeviceState::GetBuffersByAddressRange(VkDeviceAddress address, VkDeviceSize size,
+                                                                 VkBufferUsageFlags2 usage) const {
+    ReadLockGuard guard(buffer_address_lock_);
+    auto found_it = buffer_address_map_.find(address);
+    if (found_it == buffer_address_map_.end()) {
+        return {};
+    }
+    std::vector<vvl::Buffer *> buffers;
+    for (auto *buffer : found_it->second) {
+        if ((buffer->usage & usage) == usage && buffer->create_info.size >= size) {
+            buffers.push_back(buffer);
+        }
+    }
+    return buffers;
+}
+void DeviceState::TrackDeviceAddressRange(vvl::CommandBuffer &cb_state, VkDeviceAddress address, VkDeviceSize size,
+                                          VkBufferUsageFlags2 usage) {
+    if (!disabled[command_buffer_state]) {
+        const auto buffers = GetBuffersByAddressRange(address, size, usage);
+        auto bufer_address_range_states = std::make_shared<vvl::BufferAddressRange>(buffers, address, size);
+        bufer_address_range_states->LinkChildNodes();
+        cb_state.AddChild(bufer_address_range_states);
+    }
+}
+
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
@@ -5374,6 +5399,14 @@ void DeviceState::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTraceRay(record_obj.location.function);
+    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
 }
 
 void DeviceState::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
@@ -5384,6 +5417,14 @@ void DeviceState::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTraceRay(record_obj.location.function);
+    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->stride,
+                            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
 }
 
 void DeviceState::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
@@ -5557,6 +5598,26 @@ void DeviceState::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComman
         // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a
         // command buffer
     }
+}
+
+void DeviceState::PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                         const VkCopyMemoryIndirectInfoKHR *pCopyMemoryIndirectInfo,
+                                                         const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    cb_state->RecordCommand(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pCopyMemoryIndirectInfo->copyAddressRange.address,
+                            pCopyMemoryIndirectInfo->copyAddressRange.size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR *pCopyMemoryToImageIndirectInfo,
+    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    cb_state->RecordCommand(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pCopyMemoryToImageIndirectInfo->copyAddressRange.address,
+                            pCopyMemoryToImageIndirectInfo->copyAddressRange.size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 }
 
 void DeviceState::PostCallRecordCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
@@ -6477,6 +6538,8 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
     cb_state->descriptor_heap.sampler_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
+    TrackDeviceAddressRange(*cb_state, pBindInfo->heapRange.address, pBindInfo->heapRange.size,
+                            VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
 }
 
 void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
@@ -6497,6 +6560,8 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
     cb_state->descriptor_heap.resource_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
+    TrackDeviceAddressRange(*cb_state, pBindInfo->heapRange.address, pBindInfo->heapRange.size,
+                            VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
 }
 
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,

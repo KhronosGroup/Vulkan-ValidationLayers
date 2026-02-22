@@ -26,6 +26,7 @@ namespace vvl {
 
 class BufferSubState;
 class BufferViewSubState;
+class BufferAddressRangeSubState;
 class DeviceState;
 class VideoProfileDesc;
 
@@ -152,6 +153,61 @@ class BufferViewSubState {
     virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
 
     BufferView &base;
+};
+
+class BufferAddressRange : public StateObject, public SubStateManager<BufferAddressRangeSubState> {
+  public:
+    std::vector<vvl::Buffer *> buffer_states;
+    VkDeviceAddress address;
+    VkDeviceSize size;
+
+    BufferAddressRange(std::vector<vvl::Buffer *> buffer_states, const VkDeviceAddress address, const VkDeviceSize size);
+
+    void LinkChildNodes() override {
+        // Connect child node(s), which cannot safely be done in the constructor.
+        for (const auto &buffer_state : buffer_states) {
+            buffer_state->AddParent(this);
+        }
+    }
+    virtual ~BufferAddressRange() {
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
+
+    BufferAddressRange(const BufferAddressRange &rh_obj) = delete;
+
+    VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
+
+    void Destroy() override;
+
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    bool Invalid() const override {
+        if (Destroyed()) {
+            return true;
+        }
+        for (const auto *buffer_state : buffer_states) {
+            if (buffer_state && !buffer_state->Invalid()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    VkDeviceSize Size() const { return size; }
+};
+
+class BufferAddressRangeSubState {
+  public:
+    explicit BufferAddressRangeSubState(BufferAddressRange &buf) : base(buf) {}
+    BufferAddressRangeSubState(const BufferAddressRangeSubState &) = delete;
+    BufferAddressRangeSubState &operator=(const BufferAddressRangeSubState &) = delete;
+    virtual ~BufferAddressRangeSubState() {}
+    virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
+
+    BufferAddressRange &base;
 };
 
 }  // namespace vvl

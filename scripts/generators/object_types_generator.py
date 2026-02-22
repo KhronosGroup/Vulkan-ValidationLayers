@@ -88,7 +88,8 @@ class ObjectTypesOutputGenerator(BaseGenerator):
             ''')
         for count, handle in enumerate(self.vk.handles.values(), start=1):
             out.append(f'    kVulkanObjectType{handle.name[2:]} = {count},\n')
-        out.append(f'    kVulkanObjectTypeMax = {len(self.vk.handles) + 1}\n')
+        out.append(f'    kVulkanObjectTypeDeviceAddress = {len(self.vk.handles) + 1},\n')
+        out.append(f'    kVulkanObjectTypeMax = {len(self.vk.handles) + 2},\n')
         out.append('} VulkanObjectType;\n\n')
 
         out.append('VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);\n')
@@ -194,6 +195,19 @@ class ObjectTypesOutputGenerator(BaseGenerator):
                     typedef {handle.name} Type;
                 }};
                 ''')
+        out.append('''
+                template <>
+                struct VkHandleInfo<VkDeviceAddress> {
+                    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
+                    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+                    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_UNKNOWN;
+                    static const char* Typename() { return "VkDeviceAddress"; }
+                };
+                template <>
+                struct VulkanObjectTypeInfo<kVulkanObjectTypeDeviceAddress> {
+                    typedef VkDeviceAddress Type;
+                };
+                ''')
         out.extend(guard_helper.add_guard(None))
         out.append('#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n')
 
@@ -266,6 +280,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
             static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax] = {
                 VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n''')
         out.extend([f'    {self.debugReportObject[handle.name]},   // kVulkanObjectType{handle.name[2:]}\n' for handle in self.vk.handles.values()])
+        out.append('    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeBufferDeviceAddress\n')
         out.append('};\n')
 
         out.append('''
@@ -274,6 +289,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
                 "VkNonDispatchableHandle",
             ''')
         out.extend([f'    "{handle.name}",\n' for handle in self.vk.handles.values()])
+        out.append('"VkDeviceAddress",')
         out.append('};\n')
 
         out.append('''

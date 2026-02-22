@@ -161,4 +161,53 @@ void BufferView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bo
     }
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
+
+BufferAddressRange::BufferAddressRange(std::vector<vvl::Buffer *> buffer_states, const VkDeviceAddress address,
+                                       const VkDeviceSize size)
+    : StateObject(address, kVulkanObjectTypeDeviceAddress),
+      buffer_states(buffer_states),
+      address(address),
+      size(size) {}
+
+void BufferAddressRange::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
+    buffer_states.clear();
+    StateObject::Destroy();
+}
+
+void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+
+    bool removed_any = false;
+
+    for (auto &b : buffer_states) {
+        if (!b) {
+            continue;
+        }
+
+        for (const auto &node : invalid_nodes) {
+            if (node.get() == b) {
+                b->RemoveParent(this);
+                b = nullptr;
+                removed_any = true;
+                break;
+            }
+        }
+    }
+
+    if (removed_any) {
+        buffer_states.erase(std::remove(buffer_states.begin(), buffer_states.end(), nullptr), buffer_states.end());
+        if (buffer_states.empty()) {
+            Destroy();
+
+            StateObject::NotifyInvalidate(invalid_nodes, unlink);
+            return;
+        }
+    }
+}
+
 }  // namespace vvl
