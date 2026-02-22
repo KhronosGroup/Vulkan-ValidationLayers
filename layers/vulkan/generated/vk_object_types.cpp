@@ -86,6 +86,7 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeExternalComputeQueueNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectCommandsLayoutEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeBufferDeviceAddress
 };
 
 // Array of object name strings for OBJECT_TYPE enum conversion
@@ -148,6 +149,7 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkExternalComputeQueueNV",
     "VkIndirectExecutionSetEXT",
     "VkIndirectCommandsLayoutEXT",
+    "VkDeviceAddress",
 };
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type) { return kDebugReportLookup[type]; }

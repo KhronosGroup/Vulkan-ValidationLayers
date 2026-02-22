@@ -87,7 +87,8 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeExternalComputeQueueNV = 55,
     kVulkanObjectTypeIndirectExecutionSetEXT = 56,
     kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
-    kVulkanObjectTypeMax = 58
+    kVulkanObjectTypeDeviceAddress = 58,
+    kVulkanObjectTypeMax = 59,
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -628,6 +629,18 @@ struct VkHandleInfo<VkExternalComputeQueueNV> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeExternalComputeQueueNV> {
     typedef VkExternalComputeQueueNV Type;
+};
+
+template <>
+struct VkHandleInfo<VkDeviceAddress> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_UNKNOWN;
+    static const char* Typename() { return "VkDeviceAddress"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeDeviceAddress> {
+    typedef VkDeviceAddress Type;
 };
 #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
 
