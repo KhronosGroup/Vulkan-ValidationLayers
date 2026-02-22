@@ -62,6 +62,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/descriptor_indexing_positive.cpp
     unit/descriptors.cpp
     unit/descriptors_positive.cpp
+    unit/device_address.cpp
+    unit/device_address_positive.cpp
     unit/device_feature_property.cpp
     unit/device_feature_property_positive.cpp
     unit/device_generated_commands.cpp

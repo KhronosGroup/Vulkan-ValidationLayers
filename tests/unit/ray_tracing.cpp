@@ -5816,3 +5816,46 @@ TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset5) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+
+TEST_F(NegativeRayTracing, DestroyedDeviceAddressRange) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipeline(*this, m_device);
+
+    rt_pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+
+    rt_pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+
+    rt_pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    rt_pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    rt_pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    rt_pipeline.GetDescriptorSet().UpdateDescriptorSets();
+
+    rt_pipeline.Build();
+
+    vkt::rt::TraceRaysSbt sbt = rt_pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline);
+    vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100, 100, 1);
+    VkStridedDeviceAddressRegionKHR null_addr_miss_sbt = sbt.miss_sbt;
+    null_addr_miss_sbt.deviceAddress = 0;
+    vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &null_addr_miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100, 100, 1);
+    m_command_buffer.End();
+
+    rt_pipeline.DestroySbtBuffer();
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
