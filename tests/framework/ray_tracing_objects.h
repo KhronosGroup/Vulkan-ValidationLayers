@@ -450,6 +450,7 @@ class Pipeline {
     }
     TraceRaysSbt GetTraceRaysSbt(uint32_t ray_gen_shader_i = 0);
     const vkt::Buffer& GetTraceRaysSbtBuffer();
+    void DestroySbtBuffer();
     vkt::Buffer GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth);
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
