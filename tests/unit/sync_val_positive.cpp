@@ -4154,7 +4154,7 @@ TEST_F(PositiveSyncVal, ExampleShaderAccessesHeuristicCausesFalsePositive) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncVal, StencilKeepOps) {
+TEST_F(PositiveSyncVal, StencilNotWritable) {
     TEST_DESCRIPTION("Test that stencil access is not a write when KEEP is used for all stencil ops");
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -4220,8 +4220,8 @@ TEST_F(PositiveSyncVal, StencilKeepOps) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncVal, StencilKeepOps2) {
-    TEST_DESCRIPTION("Test that stencil access is not a write when KEEP is used for failOp/passOp and depth test is disabled");
+TEST_F(PositiveSyncVal, StencilNotWritable2) {
+    TEST_DESCRIPTION("Test that stencil access is not a write when depth test is disabled and depthFailOp!=KEEP");
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -4277,6 +4277,124 @@ TEST_F(PositiveSyncVal, StencilKeepOps2) {
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, StencilNotWritable3) {
+    TEST_DESCRIPTION("Test that stencil access is not a write when compareOp=NEVER and passOp!=KEEP");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto stencil_format = FindSupportedStencilOnlyFormat(Gpu());
+    vkt::Image image(*m_device, 32, 32, stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    VkStencilOpState stencil = {};
+    stencil.failOp = VK_STENCIL_OP_KEEP;
+    stencil.passOp = VK_STENCIL_OP_ZERO;  // never active because compareOp is NEVER
+    stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+    stencil.compareOp = VK_COMPARE_OP_NEVER;
+    stencil.writeMask = 255;
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_ci = vku::InitStructHelper();
+    depth_stencil_ci.depthTestEnable = VK_FALSE;
+    depth_stencil_ci.stencilTestEnable = VK_TRUE;
+    depth_stencil_ci.front = stencil;
+    depth_stencil_ci.back = stencil;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
+    pipe.CreateGraphicsPipeline();
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, StencilNotWritable4) {
+    TEST_DESCRIPTION("Test that stencil access is not a write when compareOp=ALWAYS and failOp!=KEEP");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto stencil_format = FindSupportedStencilOnlyFormat(Gpu());
+    vkt::Image image(*m_device, 32, 32, stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    VkStencilOpState stencil = {};
+    stencil.failOp = VK_STENCIL_OP_ZERO;  // never active because compareOp is ALWAYS
+    stencil.passOp = VK_STENCIL_OP_KEEP;
+    stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+    stencil.compareOp = VK_COMPARE_OP_ALWAYS;
+    stencil.writeMask = 255;
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_ci = vku::InitStructHelper();
+    depth_stencil_ci.depthTestEnable = VK_FALSE;
+    depth_stencil_ci.stencilTestEnable = VK_TRUE;
+    depth_stencil_ci.front = stencil;
+    depth_stencil_ci.back = stencil;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
+    pipe.CreateGraphicsPipeline();
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
     m_command_buffer.Barrier(layout_transition);
