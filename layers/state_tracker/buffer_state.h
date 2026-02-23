@@ -155,13 +155,31 @@ class BufferViewSubState {
     BufferView &base;
 };
 
-class BufferAddressRange : public StateObject, public SubStateManager<BufferAddressRangeSubState> {
+// As the API went from using VkBuffer to VkDevicesAddress/VkDeviceSize.
+// The issue become when there are 2 VkBuffer that can actually be tied to it.
+//
+// Example:
+//   VkDeviceMemory is from [0x1000, 0x2000]
+//   VkBuffer A is bound to [0x1000, 0x2000]
+//   VkBuffer B is also bound to [0x1000, 0x2000]
+//
+// In this case it is valid to delete VkBuffer A or B, but once both are destroyed, the VkDeviceAddress becomes invalid.
+//
+// We agreed (https://gitlab.khronos.org/vulkan/vulkan/-/issues/4665) that the case like
+//
+//   VkDeviceMemory is from [0x1000, 0x2000]
+//   VkBuffer A is bound to [0x1000, 0x2000]
+//   VkBuffer B is bound to [0x1000, 0x1800]
+//   VkBuffer C is bound to [0x1800, 0x2000]
+//
+// If VkBuffer A is destroyed, it is now invalid to use the range [0x1000, 0x2000] regardless of the various sub-buffers covering it
+class BufferAddressRange : public StateObject {
   public:
-    std::vector<vvl::Buffer *> buffer_states;
-    VkDeviceAddress address;
-    VkDeviceSize size;
+    // We use a small_vector because we can assume most apps don't do buffer memory aliasing
+    // But it is common for middleware to want a copy of the buffer, so we set the size to 2
+    small_vector<vvl::Buffer*, 2> buffer_states;
 
-    BufferAddressRange(std::vector<vvl::Buffer *> buffer_states, const VkDeviceAddress address, const VkDeviceSize size);
+    BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range);
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
@@ -177,12 +195,13 @@ class BufferAddressRange : public StateObject, public SubStateManager<BufferAddr
 
     BufferAddressRange(const BufferAddressRange &rh_obj) = delete;
 
-    VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
+    VkDeviceAddress VkHandle() const { return handle_.Cast<VkDeviceAddress>(); }
 
     void Destroy() override;
 
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
+    // Only invalid if ALL the buffers in the range are invalid
     bool Invalid() const override {
         if (Destroyed()) {
             return true;
@@ -194,20 +213,6 @@ class BufferAddressRange : public StateObject, public SubStateManager<BufferAddr
         }
         return true;
     }
-
-    VkDeviceSize Size() const { return size; }
-};
-
-class BufferAddressRangeSubState {
-  public:
-    explicit BufferAddressRangeSubState(BufferAddressRange &buf) : base(buf) {}
-    BufferAddressRangeSubState(const BufferAddressRangeSubState &) = delete;
-    BufferAddressRangeSubState &operator=(const BufferAddressRangeSubState &) = delete;
-    virtual ~BufferAddressRangeSubState() {}
-    virtual void Destroy() {}
-    virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
-
-    BufferAddressRange &base;
 };
 
 }  // namespace vvl

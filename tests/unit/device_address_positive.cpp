@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
+#include "containers/range.h"
 
 class PositiveDeviceAddress : public VkLayerTest {};
 
@@ -39,7 +40,8 @@ TEST_F(PositiveDeviceAddress, DestroyOneOutOfMultipleBuffers) {
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
     memory_ai.allocationSize = memory_requirements.size;
 
-    bool pass = m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass =
+        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -91,7 +93,8 @@ TEST_F(PositiveDeviceAddress, DestroyOneBufferBeforeCopy) {
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
     memory_ai.allocationSize = memory_requirements.size;
 
-    bool pass = m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass =
+        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -135,17 +138,15 @@ TEST_F(PositiveDeviceAddress, ValidSubRange1) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const VkDeviceSize offset = heap_props.minSamplerHeapReservedRange / 2;
-    if (offset == 0) {
-        GTEST_SKIP() << "minSamplerHeapReservedRange is too small";
-    }
+    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
     buffer_usage.usage = VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage);
-    buffer_ci.size = heap_props.minSamplerHeapReservedRange + offset * 2;
+    buffer_ci.size = heap_size + offset * 2;
     vkt::Buffer heap1(*m_device, buffer_ci, vkt::no_mem);
-    buffer_ci.size = heap_props.minSamplerHeapReservedRange;
+    buffer_ci.size = heap_size;
     vkt::Buffer heap2(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements memory_requirements;
@@ -154,9 +155,14 @@ TEST_F(PositiveDeviceAddress, ValidSubRange1) {
     VkMemoryAllocateFlagsInfo memory_allocate_flags = vku::InitStructHelper();
     memory_allocate_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
-    memory_ai.allocationSize = memory_requirements.size;
+    // make large enough if offset is not perfectly in the middle of the allocation
+    memory_ai.allocationSize = memory_requirements.size * 2;
+    if ((offset % memory_requirements.alignment) != 0) {
+        GTEST_SKIP() << "Alignment not met";
+    }
 
-    bool pass = m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass =
+        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -165,11 +171,15 @@ TEST_F(PositiveDeviceAddress, ValidSubRange1) {
 
     VkDeviceAddress address1 = heap1.Address();
     VkDeviceAddress address2 = heap2.Address();
+    vvl::range<VkDeviceAddress> range1(address1, address1 + heap_size + offset * 2);
+    vvl::range<VkDeviceAddress> range2(address2, address2 + heap_size);
+    if (!range1.includes(range2)) {
+        GTEST_SKIP() << "Address are not overlapping";
+    }
     (void)address1;
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange.address = address2;
-    bind_info.heapRange.size = heap_props.minSamplerHeapReservedRange;
+    bind_info.heapRange = {address2, heap_size};
     bind_info.reservedRangeOffset = 0;
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
@@ -193,17 +203,15 @@ TEST_F(PositiveDeviceAddress, ValidSubRange2) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const VkDeviceSize offset = heap_props.minSamplerHeapReservedRange / 2;
-    if (offset == 0) {
-        GTEST_SKIP() << "minSamplerHeapReservedRange is too small";
-    }
+    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
     buffer_usage.usage = VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage);
-    buffer_ci.size = heap_props.minSamplerHeapReservedRange + offset * 2;
+    buffer_ci.size = heap_size + offset * 2;
     vkt::Buffer heap1(*m_device, buffer_ci, vkt::no_mem);
-    buffer_ci.size = heap_props.minSamplerHeapReservedRange;
+    buffer_ci.size = heap_size;
     vkt::Buffer heap2(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements memory_requirements;
@@ -212,9 +220,11 @@ TEST_F(PositiveDeviceAddress, ValidSubRange2) {
     VkMemoryAllocateFlagsInfo memory_allocate_flags = vku::InitStructHelper();
     memory_allocate_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
-    memory_ai.allocationSize = memory_requirements.size;
+    // make large enough if offset is not perfectly in the middle of the allocation
+    memory_ai.allocationSize = memory_requirements.size * 2;
 
-    bool pass = m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass =
+        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -226,8 +236,7 @@ TEST_F(PositiveDeviceAddress, ValidSubRange2) {
     (void)address1;
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange.address = address2;
-    bind_info.heapRange.size = heap_props.minSamplerHeapReservedRange;
+    bind_info.heapRange = {address2, heap_size};
     bind_info.reservedRangeOffset = 0;
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 

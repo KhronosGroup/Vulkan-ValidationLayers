@@ -19,6 +19,7 @@
  */
 #include "state_tracker/buffer_state.h"
 #include <sstream>
+#include "containers/small_vector.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/state_tracker.h"
 
@@ -162,50 +163,45 @@ void BufferView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bo
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-BufferAddressRange::BufferAddressRange(std::vector<vvl::Buffer *> buffer_states, const VkDeviceAddress address,
-                                       const VkDeviceSize size)
-    : StateObject(address, kVulkanObjectTypeDeviceAddress),
-      buffer_states(buffer_states),
-      address(address),
-      size(size) {}
+// TODO - We could easily track the range/usage for a better error message, but need a way to set that in cb_state.broken_bindings
+// so that it can be seen in the error message
+BufferAddressRange::BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range)
+    : StateObject(range.begin, kVulkanObjectTypeDeviceAddress), buffer_states(buffer_states) {}
 
 void BufferAddressRange::Destroy() {
-    for (auto &item : sub_states_) {
-        item.second->Destroy();
-    }
     buffer_states.clear();
     StateObject::Destroy();
 }
 
-void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
-        item.second->NotifyInvalidate(invalid_nodes, unlink);
-    }
+void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    uint32_t removed = 0;
 
-    bool removed_any = false;
-
-    for (auto &b : buffer_states) {
-        if (!b) {
+    for (vvl::Buffer*& buffer_state : buffer_states) {
+        if (!buffer_state) {
             continue;
         }
 
         for (const auto &node : invalid_nodes) {
-            if (node.get() == b) {
-                b->RemoveParent(this);
-                b = nullptr;
-                removed_any = true;
+            if (node.get() == buffer_state) {
+                buffer_state->RemoveParent(this);
+                buffer_state = nullptr;
+                removed++;
                 break;
             }
         }
     }
 
-    if (removed_any) {
-        buffer_states.erase(std::remove(buffer_states.begin(), buffer_states.end(), nullptr), buffer_states.end());
-        if (buffer_states.empty()) {
+    if (removed > 0) {
+        const uint32_t remaining_buffers = static_cast<uint32_t>(buffer_states.size());
+        if (removed >= remaining_buffers) {
             Destroy();
-
             StateObject::NotifyInvalidate(invalid_nodes, unlink);
-            return;
+        } else {
+            // Shift non-null elements to the front and truncate the vector
+            // There is no erase() helpe in small_vector, but this still does the same thing with the memory in-place
+            auto new_end = std::remove(buffer_states.begin(), buffer_states.end(), nullptr);
+            size_t new_size = std::distance(buffer_states.begin(), new_end);
+            buffer_states.resize(new_size);
         }
     }
 }

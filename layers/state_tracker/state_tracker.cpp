@@ -43,6 +43,7 @@
 #include "state_tracker/descriptor_mode.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
+#include "utils/assert_utils.h"
 #include "utils/spirv_tools_utils.h"
 #include "utils/math_utils.h"
 
@@ -112,29 +113,33 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
-std::vector<vvl::Buffer *> DeviceState::GetBuffersByAddressRange(VkDeviceAddress address, VkDeviceSize size,
-                                                                 VkBufferUsageFlags2 usage) const {
-    ReadLockGuard guard(buffer_address_lock_);
-    auto found_it = buffer_address_map_.find(address);
-    if (found_it == buffer_address_map_.end()) {
-        return {};
+void DeviceState::TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, const vvl::range<VkDeviceAddress> range,
+                                          VkBufferUsageFlags2 usage) {
+    if (disabled[command_buffer_state]) {
+        return;
     }
-    std::vector<vvl::Buffer *> buffers;
-    for (auto *buffer : found_it->second) {
-        if ((buffer->usage & usage) == usage && buffer->create_info.size >= size) {
-            buffers.push_back(buffer);
+
+    // small_vector is here to match the BufferAddressRange state object
+    small_vector<vvl::Buffer*, 2> buffers;
+    {
+        ReadLockGuard guard(buffer_address_lock_);
+        const VkDeviceAddress address = range.begin;
+        auto found_it = buffer_address_map_.find(address);
+        if (found_it != buffer_address_map_.end()) {
+            for (vvl::Buffer* found_buffer : found_it->second) {
+                if ((found_buffer->usage & usage) == usage && found_buffer->DeviceAddressRange().includes(range)) {
+                    buffers.emplace_back(found_buffer);
+                }
+            }
         }
     }
-    return buffers;
-}
-void DeviceState::TrackDeviceAddressRange(vvl::CommandBuffer &cb_state, VkDeviceAddress address, VkDeviceSize size,
-                                          VkBufferUsageFlags2 usage) {
-    if (!disabled[command_buffer_state]) {
-        const auto buffers = GetBuffersByAddressRange(address, size, usage);
-        auto bufer_address_range_states = std::make_shared<vvl::BufferAddressRange>(buffers, address, size);
-        bufer_address_range_states->LinkChildNodes();
-        cb_state.AddChild(bufer_address_range_states);
-    }
+
+    // This shouldn't be possible as we validate the address is in a valid buffer range already
+    ASSERT_AND_RETURN(!buffers.empty());
+
+    auto bufer_address_range_states = std::make_shared<vvl::BufferAddressRange>(buffers, range);
+    bufer_address_range_states->LinkChildNodes();
+    cb_state.AddChild(bufer_address_range_states);
 }
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
@@ -560,7 +565,7 @@ void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCrea
         WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
-        const auto address_range = buffer_state->DeviceAddressRange();
+        const vvl::range<VkDeviceAddress> address_range = buffer_state->DeviceAddressRange();
 
         BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
@@ -760,7 +765,7 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
         RecordDestoryDescriptorBuffer(*buffer_state);
 
         if (buffer_state->deviceAddress != 0) {
-            const auto address_range = buffer_state->DeviceAddressRange();
+            const vvl::range<VkDeviceAddress> address_range = buffer_state->DeviceAddressRange();
 
             buffer_address_map_.erase_range_or_touch(address_range, [buffer_state_raw = buffer_state.get()](auto &buffers) {
                 assert(!buffers.empty());
@@ -5399,13 +5404,13 @@ void DeviceState::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 uint32_t height, uint32_t depth, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTraceRay(record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
 }
 
@@ -5417,13 +5422,13 @@ void DeviceState::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTraceRay(record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pRaygenShaderBindingTable->deviceAddress, pRaygenShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pMissShaderBindingTable->deviceAddress, pMissShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pHitShaderBindingTable->deviceAddress, pHitShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
-    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->stride,
+    TrackDeviceAddressRange(*cb_state, pCallableShaderBindingTable->deviceAddress, pCallableShaderBindingTable->size,
                             VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
 }
 
@@ -6267,12 +6272,14 @@ void DeviceState::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice,
 
 void DeviceState::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        const RecordObject &record_obj) {
-    if (record_obj.device_address == 0) return;
+    if (record_obj.device_address == 0) {
+        return;
+    }
     if (auto buffer_state = Get<Buffer>(pInfo->buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = record_obj.device_address;
-        const auto address_range = buffer_state->DeviceAddressRange();
+        const vvl::range<VkDeviceAddress> address_range = buffer_state->DeviceAddressRange();
 
         BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
@@ -6538,8 +6545,7 @@ void DeviceState::PostCallRecordCmdBindSamplerHeapEXT(VkCommandBuffer commandBuf
     cb_state->descriptor_heap.sampler_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, pBindInfo->heapRange.address, pBindInfo->heapRange.size,
-                            VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+    TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
 }
 
 void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
@@ -6560,8 +6566,7 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
     cb_state->descriptor_heap.resource_range = range;
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);
-    TrackDeviceAddressRange(*cb_state, pBindInfo->heapRange.address, pBindInfo->heapRange.size,
-                            VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
+    TrackDeviceAddressRange(*cb_state, range, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT);
 }
 
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,

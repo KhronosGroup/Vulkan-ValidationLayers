@@ -196,6 +196,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
                 }};
                 ''')
         out.append('''
+                // This is for tracking BufferAddressRange state object
                 template <>
                 struct VkHandleInfo<VkDeviceAddress> {
                     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
