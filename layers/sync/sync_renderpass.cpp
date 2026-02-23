@@ -365,17 +365,37 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
     return skip;
 }
 
-bool IsDepthAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
+static bool IsDepthAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format) {
     const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();
     return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsDepthOnly(format)) && depth_write_enable;
 }
 
-bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format, const VkImageLayout layout) {
-    // PHASE1 TODO: It needs to check if stencil is writable.
-    //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
-    //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
-    const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
-    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsStencilOnly(format)) && stencil_test_enable;
+static bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, const VkFormat format) {
+    if (!vkuFormatIsDepthAndStencil(format) && !vkuFormatIsStencilOnly(format)) {
+        return false;
+    }
+    if (!last_bound_state.IsStencilTestEnable()) {
+        return false;
+    }
+    auto is_writable = [&last_bound_state](const VkStencilOpState &ops) -> bool {
+        if (ops.writeMask == 0) {
+            return false;
+        }
+        const bool fail_pass_op_is_keep = ops.failOp == VK_STENCIL_OP_KEEP && ops.passOp == VK_STENCIL_OP_KEEP;
+        // All ops are KEEP
+        if (fail_pass_op_is_keep && ops.depthFailOp == VK_STENCIL_OP_KEEP) {
+            return false;
+        }
+        // If fail/pass ops are KEEP and depthFailOp is not KEEP but depth test is not enabled then
+        // only passOp can run (depth test can't fail when disabled, so no depthFailOp)
+        if (fail_pass_op_is_keep && !last_bound_state.IsDepthTestEnable()) {
+            return false;
+        }
+        return true;
+    };
+    const VkStencilOpState front_ops = last_bound_state.GetStencilOpStateFront();
+    const VkStencilOpState back_ops = last_bound_state.GetStencilOpStateBack();
+    return is_writable(front_ops) || is_writable(back_ops);
 }
 
 // Traverse the attachment resolves for this a specific subpass, and do action() to them.
@@ -524,7 +544,6 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
     }
 }
 
-// TODO: SyncError reporting places in this function are not covered by the tests.
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
     const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
@@ -579,7 +598,6 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
         }
     }
 
-    // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     const auto ds_state = pipe->DepthStencilState();
     const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
@@ -587,16 +605,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
     if (depth_stencil_attachment != VK_ATTACHMENT_UNUSED) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
         const vvl::ImageView &view_state = *view_gen.GetViewState();
-        const VkImageLayout ds_layout = subpass.pDepthStencilAttachment->layout;
         const VkFormat ds_format = view_state.create_info.format;
-        const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format, ds_layout);
-        const bool stencil_write = IsStencilAttachmentWriteable(last_bound_state, ds_format, ds_layout);
+        const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format);
+        const bool stencil_write = IsStencilAttachmentWriteable(last_bound_state, ds_format);
 
-        // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
-        // PHASE1 TODO: It needs to check if stencil is writable.
-        //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
-        //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
-        // const bool early_fragment_test = pipe->fragment_shader_state->early_fragment_test;
         if (depth_write) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kDepthOnlyRenderArea);
@@ -630,7 +642,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 
-    const auto& list = pipe->fs_writable_output_location_list;
+    const auto &list = pipe->fs_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
 
     auto &current_context = CurrentContext();
@@ -648,36 +660,19 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
         }
     }
 
-    // PHASE1 TODO: Add layout based read/vs. write selection.
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     const auto *ds_state = pipe->DepthStencilState();
     const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
     if (depth_stencil_attachment != VK_ATTACHMENT_UNUSED) {
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
         const vvl::ImageView &view_state = *view_gen.GetViewState();
-        bool depth_write = false, stencil_write = false;
-        const bool has_depth = vkuFormatHasDepth(view_state.create_info.format);
-        const bool has_stencil = vkuFormatHasStencil(view_state.create_info.format);
-
-        const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();  // implicitly means DepthTestEnable is set
-        const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
-
-        // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && depth_write_enable) {
-            depth_write = true;
-        }
-        // PHASE1 TODO: It needs to check if stencil is writable.
-        //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
-        //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
-        // PHASE1 TODO: These validation should be in core_checks.
-        if (has_stencil && stencil_test_enable) {
-            stencil_write = true;
-        }
+        const VkFormat ds_format = view_state.create_info.format;
+        const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format);
+        const bool stencil_write = IsStencilAttachmentWriteable(last_bound_state, ds_format);
 
         if (depth_write || stencil_write) {
             const auto ds_gentype = view_gen.GetDepthStencilRenderAreaGenType(depth_write, stencil_write);
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-            // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
             UpdateAttachmentAccessState(current_context, view_gen, ds_gentype,
                                         SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access, tag);
         }
@@ -1067,11 +1062,11 @@ bool DynamicRenderingInfo::Attachment::IsWriteable(const LastBound &last_bound_s
     if (writeable) {
         //  Depth and Stencil have additional criteria
         if (type == AttachmentType::kDepth) {
-            writeable = last_bound_state.IsDepthWriteEnable() &&
-                        IsDepthAttachmentWriteable(last_bound_state, view->create_info.format, info.imageLayout);
+            writeable =
+                last_bound_state.IsDepthWriteEnable() && IsDepthAttachmentWriteable(last_bound_state, view->create_info.format);
         } else if (type == AttachmentType::kStencil) {
-            writeable = last_bound_state.IsStencilTestEnable() &&
-                        IsStencilAttachmentWriteable(last_bound_state, view->create_info.format, info.imageLayout);
+            writeable =
+                last_bound_state.IsStencilTestEnable() && IsStencilAttachmentWriteable(last_bound_state, view->create_info.format);
         }
     }
     return writeable;
