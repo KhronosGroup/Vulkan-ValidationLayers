@@ -26,6 +26,7 @@
 #pragma once
 #include "utils/cast_utils.h"
 #include "utils/hash_util.h"
+#include "containers/range.h"
 
 // Object Type enum for validation layer internal object handling
 typedef enum VulkanObjectType {
@@ -87,7 +88,7 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeExternalComputeQueueNV = 55,
     kVulkanObjectTypeIndirectExecutionSetEXT = 56,
     kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
-    kVulkanObjectTypeDeviceAddress = 58,
+    kVulkanObjectTypeInternalDeviceRange = 58,
     kVulkanObjectTypeMax = 59,
 } VulkanObjectType;
 
@@ -632,16 +633,20 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeExternalComputeQueueNV> {
 };
 
 // This is for tracking BufferAddressRange state object
+namespace vvl {
+struct InternalDeviceRange;
+}
 template <>
-struct VkHandleInfo<VkDeviceAddress> {
-    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
+struct VkHandleInfo<vvl::InternalDeviceRange*> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeInternalDeviceRange;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_UNKNOWN;
-    static const char* Typename() { return "VkDeviceAddress"; }
+    static const char* Typename() { return "InternalDeviceRange"; }
 };
+
 template <>
-struct VulkanObjectTypeInfo<kVulkanObjectTypeDeviceAddress> {
-    typedef VkDeviceAddress Type;
+struct VulkanObjectTypeInfo<kVulkanObjectTypeInternalDeviceRange> {
+    typedef vvl::InternalDeviceRange* Type;
 };
 #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
 

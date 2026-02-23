@@ -163,10 +163,11 @@ void BufferView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bo
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-// TODO - We could easily track the range/usage for a better error message, but need a way to set that in cb_state.broken_bindings
-// so that it can be seen in the error message
-BufferAddressRange::BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range)
-    : StateObject(range.begin, kVulkanObjectTypeDeviceAddress), buffer_states(buffer_states) {}
+BufferAddressRange::BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range,
+                                       VkBufferUsageFlags2 usage)
+    : StateObject(&internal_range, kVulkanObjectTypeInternalDeviceRange),
+      buffer_states(buffer_states),
+      internal_range(range, usage) {}
 
 void BufferAddressRange::Destroy() {
     buffer_states.clear();
@@ -184,6 +185,7 @@ void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList& invalid_n
         for (const auto &node : invalid_nodes) {
             if (node.get() == buffer_state) {
                 buffer_state->RemoveParent(this);
+                internal_range.invalidated_handles.emplace_back(buffer_state->VkHandle());
                 buffer_state = nullptr;
                 removed++;
                 break;
@@ -200,7 +202,7 @@ void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList& invalid_n
             // Shift non-null elements to the front and truncate the vector
             // There is no erase() helpe in small_vector, but this still does the same thing with the memory in-place
             auto new_end = std::remove(buffer_states.begin(), buffer_states.end(), nullptr);
-            size_t new_size = std::distance(buffer_states.begin(), new_end);
+            uint32_t new_size = (uint32_t)std::distance(buffer_states.begin(), new_end);
             buffer_states.resize(new_size);
         }
     }

@@ -21,8 +21,10 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include <memory>
 #include "error_message/error_location.h"
 #include "generated/command_validation.h"
+#include "generated/vk_object_types.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/last_bound_state.h"
@@ -291,6 +293,7 @@ void CommandBuffer::ResetCBState() {
     }
     object_bindings.clear();
     broken_bindings.clear();
+    broken_internal_device_range.reset();
 
     begin_info_flags = 0;
     has_inheritance = false;
@@ -426,6 +429,15 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
                 case kVulkanObjectTypeImage:
                     if (unlink) {
                         image_layout_registry.erase(obj->Handle().Cast<VkImage>());
+                    }
+                    break;
+                case kVulkanObjectTypeInternalDeviceRange:
+                    if (unlink) {
+                        const auto* internal_device_range = obj->Handle().Cast<vvl::InternalDeviceRange*>();
+                        assert(internal_device_range);
+                        // Note - If 2 calls in the command buffer have broken ranges, we are only going to print the last one
+                        // This is the compromise to reduce memory overhead
+                        broken_internal_device_range = std::make_unique<vvl::InternalDeviceRange>(*internal_device_range);
                     }
                     break;
                 default:

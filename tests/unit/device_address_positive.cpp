@@ -138,7 +138,7 @@ TEST_F(PositiveDeviceAddress, ValidSubRange1) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 256;
     const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
@@ -203,7 +203,7 @@ TEST_F(PositiveDeviceAddress, ValidSubRange2) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 256;
     const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();

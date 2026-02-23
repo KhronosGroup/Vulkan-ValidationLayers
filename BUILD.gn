@@ -285,6 +285,7 @@ vvl_sources = [
   "layers/state_tracker/device_generated_commands_state.h",
   "layers/state_tracker/device_memory_state.cpp",
   "layers/state_tracker/device_memory_state.h",
+  "layers/state_tracker/device_range_state.h",
   "layers/state_tracker/device_state.cpp",
   "layers/state_tracker/device_state.h",
   "layers/state_tracker/event_map.h",

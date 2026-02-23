@@ -320,6 +320,60 @@ TEST_F(NegativeDeviceAddress, MemoryToImageIndirect) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDeviceAddress, MultipleBrokenRanges) {
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkCopyMemoryToImageIndirectCommandKHR cmd1 = {};
+    cmd1.srcAddress = 0;
+    cmd1.bufferRowLength = 8;
+    cmd1.bufferImageHeight = 8;
+    cmd1.imageSubresource = {};
+    cmd1.imageOffset = {0, 0, 0};
+    cmd1.imageExtent = {8, 8, 1};
+
+    vkt::Buffer indirect_buffer1(*m_device, sizeof(cmd1), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer indirect_buffer2(*m_device, sizeof(cmd1) * 2,
+                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    const VkDeviceAddress address1 = indirect_buffer1.Address();
+    const VkDeviceAddress address2 = indirect_buffer2.Address();
+    if (address1 == address2) {
+        GTEST_SKIP() << "Device addresses areequal.";
+    }
+
+    m_command_buffer.Begin();
+
+    vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = address1;
+    address_range.size = sizeof(cmd1);
+    address_range.stride = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+
+    VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkCopyMemoryToImageIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 1;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstImage = dst_image;
+    copy_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_info.pImageSubresources = &res_layer;
+
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &copy_info);
+
+    copy_info.copyAddressRange.address = address2;
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &copy_info);
+
+    indirect_buffer1.Destroy();
+    indirect_buffer2.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
+    vk::EndCommandBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceAddress, BindResourceHeap) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -414,7 +468,7 @@ TEST_F(NegativeDeviceAddress, PartialValidRange) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 256;
     const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
@@ -474,7 +528,7 @@ TEST_F(NegativeDeviceAddress, ValidRangeTooSmall) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 256;
     const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();
@@ -533,7 +587,7 @@ TEST_F(NegativeDeviceAddress, RangeSplitBetweenBuffers) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
     GetPhysicalDeviceProperties2(props2);
 
-    const uint32_t heap_size = heap_props.minSamplerHeapReservedRange + 256;
+    const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 256;
     const VkDeviceSize offset = heap_size / 2;
 
     VkBufferUsageFlags2CreateInfo buffer_usage = vku::InitStructHelper();

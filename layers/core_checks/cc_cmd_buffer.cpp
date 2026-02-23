@@ -120,24 +120,34 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
 
     ss << "because the following objects bound to the command buffer were invalidated\n";
     LogObjectList objlist(cb_state.Handle());
+    bool print_internal_device_range = false;
     for (const auto &entry : cb_state.broken_bindings) {
-        if (entry.first.type == kVulkanObjectTypeDeviceAddress) {
-            // TODO - We don't have the size (or usage), which would be great for the message.
-            // The issue is state tracker key is a handle (VkDeviceAddress) but we store as a vvl::range<VkDeviceAddress>
-            ss << " All possible VkBuffer from which " << FormatHandle(entry.first) << " was retrieved were destroyed";
+        if (entry.first.type == kVulkanObjectTypeInternalDeviceRange) {
+            print_internal_device_range = true;
+            continue;
+        }
+        ss << " " << FormatHandle(entry.first) << " was ";
+        if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
+            ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
+        } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
+            ss << "destroyed or rerecorded\n";
         } else {
-            ss << " " << FormatHandle(entry.first) << " was ";
-            if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
-                ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
-            } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
-                ss << "destroyed or rerecorded\n";
-            } else {
-                ss << "destroyed\n";
-            }
+            ss << "destroyed\n";
         }
 
         for (const auto &obj : entry.second.object_list) {
             objlist.add(obj);
+        }
+    }
+
+    // Current way around the fact we only save one possible broken internal device range
+    if (print_internal_device_range) {
+        // use cb_state.broken_internal_device_range as the casted pointer will be garbage
+        ss << " All possible VkBuffer from which " << string_range_hex(cb_state.broken_internal_device_range->range) << " (with "
+           << string_VkBufferUsageFlags2(cb_state.broken_internal_device_range->usage) << ") "
+           << "was retrieved were destroyed\n";
+        for (VkBuffer buffer : cb_state.broken_internal_device_range->invalidated_handles) {
+            ss << "  - " << FormatHandle(buffer) << "\n";
         }
     }
 

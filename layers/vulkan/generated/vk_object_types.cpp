@@ -149,7 +149,7 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkExternalComputeQueueNV",
     "VkIndirectExecutionSetEXT",
     "VkIndirectCommandsLayoutEXT",
-    "VkDeviceAddress",
+    "InternalDeviceRange",
 };
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type) { return kDebugReportLookup[type]; }
