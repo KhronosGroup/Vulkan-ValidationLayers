@@ -709,9 +709,12 @@ class DeviceState : public vvl::base::Device {
         return found_it->second;
     }
 
-    std::vector<vvl::Buffer*> GetBuffersByAddressRange(VkDeviceAddress address, VkDeviceSize size, VkBufferUsageFlags2 usage) const;
+    void TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, const vvl::range<VkDeviceAddress> range, VkBufferUsageFlags2 usage);
     void TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, VkDeviceAddress address, VkDeviceSize size,
-                                 VkBufferUsageFlags2 usage);
+                                 VkBufferUsageFlags2 usage) {
+        const vvl::range<VkDeviceAddress> range(address, address + size);
+        TrackDeviceAddressRange(cb_state, range, usage);
+    }
 
     // Used to help report error message
     NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {

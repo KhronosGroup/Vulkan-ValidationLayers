@@ -122,7 +122,9 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
     LogObjectList objlist(cb_state.Handle());
     for (const auto &entry : cb_state.broken_bindings) {
         if (entry.first.type == kVulkanObjectTypeDeviceAddress) {
-            ss << " The buffers (with relevant usage) from which " << FormatHandle(entry.first) << " was retrieved were destroyed";
+            // TODO - We don't have the size (or usage), which would be great for the message.
+            // The issue is state tracker key is a handle (VkDeviceAddress) but we store as a vvl::range<VkDeviceAddress>
+            ss << " All possible VkBuffer from which " << FormatHandle(entry.first) << " was retrieved were destroyed";
         } else {
             ss << " " << FormatHandle(entry.first) << " was ";
             if (entry.first.type == kVulkanObjectTypeDescriptorSet) {

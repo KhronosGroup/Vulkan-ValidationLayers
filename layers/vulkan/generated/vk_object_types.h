@@ -631,6 +631,7 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeExternalComputeQueueNV> {
     typedef VkExternalComputeQueueNV Type;
 };
 
+// This is for tracking BufferAddressRange state object
 template <>
 struct VkHandleInfo<VkDeviceAddress> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
