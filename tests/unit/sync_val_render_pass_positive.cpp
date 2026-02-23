@@ -258,7 +258,7 @@ TEST_F(PositiveSyncValRenderPass, SyncMultisampleReadWithPreviousWrite) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncValRenderPass, StencilKeepOps) {
+TEST_F(PositiveSyncValRenderPass, StencilNotWritable) {
     TEST_DESCRIPTION("Test that stencil access is not a write when KEEP is used for all stencil ops");
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::synchronization2);

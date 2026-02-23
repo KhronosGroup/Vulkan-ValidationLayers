@@ -381,17 +381,20 @@ static bool IsStencilAttachmentWriteable(const LastBound &last_bound_state, cons
         if (ops.writeMask == 0) {
             return false;
         }
-        const bool fail_pass_op_is_keep = ops.failOp == VK_STENCIL_OP_KEEP && ops.passOp == VK_STENCIL_OP_KEEP;
-        // All ops are KEEP
-        if (fail_pass_op_is_keep && ops.depthFailOp == VK_STENCIL_OP_KEEP) {
-            return false;
-        }
-        // If fail/pass ops are KEEP and depthFailOp is not KEEP but depth test is not enabled then
-        // only passOp can run (depth test can't fail when disabled, so no depthFailOp)
-        if (fail_pass_op_is_keep && !last_bound_state.IsDepthTestEnable()) {
-            return false;
-        }
-        return true;
+
+        // If compareOp is ALWAYS then failOp never runs (no writes possible)
+        const bool ignore_fail_op = (ops.compareOp == VK_COMPARE_OP_ALWAYS);
+
+        // If compareOp is NEVER then passOp never runs (no writes possible)
+        const bool ignore_pass_op = (ops.compareOp == VK_COMPARE_OP_NEVER);
+
+        // If depth test is not enabled then depthFailOp never runs (no writes possible)
+        const bool ignore_depth_fail_op = !last_bound_state.IsDepthTestEnable();
+
+        const bool is_read = (ops.failOp == VK_STENCIL_OP_KEEP || ignore_fail_op) &&
+                             (ops.passOp == VK_STENCIL_OP_KEEP || ignore_pass_op) &&
+                             (ops.depthFailOp == VK_STENCIL_OP_KEEP || ignore_depth_fail_op);
+        return !is_read;
     };
     const VkStencilOpState front_ops = last_bound_state.GetStencilOpStateFront();
     const VkStencilOpState back_ops = last_bound_state.GetStencilOpStateBack();
