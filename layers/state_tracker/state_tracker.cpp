@@ -135,9 +135,12 @@ void DeviceState::TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, const vv
     }
 
     // This shouldn't be possible as we validate the address is in a valid buffer range already
-    ASSERT_AND_RETURN(!buffers.empty());
+    // But if there is already an error, we will still need to guard against this
+    if (buffers.empty()) {
+        return;
+    }
 
-    auto bufer_address_range_states = std::make_shared<vvl::BufferAddressRange>(buffers, range);
+    auto bufer_address_range_states = std::make_shared<vvl::BufferAddressRange>(buffers, range, usage);
     bufer_address_range_states->LinkChildNodes();
     cb_state.AddChild(bufer_address_range_states);
 }

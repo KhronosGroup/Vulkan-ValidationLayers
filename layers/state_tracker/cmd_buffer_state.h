@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <memory>
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_library_state.h"
@@ -27,10 +28,10 @@
 #include "state_tracker/bind_point.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
+#include "state_tracker/device_range_state.h"
 #include "error_message/error_location.h"
 #include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
-#include "containers/range_map.h"
 
 struct Location;
 
@@ -483,6 +484,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     vvl::unordered_set<std::shared_ptr<StateObject>> object_bindings;
     vvl::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
+    // We need a way to save the non-VkHandle state in BufferAddressRange when it is destroyed
+    // For most cases, this is going to be empty
+    std::unique_ptr<vvl::InternalDeviceRange> broken_internal_device_range;
 
     std::vector<TensorBarrier> tensor_barriers;
 

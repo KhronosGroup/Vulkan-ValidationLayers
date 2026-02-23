@@ -78,6 +78,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
             #pragma once
             #include "utils/cast_utils.h"
             #include "utils/hash_util.h"
+            #include "containers/range.h"
 
             ''')
 
@@ -88,7 +89,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
             ''')
         for count, handle in enumerate(self.vk.handles.values(), start=1):
             out.append(f'    kVulkanObjectType{handle.name[2:]} = {count},\n')
-        out.append(f'    kVulkanObjectTypeDeviceAddress = {len(self.vk.handles) + 1},\n')
+        out.append(f'    kVulkanObjectTypeInternalDeviceRange = {len(self.vk.handles) + 1},\n')
         out.append(f'    kVulkanObjectTypeMax = {len(self.vk.handles) + 2},\n')
         out.append('} VulkanObjectType;\n\n')
 
@@ -197,16 +198,20 @@ class ObjectTypesOutputGenerator(BaseGenerator):
                 ''')
         out.append('''
                 // This is for tracking BufferAddressRange state object
+                namespace vvl {
+                    struct InternalDeviceRange;
+                }
                 template <>
-                struct VkHandleInfo<VkDeviceAddress> {
-                    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeviceAddress;
+                struct VkHandleInfo<vvl::InternalDeviceRange*> {
+                    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeInternalDeviceRange;
                     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
                     static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_UNKNOWN;
-                    static const char* Typename() { return "VkDeviceAddress"; }
+                    static const char* Typename() { return "InternalDeviceRange"; }
                 };
+
                 template <>
-                struct VulkanObjectTypeInfo<kVulkanObjectTypeDeviceAddress> {
-                    typedef VkDeviceAddress Type;
+                struct VulkanObjectTypeInfo<kVulkanObjectTypeInternalDeviceRange> {
+                    typedef vvl::InternalDeviceRange* Type;
                 };
                 ''')
         out.extend(guard_helper.add_guard(None))
@@ -290,7 +295,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
                 "VkNonDispatchableHandle",
             ''')
         out.extend([f'    "{handle.name}",\n' for handle in self.vk.handles.values()])
-        out.append('"VkDeviceAddress",')
+        out.append('"InternalDeviceRange",')
         out.append('};\n')
 
         out.append('''

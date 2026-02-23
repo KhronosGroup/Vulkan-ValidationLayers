@@ -20,6 +20,7 @@
 #pragma once
 #include <variant>
 #include "state_tracker/device_memory_state.h"
+#include "state_tracker/device_range_state.h"
 #include "containers/range.h"
 
 namespace vvl {
@@ -179,7 +180,12 @@ class BufferAddressRange : public StateObject {
     // But it is common for middleware to want a copy of the buffer, so we set the size to 2
     small_vector<vvl::Buffer*, 2> buffer_states;
 
-    BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range);
+    // This holds the information we will want to print any error message
+    // We "trick" VkHandleInfo by providing it a pointer instead of a normal vulkan handle
+    InternalDeviceRange internal_range;
+
+    BufferAddressRange(small_vector<vvl::Buffer*, 2> buffer_states, const vvl::range<VkDeviceAddress> range,
+                       VkBufferUsageFlags2 usage);
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
@@ -194,8 +200,6 @@ class BufferAddressRange : public StateObject {
     }
 
     BufferAddressRange(const BufferAddressRange &rh_obj) = delete;
-
-    VkDeviceAddress VkHandle() const { return handle_.Cast<VkDeviceAddress>(); }
 
     void Destroy() override;
 
