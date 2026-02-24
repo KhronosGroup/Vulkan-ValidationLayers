@@ -1229,7 +1229,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // that array of subpass dependencies won't be indexed, but it's not obvious).
     AccessContext temp_context(cb_context.GetSyncState());
 
-    temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependencies, nullptr,
+    temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependency_infos, nullptr,
                           cb_context.GetCurrentAccessContext());
 
     // Validate attachment operations

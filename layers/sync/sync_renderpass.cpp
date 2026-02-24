@@ -98,7 +98,7 @@ std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, c
     // Add this for all subpasses here so that they exsist during next subpass validation
     for (uint32_t pass = 0; pass < subpass_count; pass++) {
         subpass_contexts[pass].validator = external_context.validator;
-        subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts.get(),
+        subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependency_infos, subpass_contexts.get(),
                                         &external_context);
     }
     return subpass_contexts;
@@ -168,14 +168,14 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
 
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {
-        const bool prev_needs_proxy = transition.prev_pass != VK_SUBPASS_EXTERNAL && (transition.prev_pass + 1 == subpass);
+        const bool prev_needs_proxy = transition.prev_subpass != VK_SUBPASS_EXTERNAL && (transition.prev_subpass + 1 == subpass);
 
-        const auto *track_back = access_context.GetTrackBackFromSubpass(transition.prev_pass);
+        const auto *track_back = access_context.GetTrackBackFromSubpass(transition.prev_subpass);
         assert(track_back);
         if (prev_needs_proxy) {
             if (!proxy_for_prev) {
                 proxy_for_prev.reset(CreateStoreResolveProxyContext(*track_back->source_subpass, rp_state, render_pass_instance_id,
-                                                                    transition.prev_pass, attachment_views));
+                                                                    transition.prev_subpass, attachment_views));
                 proxy_track_back = *track_back;
                 proxy_track_back.source_subpass = proxy_for_prev.get();
             }
@@ -200,7 +200,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
             if (hazard.Tag() == kInvalidTag) {
                 const auto error = sync_state.error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
                     hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout,
-                    transition.prev_pass);
+                    transition.prev_subpass);
                 skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             } else {
                 const auto error = sync_state.error_messages_.RenderPassLayoutTransitionError(
@@ -532,10 +532,10 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
                                                       AccessContext &access_context) {
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {
-        const auto prev_pass = transition.prev_pass;
+        const auto prev_subpass = transition.prev_subpass;
         const auto &view_gen = attachment_views[transition.attachment];
 
-        const auto *trackback = access_context.GetTrackBackFromSubpass(prev_pass);
+        const auto *trackback = access_context.GetTrackBackFromSubpass(prev_subpass);
         assert(trackback);
 
         // Import the attachments into the current context
@@ -755,11 +755,11 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
     const auto &final_transitions = rp_state_->subpass_transitions.back();
     for (const auto &transition : final_transitions) {
         const auto &view_gen = attachment_views_[transition.attachment];
-        const auto &trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
+        const auto &trackback = subpass_contexts_[transition.prev_subpass].GetDstExternalTrackBack();
         assert(trackback.source_subpass);  // Transitions are given implicit transitions if the StateTracker is working correctly
         auto *context = trackback.source_subpass;
 
-        if (transition.prev_pass == current_subpass_) {
+        if (transition.prev_subpass == current_subpass_) {
             if (!proxy_for_current) {
                 // We haven't recorded resolve ofor the current_subpass, so we need to copy current and update it *as if*
                 proxy_for_current.reset(CreateStoreResolveProxy());
@@ -786,7 +786,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             if (hazard.Tag() == kInvalidTag) {  // Hazard vs. store/resolve
                 const std::string error = sync_state.error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                     hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout,
-                    transition.prev_pass);
+                    transition.prev_subpass);
                 skip |= sync_state.SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             } else {
                 const std::string error = sync_state.error_messages_.RenderPassFinalLayoutTransitionError(
@@ -918,8 +918,8 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     const auto &final_transitions = rp_state_->subpass_transitions.back();
     for (const auto &transition : final_transitions) {
         const AttachmentViewGen &view_gen = attachment_views_[transition.attachment];
-        const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
-        assert(&subpass_contexts_[transition.prev_pass] == last_trackback.source_subpass);
+        const auto &last_trackback = subpass_contexts_[transition.prev_subpass].GetDstExternalTrackBack();
+        assert(&subpass_contexts_[transition.prev_subpass] == last_trackback.source_subpass);
 
         const std::optional<ImageRangeGen> &ref_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         ImageRangeGen markup_range_gen(*ref_range_gen);

@@ -28,19 +28,18 @@ namespace syncval {
 bool SimpleBinding(const vvl::Bindable &bindable) { return !bindable.sparse && bindable.Binding(); }
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
-void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
-                             const std::vector<SubpassDependencyGraphNode> &dependencies, const AccessContext *contexts,
-                             const AccessContext *external_context) {
+void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyInfo> &dependencies,
+                             const AccessContext *contexts, const AccessContext *external_context) {
     const auto &subpass_dep = dependencies[subpass];
     const bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
     prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
     prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
     for (const auto &prev_dep : subpass_dep.prev) {
-        const auto prev_pass = prev_dep.first->pass;
+        const auto prev_subpass = prev_dep.first->subpass;
         const auto &prev_barriers = prev_dep.second;
         assert(prev_dep.second.size());
-        prev_.emplace_back(&contexts[prev_pass], queue_flags, prev_barriers);
-        prev_by_subpass_[prev_pass] = &prev_.back();
+        prev_.emplace_back(&contexts[prev_subpass], queue_flags, prev_barriers);
+        prev_by_subpass_[prev_subpass] = &prev_.back();
     }
 
     async_.reserve(subpass_dep.async.size());

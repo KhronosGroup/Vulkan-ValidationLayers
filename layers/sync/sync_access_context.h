@@ -22,7 +22,7 @@
 #include "sync/sync_access_state.h"
 #include <optional>
 
-struct SubpassDependencyGraphNode;
+struct SubpassDependencyInfo;
 
 namespace vvl {
 class Bindable;
@@ -299,7 +299,7 @@ class AccessContext {
     AccessContext(const AccessContext &other) = delete;
     AccessContext &operator=(const AccessContext &) = delete;
 
-    void InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
+    void InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyInfo> &dependencies,
                   const AccessContext *contexts, const AccessContext *external_context);
     void InitFrom(const AccessContext &other);
     void Reset();
