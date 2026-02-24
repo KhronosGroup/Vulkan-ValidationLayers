@@ -1028,10 +1028,14 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     TEST_DESCRIPTION(
         "Test incompatible fragment shading rate attachments "
         "calling CmdExecuteCommands");
-
-    // Enable KHR_fragment_shading_rate
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR not supported";
+    }
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
@@ -1043,8 +1047,8 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     // Create 2 render passes with fragment shading rate attachments with
     // differing shadingRateAttachmentTexelSize values
-    VkExtent2D texel_size_1 = {8, 8};
-    VkExtent2D texel_size_2 = {32, 32};
+    VkExtent2D texel_size_1 = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    VkExtent2D texel_size_2 = fsr_properties.maxFragmentShadingRateAttachmentTexelSize;
 
     RenderPass2SingleSubpass rp_fsr_1(*this);
     rp_fsr_1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
@@ -1056,7 +1060,8 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rp_fsr_2.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, texel_size_2);
     rp_fsr_2.CreateRenderPass();
 
-    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vkt::ImageView imageView = image.CreateView();
 
     // Create a frame buffer with a render pass with FSR attachment
@@ -1145,7 +1150,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
     // Test case where both command buffers have FSR attachments but they are
     // incompatible.
-    {
+    if (texel_size_1.width != texel_size_2.width || texel_size_1.height != texel_size_2.height) {
         secondary.Begin(&cmdbuff__bi_fsr);
         secondary.End();
 
@@ -3677,5 +3682,20 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateMeshShader) {
 
     m_errorMonitor->SetDesiredError("VUID-PrimitiveShadingRateKHR-PrimitiveShadingRateKHR-12275");
     VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeFragmentShadingRate, AttachmentFragmentShadingRate) {
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    RenderPass2SingleSubpass rp_fsr_1(*this);
+    rp_fsr_1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp_fsr_1.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkSubpassDescription2-attachmentFragmentShadingRate");
+    rp_fsr_1.CreateRenderPass();
     m_errorMonitor->VerifyFound();
 }

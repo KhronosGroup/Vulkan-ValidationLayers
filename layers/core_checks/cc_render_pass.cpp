@@ -2301,11 +2301,12 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 &create_inf
 bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const Location &loc) const {
     bool skip = false;
     const bool use_rp2 = loc.function != Func::vkCreateRenderPass;
-    const char *vuid;
     const Location create_info_loc = loc.dot(Field::pCreateInfo);
 
     skip |= ValidateRenderpassAttachmentUsage(create_info, create_info_loc);
     skip |= ValidateRenderPassDAG(create_info, create_info_loc);
+    skip |= ValidateFragmentShadingRateAttachments(create_info, create_info_loc);
+    skip |= ValidateFragmentDensityMapAttachments(create_info, create_info_loc);
 
     // Validate multiview correlation and view masks
     bool view_mask_zero = false;
@@ -2314,6 +2315,9 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_
     for (uint32_t i = 0; i < create_info.subpassCount; ++i) {
         const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = create_info.pSubpasses[i];
+
+        skip |= ValidateDepthStencilResolve(create_info, subpass, subpass_loc);
+
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
             if (!enabled_features.multiview) {
@@ -2333,7 +2337,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_
 
         if ((subpass.flags & VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX) != 0 &&
             (subpass.flags & VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX) == 0) {
-            vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-03076" : "VUID-VkSubpassDescription-flags-00856";
+            const char* vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-03076" : "VUID-VkSubpassDescription-flags-00856";
             skip |= LogError(vuid, device, subpass_loc,
                              "The flags parameter of subpass description %" PRIu32
                              " includes "
@@ -2357,61 +2361,12 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_
     uint32_t aggregated_cvms = 0;
     for (uint32_t i = 0; i < create_info.correlatedViewMaskCount; ++i) {
         if (aggregated_cvms & create_info.pCorrelatedViewMasks[i]) {
-            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056"
-                           : "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841";
+            const char* vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056"
+                                       : "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841";
             skip |= LogError(vuid, device, create_info_loc.dot(Field::pCorrelatedViewMasks, i),
                              "contains a previously appearing view bit.");
         }
         aggregated_cvms |= create_info.pCorrelatedViewMasks[i];
-    }
-
-    const auto *fragment_density_map_info =
-        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
-    if (fragment_density_map_info) {
-        if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
-            const Location fragment_loc =
-                create_info_loc.pNext(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT, Field::fragmentDensityMapAttachment);
-            const Location attchment_loc = fragment_loc.dot(Field::attachment);
-
-            if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= create_info.attachmentCount) {
-                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-06472"
-                               : "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471";
-                skip |= LogError(vuid, device, attchment_loc,
-                                 "(%" PRIu32 ") must be less than attachmentCount %" PRIu32 " of for this render pass.",
-                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment, create_info.attachmentCount);
-            } else {
-                if (!(fragment_density_map_info->fragmentDensityMapAttachment.layout ==
-                          VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
-                      fragment_density_map_info->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
-                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", device,
-                                     attchment_loc,
-                                     "(%" PRIu32
-                                     ") layout must be equal to "
-                                     "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT or VK_IMAGE_LAYOUT_GENERAL.",
-                                     fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
-                if (!(create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
-                          VK_ATTACHMENT_LOAD_OP_LOAD ||
-                      create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
-                          VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
-                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", device,
-                                     attchment_loc,
-                                     "(%" PRIu32
-                                     ") must reference an attachment with a loadOp "
-                                     "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
-                                     fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
-                if (create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].storeOp !=
-                    VK_ATTACHMENT_STORE_OP_DONT_CARE) {
-                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", device,
-                                     attchment_loc,
-                                     "(%" PRIu32
-                                     ") must reference an attachment with a storeOp "
-                                     "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-                                     fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
-            }
-        }
     }
 
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
@@ -2522,194 +2477,188 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
 // VK_KHR_depth_stencil_resolve was added with a requirement on VK_KHR_create_renderpass2 so this will never be able to use
 // VkRenderPassCreateInfo
-bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 &create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const VkSubpassDescription2& subpass,
+                                             const Location& subpass_loc) const {
     bool skip = false;
 
     // If the pNext chain in VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
-    for (uint32_t i = 0; i < create_info.subpassCount; i++) {
-        const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, i);
-        const VkSubpassDescription2 &subpass = create_info.pSubpasses[i];
-        const auto *resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
+    const auto* resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
-        // All of the VUs are wrapped in the wording:
-        // "If pDepthStencilResolveAttachment is not NULL"
-        if (resolve == nullptr || resolve->pDepthStencilResolveAttachment == nullptr) {
-            continue;
-        }
+    // All of the VUs are wrapped in the wording:
+    // "If pDepthStencilResolveAttachment is not NULL"
+    if (resolve == nullptr || resolve->pDepthStencilResolveAttachment == nullptr) {
+        return skip;
+        ;
+    }
 
-        // The spec says
-        // "If pDepthStencilAttachment is NULL, or if its attachment index is VK_ATTACHMENT_UNUSED, it indicates that no
-        // depth/stencil attachment will be used in the subpass."
-        if (subpass.pDepthStencilAttachment == nullptr) {
-            continue;
-        } else if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
-            // while should be ignored, this is an explicit VU and some drivers will crash if this is let through
-            skip |=
-                LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177", device, subpass_loc,
+    // The spec says
+    // "If pDepthStencilAttachment is NULL, or if its attachment index is VK_ATTACHMENT_UNUSED, it indicates that no
+    // depth/stencil attachment will be used in the subpass."
+    if (subpass.pDepthStencilAttachment == nullptr) {
+        return skip;
+    } else if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
+        // while should be ignored, this is an explicit VU and some drivers will crash if this is let through
+        skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177", device, subpass_loc,
                          "includes a VkSubpassDescriptionDepthStencilResolve "
                          "structure with resolve attachment %" PRIu32 ", but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
                          resolve->pDepthStencilResolveAttachment->attachment);
-            continue;
-        }
+        return skip;
+    }
 
-        const uint32_t ds_attachment = subpass.pDepthStencilAttachment->attachment;
-        const uint32_t resolve_attachment = resolve->pDepthStencilResolveAttachment->attachment;
+    const uint32_t ds_attachment = subpass.pDepthStencilAttachment->attachment;
+    const uint32_t resolve_attachment = resolve->pDepthStencilResolveAttachment->attachment;
 
-        // ValidateAttachmentIndex() should catch if this is invalid, but skip to avoid crashing
-        if (ds_attachment >= create_info.attachmentCount) {
-            continue;
-        }
+    // ValidateAttachmentIndex() should catch if this is invalid, but skip to avoid crashing
+    if (ds_attachment >= create_info.attachmentCount) {
+        return skip;
+    }
 
-        // All VUs in VkSubpassDescriptionDepthStencilResolve are wrapped with language saying it is not unused
-        if (resolve_attachment == VK_ATTACHMENT_UNUSED) {
-            continue;
-        }
+    // All VUs in VkSubpassDescriptionDepthStencilResolve are wrapped with language saying it is not unused
+    if (resolve_attachment == VK_ATTACHMENT_UNUSED) {
+        return skip;
+    }
 
-        const Location ds_resolve_loc =
-            subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment);
-        if (resolve_attachment >= create_info.attachmentCount) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473", device, ds_resolve_loc,
-                             "must be less than attachmentCount %" PRIu32 " of for this render pass.", create_info.attachmentCount);
-            // if the index is invalid need to skip everything else to prevent out of bounds index accesses crashing
-            continue;
-        }
+    const Location ds_resolve_loc =
+        subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment);
+    if (resolve_attachment >= create_info.attachmentCount) {
+        skip |= LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473", device, ds_resolve_loc,
+                         "must be less than attachmentCount %" PRIu32 " of for this render pass.", create_info.attachmentCount);
+        // if the index is invalid need to skip everything else to prevent out of bounds index accesses crashing
+        return skip;
+    }
 
-        const VkFormat ds_attachment_format = create_info.pAttachments[ds_attachment].format;
-        const VkFormat resolve_attachment_format = create_info.pAttachments[resolve_attachment].format;
+    const VkFormat ds_attachment_format = create_info.pAttachments[ds_attachment].format;
+    const VkFormat resolve_attachment_format = create_info.pAttachments[resolve_attachment].format;
 
-        // "depthResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a depth component"
-        const bool resolve_has_depth = vkuFormatHasDepth(resolve_attachment_format);
-        // "stencilResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a stencil component"
-        const bool resolve_has_stencil = vkuFormatHasStencil(resolve_attachment_format);
+    // "depthResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a depth component"
+    const bool resolve_has_depth = vkuFormatHasDepth(resolve_attachment_format);
+    // "stencilResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a stencil component"
+    const bool resolve_has_stencil = vkuFormatHasStencil(resolve_attachment_format);
 
-        if (resolve_has_depth) {
-            if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
-                  resolve->depthResolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
-                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183", device,
-                                 subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode),
-                                 "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
-                                 "supportedDepthResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
-                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str(),
-                                 resolve_attachment, string_VkFormat(resolve_attachment_format));
-            }
-        }
-
-        if (resolve_has_stencil) {
-            if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE ||
-                  resolve->stencilResolveMode & phys_dev_props_core12.supportedStencilResolveModes)) {
-                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184", device,
-                                 subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::stencilResolveMode),
-                                 "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
-                                 "supportedStencilResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
-                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode),
-                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str(),
-                                 resolve_attachment, string_VkFormat(resolve_attachment_format));
-            }
-        }
-
-        if (resolve_has_depth && resolve_has_stencil) {
-            if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_FALSE &&
-                resolve->depthResolveMode != resolve->stencilResolveMode) {
-                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185", device,
-                                 subpass_loc,
-                                 "includes a VkSubpassDescriptionDepthStencilResolve "
-                                 "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be "
-                                 "identical.\npAttachments[%" PRIu32 "].format is %s",
-                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode), resolve_attachment,
-                                 string_VkFormat(resolve_attachment_format));
-            }
-
-            if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_TRUE &&
-                !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
-                  resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE)) {
-                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186", device,
-                                 subpass_loc,
-                                 "includes a VkSubpassDescriptionDepthStencilResolve "
-                                 "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical, or "
-                                 "one of them must be VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32 "].format is %s",
-                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode), resolve_attachment,
-                                 string_VkFormat(resolve_attachment_format));
-            }
-        }
-
-        // Same VU, but better error message if one of the resolves are ignored
-        if (resolve_has_depth && !resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
-                             ds_resolve_loc,
-                             "is not NULL, but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
-                             "ignored due to format not having stencil component).\npAttachments[%" PRIu32 "].format is %s",
+    if (resolve_has_depth) {
+        if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
+              resolve->depthResolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183", device,
+                             subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode),
+                             "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
+                             "supportedDepthResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
+                             string_VkResolveModeFlagBits(resolve->depthResolveMode),
+                             string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str(),
                              resolve_attachment, string_VkFormat(resolve_attachment_format));
-        } else if (!resolve_has_depth && resolve_has_stencil && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
-                             ds_resolve_loc,
-                             "is not NULL, but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
-                             "ignored due to format not having depth component).\npAttachments[%" PRIu32 "].format is %s",
+        }
+    }
+
+    if (resolve_has_stencil) {
+        if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE ||
+              resolve->stencilResolveMode & phys_dev_props_core12.supportedStencilResolveModes)) {
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184", device,
+                             subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::stencilResolveMode),
+                             "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
+                             "supportedStencilResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
+                             string_VkResolveModeFlagBits(resolve->stencilResolveMode),
+                             string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str(),
                              resolve_attachment, string_VkFormat(resolve_attachment_format));
-        } else if (resolve_has_depth && resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
-                   resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+        }
+    }
+
+    if (resolve_has_depth && resolve_has_stencil) {
+        if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_FALSE &&
+            resolve->depthResolveMode != resolve->stencilResolveMode) {
             skip |= LogError(
-                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device, ds_resolve_loc,
-                "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32
-                "].format is %s",
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185", device, subpass_loc,
+                "includes a VkSubpassDescriptionDepthStencilResolve "
+                "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be "
+                "identical.\npAttachments[%" PRIu32 "].format is %s",
+                string_VkResolveModeFlagBits(resolve->depthResolveMode), string_VkResolveModeFlagBits(resolve->stencilResolveMode),
                 resolve_attachment, string_VkFormat(resolve_attachment_format));
         }
 
-        const uint32_t resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
-        const uint32_t resolve_stencil_size = vkuFormatStencilSize(resolve_attachment_format);
-
-        if (resolve_depth_size > 0 &&
-            ((vkuFormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
-             (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(ds_attachment_format)))) {
+        if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_TRUE &&
+            !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
+              resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE)) {
             skip |= LogError(
-                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
-                "has a depth component (size %" PRIu32 ") for pAttachments[%" PRIu32
-                "].format is %s.\nThe depth component "
-                "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_depth_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
-                vkuFormatDepthSize(ds_attachment_format));
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186", device, subpass_loc,
+                "includes a VkSubpassDescriptionDepthStencilResolve "
+                "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical, or "
+                "one of them must be VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32 "].format is %s",
+                string_VkResolveModeFlagBits(resolve->depthResolveMode), string_VkResolveModeFlagBits(resolve->stencilResolveMode),
+                resolve_attachment, string_VkFormat(resolve_attachment_format));
         }
+    }
 
-        if (resolve_stencil_size > 0 &&
-            ((vkuFormatStencilSize(ds_attachment_format) != resolve_stencil_size) ||
-             (vkuFormatStencilNumericalType(ds_attachment_format) != vkuFormatStencilNumericalType(resolve_attachment_format)))) {
-            skip |= LogError(
-                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182", device, ds_resolve_loc,
-                "has a stencil component (size %" PRIu32 ") for pAttachments[%" PRIu32
-                "].format is %s.\nThe stencil component "
-                "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_stencil_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
-                vkuFormatStencilSize(ds_attachment_format));
-        }
+    // Same VU, but better error message if one of the resolves are ignored
+    if (resolve_has_depth && !resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE) {
+        skip |=
+            LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device, ds_resolve_loc,
+                     "is not NULL, but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
+                     "ignored due to format not having stencil component).\npAttachments[%" PRIu32 "].format is %s",
+                     resolve_attachment, string_VkFormat(resolve_attachment_format));
+    } else if (!resolve_has_depth && resolve_has_stencil && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+        skip |=
+            LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device, ds_resolve_loc,
+                     "is not NULL, but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
+                     "ignored due to format not having depth component).\npAttachments[%" PRIu32 "].format is %s",
+                     resolve_attachment, string_VkFormat(resolve_attachment_format));
+    } else if (resolve_has_depth && resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
+               resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+        skip |=
+            LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device, ds_resolve_loc,
+                     "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32
+                     "].format is %s",
+                     resolve_attachment, string_VkFormat(resolve_attachment_format));
+    }
 
-        if (create_info.pAttachments[ds_attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-            skip |=
-                LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179", device,
+    const uint32_t resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
+    const uint32_t resolve_stencil_size = vkuFormatStencilSize(resolve_attachment_format);
+
+    if (resolve_depth_size > 0 &&
+        ((vkuFormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
+         (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(ds_attachment_format)))) {
+        skip |= LogError(
+            "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
+            "has a depth component (size %" PRIu32 ") for pAttachments[%" PRIu32
+            "].format is %s.\nThe depth component "
+            "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
+            resolve_depth_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
+            vkuFormatDepthSize(ds_attachment_format));
+    }
+
+    if (resolve_stencil_size > 0 &&
+        ((vkuFormatStencilSize(ds_attachment_format) != resolve_stencil_size) ||
+         (vkuFormatStencilNumericalType(ds_attachment_format) != vkuFormatStencilNumericalType(resolve_attachment_format)))) {
+        skip |= LogError(
+            "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182", device, ds_resolve_loc,
+            "has a stencil component (size %" PRIu32 ") for pAttachments[%" PRIu32
+            "].format is %s.\nThe stencil component "
+            "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
+            resolve_stencil_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
+            vkuFormatStencilSize(ds_attachment_format));
+    }
+
+    if (create_info.pAttachments[ds_attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+        skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179", device,
                          ds_resolve_loc, "is not NULL, however pDepthStencilAttachment has sample count of VK_SAMPLE_COUNT_1_BIT.");
-        }
+    }
 
-        if (create_info.pAttachments[resolve_attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180", device,
-                             ds_resolve_loc, "has sample count of VK_SAMPLE_COUNT_1_BIT.");
-        }
+    if (create_info.pAttachments[resolve_attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
+        skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180", device,
+                         ds_resolve_loc, "has sample count of VK_SAMPLE_COUNT_1_BIT.");
+    }
 
-        const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(resolve_attachment_format);
-        if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-            skip |= LogError(
-                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device, ds_resolve_loc,
-                "has a format %s which doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
-                string_VkFormat(resolve_attachment_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
-        }
+    const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(resolve_attachment_format);
+    if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+        skip |= LogError(
+            "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device, ds_resolve_loc,
+            "has a format %s which doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
+            string_VkFormat(resolve_attachment_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
+    }
 
-        if ((subpass.flags & VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT) != 0) {
-            skip |= LogError("VUID-VkSubpassDescription2-flags-04908", device, subpass_loc,
-                             "enables shader resolve, which requires the depth/stencil resolve attachment"
-                             " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
-                             resolve_attachment);
-        }
+    if ((subpass.flags & VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT) != 0) {
+        skip |= LogError("VUID-VkSubpassDescription2-flags-04908", device, subpass_loc,
+                         "enables shader resolve, which requires the depth/stencil resolve attachment"
+                         " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
+                         resolve_attachment);
     }
 
     return skip;
@@ -2720,9 +2669,6 @@ bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRende
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
-    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    skip |= ValidateDepthStencilResolve(*pCreateInfo, create_info_loc);
-    skip |= ValidateFragmentShadingRateAttachments(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateRenderPass(*pCreateInfo, error_obj.location);
     return skip;
 }
@@ -2732,7 +2678,25 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
     bool skip = false;
 
     if (!enabled_features.attachmentFragmentShadingRate) {
-        return false;
+        for (uint32_t i = 0; i < create_info.subpassCount; i++) {
+            const auto* fragment_shading_rate_attachment =
+                vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(create_info.pSubpasses[i].pNext);
+            if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
+                continue;
+            }
+            if (fragment_shading_rate_attachment->pFragmentShadingRateAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8083
+                skip |=
+                    LogError("UNASSIGNED-VkSubpassDescription2-attachmentFragmentShadingRate", device,
+                             create_info_loc.dot(Field::pSubpasses, i)
+                                 .pNext(vvl::Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment)
+                                 .dot(Field::attachment),
+                             "(%" PRIu32 ") is not allowed because the attachmentFragmentShadingRate feature was not enabled.",
+                             fragment_shading_rate_attachment->pFragmentShadingRateAttachment->attachment);
+            }
+        }
+
+        return skip;
     }
 
     for (uint32_t attachment_description = 0; attachment_description < create_info.attachmentCount; ++attachment_description) {
@@ -2760,95 +2724,93 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 }
             }
 
-            if (attachment_reference.attachment != VK_ATTACHMENT_UNUSED) {
-                if ((create_info.flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
-                    skip |=
-                        LogError("VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
+            if (attachment_reference.attachment == VK_ATTACHMENT_UNUSED) {
+                continue;
+            }
+            if ((create_info.flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
+                skip |= LogError("VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
                                  "is not VK_ATTACHMENT_UNUSED, but render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM");
-                }
+            }
 
-                const VkFormatFeatureFlags2 potential_format_features =
-                    GetPotentialFormatFeatures(create_info.pAttachments[attachment_reference.attachment].format);
+            const VkFormatFeatureFlags2 potential_format_features =
+                GetPotentialFormatFeatures(create_info.pAttachments[attachment_reference.attachment].format);
 
-                if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
-                                     create_info_loc.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
-                                     "is %s and used in %s as a fragment shading rate attachment, but the format doesn't support "
-                                     "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR\n(supported features: %s)",
-                                     string_VkFormat(create_info.pAttachments[attachment_reference.attachment].format),
-                                     subpass_loc.Fields().c_str(), string_VkFormatFeatureFlags2(potential_format_features).c_str());
-                }
+            if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
+                                 create_info_loc.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
+                                 "is %s and used in %s as a fragment shading rate attachment, but the format doesn't support "
+                                 "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR\n(supported features: %s)",
+                                 string_VkFormat(create_info.pAttachments[attachment_reference.attachment].format),
+                                 subpass_loc.Fields().c_str(), string_VkFormatFeatureFlags2(potential_format_features).c_str());
+            }
 
-                if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
-                    attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
-                                     fragment_loc.dot(Field::layout), "has a layout of %s.",
-                                     string_VkImageLayout(attachment_reference.layout));
-                }
+            if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
+                attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
+                                 fragment_loc.dot(Field::layout), "has a layout of %s.",
+                                 string_VkImageLayout(attachment_reference.layout));
+            }
 
-                const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
-                const Location texel_loc =
-                    subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
-                if (!IsPowerOfTwo(texel_size.width)) {
-                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
-                                     texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
-                }
-                if (texel_size.width <
-                    phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
-                    skip |=
-                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
+            const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
+            const Location texel_loc =
+                subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
+            if (!IsPowerOfTwo(texel_size.width)) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
+                                 texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
+            }
+            if (texel_size.width < phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
                                  texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is lower than the advertised minimum width %" PRIu32 ".", texel_size.width,
+                                 "(%" PRIu32 ") is lower than minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                 texel_size.width,
                                  phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
-                }
-                if (texel_size.width >
-                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
-                    skip |=
-                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
+            }
+            if (texel_size.width > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
                                  texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is higher than the advertised maximum width %" PRIu32 ".", texel_size.width,
+                                 "(%" PRIu32 ") is higher than maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                                 texel_size.width,
                                  phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
-                }
-                if (!IsPowerOfTwo(texel_size.height)) {
-                    skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
-                                     texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
-                }
-                if (texel_size.height <
-                    phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
-                    skip |=
-                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
+            }
+            if (!IsPowerOfTwo(texel_size.height)) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
+                                 texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
+            }
+            if (texel_size.height <
+                phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
                                  texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is lower than the advertised minimum height %" PRIu32 ".", texel_size.height,
+                                 "(%" PRIu32 ") is lower than minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                                 texel_size.height,
                                  phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
-                }
-                if (texel_size.height >
-                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
-                    skip |=
-                        LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
+            }
+            if (texel_size.height >
+                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
+                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
                                  texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is higher than the advertised maximum height %" PRIu32 ".", texel_size.height,
+                                 "(%" PRIu32 ") is higher than maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                                 texel_size.height,
                                  phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
-                }
-                uint32_t aspect_ratio = texel_size.width / texel_size.height;
-                uint32_t inverse_aspect_ratio = texel_size.height / texel_size.width;
-                if (aspect_ratio >
-                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                    skip |= LogError(
-                        "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
-                        "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
-                        ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
-                        texel_size.width, texel_size.height, aspect_ratio,
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-                }
-                if (inverse_aspect_ratio >
-                    phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                    skip |= LogError(
-                        "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
-                        "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
-                        ", which is higher than the advertised maximum aspect ratio %" PRIu32 ".",
-                        texel_size.width, texel_size.height, inverse_aspect_ratio,
-                        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-                }
+            }
+            const uint32_t aspect_ratio = texel_size.width / texel_size.height;
+            if (aspect_ratio >
+                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                skip |=
+                    LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
+                             "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
+                             ", which is higher than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             texel_size.width, texel_size.height, aspect_ratio,
+                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
+            }
+            const uint32_t inverse_aspect_ratio = texel_size.height / texel_size.width;
+            if (inverse_aspect_ratio >
+                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+                skip |=
+                    LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
+                             "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
+                             ", which is higher than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             texel_size.width, texel_size.height, inverse_aspect_ratio,
+                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
             }
         }
 
@@ -2927,6 +2889,65 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                             attachment_description, fsr_attachment_subpasses_string.c_str());
                     }
                 }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateFragmentDensityMapAttachments(const VkRenderPassCreateInfo2& create_info,
+                                                       const Location& create_info_loc) const {
+    bool skip = false;
+
+    const auto* fragment_density_map_info =
+        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
+    if (!fragment_density_map_info) {
+        return skip;
+    }
+
+    const bool use_rp2 = create_info_loc.function != Func::vkCreateRenderPass;
+    if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
+        const Location fragment_loc =
+            create_info_loc.pNext(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT, Field::fragmentDensityMapAttachment);
+        const Location attchment_loc = fragment_loc.dot(Field::attachment);
+
+        if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= create_info.attachmentCount) {
+            const char* vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-06472"
+                                       : "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471";
+            skip |= LogError(vuid, device, attchment_loc,
+                             "(%" PRIu32 ") must be less than attachmentCount %" PRIu32 " of for this render pass.",
+                             fragment_density_map_info->fragmentDensityMapAttachment.attachment, create_info.attachmentCount);
+        } else {
+            if (!(fragment_density_map_info->fragmentDensityMapAttachment.layout ==
+                      VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                  fragment_density_map_info->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
+                skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", device,
+                                 attchment_loc,
+                                 "(%" PRIu32
+                                 ") layout must be equal to "
+                                 "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT or VK_IMAGE_LAYOUT_GENERAL.",
+                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment);
+            }
+            if (!(create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
+                      VK_ATTACHMENT_LOAD_OP_LOAD ||
+                  create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
+                      VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
+                skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", device,
+                                 attchment_loc,
+                                 "(%" PRIu32
+                                 ") must reference an attachment with a loadOp "
+                                 "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
+                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment);
+            }
+            if (create_info.pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].storeOp !=
+                VK_ATTACHMENT_STORE_OP_DONT_CARE) {
+                skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", device,
+                                 attchment_loc,
+                                 "(%" PRIu32
+                                 ") must reference an attachment with a storeOp "
+                                 "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
+                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment);
             }
         }
     }
@@ -5572,9 +5593,8 @@ bool CoreChecks::ValidateFrameBufferSubpasses(const VkFramebufferCreateInfo &cre
                                               const VkRenderPassCreateInfo2 &rpci) const {
     bool skip = false;
     for (uint32_t subpass = 0; subpass < rpci.subpassCount; subpass++) {
-        const VkSubpassDescription2 &subpass_description = rpci.pSubpasses[subpass];
-        const auto *ms_rendered_to_single_sampled =
-            vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_description.pNext);
+        const VkSubpassDescription2& subpass_description = rpci.pSubpasses[subpass];
+        ;
         // Verify input attachments:
         skip |= MatchUsage(subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, create_info,
                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879", create_info_loc);
@@ -5593,15 +5613,15 @@ bool CoreChecks::ValidateFrameBufferSubpasses(const VkFramebufferCreateInfo &cre
         }
 
         // Verify fragment shading rate attachments
-        if (enabled_features.attachmentFragmentShadingRate) {
-            const auto *fragment_shading_rate_attachment_info =
-                vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass_description.pNext);
-            if (fragment_shading_rate_attachment_info) {
-                skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment, create_info,
-                                   VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
-                                   "VUID-VkFramebufferCreateInfo-flags-04548", create_info_loc);
-            }
+        if (const auto* fragment_shading_rate_attachment_info =
+                vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass_description.pNext)) {
+            skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment, create_info,
+                               VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "VUID-VkFramebufferCreateInfo-flags-04548",
+                               create_info_loc);
         }
+
+        const auto* ms_rendered_to_single_sampled =
+            vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_description.pNext);
         if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
             skip |= MsRenderedToSingleSampledValidateFBAttachments(
                 subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, create_info, rpci, subpass,
