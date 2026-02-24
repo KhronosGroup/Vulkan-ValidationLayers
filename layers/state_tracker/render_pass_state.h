@@ -35,13 +35,6 @@ static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkP
     return depth_stencil_attachment;
 }
 
-// Store the DAG.
-struct DAGNode {
-    uint32_t pass;
-    std::vector<uint32_t> prev;
-    std::vector<uint32_t> next;
-};
-
 struct SubpassDependencyGraphNode {
     uint32_t pass;
 
@@ -91,16 +84,9 @@ class RenderPass : public StateObject {
     const bool has_multiview_enabled;
 
     using SubpassVec = std::vector<uint32_t>;
-    using SelfDepVec = std::vector<SubpassVec>;
     const std::vector<SubpassVec> self_dependencies;
-    using DAGNodeVec = std::vector<DAGNode>;
-    const DAGNodeVec subpass_to_node;
-    using FirstReadMap = vvl::unordered_map<uint32_t, bool>;
-    const FirstReadMap attachment_first_read;
     const SubpassVec attachment_first_subpass;
     const SubpassVec attachment_last_subpass;
-    using FirstIsTransitionVec = std::vector<bool>;
-    const FirstIsTransitionVec attachment_first_is_transition;
     using SubpassGraphVec = std::vector<SubpassDependencyGraphNode>;
     const SubpassGraphVec subpass_dependencies;
     using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
