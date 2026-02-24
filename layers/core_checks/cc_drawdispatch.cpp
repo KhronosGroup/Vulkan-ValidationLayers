@@ -1947,9 +1947,10 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     if (pipeline) {
-        for (const auto &stage : pipeline->stage_states) {
-            // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
-            if (!stage.spirv_state) continue;
+        for (const ShaderStageState& stage : pipeline->stage_states) {
+            if (!stage.HasSpirv()) {
+                continue;
+            }
 
             if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
                 skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), vuid.loc(),
@@ -1958,9 +1959,11 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
             }
         }
     } else {
-        for (const auto& shader_object : last_bound_state.shader_object_states) {
-            if (shader_object && shader_object->stage.spirv_state &&
-                shader_object->stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
+        for (const vvl::ShaderObject* shader_object : last_bound_state.shader_object_states) {
+            if (!shader_object || !shader_object->stage.HasSpirv()) {
+                continue;
+            }
+            if (shader_object->stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
                 const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
                 skip |= LogError(vuid.ray_query_04617, objlist, vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
@@ -2073,11 +2076,11 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
                 if (stage_state.entrypoint && stage_state.entrypoint->written_built_in_primitive_shading_rate_khr) {
                     skip |=
                         LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
-                                 "the %s shader in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
+                                 "shader %s in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
                                  "but multiple viewports (%" PRIu32
                                  ") are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                 string_VkShaderStageFlagBits(stage), cb_state.dynamic_state_value.viewport_count);
+                                 stage_state.entrypoint->Describe().c_str(), cb_state.dynamic_state_value.viewport_count);
                 }
             }
         }

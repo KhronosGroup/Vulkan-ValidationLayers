@@ -382,6 +382,56 @@ void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decora
     annotations_.emplace_back(std::move(new_inst));
 }
 
+const Variable& Module::GetBuiltInVariable(uint32_t built_in) {
+    uint32_t variable_id = 0;
+    for (const auto& annotation : annotations_) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(2) == spv::DecorationBuiltIn &&
+            annotation->Word(3) == built_in) {
+            variable_id = annotation->Word(1);
+            break;
+        }
+    }
+
+    if (variable_id == 0) {
+        variable_id = TakeNextId();
+        auto new_inst = std::make_unique<Instruction>(4, spv::OpDecorate);
+        new_inst->Fill({variable_id, spv::DecorationBuiltIn, built_in});
+        annotations_.emplace_back(std::move(new_inst));
+    }
+
+    // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by both Input and
+    // Output storage classes
+    const Variable* built_in_variable = type_manager_.FindVariableById(variable_id);
+    if (!built_in_variable) {
+        const Type& pointer_type = type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
+        auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
+        new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
+        built_in_variable = &type_manager_.AddVariable(std::move(new_inst), pointer_type);
+        AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
+    } else {
+        // Slang with the --preserve-params option will leave built-in variables that aren't in any interface.
+        const uint32_t built_in_variable_id = built_in_variable->Id();
+        const Instruction* entry_point = GetTargetEntryPoint();
+
+        bool found_variable = false;
+        uint32_t word = entry_point->GetEntryPointInterfaceStart();
+        const uint32_t total_words = entry_point->Length();
+        for (; word < total_words; word++) {
+            const uint32_t interface_id = entry_point->Word(word);
+            if (interface_id == built_in_variable_id) {
+                found_variable = true;
+                break;
+            }
+        }
+
+        if (!found_variable) {
+            AddInterfaceVariables(variable_id, spv::StorageClassInput);
+        }
+    }
+
+    return *built_in_variable;
+}
+
 // Found in extreme cases production shaders have maybe 5 entrypoints
 // From 400k shaders dumped, the average was 1.01 entry points per shader
 Instruction* Module::GetTargetEntryPoint() const {

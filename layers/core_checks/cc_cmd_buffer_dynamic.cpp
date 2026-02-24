@@ -883,25 +883,20 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
         }
     }
 
-    const spirv::Module* vert_spirv_state = nullptr;
-    const spirv::EntryPoint* vert_entrypoint = nullptr;
+    const ShaderStageState* vert_state = nullptr;
     if (last_bound_state.pipeline_state) {
-        for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
-            if (stage_state.GetStage() == VK_SHADER_STAGE_VERTEX_BIT) {
-                vert_spirv_state = stage_state.spirv_state.get();
-                vert_entrypoint = stage_state.entrypoint.get();
-            }
-        }
-    } else if (const auto& vertex_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::VERTEX)) {
-        vert_spirv_state = vertex_state->stage.spirv_state.get();
-        vert_entrypoint = vertex_state->stage.entrypoint.get();
+        vert_state = last_bound_state.pipeline_state->GetShaderStageState(VK_SHADER_STAGE_VERTEX_BIT);
+    } else if (const auto& shader_object = last_bound_state.GetShaderObjectState(ShaderObjectStage::VERTEX)) {
+        vert_state = &shader_object->stage;
     }
-    if (!vert_spirv_state || !vert_entrypoint) {
+    if (!vert_state || !vert_state->HasSpirv()) {
         return skip;  // Mesh shader
     }
+    const spirv::Module& vert_spirv_state = *vert_state->spirv_state;
+    const spirv::EntryPoint& vert_entrypoint = *vert_state->entrypoint;
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        for (const auto* variable_ptr : vert_entrypoint->user_defined_interface_variables) {
+        for (const auto* variable_ptr : vert_entrypoint.user_defined_interface_variables) {
             // Validate only input locations
             if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
                 continue;
@@ -914,41 +909,41 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 
                 const uint32_t var_base_type_id = variable_ptr->base_type.ResultId();
                 const uint32_t attribute_type = spirv::GetFormatType(attrib->desc.format);
-                const uint32_t var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
-                const spirv::Instruction* var_base_type = vert_spirv_state->FindDef(var_base_type_id);
+                const uint32_t var_numeric_type = vert_spirv_state.GetNumericType(var_base_type_id);
+                const spirv::Instruction* var_base_type = vert_spirv_state.FindDef(var_base_type_id);
 
                 const bool attribute64 = vkuFormatIs64bit(attrib->desc.format);
-                const bool shader64 = vert_spirv_state->GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
+                const bool shader64 = vert_spirv_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
 
                 // first type check before doing 64-bit matching
                 if ((attribute_type & var_numeric_type) == 0) {
                     if (!enabled_features.legacyVertexAttributes || shader64) {
-                        skip |= LogError(vuid.vertex_input_08734, vert_spirv_state->handle(), vuid.loc(),
+                        skip |= LogError(vuid.vertex_input_08734, vert_spirv_state.handle(), vuid.loc(),
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
                                          ", location %" PRIu32 ") with format %s but the vertex shader %s is numeric type %s",
                                          attrib->index, attrib->desc.binding, attrib->desc.location,
                                          string_VkFormat(attrib->desc.format), variable_ptr->Describe().c_str(),
-                                         vert_spirv_state->DescribeType(var_base_type_id).c_str());
+                                         vert_spirv_state.DescribeType(var_base_type_id).c_str());
                     }
                 } else if (attribute64 && !shader64) {
                     skip |=
-                        LogError(vuid.vertex_input_format_08936, vert_spirv_state->handle(), vuid.loc(),
+                        LogError(vuid.vertex_input_format_08936, vert_spirv_state.handle(), vuid.loc(),
                                  "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
                                  ", location %" PRIu32 ") with a 64-bit format (%s) but the vertex shader %s is a 32-bit type (%s)",
                                  attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
-                                 variable_ptr->Describe().c_str(), vert_spirv_state->DescribeType(var_base_type_id).c_str());
+                                 variable_ptr->Describe().c_str(), vert_spirv_state.DescribeType(var_base_type_id).c_str());
                 } else if (!attribute64 && shader64) {
                     skip |=
-                        LogError(vuid.vertex_input_format_08937, vert_spirv_state->handle(), vuid.loc(),
+                        LogError(vuid.vertex_input_format_08937, vert_spirv_state.handle(), vuid.loc(),
                                  "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
                                  ", location %" PRIu32 ") with a 32-bit format (%s) but the vertex shader %s is a 64-bit type (%s)",
                                  attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
-                                 variable_ptr->Describe().c_str(), vert_spirv_state->DescribeType(var_base_type_id).c_str());
+                                 variable_ptr->Describe().c_str(), vert_spirv_state.DescribeType(var_base_type_id).c_str());
                 } else if (attribute64 && shader64) {
                     const uint32_t attribute_components = vkuFormatComponentCount(attrib->desc.format);
-                    const uint32_t input_components = vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type);
+                    const uint32_t input_components = vert_spirv_state.GetNumComponentsInBaseType(&variable_ptr->base_type);
                     if (attribute_components < input_components) {
-                        skip |= LogError(vuid.vertex_input_format_09203, vert_spirv_state->handle(), vuid.loc(),
+                        skip |= LogError(vuid.vertex_input_format_09203, vert_spirv_state.handle(), vuid.loc(),
                                          "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
                                          ", location %" PRIu32 ") with a %" PRIu32
                                          "-wide 64-bit format (%s) but the vertex shader %s is %" PRIu32
@@ -960,7 +955,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 }
             }
             if (!location_provided && !enabled_features.vertexAttributeRobustness && !enabled_features.maintenance9) {
-                skip |= LogError(vuid.vertex_input_format_07939, vert_spirv_state->handle(), vuid.loc(),
+                skip |= LogError(vuid.vertex_input_format_07939, vert_spirv_state.handle(), vuid.loc(),
                                  "Vertex shader %s is using Location %" PRIu32
                                  ", but it was not provided with vkCmdSetVertexInputEXT(). (This can be valid if "
                                  "either the vertexAttributeRobustness or maintenance9 feature is enabled)",
@@ -978,11 +973,11 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 
         if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
             topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-            if (!vert_entrypoint->written_built_in_point_size && !enabled_features.maintenance5) {
+            if (!vert_entrypoint.written_built_in_point_size && !enabled_features.maintenance5) {
                 skip |= LogError(vuid.primitive_topology_point_size_10748, cb_state.Handle(), vuid.loc(),
                                  "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
                                  "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
-                                 FormatHandle(vert_spirv_state->handle()).c_str());
+                                 FormatHandle(vert_spirv_state.handle()).c_str());
             }
         }
 
@@ -1006,19 +1001,16 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
-    const spirv::Module* frag_spirv_state = nullptr;
+    const ShaderStageState* frag_state = nullptr;
     if (last_bound_state.pipeline_state) {
-        for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
-            if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                frag_spirv_state = stage_state.spirv_state.get();
-            }
-        }
+        frag_state = last_bound_state.pipeline_state->GetShaderStageState(VK_SHADER_STAGE_FRAGMENT_BIT);
     } else if (const auto& fragment_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::FRAGMENT)) {
-        frag_spirv_state = fragment_state->stage.spirv_state.get();
+        frag_state = &fragment_state->stage;
     }
-    if (!frag_spirv_state) {
+    if (!frag_state || !frag_state->HasSpirv()) {
         return skip;  // no fragment shader used
     }
+    const spirv::Module& frag_spirv_state = *frag_state->spirv_state;
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
@@ -1031,7 +1023,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                 DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, rasterization_samples, &multisample_prop);
                 const auto& gridSize = cb_state.dynamic_state_value.sample_locations_info.sampleLocationGridSize;
                 if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.width, gridSize.width)) {
-                    const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
+                    const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
                     skip |= LogError(vuid.sample_locations_enable_07485, objlist, vuid.loc(),
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
                                      ") with rasterization samples %s is not evenly divided by "
@@ -1041,7 +1033,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                                      string_VkSampleCountFlagBits(rasterization_samples), gridSize.width);
                 }
                 if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.height, gridSize.height)) {
-                    const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
+                    const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
                     skip |= LogError(vuid.sample_locations_enable_07486, objlist, vuid.loc(),
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
                                      ") with rasterization samples %s is not evenly divided by "
@@ -1051,8 +1043,8 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                                      string_VkSampleCountFlagBits(rasterization_samples), gridSize.height);
                 }
             }
-            if (frag_spirv_state && frag_spirv_state->static_data_.uses_interpolate_at_sample) {
-                const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
+            if (frag_spirv_state.static_data_.uses_interpolate_at_sample) {
+                const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
                 skip |= LogError(vuid.sample_locations_enable_07487, objlist, vuid.loc(),
                                  "sampleLocationsEnable set with vkCmdSetSampleLocationsEnableEXT() was VK_TRUE, but fragment "
                                  "shader uses InterpolateAtSample instruction.");
@@ -1066,7 +1058,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
         const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info = rp_state->GetMSRTSSInfo(cb_state.GetActiveSubpass());
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
             if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
-                LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
+                LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
                 skip |= LogError(vuid.rasterization_samples_09211, objlist, vuid.loc(),
                                  "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE "
                                  "and VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples are %s, but rasterization "

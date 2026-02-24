@@ -652,8 +652,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
             bool descriptor_written_to = false;
             const auto pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
-            for (const auto &stage : pipeline->stage_states) {
-                if (!stage.entrypoint) continue;
+            for (const ShaderStageState& stage : pipeline->stage_states) {
+                if (!stage.HasSpirv()) {
+                    continue;
+                }
                 for (const auto &interface_variable : stage.entrypoint->resource_interface_variables) {
                     if (interface_variable.decorations.set == set_index &&
                         interface_variable.decorations.binding == binding_index) {

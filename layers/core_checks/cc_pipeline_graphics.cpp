@@ -4292,9 +4292,10 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         }
     }
 
-    for (const auto &stage : pipeline.stage_states) {
-        // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
-        if (!stage.spirv_state) continue;
+    for (const ShaderStageState& stage : pipeline.stage_states) {
+        if (!stage.HasSpirv()) {
+            continue;
+        }
 
         if (stage.spirv_state->static_data_.has_built_in_layer) {
             // Special case for GLSL and Mesh Shading discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4194

@@ -114,6 +114,9 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
             break;
         case SpvType::kUntypedPointerKHR:
             break;
+        case SpvType::kTensorLayoutNV:
+        case SpvType::kTensorViewNV:
+            break;
         default:
             assert(false && "unsupported SpvType");
             break;
@@ -389,10 +392,12 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
         case spv::BuiltInInstanceIndex:
         case spv::BuiltInPrimitiveId:
         case spv::BuiltInInvocationId:
+        case spv::BuiltInLocalInvocationIndex:
         case spv::BuiltInSubgroupLocalInvocationId: {
             const Type& uint_32 = GetTypeInt(32, false);
             return GetTypePointer(spv::StorageClassInput, uint_32);
         }
+        case spv::BuiltInWorkgroupSize:
         case spv::BuiltInGlobalInvocationId:
         case spv::BuiltInLaunchIdKHR: {
             const Type& uint_32 = GetTypeInt(32, false);

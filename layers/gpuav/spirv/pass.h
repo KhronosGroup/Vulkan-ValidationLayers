@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,6 @@ class Pass {
     virtual void PrintDebugInfo() const = 0;
     // Wrapper that each pass can use to start
     bool Run();
-
-    // Finds (and creates if needed) decoration and returns the OpVariable it points to
-    const Variable& GetBuiltInVariable(uint32_t built_in);
 
     // Returns the ID for OpCompositeConstruct it creates
     uint32_t GetStageInfo(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it);
