@@ -36,16 +36,29 @@ static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkP
 }
 
 struct SubpassDependencyInfo {
+    // For dependencies between subpasses this is a dstSubpass.
+    // For external dependencies this can be either srcSubpass or dstSubpass
     uint32_t subpass;
 
-    std::map<const SubpassDependencyInfo *, std::vector<const VkSubpassDependency2 *>> prev;
-    std::map<const SubpassDependencyInfo *, std::vector<const VkSubpassDependency2 *>> next;
-    std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index
+    // Map's key is a srcSubpass in subpass dependency.
+    // this->subpass is a dstSubpass in subpass dependency.
+    // Map's value is a list of dependencies defined for a given (srcSubpass, dstSubpass) pair.
+    std::map<uint32_t, std::vector<const VkSubpassDependency2 *>> dependencies;
 
+    // Asynchronous subpasses with a lower subpass index
+    std::vector<uint32_t> async;
+
+    // Subpass dependencies with srcSubpass = VK_SUBPASS_EXTERNAL
     std::vector<const VkSubpassDependency2 *> barrier_from_external;
+
+    // Subpass dependencies with dstSubpass = VK_SUBPASS_EXTERNAL
     std::vector<const VkSubpassDependency2 *> barrier_to_external;
-    std::unique_ptr<VkSubpassDependency2> implicit_barrier_from_external;
-    std::unique_ptr<VkSubpassDependency2> implicit_barrier_to_external;
+
+    // Implicit external barriers are defined only if subpass dependencies do not specify them.
+    // Given how SubpassDependencyInfo objects are stored, it is safe to keep references to
+    // these barriers in the barrier_from_external and barrier_to_external vectors.
+    VkSubpassDependency2 implicit_barrier_from_external;
+    VkSubpassDependency2 implicit_barrier_to_external;
 };
 
 struct SubpassLayout {
@@ -78,7 +91,7 @@ class RenderPass : public StateObject {
     // For each subpass, indices into pDependencies for that subpass's self-dependencies
     const std::vector<std::vector<uint32_t>> self_dependencies;  // [subpassCount]
 
-    // For each subpass, all dependencies where it appears as srcSubpass or dstSubpass
+    // Dependency information for each subpass
     const std::vector<SubpassDependencyInfo> subpass_dependency_infos;  // [subpassCount]
 
     // For each attachment, the index of the first subpass that uses it.
