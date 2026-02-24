@@ -675,7 +675,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer& cb_state, uint32_t deviceMask, const Location& loc,
                                         const char* vuid) const;
 
-    bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
+    bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const VkSubpassDescription2& subpass,
+                                     const Location& subpass_loc) const;
 
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties3 GetPDFormatProperties(const VkFormat format) const;
@@ -2037,6 +2038,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         uint32_t subpass, VkSampleCountFlagBits sample_count,
                                                         const Location& create_info_loc) const;
     bool ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
+    bool ValidateFragmentDensityMapAttachments(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
     bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                              const ErrorObject& error_obj) const override;
