@@ -636,7 +636,9 @@ void Instance::FindLeakedObjects(VulkanObjectType object_type, std::vector<Vulka
 bool Instance::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
     std::stringstream ss;
     ss << FormatHandle(instance) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
-    const uint32_t limit = debug_report->duplicate_message_limit;
+
+    const bool has_limit = debug_report->duplicate_message_limit != 0;
+    const uint32_t limit = has_limit ? debug_report->duplicate_message_limit : vvl::kU32Max;
     if (leaked_list.size() > limit) {
         // Feels like spam after this, user should have zero anyway
         ss << "(Only printing the first " << limit
@@ -669,7 +671,9 @@ void Device::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanT
 bool Device::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, const Location& loc) const {
     std::stringstream ss;
     ss << FormatHandle(device) << " has " << leaked_list.size() << " leaked objects that have not been destroyed.\n";
-    const uint32_t limit = debug_report->duplicate_message_limit;
+
+    const bool has_limit = debug_report->duplicate_message_limit != 0;
+    const uint32_t limit = has_limit ? debug_report->duplicate_message_limit : vvl::kU32Max;
     if (leaked_list.size() > limit) {
         // Feels like spam after this, user should have zero anyway
         ss << "(Only printing the first " << limit
