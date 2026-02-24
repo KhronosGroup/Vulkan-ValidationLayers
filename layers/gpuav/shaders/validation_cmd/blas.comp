@@ -100,7 +100,6 @@ void main() {
             return;
         }
 
-
         const uint64_t aabb_i = gid;
         AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.address_byte_offset) + aabb_i * pc.stride);
         if (aabb.coords.minX > aabb.coords.maxX) {

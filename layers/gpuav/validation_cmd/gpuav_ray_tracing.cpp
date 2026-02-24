@@ -759,6 +759,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
     struct ErrorInfo {
         uint32_t info_i{};
         uint32_t geom_i{};
+        VkAccelerationStructureBuildGeometryInfoKHR info;
         VkGeometryTypeKHR geom_type;
         VkAccelerationStructureGeometryDataKHR geom;
         VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
@@ -787,6 +788,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 const VkAccelerationStructureBuildRangeInfoKHR& build_range_info = pp_build_ranges_infos[info_i][geom_i];
 
                 ErrorInfo& error_info = error_infos.emplace_back();
+                error_info.info = info;
                 error_info.info_i = info_i;
                 error_info.geom_i = geom_i;
                 error_info.geom_type = geom_data.geometryType;
@@ -1022,6 +1024,35 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         assert(error_info_i < error_infos.size());
         const ErrorInfo& error_info = error_infos[error_info_i];
 
+        std::string index_buffers_str;
+        std::string vertex_buffers_str;
+        std::string transform_buffers_str;
+        if (error_info.geom_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+            auto buffers_from_address_str = [](Validator& gpuav, VkDeviceAddress address) {
+                std::string buffers_str;
+                vvl::span<vvl::Buffer* const> buffers = gpuav.GetBuffersByAddress(address);
+                for (vvl::Buffer* const buffer : buffers) {
+                    if (!buffers_str.empty()) {
+                        buffers_str += '\n';
+                    }
+                    buffers_str += "        ";
+                    buffers_str += buffer->Describe(gpuav);
+                }
+                return buffers_str;
+            };
+            const char* pertains = "\n        Pertains to the following buffer(s):\n";
+            if (error_info.geom.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                index_buffers_str += pertains;
+                index_buffers_str += buffers_from_address_str(gpuav, error_info.geom.triangles.indexData.deviceAddress);
+            }
+            vertex_buffers_str += pertains;
+            vertex_buffers_str += buffers_from_address_str(gpuav, error_info.geom.triangles.vertexData.deviceAddress);
+            if (error_info.geom.triangles.transformData.deviceAddress != 0) {
+                transform_buffers_str += pertains;
+                transform_buffers_str += buffers_from_address_str(gpuav, error_info.geom.triangles.transformData.deviceAddress);
+            }
+        }
+
         // Log error
         // ---
         const uint32_t error_sub_code = GetSubError(error_record);
@@ -1040,23 +1071,23 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "\n"
                     "Given index type of %s, and that starting address, that's IndexBuffer[%" PRIu32
                     "] (VkDeviceAddress: 0x%" PRIx64
-                    ")\n"
+                    ")\n\n"
 
                     "Corresponding BLAS build command info:\n"
                     "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32 "]::VkAccelerationStructureGeometryKHR[%" PRIu32
                     "]::VkAccelerationStructureGeometryTrianglesDataKHR was:\n"
                     "    vertexFormat: %s\n"
                     "    vertexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    vertexStride: %" PRIu64
                     "\n"
                     "    maxVertex: %" PRIu32
                     "\n"
                     "    indexType: %s\n"
                     "    indexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    transformData: 0x%" PRIx64
-                    "\n\n"
+                    "%s\n\n"
 
                     "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32
                     "] was:\n"
@@ -1077,9 +1108,10 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                         gid * index_type_byte_size,
 
                     error_info.info_i, error_info.geom_i, string_VkFormat(error_info.geom.triangles.vertexFormat),
-                    error_info.geom.triangles.vertexData.deviceAddress, error_info.geom.triangles.vertexStride,
-                    error_info.geom.triangles.maxVertex, string_VkIndexType(error_info.geom.triangles.indexType),
-                    error_info.geom.triangles.indexData.deviceAddress, error_info.geom.triangles.transformData.deviceAddress,
+                    error_info.geom.triangles.vertexData.deviceAddress, vertex_buffers_str.c_str(),
+                    error_info.geom.triangles.vertexStride, error_info.geom.triangles.maxVertex,
+                    string_VkIndexType(error_info.geom.triangles.indexType), error_info.geom.triangles.indexData.deviceAddress,
+                    index_buffers_str.c_str(), error_info.geom.triangles.transformData.deviceAddress, transform_buffers_str.c_str(),
 
                     error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
                     error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
@@ -1166,16 +1198,16 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "]::VkAccelerationStructureGeometryTrianglesDataKHR was:\n"
                     "    vertexFormat: %s\n"
                     "    vertexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    vertexStride: %" PRIu64
                     "\n"
                     "    maxVertex: %" PRIu32
                     "\n"
                     "    indexType: %s\n"
                     "    indexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    transformData: 0x%" PRIx64
-                    "\n\n"
+                    "%s\n\n"
 
                     "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32
                     "] was:\n"
@@ -1188,9 +1220,10 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "    transformOffset: %" PRIu32 "\n",
 
                     error_info.info_i, error_info.geom_i, string_VkFormat(error_info.geom.triangles.vertexFormat),
-                    error_info.geom.triangles.vertexData.deviceAddress, error_info.geom.triangles.vertexStride,
-                    error_info.geom.triangles.maxVertex, string_VkIndexType(error_info.geom.triangles.indexType),
-                    error_info.geom.triangles.indexData.deviceAddress, error_info.geom.triangles.transformData.deviceAddress,
+                    error_info.geom.triangles.vertexData.deviceAddress, vertex_buffers_str.c_str(),
+                    error_info.geom.triangles.vertexStride, error_info.geom.triangles.maxVertex,
+                    string_VkIndexType(error_info.geom.triangles.indexType), error_info.geom.triangles.indexData.deviceAddress,
+                    index_buffers_str.c_str(), error_info.geom.triangles.transformData.deviceAddress, transform_buffers_str.c_str(),
 
                     error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
                     error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
@@ -1255,24 +1288,39 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "Index type is %s. At offset %" PRIu32 " original index was %" PRIu32
                     ", but updated index at same offset is %" PRIu32 " (found at VkDeviceAddress: 0x%" PRIx64
                     ").\n"
-                    "Updated index  buffer starts at VkDeviceAddress indexData (0x%" PRIx64 ") + primitiveOffset (%" PRIu32
+                    "Updated index buffer starts at VkDeviceAddress indexData (0x%" PRIx64 ") + primitiveOffset (%" PRIu32
                     ") = 0x%" PRIx64
                     ".\n\n"
+
                     "Corresponding BLAS build command info:\n"
+                    "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32
+                    "] was:\n"
+                    "    type: %s\n"
+                    "    flags: %s\n"
+                    "    mode: %s\n"
+                    "    srcAccelerationStructure: %s\n"
+                    "    dstAccelerationStructure: %s\n"
+                    "    geometryCount: %" PRIu32
+                    "\n"
+                    "    pGeometries: %p\n"
+                    "    ppGeometries: %p\n"
+                    "    scratchData: 0x%" PRIx64
+                    "\n\n"
+
                     "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32 "]::VkAccelerationStructureGeometryKHR[%" PRIu32
                     "]::VkAccelerationStructureGeometryTrianglesDataKHR was:\n"
                     "    vertexFormat: %s\n"
                     "    vertexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    vertexStride: %" PRIu64
                     "\n"
                     "    maxVertex: %" PRIu32
                     "\n"
                     "    indexType: %s\n"
                     "    indexData: 0x%" PRIx64
-                    "\n"
+                    "%s\n"
                     "    transformData: 0x%" PRIx64
-                    "\n\n"
+                    "%s\n\n"
 
                     "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32
                     "] was:\n"
@@ -1288,10 +1336,18 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     index_address, error_info.geom.triangles.indexData.deviceAddress, error_info.build_range_info.primitiveOffset,
                     error_info.geom.triangles.indexData.deviceAddress + error_info.build_range_info.primitiveOffset,
 
+                    error_info.info_i, string_VkAccelerationStructureTypeKHR(error_info.info.type),
+                    string_VkBuildAccelerationStructureFlagsKHR(error_info.info.flags).c_str(),
+                    string_VkBuildAccelerationStructureModeKHR(error_info.info.mode),
+                    gpuav.FormatHandle(error_info.info.srcAccelerationStructure).c_str(),
+                    gpuav.FormatHandle(error_info.info.dstAccelerationStructure).c_str(), error_info.info.geometryCount,
+                    error_info.info.pGeometries, error_info.info.ppGeometries, error_info.info.scratchData.deviceAddress,
+
                     error_info.info_i, error_info.geom_i, string_VkFormat(error_info.geom.triangles.vertexFormat),
-                    error_info.geom.triangles.vertexData.deviceAddress, error_info.geom.triangles.vertexStride,
-                    error_info.geom.triangles.maxVertex, string_VkIndexType(error_info.geom.triangles.indexType),
-                    error_info.geom.triangles.indexData.deviceAddress, error_info.geom.triangles.transformData.deviceAddress,
+                    error_info.geom.triangles.vertexData.deviceAddress, vertex_buffers_str.c_str(),
+                    error_info.geom.triangles.vertexStride, error_info.geom.triangles.maxVertex,
+                    string_VkIndexType(error_info.geom.triangles.indexType), error_info.geom.triangles.indexData.deviceAddress,
+                    index_buffers_str.c_str(), error_info.geom.triangles.transformData.deviceAddress, transform_buffers_str.c_str(),
 
                     error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
                     error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
