@@ -35,11 +35,11 @@ static inline uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkP
     return depth_stencil_attachment;
 }
 
-struct SubpassDependencyGraphNode {
-    uint32_t pass;
+struct SubpassDependencyInfo {
+    uint32_t subpass;
 
-    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> prev;
-    std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> next;
+    std::map<const SubpassDependencyInfo *, std::vector<const VkSubpassDependency2 *>> prev;
+    std::map<const SubpassDependencyInfo *, std::vector<const VkSubpassDependency2 *>> next;
     std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index
 
     std::vector<const VkSubpassDependency2 *> barrier_from_external;
@@ -60,14 +60,6 @@ namespace vvl {
 // inside.
 class RenderPass : public StateObject {
   public:
-    struct AttachmentTransition {
-        uint32_t prev_pass;
-        uint32_t attachment;
-        VkImageLayout old_layout;
-        VkImageLayout new_layout;
-        AttachmentTransition(uint32_t prev_pass_, uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
-            : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
-    };
     const vku::safe_VkRenderPassCreateInfo2 create_info;
 
     const bool use_dynamic_rendering;
@@ -83,14 +75,35 @@ class RenderPass : public StateObject {
 
     const bool has_multiview_enabled;
 
-    using SubpassVec = std::vector<uint32_t>;
-    const std::vector<SubpassVec> self_dependencies;
-    const SubpassVec attachment_first_subpass;
-    const SubpassVec attachment_last_subpass;
-    using SubpassGraphVec = std::vector<SubpassDependencyGraphNode>;
-    const SubpassGraphVec subpass_dependencies;
-    using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
-    const TransitionVec subpass_transitions;
+    // For each subpass, indices into pDependencies for that subpass's self-dependencies
+    const std::vector<std::vector<uint32_t>> self_dependencies;  // [subpassCount]
+
+    // For each subpass, all dependencies where it appears as srcSubpass or dstSubpass
+    const std::vector<SubpassDependencyInfo> subpass_dependency_infos;  // [subpassCount]
+
+    // For each attachment, the index of the first subpass that uses it.
+    // VK_SUBPASS_EXTERNAL if the attachment is unused.
+    const std::vector<uint32_t> attachment_first_subpass;  // [attachmentCount]
+
+    // For each attachment, the index of the last subpass that uses it.
+    // VK_SUBPASS_EXTERNAL if the attachment is unused.
+    const std::vector<uint32_t> attachment_last_subpass;  // [attachmentCount]
+
+    struct AttachmentTransition {
+        // Subpass index or VK_SUBPASS_EXTERNAL for transitions from initialLayout.
+        // For transitions into finalLayout this is the last subpass that used the attachment.
+        uint32_t prev_subpass;
+
+        uint32_t attachment;
+        VkImageLayout old_layout;
+        VkImageLayout new_layout;
+    };
+    // The list of transitions for each subpass.
+    // The last element (subpass_transitions[subpassCount]) are the transitions into finalLayout.
+    // NOTE: this first element should not be interpreted as all transitions from initialLayout.
+    // The initiaLayout transitions are defined by the first subpass that used the attachment,
+    // so they may be registered for any subpass [0..subpassCount-1]
+    const std::vector<std::vector<AttachmentTransition>> subpass_transitions;  // [subpassCount + 1]
 
     // vkCreateRenderPass
     RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo);
