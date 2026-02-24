@@ -4287,7 +4287,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
                                                  : "VUID-VkGraphicsPipelineCreateInfo-renderPass-12325";
             skip |= LogError(vuid, device, multiview_loc,
                              "is 0x%" PRIx32 ", its highest bit (%" PRIu32
-                             ") is not less than VkPhysicalDeviceMultiviewProperties::maxMeshMultiviewViewCount (%" PRIu32 ").",
+                             ") is not less than VkPhysicalDeviceMeshShaderPropertiesEXT::maxMeshMultiviewViewCount (%" PRIu32 ").",
                              view_mask, highest_view_bit, phys_dev_ext_props.mesh_shader_props_ext.maxMeshMultiviewViewCount);
         }
     }
