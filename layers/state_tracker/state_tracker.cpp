@@ -274,6 +274,13 @@ VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice phy
         if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             VkImageDrmFormatModifierPropertiesEXT drm_format_props = vku::InitStructHelper();
 
+            // If the driver returns zero, apparently that means nothing is valid
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11739
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4710
+            if (fmt_drm_props.drmFormatModifierCount == 0) {
+                return format_features;
+            }
+
             // Find the image modifier
             DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_props);
 
