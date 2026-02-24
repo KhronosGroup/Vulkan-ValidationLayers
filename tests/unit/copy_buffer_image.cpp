@@ -3415,11 +3415,11 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     RETURN_IF_SKIP(Init());
 
     const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    const bool is_compute_queue =
-        m_device->Physical().queue_properties_[*non_graphics_queue_family_index].queueFlags & VK_QUEUE_COMPUTE_BIT;
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
     }
+    const bool is_compute_queue =
+        m_device->Physical().queue_properties_[*non_graphics_queue_family_index].queueFlags & VK_QUEUE_COMPUTE_BIT;
 
     VkFormatProperties2 depth_format_properties2 = vku::InitStructHelper();
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_D16_UNORM, &depth_format_properties2);
