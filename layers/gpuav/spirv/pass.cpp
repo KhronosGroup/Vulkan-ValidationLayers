@@ -45,56 +45,6 @@ bool Pass::Run() {
     return modified;
 }
 
-const Variable& Pass::GetBuiltInVariable(uint32_t built_in) {
-    uint32_t variable_id = 0;
-    for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(2) == spv::DecorationBuiltIn &&
-            annotation->Word(3) == built_in) {
-            variable_id = annotation->Word(1);
-            break;
-        }
-    }
-
-    if (variable_id == 0) {
-        variable_id = module_.TakeNextId();
-        auto new_inst = std::make_unique<Instruction>(4, spv::OpDecorate);
-        new_inst->Fill({variable_id, spv::DecorationBuiltIn, built_in});
-        module_.annotations_.emplace_back(std::move(new_inst));
-    }
-
-    // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by both Input and
-    // Output storage classes
-    const Variable* built_in_variable = type_manager_.FindVariableById(variable_id);
-    if (!built_in_variable) {
-        const Type& pointer_type = type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
-        auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
-        new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
-        built_in_variable = &type_manager_.AddVariable(std::move(new_inst), pointer_type);
-        module_.AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
-    } else {
-        // Slang with the --preserve-params option will leave built-in variables that aren't in any interface.
-        const uint32_t built_in_variable_id = built_in_variable->Id();
-        const Instruction* entry_point = module_.GetTargetEntryPoint();
-
-        bool found_variable = false;
-        uint32_t word = entry_point->GetEntryPointInterfaceStart();
-        const uint32_t total_words = entry_point->Length();
-        for (; word < total_words; word++) {
-            const uint32_t interface_id = entry_point->Word(word);
-            if (interface_id == built_in_variable_id) {
-                found_variable = true;
-                break;
-            }
-        }
-
-        if (!found_variable) {
-            module_.AddInterfaceVariables(variable_id, spv::StorageClassInput);
-        }
-    }
-
-    return *built_in_variable;
-}
-
 // Special function to map to the internal representation of the execution models used for GenerateStageMessage()
 static uint32_t GetNormalizedExecutionModel(VkShaderStageFlagBits shader_stage) {
     switch (shader_stage) {
@@ -160,7 +110,7 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
 
     // Gets BuiltIn variable and creates a valid OpLoad of it
     auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
-        const Variable& variable = GetBuiltInVariable(built_in);
+        const Variable& variable = module_.GetBuiltInVariable(built_in);
         const Type* pointer_type = variable.PointerType(type_manager_);
         const uint32_t load_id = module_.TakeNextId();
         block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
@@ -204,7 +154,7 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
         case VK_SHADER_STAGE_TASK_BIT_NV:
         case VK_SHADER_STAGE_MESH_BIT_NV: {
             // This can be both a uvec3 or ivec3 so need to cast if ivec3
-            const Variable& variable = GetBuiltInVariable(spv::BuiltInGlobalInvocationId);
+            const Variable& variable = module_.GetBuiltInVariable(spv::BuiltInGlobalInvocationId);
             const Type* pointer_type = variable.PointerType(type_manager_);
             const uint32_t load_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);

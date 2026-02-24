@@ -15,6 +15,7 @@
 
 #include "function_basic_block.h"
 #include "state_tracker/shader_instruction.h"
+#include "containers/container_utils.h"
 #include "module.h"
 
 namespace gpuav {
@@ -55,7 +56,8 @@ uint32_t BasicBlock::GetLabelId() const { return (*(instructions_[0])).ResultId(
 InstructionIt BasicBlock::GetFirstInjectableInstrution() {
     InstructionIt inst_it;
     for (inst_it = instructions_.begin(); inst_it != instructions_.end(); ++inst_it) {
-        if ((*inst_it)->Opcode() != spv::OpLabel && (*inst_it)->Opcode() != spv::OpVariable) {
+        if (!IsValueIn((spv::Op)(*inst_it)->Opcode(),
+                       {spv::OpLabel, spv::OpLine, spv::OpNoLine, spv::OpFunctionParameter, spv::OpVariable})) {
             break;
         }
     }

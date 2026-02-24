@@ -454,6 +454,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
             break;
         case spv::OpAtomicStore:
         case spv::OpBranchConditional:
+        case spv::OpControlBarrier:
             swap_to_end(1);
             break;
         case spv::OpAtomicLoad:

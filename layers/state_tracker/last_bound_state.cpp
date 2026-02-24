@@ -628,9 +628,9 @@ VkPrimitiveTopology LastBound::ClipSpaceTopology() const {
             // Can only have either a mesh or geometry stage, so can search both at once
             assert(!mesh_shader_bound || !geom_shader_bound);
             for (const ShaderStageState &shader_stage_state : pipeline_state->stage_states) {
-                if (shader_stage_state.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT ||
-                    shader_stage_state.GetStage() == VK_SHADER_STAGE_GEOMETRY_BIT) {
-                    if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
+                if (stage == VK_SHADER_STAGE_MESH_BIT_EXT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
+                    if (shader_stage_state.HasSpirv()) {
                         return shader_stage_state.entrypoint->execution_mode.GetGeometryMeshOutputTopology();
                     }
                 }
@@ -640,7 +640,7 @@ VkPrimitiveTopology LastBound::ClipSpaceTopology() const {
             for (const ShaderStageState &shader_stage_state : pipeline_state->stage_states) {
                 const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
                 if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                    if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                    if (shader_stage_state.HasSpirv()) {
                         // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
                         // Can be found in both tessellation shaders
                         if (shader_stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
@@ -965,13 +965,10 @@ std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderO
 
 const spirv::EntryPoint *LastBound::GetVertexEntryPoint() const {
     if (pipeline_state) {
-        for (const ShaderStageState &shader_stage_state : pipeline_state->stage_states) {
-            if (shader_stage_state.GetStage() != VK_SHADER_STAGE_VERTEX_BIT) {
-                continue;
-            }
-            return shader_stage_state.entrypoint.get();
+        const ShaderStageState* stage_state = pipeline_state->GetShaderStageState(VK_SHADER_STAGE_VERTEX_BIT);
+        if (stage_state) {
+            return stage_state->entrypoint.get();
         }
-        return nullptr;
     } else if (const auto *shader_object = GetShaderObjectState(ShaderObjectStage::VERTEX)) {
         return shader_object->stage.entrypoint.get();
     }

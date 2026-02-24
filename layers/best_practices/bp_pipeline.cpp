@@ -498,14 +498,12 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
                                         const Location& loc) const {
     bool skip = false;
 
-    if ((pipeline && pipeline->uses_shader_module_id) || !stage_state.spirv_state) {
+    if ((pipeline && pipeline->uses_shader_module_id) || !stage_state.HasSpirv()) {
         return skip;  // these edge cases should be validated already
     }
 
     const spirv::Module& module_state = *stage_state.spirv_state.get();
     if (!module_state.valid_spirv) {
-        return skip;  // checked elsewhere
-    } else if (!stage_state.entrypoint) {
         return skip;  // checked elsewhere
     }
 

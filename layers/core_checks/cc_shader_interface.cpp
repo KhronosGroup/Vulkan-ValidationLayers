@@ -243,8 +243,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
 
     bool has_tess = false;
     VkPrimitiveTopology tess_output_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-    for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
-        auto &stage_state = pipeline.stage_states[i];
+    for (const auto& stage_state : pipeline.stage_states) {
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             has_tess = true;
@@ -819,38 +818,40 @@ bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bo
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_module_state,
-                                                    const spirv::EntryPoint &tesc_entrypoint,
-                                                    const spirv::Module &tese_module_state,
-                                                    const spirv::EntryPoint &tese_entrypoint,
-                                                    const Location &create_info_loc) const {
+bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc_stage, const ShaderStageState& tese_stage,
+                                                    const Location& create_info_loc) const {
     bool skip = false;
+
+    if (!tesc_stage.HasSpirv() || !tese_stage.HasSpirv()) {
+        return skip;
+    }
 
     // The other tessellation modes (PointMode, Spacing, Orientation) can be in either stage.
     // OutputVertices needs to be in TESC and Subdivision in TESE, but they can be in the other stage, but needs to match
-    const uint32_t tesc_subdivision = tesc_entrypoint.execution_mode.GetTessellationSubdivision();
-    const uint32_t tese_subdivision = tese_entrypoint.execution_mode.GetTessellationSubdivision();
-    const uint32_t tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
-    const uint32_t tese_patch_size = tese_entrypoint.execution_mode.output_vertices;
+    const uint32_t tesc_subdivision = tesc_stage.entrypoint->execution_mode.GetTessellationSubdivision();
+    const uint32_t tesc_patch_size = tesc_stage.entrypoint->execution_mode.output_vertices;
+    const uint32_t tese_subdivision = tese_stage.entrypoint->execution_mode.GetTessellationSubdivision();
+    const uint32_t tese_patch_size = tese_stage.entrypoint->execution_mode.output_vertices;
+
     if (tesc_subdivision == spirv::kInvalidValue && tese_subdivision == spirv::kInvalidValue) {
-        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00732", objlist, create_info_loc,
                          "Subdivision (Triangles/Quads/IsoLines) is not specified in either of tessellation stages");
     } else if (tesc_subdivision != spirv::kInvalidValue && tese_subdivision != spirv::kInvalidValue &&
                tesc_subdivision != tese_subdivision) {
-        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
                          "Subdivision specified in tessellation control shader is %s, but subdivison type specified in "
                          "tessellation evaluation shader is %s",
                          string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
     }
     if (tesc_patch_size == spirv::kInvalidValue && tese_patch_size == spirv::kInvalidValue) {
-        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00734", objlist, create_info_loc,
                          "OutputVertices (patch size) is not specified in either of tessellation stages");
     } else if (tesc_patch_size != spirv::kInvalidValue && tese_patch_size != spirv::kInvalidValue &&
                tesc_patch_size != tese_patch_size) {
-        const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
+        const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00735", objlist, create_info_loc,
                          "OutputVertices (patch size) specified in tessellation control shader is %" PRIu32
                          ", but OutputVertices specified in tessellation evaluation shader is %" PRIu32,
@@ -869,7 +870,11 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         return skip;
     }
 
-    const ShaderStageState *vertex_stage = nullptr, *tesc_stage = nullptr, *tese_stage = nullptr, *fragment_stage = nullptr;
+    const ShaderStageState* vertex_stage = nullptr;
+    const ShaderStageState* tesc_stage = nullptr;
+    const ShaderStageState* tese_stage = nullptr;
+    const ShaderStageState* fragment_stage = nullptr;
+
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         auto &stage_state = pipeline.stage_states[i];
         const VkShaderStageFlagBits stage = stage_state.GetStage();
@@ -877,6 +882,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         if ((stage & pipeline.linking_shaders) == 0) {
             skip |= ValidateShaderStage(stage_state, &pipeline, create_info_loc.dot(Field::pStages, i));
         }
+
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;
         } else if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
@@ -964,10 +970,8 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
         }
     }
 
-    if (tesc_stage && tesc_stage->spirv_state && tesc_stage->entrypoint && tese_stage && tese_stage->spirv_state &&
-        tese_stage->entrypoint) {
-        skip |= ValidatePipelineTessellationStages(*tesc_stage->spirv_state, *tesc_stage->entrypoint, *tese_stage->spirv_state,
-                                                   *tese_stage->entrypoint, create_info_loc);
+    if (tesc_stage && tese_stage) {
+        skip |= ValidatePipelineTessellationStages(*tesc_stage, *tese_stage, create_info_loc);
     }
 
     return skip;

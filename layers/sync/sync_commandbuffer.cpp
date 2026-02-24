@@ -531,7 +531,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     for (const auto &stage_state : pipe->stage_states) {
         if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->RasterizationDisabled()) {
             continue;
-        } else if (!stage_state.entrypoint) {
+        } else if (!stage_state.HasSpirv()) {
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
@@ -699,7 +699,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     for (const auto &stage_state : pipe->stage_states) {
         if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipe->RasterizationDisabled()) {
             continue;
-        } else if (!stage_state.entrypoint) {
+        } else if (!stage_state.HasSpirv()) {
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {

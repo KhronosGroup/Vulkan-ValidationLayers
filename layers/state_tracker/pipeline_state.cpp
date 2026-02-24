@@ -530,9 +530,9 @@ static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_st
     // Get Clip Space Topology first
     if (pipe_state.active_shaders & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
         for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
-            if (shader_stage_state.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT ||
-                shader_stage_state.GetStage() == VK_SHADER_STAGE_GEOMETRY_BIT) {
-                if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+            const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
+            if (stage == VK_SHADER_STAGE_MESH_BIT_EXT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
+                if (shader_stage_state.HasSpirv()) {
                     topology = shader_stage_state.entrypoint->execution_mode.GetGeometryMeshOutputTopology();
                     break;
                 }
@@ -542,7 +542,7 @@ static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_st
         for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
             const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
             if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                if (shader_stage_state.HasSpirv()) {
                     if (shader_stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                         // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
                         // Can be found in both tessellation shaders
@@ -685,8 +685,8 @@ static bool UsesShaderModuleId(const Pipeline &pipe_state) {
 
 static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<ShaderStageState> &stage_states) {
     vvl::unordered_set<uint32_t> result;
-    for (const auto &stage_state : stage_states) {
-        if (!stage_state.entrypoint) {
+    for (const ShaderStageState& stage_state : stage_states) {
+        if (!stage_state.HasSpirv()) {
             continue;
         }
         if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {

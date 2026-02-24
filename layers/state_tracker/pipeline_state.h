@@ -558,6 +558,15 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     }
     static uint32_t CountDescriptorHeapEmbeddedSamplers(const Pipeline& pipe_state);
 
+    const ShaderStageState* GetShaderStageState(VkShaderStageFlagBits stage) const {
+        for (const ShaderStageState& shader_stage_state : stage_states) {
+            if (shader_stage_state.GetStage() == stage) {
+                return &shader_stage_state;
+            }
+        }
+        return nullptr;
+    }
+
   protected:
     static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const DeviceState &state,
                                                                     const vku::safe_VkGraphicsPipelineCreateInfo &create_info);

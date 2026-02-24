@@ -970,8 +970,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const vvl::Pipeline& pipeline, uint32_t subpass_index,
                                             const Location& create_info_loc) const;
-    bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
-                                            const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
+    bool ValidatePipelineTessellationStages(const ShaderStageState& tesc_stage, const ShaderStageState& tese_stage,
                                             const Location& create_info_loc) const;
     bool ValidateShaderInterfaceVariableDSL(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const ShaderStageState& stage_state, const spirv::ResourceInterfaceVariable& variable,
