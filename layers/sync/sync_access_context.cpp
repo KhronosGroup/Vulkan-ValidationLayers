@@ -28,33 +28,32 @@ namespace syncval {
 bool SimpleBinding(const vvl::Bindable &bindable) { return !bindable.sparse && bindable.Binding(); }
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
-void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyInfo> &dependencies,
-                             const AccessContext *contexts, const AccessContext *external_context) {
-    const auto &subpass_dep = dependencies[subpass];
-    const bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
-    prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
+void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
+                             const std::vector<SubpassDependencyInfo> &subpass_dependency_infos, const AccessContext *contexts,
+                             const AccessContext *external_context) {
+    const SubpassDependencyInfo &info = subpass_dependency_infos[subpass];
+    const bool has_barrier_from_external = !info.barrier_from_external.empty();
+
+    prev_.reserve(info.dependencies.size() + (has_barrier_from_external ? 1 : 0));
     prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
-    for (const auto &prev_dep : subpass_dep.prev) {
-        const auto prev_subpass = prev_dep.first->subpass;
-        const auto &prev_barriers = prev_dep.second;
-        assert(prev_dep.second.size());
-        prev_.emplace_back(&contexts[prev_subpass], queue_flags, prev_barriers);
-        prev_by_subpass_[prev_subpass] = &prev_.back();
+    for (const auto &[src_subpass, subpass_dependencies] : info.dependencies) {
+        prev_.emplace_back(&contexts[src_subpass], queue_flags, subpass_dependencies);
+        prev_by_subpass_[src_subpass] = &prev_.back();
     }
 
-    async_.reserve(subpass_dep.async.size());
-    for (const auto async_subpass : subpass_dep.async) {
+    async_.reserve(info.async.size());
+    for (const auto async_subpass : info.async) {
         // Start tags are not known at creation time (as it's done at BeginRenderpass)
         async_.emplace_back(contexts[async_subpass], kInvalidTag, kQueueIdInvalid);
     }
 
     if (has_barrier_from_external) {
         // Store the barrier from external with the reat, but save pointer for "by subpass" lookups.
-        prev_.emplace_back(external_context, queue_flags, subpass_dep.barrier_from_external);
+        prev_.emplace_back(external_context, queue_flags, info.barrier_from_external);
         src_external_ = &prev_.back();
     }
-    if (subpass_dep.barrier_to_external.size()) {
-        dst_external_ = SubpassBarrierTrackback(this, queue_flags, subpass_dep.barrier_to_external);
+    if (info.barrier_to_external.size()) {
+        dst_external_ = SubpassBarrierTrackback(this, queue_flags, info.barrier_to_external);
     }
 }
 

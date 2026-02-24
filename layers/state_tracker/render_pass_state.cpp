@@ -22,48 +22,43 @@
 #include "state_tracker/image_state.h"
 #include "containers/span.h"
 
+// Defined according to spec (check VkSubpassDependency documentation)
 static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
-    VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                          nullptr,
-                                          VK_SUBPASS_EXTERNAL,
-                                          subpass,
-                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                          0,
-                                          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                          0,
-                                          0};
+    VkSubpassDependency2 from_external = vku::InitStructHelper();
+    from_external.srcSubpass = VK_SUBPASS_EXTERNAL;
+    from_external.dstSubpass = subpass;
+    from_external.srcStageMask = VK_PIPELINE_STAGE_NONE;
+    from_external.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    from_external.srcAccessMask = 0;
+    from_external.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     return from_external;
 }
 
+// Defined according to spec (check VkSubpassDependency documentation)
 static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
-    VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-                                        nullptr,
-                                        subpass,
-                                        VK_SUBPASS_EXTERNAL,
-                                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                        0,
-                                        0,
-                                        0};
+    VkSubpassDependency2 to_external = vku::InitStructHelper();
+    to_external.srcSubpass = subpass;
+    to_external.dstSubpass = VK_SUBPASS_EXTERNAL;
+    to_external.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    to_external.dstStageMask = VK_PIPELINE_STAGE_NONE;
+    to_external.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    to_external.dstAccessMask = 0;
     return to_external;
 }
+
 // NOTE: The functions below are only called from the vvl::RenderPass constructor, and use const_cast<> to set up
 // members that never change after construction is finished.
 static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl::RenderPass &render_pass) {
     auto &self_dependencies = const_cast<std::vector<std::vector<uint32_t>> &>(render_pass.self_dependencies);
     self_dependencies.resize(pCreateInfo->subpassCount);
-    auto &subpass_dependencies = const_cast<std::vector<SubpassDependencyInfo> &>(render_pass.subpass_dependency_infos);
-    subpass_dependencies.resize(pCreateInfo->subpassCount);
+    auto &subpass_dependency_infos = const_cast<std::vector<SubpassDependencyInfo> &>(render_pass.subpass_dependency_infos);
+    subpass_dependency_infos.resize(pCreateInfo->subpassCount);
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         self_dependencies[i].clear();
-        subpass_dependencies[i].subpass = i;
+        subpass_dependency_infos[i].subpass = i;
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
@@ -74,34 +69,28 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
             // Invalid per VUID-VkSubpassDependency-srcSubpass-00865
             continue;
         }
-
         if (src_subpass == dst_subpass) {
             self_dependencies[dependency.srcSubpass].push_back(i);
         } else if (src_subpass == VK_SUBPASS_EXTERNAL) {
-            subpass_dependencies[dst_subpass].barrier_from_external.emplace_back(&dependency);
+            subpass_dependency_infos[dst_subpass].barrier_from_external.emplace_back(&dependency);
         } else if (dst_subpass == VK_SUBPASS_EXTERNAL) {
-            subpass_dependencies[src_subpass].barrier_to_external.emplace_back(&dependency);
+            subpass_dependency_infos[src_subpass].barrier_to_external.emplace_back(&dependency);
         } else {
-            // ignore self dependencies in prev and next
-            subpass_dependencies[src_subpass].next[&subpass_dependencies[dst_subpass]].emplace_back(&dependency);
-            subpass_dependencies[dst_subpass].prev[&subpass_dependencies[src_subpass]].emplace_back(&dependency);
+            subpass_dependency_infos[dst_subpass].dependencies[src_subpass].emplace_back(&dependency);
         }
     }
 
     // If no barriers to external are provided for a given subpass, add them.
-    for (auto &subpass_dep : subpass_dependencies) {
-        const uint32_t subpass = subpass_dep.subpass;
-        if (subpass_dep.barrier_from_external.empty()) {
-            // Add implicit from barrier if they're aren't any
-            subpass_dep.implicit_barrier_from_external =
-                std::make_unique<VkSubpassDependency2>(ImplicitDependencyFromExternal(subpass));
-            subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
+    // This is used for initialLayout/finalLayout transitions when corresponding
+    // subpass is the first/last subpass that uses the attachment.
+    for (SubpassDependencyInfo &info : subpass_dependency_infos) {
+        if (info.barrier_from_external.empty()) {
+            info.implicit_barrier_from_external = ImplicitDependencyFromExternal(info.subpass);
+            info.barrier_from_external.emplace_back(&info.implicit_barrier_from_external);
         }
-        if (subpass_dep.barrier_to_external.empty()) {
-            // Add implicit to barrier  if they're aren't any
-            subpass_dep.implicit_barrier_to_external =
-                std::make_unique<VkSubpassDependency2>(ImplicitDependencyToExternal(subpass));
-            subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
+        if (info.barrier_to_external.empty()) {
+            info.implicit_barrier_to_external = ImplicitDependencyToExternal(info.subpass);
+            info.barrier_to_external.emplace_back(&info.implicit_barrier_to_external);
         }
     }
 
@@ -114,18 +103,17 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
     for (uint32_t i = 1; i < pCreateInfo->subpassCount; ++i) {
         auto &depends = pass_depends[i];
         depends.resize(i);
-        auto &subpass_dep = subpass_dependencies[i];
-        for (const auto &prev : subpass_dep.prev) {
-            const auto prev_subpass = prev.first->subpass;
-            const auto &prev_depends = pass_depends[prev_subpass];
-            for (uint32_t j = 0; j < prev_subpass; j++) {
-                depends[j] = depends[j] || prev_depends[j];
+        SubpassDependencyInfo &info = subpass_dependency_infos[i];
+        for (const auto &[src_subpass, _] : info.dependencies) {
+            const auto &src_depends = pass_depends[src_subpass];
+            for (uint32_t j = 0; j < src_subpass; j++) {
+                depends[j] = depends[j] || src_depends[j];
             }
-            depends[prev_subpass] = true;
+            depends[src_subpass] = true;
         }
-        for (uint32_t subpass = 0; subpass < subpass_dep.subpass; subpass++) {
+        for (uint32_t subpass = 0; subpass < info.subpass; subpass++) {
             if (!depends[subpass]) {
-                subpass_dep.async.push_back(subpass);
+                info.async.push_back(subpass);
             }
         }
     }
@@ -168,9 +156,8 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 
         // max_prev is invariant across attachments
         uint32_t max_prev = VK_SUBPASS_EXTERNAL;
-        for (const auto &prev : rp.subpass_dependency_infos[subpass].prev) {
-            const auto prev_subpass = prev.first->subpass;
-            max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_subpass : std::max(prev_subpass, max_prev);
+        for (const auto &[src_subpass, _] : rp.subpass_dependency_infos[subpass].dependencies) {
+            max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? src_subpass : std::max(src_subpass, max_prev);
         }
 
         for (const auto attachment : vvl::make_span(preserved, count)) {
@@ -200,16 +187,15 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                 }
                 last[attachment] = subpass;
 
-                for (const auto &prev : rp.subpass_dependency_infos[subpass].prev) {
-                    const auto prev_pass = prev.first->subpass;
-                    const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
+                for (const auto &[src_subpass, _] : rp.subpass_dependency_infos[subpass].dependencies) {
+                    const auto prev_layout = subpass_attachment_layout[src_subpass][attachment];
                     if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
                         subpass_transitions[subpass].emplace_back(
-                            vvl::RenderPass::AttachmentTransition{prev_pass, attachment, prev_layout, layout});
+                            vvl::RenderPass::AttachmentTransition{src_subpass, attachment, prev_layout, layout});
                     }
                 }
 
-                if (no_external_transition && (rp.subpass_dependency_infos[subpass].prev.empty())) {
+                if (no_external_transition && (rp.subpass_dependency_infos[subpass].dependencies.empty())) {
                     // This will insert a layout transition when dependencies are missing between first and subsequent use
                     // but is consistent with the idea of an implicit external dependency
                     if (initial_layout != layout) {
