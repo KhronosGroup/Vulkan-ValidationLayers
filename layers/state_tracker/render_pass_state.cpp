@@ -56,36 +56,32 @@ static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
 // NOTE: The functions below are only called from the vvl::RenderPass constructor, and use const_cast<> to set up
 // members that never change after construction is finished.
 static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl::RenderPass &render_pass) {
-    auto &subpass_to_node = const_cast<vvl::RenderPass::DAGNodeVec &>(render_pass.subpass_to_node);
-    subpass_to_node.resize(pCreateInfo->subpassCount);
-    auto &self_dependencies = const_cast<vvl::RenderPass::SelfDepVec &>(render_pass.self_dependencies);
+    auto &self_dependencies = const_cast<std::vector<vvl::RenderPass::SubpassVec> &>(render_pass.self_dependencies);
     self_dependencies.resize(pCreateInfo->subpassCount);
     auto &subpass_dependencies = const_cast<vvl::RenderPass::SubpassGraphVec &>(render_pass.subpass_dependencies);
     subpass_dependencies.resize(pCreateInfo->subpassCount);
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        subpass_to_node[i].pass = i;
         self_dependencies[i].clear();
         subpass_dependencies[i].pass = i;
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const auto &dependency = pCreateInfo->pDependencies[i];
-        const auto src_subpass = dependency.srcSubpass;
-        const auto dst_subpass = dependency.dstSubpass;
-        if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
-            if (dependency.srcSubpass == dependency.dstSubpass) {
-                self_dependencies[dependency.srcSubpass].push_back(i);
-            } else {
-                subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
-                subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
-            }
+        const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
+        const uint32_t src_subpass = dependency.srcSubpass;
+        const uint32_t dst_subpass = dependency.dstSubpass;
+
+        if (src_subpass == VK_SUBPASS_EXTERNAL && dst_subpass == VK_SUBPASS_EXTERNAL) {
+            // Invalid per VUID-VkSubpassDependency-srcSubpass-00865
+            continue;
         }
-        if (src_subpass == VK_SUBPASS_EXTERNAL) {
-            assert(dst_subpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
+
+        if (src_subpass == dst_subpass) {
+            self_dependencies[dependency.srcSubpass].push_back(i);
+        } else if (src_subpass == VK_SUBPASS_EXTERNAL) {
             subpass_dependencies[dst_subpass].barrier_from_external.emplace_back(&dependency);
         } else if (dst_subpass == VK_SUBPASS_EXTERNAL) {
             subpass_dependencies[src_subpass].barrier_to_external.emplace_back(&dependency);
-        } else if (dependency.srcSubpass != dependency.dstSubpass) {
+        } else {
             // ignore self dependencies in prev and next
             subpass_dependencies[src_subpass].next[&subpass_dependencies[dst_subpass]].emplace_back(&dependency);
             subpass_dependencies[dst_subpass].prev[&subpass_dependencies[src_subpass]].emplace_back(&dependency);
@@ -137,25 +133,20 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
 struct AttachmentTracker {  // This is really only of local interest, but a bit big for a lambda
     vvl::RenderPass &rp;
     vvl::RenderPass::SubpassVec &first;
-    vvl::RenderPass::FirstIsTransitionVec &first_is_transition;
     vvl::RenderPass::SubpassVec &last;
     vvl::RenderPass::TransitionVec &subpass_transitions;
-    vvl::RenderPass::FirstReadMap &first_read;
     const uint32_t attachment_count;
     std::vector<VkImageLayout> attachment_layout;
     std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
     explicit AttachmentTracker(vvl::RenderPass &render_pass)
         : rp(render_pass),
           first(const_cast<vvl::RenderPass::SubpassVec &>(rp.attachment_first_subpass)),
-          first_is_transition(const_cast<vvl::RenderPass::FirstIsTransitionVec &>(rp.attachment_first_is_transition)),
           last(const_cast<vvl::RenderPass::SubpassVec &>(rp.attachment_last_subpass)),
           subpass_transitions(const_cast<vvl::RenderPass::TransitionVec &>(rp.subpass_transitions)),
-          first_read(const_cast<vvl::RenderPass::FirstReadMap &>(rp.attachment_first_read)),
           attachment_count(rp.create_info.attachmentCount),
           attachment_layout(),
           subpass_attachment_layout() {
         first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-        first_is_transition.resize(attachment_count, false);
         last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
         subpass_transitions.resize(rp.create_info.subpassCount + 1);  // Add an extra for EndRenderPass
         attachment_layout.reserve(attachment_count);
@@ -195,15 +186,12 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
             const auto attachment = attach_ref[j].attachment;
             if (attachment != VK_ATTACHMENT_UNUSED) {
                 const auto layout = attach_ref[j].layout;
-                // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
-                first_read.emplace(attachment, is_read);
                 const auto initial_layout = rp.create_info.pAttachments[attachment].initialLayout;
                 bool no_external_transition = true;
                 if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                     first[attachment] = subpass;
                     if (initial_layout != layout) {
                         subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
-                        first_is_transition[attachment] = true;
                         no_external_transition = false;
                     }
                 }

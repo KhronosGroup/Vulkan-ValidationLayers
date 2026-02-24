@@ -60,7 +60,6 @@ class CommandBufferSubState;
 }  // namespace core
 
 struct SubpassLayout;
-struct DAGNode;
 struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
