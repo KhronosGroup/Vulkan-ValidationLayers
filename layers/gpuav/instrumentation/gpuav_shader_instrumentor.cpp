@@ -474,6 +474,7 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     interface.unique_shader_id = unique_shader_id;
     interface.entry_point_name = modified_create_info.pName;
     interface.entry_point_stage = modified_create_info.stage;
+    interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
     BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
 
     const bool is_shader_instrumented = InstrumentShader(
@@ -1251,6 +1252,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.unique_shader_id = unique_shader_id;
         interface.entry_point_name = stage_state.GetPName();
         interface.entry_point_stage = stage_state.GetStage();
+        interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1447,6 +1449,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.unique_shader_id = unique_shader_id;
             interface.entry_point_name = modified_stage_state.GetPName();
             interface.entry_point_stage = modified_stage_state.GetStage();
+            interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
             const bool is_shader_instrumented =
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 

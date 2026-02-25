@@ -79,6 +79,7 @@ struct InstrumentationInterface {
     VkShaderStageFlagBits entry_point_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
+    const VkSpecializationInfo* specialization_info;
 
     const Location& loc;
 

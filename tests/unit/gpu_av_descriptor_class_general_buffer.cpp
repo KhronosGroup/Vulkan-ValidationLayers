@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1745,31 +1745,28 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SpecConstant) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
-        layout(constant_id = 0) const uint index = 2;
-
+        layout(constant_id = 0) const int INDEX = 2;
         layout(set = 0, binding = 0) buffer foo {
-            uint a;
-            uint b[4];
+            uint a[8]; // 32 bytes
         };
-
         void main() {
-            a = b[index];
+            a[INDEX] = 44;
         }
     )glsl";
 
-    const uint32_t value = 25;
+    uint32_t data = 7;
     VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo spec_info = {1, &entry, sizeof(uint32_t), &value};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &specialization_info);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 20, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_.UpdateDescriptorSets();
 

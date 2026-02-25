@@ -264,6 +264,7 @@ vvl_sources = [
   "layers/gpuav/spirv/debug_printf_pass.h",
   "layers/gpuav/spirv/type_manager.cpp",
   "layers/gpuav/spirv/type_manager.h",
+  "layers/gpuav/spirv/spec_constant.cpp",
   "layers/layer_options.cpp",
   "layers/layer_options.h",
   "layers/layer_options_validation.h",

@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2024-2025 LunarG, Inc.
+# Copyright (c) 2024-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ target_sources(gpu_av_spirv PRIVATE
     type_manager.cpp
     pass.h
     pass.cpp
+    spec_constant.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
 
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h
