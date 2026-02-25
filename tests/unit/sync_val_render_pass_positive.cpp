@@ -317,3 +317,35 @@ TEST_F(PositiveSyncValRenderPass, StencilNotWritable) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRenderPass, FinalLayoutTransitionProtectsPreviousCopyRead) {
+    TEST_DESCRIPTION("Implicit subpass dependency creates execution dependency with READ outside of render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_NONE);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
+    // loadOp=NONE and storeOp=NONE, so image copy is followed directly by layout transition.
+    // There is an implicit dependency with VK_SUBPASS_EXTERNAL that specifies srcStageMask as
+    // ALL_COMMANDS, and this creates an execution dependency with image's COPY_READ, which is
+    // enough to prevent WRITE-AFTER-READ hazard.
+    m_command_buffer.EndRenderPass();
+}
