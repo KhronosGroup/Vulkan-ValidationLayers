@@ -115,10 +115,10 @@ class ErrorMessages {
     std::string RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 vvl::Func command, const std::string& resource_description,
                                                 VkImageLayout old_layout, VkImageLayout new_layout) const;
-    std::string RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
-                                                                const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                                                const std::string& resource_description, VkImageLayout old_layout,
-                                                                VkImageLayout new_layout, uint32_t store_resolve_subpass) const;
+    std::string RenderPassLayoutTransitionVsResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                         vvl::Func command, const std::string& resource_description,
+                                                         VkImageLayout old_layout, VkImageLayout new_layout,
+                                                         uint32_t resolve_subpass) const;
     std::string RenderPassFinalLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description,
                                                      VkImageLayout old_layout, VkImageLayout new_layout) const;

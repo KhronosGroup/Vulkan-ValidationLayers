@@ -198,7 +198,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
             const std::string resource_description = ss.str();
 
             if (hazard.Tag() == kInvalidTag) {
-                const auto error = sync_state.error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
+                const auto error = sync_state.error_messages_.RenderPassLayoutTransitionVsResolveError(
                     hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout,
                     transition.prev_subpass);
                 skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
