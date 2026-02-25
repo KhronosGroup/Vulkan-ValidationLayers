@@ -569,3 +569,83 @@ TEST_F(NegativeSyncValRenderPass, InputAttachmentWAR) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRenderPass, LayoutTransitonVsResolveHazard) {
+    TEST_DESCRIPTION("Layout transition between subpasses (not into finalLayout) hazards with the previous resolve write");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkImageCreateInfo resolve_image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image resolve_image(*m_device, resolve_image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription resolve_attachment = {};
+    resolve_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    resolve_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    resolve_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    resolve_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    resolve_attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference resolve_attachment_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference resolve_attachment_ref2 = {1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &attachment_ref;
+    subpass0.pResolveAttachments = &resolve_attachment_ref;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.inputAttachmentCount = 1;
+    subpass1.pInputAttachments = &resolve_attachment_ref2;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 1;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    // Execution dependency with COLOR_ATTACHMENT_OUTPUT does not protect layout transition from previous resolve write
+    subpass_dependency.srcAccessMask = 0;
+
+    subpass_dependency.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+    const VkAttachmentDescription attachments[2] = {attachment, resolve_attachment};
+    const VkImageView image_views[2] = {image_view, resolve_image_view};
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper();
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+    renderpass_ci.dependencyCount = 1;
+    renderpass_ci.pDependencies = &subpass_dependency;
+
+    const vkt::RenderPass render_pass(*m_device, renderpass_ci);
+    const vkt::Framebuffer framebuffer(*m_device, render_pass, 2, image_views, 32, 32);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    // Resolve at the end of this subpass then perform layout transition
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.NextSubpass();
+    m_errorMonitor->VerifyFound();
+}

@@ -447,7 +447,8 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
         ss << "read by ";
     }
     if (hazard.Tag() == kInvalidTag) {
-        // Invalid tag for prior access means the same command performed ILT before loadOp access
+        // Invalid tag for prior access means the same command performed ILT before loadOp,
+        // resolve before ILT or ILT after storeOp.
         ss << "the same command";
     } else {
         const ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());

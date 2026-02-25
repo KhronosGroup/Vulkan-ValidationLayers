@@ -345,12 +345,11 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
     return Error(hazard, cb_context, command, resource_description, "RenderPassLayoutTransitionError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
-                                                                           const CommandBufferAccessContext& cb_context,
-                                                                           vvl::Func command,
-                                                                           const std::string& resource_description,
-                                                                           VkImageLayout old_layout, VkImageLayout new_layout,
-                                                                           uint32_t store_resolve_subpass) const {
+std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const HazardResult& hazard,
+                                                                    const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                                                    const std::string& resource_description,
+                                                                    VkImageLayout old_layout, VkImageLayout new_layout,
+                                                                    uint32_t resolve_subpass) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
     const char* new_layout_str = string_VkImageLayout(new_layout);
 
@@ -360,11 +359,9 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const
     additional_info.access_action =
         "performs image layout transition during " +
         validator_.FormatHandle(cb_context.GetCurrentRenderPassContext()->GetRenderPassState()->Handle());
-    additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
-    additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
-
-    return Error(hazard, cb_context, command, resource_description, "RenderPassLayoutTransitionVsStoreOrResolveError",
-                 additional_info);
+    additional_info.brief_description_end_text = "during resolve operation in subpass ";
+    additional_info.brief_description_end_text += std::to_string(resolve_subpass);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassLayoutTransitionVsResolveError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
