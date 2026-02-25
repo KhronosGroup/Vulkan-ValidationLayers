@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ constexpr auto kU64Max = std::numeric_limits<uint64_t>::max();
 constexpr auto kI32Max = std::numeric_limits<int32_t>::max();
 // Typesafe INT64_MAX
 constexpr auto kI64Max = std::numeric_limits<int64_t>::max();
+// Typesafe INT64_MIN
+constexpr auto kI64Min = std::numeric_limits<int64_t>::min();
 
 // Descriptive names to indicate uninitialized/invalid unsigned index values
 constexpr auto kNoIndex32 = kU32Max;

@@ -269,7 +269,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
 
 bool SanitizerPass::IsConstantZero(const Constant& constant) const {
     if (constant.is_spec_constant_) {
-        // TODO - We have the spec constants information, we just need to pipe it into the passes
+        assert(false);
         return false;
     }
     const spv::Op opcode = (spv::Op)constant.inst_.Opcode();
@@ -321,8 +321,8 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
         // 04664 requires this to be a constant
         if (const Constant* constant = type_manager_.FindConstantById(inst.Word(5))) {
             const uint32_t constant_value = constant->GetValueUint32();
-            // TODO - Support spec constants
-            if (!constant->is_spec_constant_ && constant_value > 3) {
+            assert(!constant->is_spec_constant_);
+            if (constant_value > 3) {
                 meta.sub_code = glsl::kErrorSubCode_Sanitizer_ImageGather;
                 meta.skip_safe_mode = true;
                 meta.constant_value = constant_value;

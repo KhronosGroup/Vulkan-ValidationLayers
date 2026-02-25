@@ -123,6 +123,14 @@ class Module {
     // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
     // Will be set in the LogErrorPass
     uint32_t error_payload_variable_id_ = 0;
+
+  private:
+    // This is here to emulate the
+    //  spirv-opt --set-spec-const-default-value <values> --freeze-spec-const --fold-spec-const-op-composite
+    // Normally done, but by doing it internally, we can both be faster (not re-prasing the SPIR-V) and most importantly, preserve
+    // the |position_offset| value to know the index of the instructions from the original operation
+    void SetSpecConstantValue(Instruction* inst, const Type& type, vvl::unordered_map<uint32_t, uint32_t>& id_to_spec_id);
+    bool ConstantFold(Instruction* inst, const Type& type);
 };
 
 }  // namespace spirv

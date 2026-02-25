@@ -503,6 +503,24 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     UpdateDebugInfo();
 }
 
+void Instruction::FreezeSpecConstant() {
+    const uint32_t opcode = Opcode();
+    if (opcode == spv::OpSpecConstant) {
+        SetNewOpcode(spv::OpConstant);
+    } else if (opcode == spv::OpSpecConstantTrue) {
+        SetNewOpcode(spv::OpConstantTrue);
+    } else if (opcode == spv::OpSpecConstantFalse) {
+        SetNewOpcode(spv::OpConstantFalse);
+    } else if (opcode == spv::OpSpecConstantComposite) {
+        SetNewOpcode(spv::OpConstantComposite);
+    }
+}
+
+void Instruction::SetNewOpcode(uint32_t opcode) {
+    words_[0] = (words_[0] & 0xffff0000u) | (opcode & 0x0ffffu);
+    UpdateDebugInfo();
+}
+
 static inline bool IsImageOperandsBiasOffset(uint32_t type) {
     return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
                     spv::ImageOperandsConstOffsetsMask)) != 0;

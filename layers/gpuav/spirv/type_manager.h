@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ struct Type {
     uint32_t VectorSize() const;
     // 64-bit floats/int take up 2 dwords
     bool Is64Bit() const;
+    uint32_t ScalarBitWidth() const;
 
     const SpvType spv_type_;
     const Instruction& inst_;
@@ -77,7 +78,7 @@ static bool IsSpecConstant(uint32_t opcode) {
 }
 
 // Represents a OpConstant* or OpSpecConstant*
-// (Currently doesn't handle OpSpecConstantComposite or OpSpecConstantOp)
+// (Currently doesn't handle OpSpecConstantOp)
 struct Constant {
     Constant(const Type& type, const Instruction& inst)
         : type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
@@ -86,11 +87,12 @@ struct Constant {
 
     // Only for cases where we know the constant value
     uint32_t GetValueUint32() const;
+    uint64_t GetValueUint64(bool is_signed) const;
 
     const Type& type_;
     const Instruction& inst_;
-    // Most times we just need Constant to get type or id, so being a spec const doesn't matter.
-    // This boolean is here incase we do care about the value of the constant.
+    // We currently freeze spec constants and do our own constant folding, but we have this here as a way to catch any edge cases we
+    // have missed in constant folding
     const bool is_spec_constant_;
 };
 
@@ -150,6 +152,7 @@ class TypeManager {
     const Constant* FindConstantFloat32(uint32_t type_id, uint32_t value) const;
     // most constants are uint
     const Constant& CreateConstantUInt32(uint32_t value);
+    const Constant& CreateConstantScalar(uint64_t value, const Type& type, uint32_t result_id = 0);
     const Constant& GetConstantUInt32(uint32_t value);
     const Constant& GetConstantZeroUint32();
     const Constant& GetConstantOneUint32();

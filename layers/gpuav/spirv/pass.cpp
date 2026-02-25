@@ -287,7 +287,6 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
         case SpvType::kArray: {
             const uint32_t array_stride = GetDecoration(type_id, spv::DecorationArrayStride)->Word(3);
             const Constant* count = type_manager_.FindConstantById(type.inst_.Operand(1));
-            // TODO - Need to handle spec constant here, for now return one to have things not blowup
             assert(count && !count->is_spec_constant_);
             const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 1;
             return array_length * array_stride;
@@ -717,7 +716,6 @@ CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst
 
     const Constant* rows_const = type_manager_.FindConstantById(info.type->inst_.Word(4));
     const Constant* columns_const = type_manager_.FindConstantById(info.type->inst_.Word(5));
-    // TODO - Need to handle spec constant here, for now return zero to have things not blowup
     assert(rows_const && !rows_const->is_spec_constant_ && columns_const && !columns_const->is_spec_constant_);
     info.rows = rows_const->inst_.Operand(0);
     info.columns = columns_const->inst_.Operand(0);

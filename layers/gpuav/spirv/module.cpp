@@ -17,12 +17,12 @@
 #include <cassert>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
+#include "containers/limits.h"
 #include "function_basic_block.h"
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
 #include "error_message/log_message_type.h"
-#include "error_message/error_location.h"
 #include "utils/shader_utils.h"
 
 #include <iostream>
@@ -50,6 +50,14 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     header_.generator = *it++;
     header_.bound = *it++;
     header_.schema = *it++;
+
+    // We do the equivalent of SetSpecConstantDefaultValuePass and FreezeSpecConstantValuePass spirv-opt pass here. These are simple
+    // and we don't need spirv-opt overhead to do it. Unfortunately this is a bit duplicated from Core Validation, but that code
+    // needs to validate the VkSpecializationInfo struct.
+    //
+    // [OpSpecConstant Result ID -> OpDecorate SpecID value] mapping
+    vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
+
     // Parse everything up until the first function and sort into seperate lists
     while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
@@ -105,7 +113,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 // https://github.com/KhronosGroup/SPIRV-Tools/issues/5513
                 types_values_constants_.emplace_back(std::move(new_inst));
                 break;
-            case spv::OpDecorate:
             case spv::OpMemberDecorate:
             case spv::OpDecorationGroup:
             case spv::OpGroupDecorate:
@@ -116,6 +123,18 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 annotations_.emplace_back(std::move(new_inst));
                 break;
 
+            case spv::OpDecorate: {
+                if (new_inst->Word(2) == spv::DecorationSpecId) {
+                    const uint32_t target_id = new_inst->Word(1);
+                    // This will get filled before seeing any spec constant
+                    id_to_spec_id[target_id] = new_inst->Word(3);
+                    // We don't add because after we set/freeze the SpecConstant these can be removed
+                } else {
+                    annotations_.emplace_back(std::move(new_inst));
+                }
+                break;
+            }
+
             case spv::OpUndef:
                 type_manager_.AddUndef(std::move(new_inst));
                 break;
@@ -125,14 +144,21 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             case spv::OpConstantTrue:
             case spv::OpConstantFalse: {
                 const Type& type = type_manager_.GetTypeBool();
+                if (opcode == spv::OpSpecConstantTrue || opcode == spv::OpSpecConstantFalse) {
+                    SetSpecConstantValue(new_inst.get(), type, id_to_spec_id);
+                }
                 type_manager_.AddConstant(std::move(new_inst), type);
                 break;
             }
             case spv::OpSpecConstant:
+            case spv::OpSpecConstantComposite:
             case spv::OpConstant:
             case spv::OpConstantNull:
             case spv::OpConstantComposite: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+                if (opcode == spv::OpSpecConstant || opcode == spv::OpSpecConstantComposite) {
+                    SetSpecConstantValue(new_inst.get(), *type, id_to_spec_id);
+                }
                 type_manager_.AddConstant(std::move(new_inst), *type);
                 break;
             }
@@ -156,13 +182,23 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
                 break;
             }
+            case spv::OpSpecConstantOp: {
+                const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+                // If folded, we drop the |new_inst| as we will add it inside the function
+                const bool folded = ConstantFold(new_inst.get(), *type);
+                if (!folded) {
+                    assert(false);
+                    // Even if we can't fold, we need to keep the instruction in the constant section to maintain being valid
+                    types_values_constants_.emplace_back(std::move(new_inst));
+                }
+                break;
+            }
             default: {
                 SpvType spv_type = GetSpvType(new_inst->Opcode());
                 if (spv_type != SpvType::Empty) {
                     type_manager_.AddType(std::move(new_inst), spv_type);
                 } else {
                     // unknown instruction, try and just keep in last section to not just crash
-                    // example: OpSpecConstant
                     types_values_constants_.emplace_back(std::move(new_inst));
                 }
                 break;

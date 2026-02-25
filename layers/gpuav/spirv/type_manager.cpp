@@ -14,6 +14,7 @@
  */
 
 #include "type_manager.h"
+#include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
@@ -549,6 +550,25 @@ const Constant& TypeManager::CreateConstantUInt32(uint32_t value) {
     return AddConstant(std::move(new_inst), type);
 }
 
+// Used when not sure if 8-bit float, 64-bit int, or something inbetween
+const Constant& TypeManager::CreateConstantScalar(uint64_t value, const Type& type, uint32_t result_id) {
+    const bool is_64bit = type.Is64Bit();
+
+    auto new_inst = std::make_unique<Instruction>(is_64bit ? 5 : 4, spv::OpConstant);
+
+    if (result_id == 0) {
+        result_id = module_.TakeNextId();
+    }
+
+    std::vector<uint32_t> words = {type.Id(), result_id, static_cast<uint32_t>(value & 0xFFFFFFFF)};
+    if (is_64bit) {
+        words.emplace_back(static_cast<uint32_t>(value >> 32));
+    }
+    new_inst->Fill(words);
+
+    return AddConstant(std::move(new_inst), type);
+}
+
 const Constant& TypeManager::GetConstantUInt32(uint32_t value) {
     if (value == 0) {
         return GetConstantZeroUint32();
@@ -730,9 +750,38 @@ bool Type::Is64Bit() const {
     return false;
 }
 
+uint32_t Type::ScalarBitWidth() const {
+    if (spv_type_ == SpvType::kFloat || spv_type_ == SpvType::kInt) {
+        return inst_.Word(2);
+    } else if (spv_type_ == SpvType::kBool) {
+        return 1;
+    }
+    assert(false);
+    return 0;
+}
+
 uint32_t Constant::GetValueUint32() const {
     assert(inst_.Opcode() == spv::OpConstant || inst_.Opcode() == spv::OpConstantNull);
     return inst_.Opcode() == spv::OpConstantNull ? 0 : inst_.Word(3);
+}
+
+uint64_t Constant::GetValueUint64(bool is_signed) const {
+    const uint32_t bit_width = type_.inst_.Word(2);
+
+    uint64_t value = inst_.Word(3);
+    if (bit_width == 64) {
+        value |= (static_cast<uint64_t>(inst_.Word(4)) << 32);
+    }
+
+    // Sign-extend if necessary (8, 16, 32 bit negative numbers)
+    if (is_signed && bit_width < 64) {
+        uint64_t sign_bit = 1ULL << (bit_width - 1);
+        if (value & sign_bit) {
+            uint64_t mask = ~0ULL << bit_width;
+            value |= mask;
+        }
+    }
+    return value;
 }
 
 void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
