@@ -310,6 +310,12 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
                     requirment += f'{enable.struct}::{enable.feature}'
                 elif enable.extension is not None:
                     requirment += enable.extension
+                    # Special case to make it clear some extensions are only used at certain versions
+                    # (Only need for the extensions that have a SPIR-V capability)
+                    if enable.extension == 'VK_KHR_shader_draw_parameters':
+                        requirment += ' [when using Vulkan 1.0]'
+                    if enable.extension == 'VK_EXT_shader_viewport_index_layer':
+                        requirment += ' [when using Vulkan 1.0 or 1.1]'
                 elif enable.property is not None:
                     requirment += f'({enable.property}::{enable.member} == {enable.value})'
 
