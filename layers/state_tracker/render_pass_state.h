@@ -105,7 +105,7 @@ class RenderPass : public StateObject {
     struct AttachmentTransition {
         // Subpass index or VK_SUBPASS_EXTERNAL for transitions from initialLayout.
         // For transitions into finalLayout this is the last subpass that used the attachment.
-        uint32_t prev_subpass;
+        uint32_t src_subpass;
 
         uint32_t attachment;
         VkImageLayout old_layout;

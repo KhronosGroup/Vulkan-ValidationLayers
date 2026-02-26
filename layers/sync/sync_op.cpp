@@ -817,7 +817,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
     SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
-    access_context->ResolvePreviousAccesses();
+    access_context->ResolveAllSubpassDependencies();
 
     assert(barrier_sets_.size() == 1 || (barrier_sets_.size() == events_.size()));
 
@@ -1230,7 +1230,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     AccessContext temp_context(cb_context.GetSyncState());
 
     temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependency_infos, nullptr,
-                          cb_context.GetCurrentAccessContext());
+                          *cb_context.GetCurrentAccessContext());
 
     // Validate attachment operations
     if (attachments_.empty()) return skip;

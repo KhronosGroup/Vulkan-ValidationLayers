@@ -69,6 +69,10 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
             // Invalid per VUID-VkSubpassDependency-srcSubpass-00865
             continue;
         }
+        if (src_subpass != VK_SUBPASS_EXTERNAL && dst_subpass != VK_SUBPASS_EXTERNAL && src_subpass > dst_subpass) {
+            // Invalid per VUID-VkSubpassDependency-srcSubpass-00864
+            continue;
+        }
         if (src_subpass == dst_subpass) {
             self_dependencies[dependency.srcSubpass].push_back(i);
         } else if (src_subpass == VK_SUBPASS_EXTERNAL) {
