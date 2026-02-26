@@ -1454,7 +1454,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     const uint32_t read_heap_offset = static_cast<uint32_t>(physDevProps_.limits.minUniformBufferOffsetAlignment);
-    const int32_t read_push_offset = -8;
+    const int32_t read_push_offset = 8;
     const uint32_t read_push_data_offset = 48u;
     const uint32_t read_offset = read_heap_offset + read_push_offset;
     const VkDeviceSize write_offset =
