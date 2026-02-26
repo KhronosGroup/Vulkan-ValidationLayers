@@ -39,6 +39,10 @@ struct ShaderInstrumentationMetadata;
 struct ShaderObjectInstrumentationData;
 }  // namespace chassis
 
+namespace spirv {
+struct Module;
+}
+
 namespace gpuav {
 class Validator;
 
@@ -106,9 +110,10 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
     void PreCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize, void *pData,
                                              const RecordObject &record_obj, chassis::ShaderBinaryData &chassis_state) override;
-    bool PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT &modified_create_info,
-                                                  const Location &create_info_loc,
-                                                  chassis::ShaderObjectInstrumentationData &shader_instrumentation_data);
+    bool PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT& modified_create_info,
+                                                  const Location& create_info_loc,
+                                                  chassis::ShaderObjectInstrumentationData& shader_instrumentation_data,
+                                                  ::spirv::Module* module_state);
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;

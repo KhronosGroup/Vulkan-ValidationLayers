@@ -460,9 +460,10 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
     chassis_state.modified_shader_handle = sub_state.original_handle;
 }
 
-bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
-    vku::safe_VkShaderCreateInfoEXT &modified_create_info, const Location &create_info_loc,
-    chassis::ShaderObjectInstrumentationData &instrumentation_data) {
+bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT& modified_create_info,
+                                                                     const Location& create_info_loc,
+                                                                     chassis::ShaderObjectInstrumentationData& instrumentation_data,
+                                                                     ::spirv::Module* module_state) {
     if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(modified_create_info.pNext)) {
         return false;
     }
@@ -475,6 +476,7 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     interface.entry_point_name = modified_create_info.pName;
     interface.entry_point_stage = modified_create_info.stage;
     interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
+    interface.core_module = module_state;
     BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
 
     const bool is_shader_instrumented = InstrumentShader(
@@ -504,12 +506,14 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         vku::safe_VkShaderCreateInfoEXT &new_create_info = chassis_state.modified_create_infos[i];
         new_create_info.initialize(&pCreateInfos[i]);
 
-        const Location &create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
-        auto &instrumentation_data = chassis_state.instrumentations_data[i];
-
         if (new_create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
+        } else if (!chassis_state.module_states[i]) {
+            continue;
         }
+
+        const Location& create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
+        auto& instrumentation_data = chassis_state.instrumentations_data[i];
 
         // See pipeline version for explanation
         if (new_create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) {
@@ -543,8 +547,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     continue;
                 }
                 AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure *>(&new_create_info));
-                chassis_state.is_modified |=
-                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+                chassis_state.is_modified |= PreCallRecordShaderObjectInstrumentation(
+                    new_create_info, create_info_loc, instrumentation_data, chassis_state.module_states[i].get());
             } else {
                 // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
                 if (new_create_info.pSetLayouts) {
@@ -561,8 +565,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 }
                 new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
 
-                chassis_state.is_modified |=
-                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+                chassis_state.is_modified |= PreCallRecordShaderObjectInstrumentation(
+                    new_create_info, create_info_loc, instrumentation_data, chassis_state.module_states[i].get());
             }
         }
     }
@@ -1253,6 +1257,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_name = stage_state.GetPName();
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
+        interface.core_module = stage_state.spirv_state.get();
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1450,6 +1455,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_name = modified_stage_state.GetPName();
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
+            interface.core_module = modified_stage_state.spirv_state.get();
             const bool is_shader_instrumented =
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 
