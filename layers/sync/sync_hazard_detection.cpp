@@ -398,15 +398,13 @@ HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen &vi
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
 
-HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
+HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrier &subpass_barrier,
                                                           const AttachmentViewGen &attach_view) const {
-    // We should never ask for a transition from a context we don't have
-    assert(track_back.source_subpass);
-
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
     // Hazard detection for the transition can be against the merged of the barriers (it only uses src_...)
-    const SyncBarrier merged_barrier(track_back.barriers);
-    HazardResult hazard = track_back.source_subpass->DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious);
+    const SyncBarrier merged_barrier(subpass_barrier.barriers);
+    const AccessContext &src_subpass_context = *subpass_barrier.src_subpass_context;
+    HazardResult hazard = src_subpass_context.DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious);
     if (!hazard.IsHazard()) {
         // The Async hazard check is against the current context's async set.
         SyncBarrier null_barrier = {};
@@ -612,14 +610,12 @@ HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect
 
 template <typename Detector>
 HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const AccessRange &range) const {
-    if (prev_.empty()) {
+    if (subpass_barriers_.empty()) {
         return {};
     }
     AccessContext descent_context;
-    for (const auto &prev_dep : prev_) {
-        const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
-        prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, false);
-    }
+    ResolveSubpassDependencies(range, descent_context, false);
+
     AccessMap &descent_map = descent_context.access_state_map_;
     for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
         HazardResult hazard = detector.Detect(prev);

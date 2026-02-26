@@ -208,7 +208,13 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
-    const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
+
+    const AccessContext *GetCurrentAccessContext() const override {
+        // TODO: return a reference (update a lot of places!)
+        assert(current_context_ != nullptr);
+        return current_context_;
+    }
+
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
     QueueId GetQueueId() const override;
 
