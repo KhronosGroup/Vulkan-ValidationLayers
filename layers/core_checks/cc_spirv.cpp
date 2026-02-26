@@ -2894,19 +2894,32 @@ bool CoreChecks::ValidateTaskPayload(const spirv::Module *task_module, const spi
     return skip;
 }
 
-bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM &create_info,
-                                                            const Location &create_info_loc,
-                                                            const VkDataGraphPipelineShaderModuleCreateInfoARM &dg_shader_ci,
-                                                            const vvl::Pipeline &pipeline) const {
-    bool skip = false;
+static const ShaderStageState* GetDataGraphShaderStage(const vvl::Pipeline& pipeline) {
     if (pipeline.stage_states.empty()) {
         // no ShaderModule defined
+        return nullptr;
+    }
+    // the one and only stage for a datagraph
+    return &pipeline.stage_states[0];
+}
+
+bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                            const Location& create_info_loc,
+                                                            const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
+                                                            const vvl::Pipeline& pipeline) const {
+    bool skip = false;
+
+    const ShaderStageState* stage_state_ptr = GetDataGraphShaderStage(pipeline);
+    if (!stage_state_ptr) {
         return skip;
     }
+    const ShaderStageState& stage_state = *stage_state_ptr;
+    const spirv::Module* module_spirv_ptr = stage_state.spirv_state.get();
+    if (!module_spirv_ptr) {
+        return skip;
+    }
+    const spirv::Module& module_spirv = *module_spirv_ptr;
 
-    const auto &stage_state = pipeline.stage_states[0];
-    ASSERT_AND_RETURN_SKIP(stage_state.spirv_state.get());
-    const spirv::Module &module_spirv = *stage_state.spirv_state.get();
     const Location dg_shader_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM);
 
     // location where the VkShaderModule was defined: VkDataGraphPipelineShaderModuleCreateInfoARM or VkShaderModuleCreateInfo?
@@ -3200,6 +3213,12 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module &module_spirv, c
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint32_t queueFamilyIndex, const Location& loc) const {
+    bool skip = false;
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/11713
     return skip;
 }
 

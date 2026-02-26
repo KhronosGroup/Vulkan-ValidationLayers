@@ -573,6 +573,8 @@ struct EntryPoint {
     const std::vector<StageInterfaceVariable> stage_interface_variables;
     const std::vector<const Instruction *> datagraph_constants;
 
+    bool uses_tosa_1_0{false};
+
     // Easier to lookup without having to check for the is_builtin bool
     // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
     std::vector<const StageInterfaceVariable *> built_in_variables;
@@ -728,6 +730,7 @@ struct Module {
         struct ExtendedInstructionSets {
             uint32_t glsl_std450 = 0;        // GLSL.std.450
             uint32_t shader_debug_info = 0;  // NonSemantic.Shader.DebugInfo.100
+            uint32_t tosa_001000_1 = 0;      // TOSA.001000.1
         } extended;
 
         // EntryPoint has pointer references inside it that need to be preserved

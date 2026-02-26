@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,3 +39,6 @@ bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentS
 bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b);
 
 bool CompareDependencyInfo(const VkDependencyInfo& a, const VkDependencyInfo& b);
+
+bool CompareVkQueueFamilyDataGraphPropertiesARM(const VkQueueFamilyDataGraphPropertiesARM& a,
+                                                const VkQueueFamilyDataGraphPropertiesARM& b);

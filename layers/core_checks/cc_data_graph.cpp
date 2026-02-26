@@ -409,5 +409,8 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
             FormatHandle(cb_pipeline).c_str(), FormatHandle(session_state.create_info.dataGraphPipeline).c_str(), FormatHandle(session_state).c_str());
     }
 
+    skip |=
+        ValidateDataGraphOperations(*last_bound_state.pipeline_state, cb_state.command_pool->queueFamilyIndex, error_obj.location);
+
     return skip;
 }

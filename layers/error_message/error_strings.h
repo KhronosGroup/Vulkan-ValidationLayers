@@ -400,3 +400,41 @@
     ss << "reservedRangeSize = " << info.reservedRangeSize << "";
     return ss.str();
 }
+
+[[maybe_unused]] static std::string string_VkPhysicalDeviceDataGraphProcessingEngineARM(
+    const VkPhysicalDeviceDataGraphProcessingEngineARM& engine) {
+    std::stringstream ss;
+    ss << "{ type: " << string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(engine.type)
+       << ", isForeign: " << string_VkBool32(engine.isForeign) << " }";
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkPhysicalDeviceDataGraphOperationSupportARM(
+    const VkPhysicalDeviceDataGraphOperationSupportARM& operation) {
+    std::stringstream ss;
+    ss << "{ type: " << string_VkPhysicalDeviceDataGraphOperationTypeARM(operation.operationType) << ", name: \"" << operation.name
+       << "\", version: " << operation.version << "}";
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkQueueFamilyDataGraphPropertiesARM(
+    const VkQueueFamilyDataGraphPropertiesARM& property) {
+    std::stringstream ss;
+    ss << "{\n  engine: " << string_VkPhysicalDeviceDataGraphProcessingEngineARM(property.engine)
+       << ",\n  operation: " << string_VkPhysicalDeviceDataGraphOperationSupportARM(property.operation) << "\n}\n";
+    return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkQueueFamilyDataGraphPropertiesARM(
+    const std::vector<VkQueueFamilyDataGraphPropertiesARM>& properties) {
+    if (properties.size() == 0) {
+        // with just a blank it's unclear if the function is wrong or there really are no properties.
+        return "EMPTY\n";
+    }
+
+    std::stringstream ss;
+    for (const auto& p : properties) {
+        ss << string_VkQueueFamilyDataGraphPropertiesARM(p) << '\n';
+    }
+    return ss.str();
+}

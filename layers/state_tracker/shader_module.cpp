@@ -522,6 +522,7 @@ struct ParsedInfo {
     std::vector<const Instruction*> debug_global_variables;
 
     bool has_graph_constant_arm = false;  // detects if any are found OpGraphConstantARM
+    bool uses_tosa_1_0 = false;
 
     uint32_t total_entry_points = 0;
 };
@@ -858,6 +859,7 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, parsed)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)),
       datagraph_constants(GetDataGraphConstants(module_state, *this, parsed)),
+      uses_tosa_1_0(parsed.uses_tosa_1_0),
       only_entry_point(parsed.total_entry_points == 1) {
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
@@ -1222,6 +1224,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                     if (ext_instruction == NonSemanticShaderDebugInfo100DebugGlobalVariable) {
                         parsed.debug_global_variables.emplace_back(&insn);
                     }
+                } else if (set == extended.tosa_001000_1) {
+                    parsed.uses_tosa_1_0 = true;
                 }
                 break;
             }
@@ -1245,11 +1249,13 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
 
             case spv::OpExtInstImport: {
-                if (strcmp(insn.GetAsString(2), "GLSL.std.450") == 0) {
+                const char* ext_name = insn.GetAsString(2);
+                if (strcmp(ext_name, "GLSL.std.450") == 0) {
                     extended.glsl_std450 = insn.ResultId();
-                }
-                if (strcmp(insn.GetAsString(2), "NonSemantic.Shader.DebugInfo.100") == 0) {
+                } else if (strcmp(ext_name, "NonSemantic.Shader.DebugInfo.100") == 0) {
                     extended.shader_debug_info = insn.ResultId();
+                } else if (strncmp(ext_name, "TOSA.001000.1", strlen("TOSA.001000.1")) == 0) {
+                    extended.tosa_001000_1 = insn.ResultId();
                 }
                 break;
             }
