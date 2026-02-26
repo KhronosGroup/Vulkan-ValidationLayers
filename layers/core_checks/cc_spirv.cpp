@@ -95,7 +95,8 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
                         LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652", objlist, loc,
                                  "%s which is not less than VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
                                  ")\nIf VkRenderingInputAttachmentIndexInfo is provided, the index can be set, but without it, it "
-                                 "uses the default index values.",
+                                 "uses the default index values.\nHint: If using Depth/Stencil attachments, you should be omitting "
+                                 "the input attachment index in the shader to access the depth/stencil attachments.",
                                  print_index(input_attachment_index).c_str(), color_count);
                 }
             }
