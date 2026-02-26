@@ -1159,6 +1159,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     break;
                 }
             } else if (!pre_raster_dsl && !fs_dsl) {
+                if (!not_independent_sets) {
+                    // With INDEPENDENT_SETS this is valid
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8081
+                    break;
+                }
                 const auto pre_raster_layout_handle_str = FormatHandle(pre_raster_info.layout->Handle());
                 const auto fs_layout_handle_str = FormatHandle(frag_shader_info.layout->Handle());
                 const char *vuid = nullptr;
