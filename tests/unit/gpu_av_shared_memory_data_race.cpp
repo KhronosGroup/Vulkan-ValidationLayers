@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
+ * Copyright (c) 2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,13 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../layers/containers/range.h"
 
-class NegativeGpuAVSharedMemoryDataRaceTest : public GpuAVSharedMemoryDataRaceTest {
+class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
     void TestHelper(const char *source, uint32_t count, const char *error = "SharedMemoryDataRace");
 };
 
-void NegativeGpuAVSharedMemoryDataRaceTest::TestHelper(const char *shader_source, uint32_t count, const char *error) {
+void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, uint32_t count, const char* error) {
     TEST_DESCRIPTION("Shared memory, data race");
     RETURN_IF_SKIP(InitSharedMemoryDataRace(count));
 
@@ -39,7 +37,7 @@ void NegativeGpuAVSharedMemoryDataRaceTest::TestHelper(const char *shader_source
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SingleScalar) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleScalar) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -53,7 +51,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SingleScalar) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SingleElementArray) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleElementArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -67,7 +65,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SingleElementArray) {
     TestHelper(shader_source, 2);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoThreadsShareValuesThroughArray) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -82,7 +80,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoThreadsShareValuesThroughArray)
     TestHelper(shader_source, 2);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoDimensionalArray) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -97,7 +95,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoDimensionalArray) {
     TestHelper(shader_source, 3);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, BasicStructRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStructRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -121,7 +119,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, BasicStructRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, StructVsScalarRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalarRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -142,7 +140,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, StructVsScalarRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, VectorVsScalarRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalarRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -161,7 +159,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, VectorVsScalarRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoVariablesRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariablesRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -184,7 +182,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoVariablesRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoVectorsRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectorsRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -207,7 +205,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, TwoVectorsRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, VectorArrayRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArrayRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -225,7 +223,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, VectorArrayRace) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, ShortIndex) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
 
     const char *shader_source = R"glsl(
@@ -246,7 +244,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, ShortIndex) {
     TestHelper(shader_source, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SpecConstantArrayRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArrayRace) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -262,7 +260,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, SpecConstantArrayRace) {
     TestHelper(shader_source, 2);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRaceTest, VariableName) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, VariableName) {
     const char *shader_source = R"glsl(
         #version 450
 

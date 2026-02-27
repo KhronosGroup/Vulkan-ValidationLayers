@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2026 LunarG, Inc.
+/* Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,7 @@ const static OfflineFunction kOfflineFunction[4] = {
     {"do_atomic", instrumentation_shared_memory_data_race_comp_function_3_offset},
 };
 
-SharedMemoryDataRacePass::SharedMemoryDataRacePass(Module& module, const vvl::span<const uint32_t>& input_spirv)
-    : Pass(module, kOfflineModule), input_spirv(input_spirv) {
-    module.use_bda_ = true;
-}
+SharedMemoryDataRacePass::SharedMemoryDataRacePass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
 uint32_t SharedMemoryDataRacePass::GetLinkFunctionId(const InstructionMeta& meta) {
     return GetLinkFunction(link_function_id_[meta.function_idx], kOfflineFunction[meta.function_idx]);
@@ -49,10 +46,7 @@ void SharedMemoryDataRacePass::CreateFunctionCall(BasicBlock& block, Instruction
     const uint32_t function_def = GetLinkFunctionId(meta);
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
-    // XXX TODO need a better solution to handle source mapping when we've run
-    // spirv-opt to freeze spec constants. For now, this just uses a bogus line
-    // number in that case.
-    const uint32_t inst_position = module_.spec_constants_frozen ? 1 : meta.target_instruction->GetPositionOffset();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.GetConstantUInt32(inst_position).Id();
 
     if (meta.function_idx == 0) {
@@ -228,16 +222,16 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
 
     switch (opcode) {
         case spv::OpLoad:
-            meta.function_idx = 2;
+            meta.function_idx = 2;  // do_load
             break;
         case spv::OpStore:
-            meta.function_idx = 1;
+            meta.function_idx = 1;  // do_store
             break;
         case spv::OpControlBarrier:
-            meta.function_idx = 0;
+            meta.function_idx = 0;  // init_shadow
             break;
         default:
-            meta.function_idx = 3;
+            meta.function_idx = 3;  // do_atomic
             break;
     }
 
@@ -246,6 +240,10 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
 
 bool SharedMemoryDataRacePass::Instrument() {
     if (module_.interface_.entry_point_stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+        return false;
+    }
+
+    if (module_.HasCapability(spv::CapabilityWorkgroupMemoryExplicitLayoutKHR)) {
         return false;
     }
 
@@ -266,11 +264,9 @@ bool SharedMemoryDataRacePass::Instrument() {
         return false;
     }
 
-    // Hackily create a ::spirv::Module to compute the shared memory size.
-    ::spirv::Module m(input_spirv);
-    const uint32_t shared_memory_size = m.CalculateWorkgroupSharedMemory();
+    const uint32_t shared_memory_size = module_.interface_.core_module->CalculateWorkgroupSharedMemory();
     // Bail if we would overflow the limit
-    if (shared_memory_size + num_slots * sizeof(uint32_t) > module_.settings_.maxComputeSharedMemorySize) {
+    if (shared_memory_size + num_slots * sizeof(uint32_t) > module_.settings_.max_compute_shared_memory_size) {
         return false;
     }
 
@@ -306,15 +302,11 @@ bool SharedMemoryDataRacePass::Instrument() {
 
             // Call init_shadow at the start of the entry point
             if (function.id_ == module_.target_entry_point_id_ && block_it == function.blocks_.begin()) {
-                auto inst_it = block_instructions.begin();
-                while (IsValueIn((spv::Op)inst_it->get()->Opcode(),
-                                 {spv::OpLabel, spv::OpLine, spv::OpNoLine, spv::OpFunctionParameter, spv::OpVariable})) {
-                    inst_it++;
-                }
+                InstructionIt inst_it = current_block.GetFirstInjectableInstrution();
 
                 InstructionMeta meta;
                 meta.target_instruction = &*(inst_it->get());
-                meta.function_idx = 0;
+                meta.function_idx = 0;  // init_shadow
 
                 CreateFunctionCall(current_block, &inst_it, meta);
                 instrumentations_count_++;

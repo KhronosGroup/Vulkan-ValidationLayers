@@ -97,7 +97,6 @@ class Module {
     const InstrumentationInterface& interface_;
 
     bool use_bda_ = false;
-    bool spec_constants_frozen = false;
 
     const DeviceFeatures& enabled_features_;
 

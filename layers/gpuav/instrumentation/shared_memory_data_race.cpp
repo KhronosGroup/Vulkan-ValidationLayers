@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "generated/spirv_grammar_helper.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_codes.h"

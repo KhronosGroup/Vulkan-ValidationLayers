@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2026 LunarG, Inc.
+/* Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ namespace spirv {
 
 class SharedMemoryDataRacePass : public Pass {
   public:
-    SharedMemoryDataRacePass(Module& module, const vvl::span<const uint32_t>& input_spirv);
+    SharedMemoryDataRacePass(Module& module);
     const char* Name() const final { return "SharedMemoryDataRacePass"; }
     bool Instrument() final;
     void PrintDebugInfo() const final;
@@ -51,8 +51,6 @@ class SharedMemoryDataRacePass : public Pass {
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(const InstructionMeta& meta);
-
-    const vvl::span<const uint32_t>& input_spirv;
 
     // Function IDs to link in
     uint32_t link_function_id_[4]{};
