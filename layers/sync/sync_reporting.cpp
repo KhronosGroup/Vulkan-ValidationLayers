@@ -20,6 +20,8 @@
 #include "error_message/error_strings.h"
 #include "utils/math_utils.h"
 
+using vvl::Func;
+
 namespace syncval {
 
 constexpr VkAccessFlags2 kAllAccesses = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
@@ -335,12 +337,12 @@ static void ReportLayoutTransitionSynchronizationInsight(std::ostringstream &ss,
     // print instructions for specific situation. Now we describe all possibilities.
     const std::string barrier_src_stage = string_VkPipelineStageFlags2(read_barriers);
     if (needs_execution_dependency) {
-        ss << "\nVulkan insight: If the layout transition is done via an image barrier, consider including " << barrier_src_stage
+        ss << "\nHint: If the layout transition is done via an image barrier, consider including " << barrier_src_stage
            << " in srcStageMask. If the transition occurs as part of the render pass begin operation, consider specifying an "
               "external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask that includes "
            << barrier_src_stage << ", or perform the transition in a separate image barrier before the render pass begins.";
     } else {
-        ss << "\nVulkan insight: If the layout transition is done via an image barrier, ensure srcStageMask and srcAccessMask "
+        ss << "\nHint: If the layout transition is done via an image barrier, ensure srcStageMask and srcAccessMask "
               "synchronize with the accesses mentioned above. If the transition occurs as part of the render pass begin operation, "
               "consider specifying an external subpass dependency (VK_SUBPASS_EXTERNAL) with srcStageMask and srcAccessMask that "
               "synchronize with those accesses, or perform the transition in a separate image barrier before the render pass "
@@ -349,9 +351,9 @@ static void ReportLayoutTransitionSynchronizationInsight(std::ostringstream &ss,
 }
 
 static void ReportAcquireImageSynchronizationInsight(std::ostringstream &ss) {
-    ss << "\nVulkan insight: If a submit command waits on a semaphore signaled by AcquireNextImage command at specific pipeline "
-          "stages, this error can occur if the layout transition barrier does not create an execution dependency with those stages "
-          "(for example, by including them in the barrier's srcStageMask).";
+    ss << "\nHint: If a submit command waits on a semaphore signaled by AcquireNextImage command at specific pipeline stages, this "
+          "error can occur if the layout transition barrier does not create an execution dependency with those stages (for "
+          "example, by including them in the barrier's srcStageMask).";
 }
 
 void ReportProperties::Add(std::string_view property_name, std::string_view value) {
@@ -574,7 +576,21 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
 
     // Give a hint for WAR hazard
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
-        ss << "\nVulkan insight: An execution dependency is sufficient to prevent this hazard.";
+        ss << "\nHint: An execution dependency is sufficient to prevent this hazard.";
+    }
+    // Give a hint about how to fix a layout transition hazard with the previous access.
+    // Skip async and special hazard types (consider WAR and WAW only)
+    if (IsValueIn(command, {Func::vkCmdPipelineBarrier, Func::vkCmdPipelineBarrier2, Func::vkCmdPipelineBarrier2KHR}) &&
+        IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_AFTER_WRITE}) &&
+        prior_access.stage_mask != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL) {
+        if (hazard_type == WRITE_AFTER_READ) {
+            ss << "\nHint: Ensure that srcStageMask includes " << string_VkPipelineStageFlagBits2(prior_access.stage_mask);
+        } else {
+            ss << "\nHint: Ensure that srcStageMask includes " << string_VkPipelineStageFlagBits2(prior_access.stage_mask)
+               << " and srcAccessMask includes " << string_VkAccessFlagBits2(prior_access.access_mask);
+        }
+        ss << ". The source side of the barrier protects layout transition writes from previous accesses, and the destination side "
+              "cannot introduce this specific hazard.";
     }
 
     if (!additional_info.message_end_text.empty()) {

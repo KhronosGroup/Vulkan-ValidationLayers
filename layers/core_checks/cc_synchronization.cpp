@@ -284,7 +284,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
            << ", but it may still be in use by the swapchain since the corresponding swapchain image has not been "
               "re-acquired.\n";
     }
-    ss << "Vulkan insight: See https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html for details on swapchain "
+    ss << "Hint: See https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html for details on swapchain "
           "semaphore reuse. Examples of possible approaches:\n"
           "   a) Use a separate semaphore per swapchain image. Index these semaphores using the index of the acquired image.\n"
           "   b) Consider the VK_KHR_swapchain_maintenance1 extension. It allows using a VkFence with the presentation "

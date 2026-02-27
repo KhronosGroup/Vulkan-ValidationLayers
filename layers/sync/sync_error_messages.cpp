@@ -254,7 +254,7 @@ static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
 static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_color, std::string& message_end_text) {
     if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
         std::ostringstream ss;
-        ss << "\nVulkan insight: according to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
+        ss << "\nHint: According to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
         if (is_color) {
             ss << "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT for color attachment";
         } else {
