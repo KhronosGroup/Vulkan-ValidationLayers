@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ TEST_F(PositiveGpuAVMesh, MultipleSetMeshOutput) {
     RETURN_IF_SKIP(InitBasicMeshAndTask(false));
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(triangles, max_vertices = 3, max_primitives = 1) out;
@@ -62,7 +62,7 @@ TEST_F(PositiveGpuAVMesh, MultipleSetMeshOutput) {
         };
         void main() {
             if (index == 1) {
-                SetMeshOutputsEXT(500, 500);
+                SetMeshOutputsEXT(v * 500, p * 500);
             } else if (index == 2) {
                 SetMeshOutputsEXT(p, v);
             } else {

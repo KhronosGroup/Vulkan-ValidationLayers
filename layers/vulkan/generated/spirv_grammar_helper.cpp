@@ -1167,6 +1167,12 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGroupLogicalXorKHR";
         case spv::OpRoundFToTF32INTEL:
             return "OpRoundFToTF32INTEL";
+        case spv::OpFDot2MixAcc32VALVE:
+            return "OpFDot2MixAcc32VALVE";
+        case spv::OpFDot2MixAcc16VALVE:
+            return "OpFDot2MixAcc16VALVE";
+        case spv::OpFDot4MixAcc32VALVE:
+            return "OpFDot4MixAcc32VALVE";
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::OpAllocateNodePayloadsAMDX:
@@ -2743,6 +2749,9 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGroupLogicalOrKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalXorKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpRoundFToTF32INTEL, {{OperandKind::Id}}},
+        {spv::OpFDot2MixAcc32VALVE, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpFDot2MixAcc16VALVE, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpFDot4MixAcc32VALVE, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
     };  // clang-format on
 
     auto info = kOperandTable.find(opcode);

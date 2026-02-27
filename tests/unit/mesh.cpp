@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "shader_templates.h"
+#include "test_framework.h"
 
 class NegativeMesh : public MeshTest {};
 
@@ -1432,5 +1433,50 @@ TEST_F(NegativeMesh, RenderingViewMask) {
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-12326");
     pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMesh, VertexCountConstant) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4694");
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+
+    const char* mesh_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(triangles, max_vertices = 3, max_primitives = 1) out;
+        void main() {
+            SetMeshOutputsEXT(6, 1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    // spirv-val
+    // VUID-VkShaderModuleCreateInfo-pCode-08737
+    m_errorMonitor->SetDesiredError(
+        "OpSetMeshOutputsEXT Vertex Count (6) is larger than the OutputVertices in OpExecutionMode (3)");
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMesh, PrimitiveCountConstant) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4694");
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    const char* mesh_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(triangles, max_vertices = 3, max_primitives = 1) out;
+        void main() {
+            SetMeshOutputsEXT(3, 2);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    // spirv-val
+    // VUID-VkShaderModuleCreateInfo-pCode-08737
+    m_errorMonitor->SetDesiredError(
+        "OpSetMeshOutputsEXT Primitive Count (2) is larger than the OutputPrimitivesEXT in OpExecutionMode (1)");
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

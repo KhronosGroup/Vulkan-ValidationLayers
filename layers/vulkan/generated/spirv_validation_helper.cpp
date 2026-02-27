@@ -294,14 +294,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
         {spv::CapabilityLongVectorEXT, {0, &DeviceFeatures::longVector, nullptr, ""}},
         {spv::CapabilityDescriptorHeapEXT, {0, &DeviceFeatures::descriptorHeap, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityDotProductFloat16AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat32, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityDotProductFloat16AccFloat16VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat16, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityDotProductBFloat16AccVALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductBFloat16Acc, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
+        {spv::CapabilityDotProductFloat16AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat32, nullptr, ""}},
+        {spv::CapabilityDotProductFloat16AccFloat16VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat16, nullptr, ""}},
+        {spv::CapabilityDotProductBFloat16AccVALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductBFloat16Acc, nullptr, ""}},
+        {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -888,6 +884,14 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
         case spv::CapabilityBindlessImagesINTEL:
             return "BindlessImagesINTEL";
 #endif
+        case spv::CapabilityDotProductFloat16AccFloat32VALVE:
+            return "DotProductFloat16AccFloat32VALVE";
+        case spv::CapabilityDotProductFloat16AccFloat16VALVE:
+            return "DotProductFloat16AccFloat16VALVE";
+        case spv::CapabilityDotProductBFloat16AccVALVE:
+            return "DotProductBFloat16AccVALVE";
+        case spv::CapabilityDotProductFloat8AccFloat32VALVE:
+            return "DotProductFloat8AccFloat32VALVE";
         default:
             return "Unhandled OpCapability";
     };
@@ -1262,6 +1266,10 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityShader64BitIndexingEXT, "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing"},
     {spv::CapabilityLongVectorEXT, "VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector"},
     {spv::CapabilityDescriptorHeapEXT, "VkPhysicalDeviceDescriptorHeapFeaturesEXT::descriptorHeap"},
+    {spv::CapabilityDotProductFloat16AccFloat32VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat32"},
+    {spv::CapabilityDotProductFloat16AccFloat16VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat16"},
+    {spv::CapabilityDotProductBFloat16AccVALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductBFloat16Acc"},
+    {spv::CapabilityDotProductFloat8AccFloat32VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32"},
     };
 
     // VUs before catch unknown capabilities

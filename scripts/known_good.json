@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "04f10f650d514df88b76d25e83db360142c7b174"
+            "commit": "f88a2d766840fc825af1fc065977953ba1fa4a91"
         },
         {
             "name": "SPIRV-Tools",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "a66a95eecf5102f2b19d6208385538c7c29aa7a1"
+            "commit": "90d8e7d8ae287980dc9bda69e1bf03f072351f2f"
         },
         {
             "name": "mimalloc",
