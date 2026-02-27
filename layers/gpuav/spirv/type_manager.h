@@ -66,7 +66,6 @@ struct Type {
     uint32_t VectorSize() const;
     // 64-bit floats/int take up 2 dwords
     bool Is64Bit() const;
-    uint32_t ScalarBitWidth() const;
 
     const SpvType spv_type_;
     const Instruction& inst_;
