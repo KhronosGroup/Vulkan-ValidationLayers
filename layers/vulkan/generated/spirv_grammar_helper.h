@@ -468,6 +468,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
         case spv::OpRoundFToTF32INTEL:
+        case spv::OpFDot2MixAcc32VALVE:
+        case spv::OpFDot2MixAcc16VALVE:
+        case spv::OpFDot4MixAcc32VALVE:
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::OpAllocateNodePayloadsAMDX:
         case spv::OpFinishWritingNodePayloadAMDX:
@@ -946,6 +949,9 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
         case spv::OpRoundFToTF32INTEL:
+        case spv::OpFDot2MixAcc32VALVE:
+        case spv::OpFDot2MixAcc16VALVE:
+        case spv::OpFDot4MixAcc32VALVE:
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::OpAllocateNodePayloadsAMDX:
         case spv::OpTypeNodePayloadArrayAMDX:
