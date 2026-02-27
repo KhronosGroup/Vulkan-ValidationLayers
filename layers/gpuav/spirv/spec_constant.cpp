@@ -301,7 +301,7 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
         }
 
         uint64_t lane_result = 0;
-        const uint32_t result_bit_width = scalar_type.ScalarBitWidth();
+        const uint32_t result_bit_width = scalar_type.inst_.GetBitWidth();
         if (target_opcode == spv::OpSConvert || target_opcode == spv::OpUConvert) {
             uint64_t mask = (result_bit_width == 64) ? ~0ULL : (1ULL << result_bit_width) - 1;
             lane_result = args[0] & mask;

@@ -750,16 +750,6 @@ bool Type::Is64Bit() const {
     return false;
 }
 
-uint32_t Type::ScalarBitWidth() const {
-    if (spv_type_ == SpvType::kFloat || spv_type_ == SpvType::kInt) {
-        return inst_.Word(2);
-    } else if (spv_type_ == SpvType::kBool) {
-        return 1;
-    }
-    assert(false);
-    return 0;
-}
-
 uint32_t Constant::GetValueUint32() const {
     assert(inst_.Opcode() == spv::OpConstant || inst_.Opcode() == spv::OpConstantNull);
     return inst_.Opcode() == spv::OpConstantNull ? 0 : inst_.Word(3);
