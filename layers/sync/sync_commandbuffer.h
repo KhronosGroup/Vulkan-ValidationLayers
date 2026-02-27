@@ -84,15 +84,21 @@ struct HandleRecord {
     }
 };
 
+enum class SubCommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
+
 // ResourceUsageRecord encodes information about the command that performed the access.
 // It's important to limit the size of this structure. Separate record is stored per access command.
 struct ResourceUsageRecord {
     static constexpr auto kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
-    enum class SubcommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
 
-    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubcommandType sub_type, const vvl::CommandBuffer *cb_state,
-                        uint32_t reset_count)
-        : command(command), seq_num(seq_num), sub_command_type(sub_type), cb_state(cb_state), reset_count(reset_count) {}
+    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubCommandType sub_type, const vvl::CommandBuffer *cb_state,
+                        uint32_t reset_count, uint32_t subpass = vvl::kNoIndex32)
+        : command(command),
+          seq_num(seq_num),
+          sub_command_type(sub_type),
+          subpass(subpass),
+          cb_state(cb_state),
+          reset_count(reset_count) {}
     ResourceUsageRecord(const AlternateResourceUsage &other) : alt_usage(other) {}
 
     vvl::Func command = vvl::Func::Empty;
@@ -101,7 +107,9 @@ struct ResourceUsageRecord {
     // Currently this indexes only the commands that initiate memory accesses (so are of interest to syncval).
     uint32_t seq_num = 0;
 
-    SubcommandType sub_command_type = SubcommandType::kNone;
+    SubCommandType sub_command_type = SubCommandType::kNone;
+
+    uint32_t subpass = vvl::kNoIndex32;
 
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
@@ -121,6 +129,8 @@ struct ResourceUsageRecord {
 struct ResourceUsageInfo {
     vvl::Func command = vvl::Func::Empty;
     uint32_t command_seq = vvl::kNoIndex32;
+    SubCommandType sub_command_type = SubCommandType::kNone;
+    uint32_t subpass = vvl::kNoIndex32;
 
     VulkanTypedHandle resource_handle;
     std::string debug_region_name;
@@ -257,9 +267,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
         return VulkanTypedHandle(static_cast<VkCommandBuffer>(VK_NULL_HANDLE), kVulkanObjectTypeCommandBuffer);
     }
 
-    ResourceUsageTag NextCommandTag(vvl::Func command,
-                                    ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
-    ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
+    ResourceUsageTag NextCommandTag(vvl::Func command, SubCommandType subcommand = SubCommandType::kNone,
+                                    uint32_t subpass = vvl::kNoIndex32);
+    ResourceUsageTag NextSubCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass = vvl::kNoIndex32);
 
     ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle);
     ResourceUsageTagEx AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);

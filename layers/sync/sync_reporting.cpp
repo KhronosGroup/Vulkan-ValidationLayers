@@ -436,31 +436,51 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
     }
     ss << " " << resouce_description << ", which was previously ";
     if (prior_access.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
-        ss << "accessed by ";
+        ss << "accessed ";
     } else if (hazard_info.IsPriorWrite()) {
         if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
-            ss << "written during an image layout transition initiated by ";
+            ss << "written during an image layout transition initiated ";
         } else {
-            ss << "written by ";
+            ss << "written ";
         }
     } else {
-        ss << "read by ";
+        ss << "read ";
     }
     if (hazard.Tag() == kInvalidTag) {
         // Invalid tag for prior access means the same command performed ILT before loadOp,
         // resolve before ILT or ILT after storeOp.
-        ss << "the same command";
+        ss << "by the same command";
     } else {
         const ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
-        if (prior_usage_info.command == command) {
-            ss << "another ";
-        }
-        ss << vvl::String(prior_usage_info.command);
-        if (!prior_usage_info.debug_region_name.empty()) {
-            ss << "[" << prior_usage_info.debug_region_name << "]";
-        }
-        if (prior_usage_info.command == command) {
-            ss << " command";
+        const vvl::Func prior_command = prior_usage_info.command;
+        if (prior_usage_info.sub_command_type == SubCommandType::kLoadOp) {
+            if (prior_usage_info.subpass != vvl::kNoIndex32) {
+                ss << "at the beginning of subpass " << prior_usage_info.subpass << " ";
+            } else {
+                ss << "at the beginning of the render pass instance ";
+            }
+            ss << "(" << vvl::String(prior_command) << ") ";
+            ss << "by the attachment loadOp";
+        } else if (prior_usage_info.sub_command_type == SubCommandType::kStoreOp) {
+            if (prior_usage_info.subpass != vvl::kNoIndex32) {
+                ss << "at the end of subpass " << prior_usage_info.subpass << " ";
+            } else {
+                ss << "at the end of the render pass instance ";
+            }
+            ss << "(" << vvl::String(prior_command) << ") ";
+            ss << "by the attachment storeOp";
+        } else {
+            ss << "by ";
+            if (prior_usage_info.command == command) {
+                ss << "another ";
+            }
+            ss << vvl::String(prior_usage_info.command);
+            if (!prior_usage_info.debug_region_name.empty()) {
+                ss << "[" << prior_usage_info.debug_region_name << "]";
+            }
+            if (prior_usage_info.command == command) {
+                ss << " command";
+            }
         }
     }
     if (!additional_info.brief_description_end_text.empty()) {
@@ -618,6 +638,8 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
     } else {
         info.command = record.command;
         info.command_seq = record.seq_num;
+        info.sub_command_type = record.sub_command_type;
+        info.subpass = record.subpass;
         info.command_buffer_reset_count = record.reset_count;
 
         // Associated resource

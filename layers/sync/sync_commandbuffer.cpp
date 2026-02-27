@@ -482,7 +482,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
         return;
     }
 
-    auto store_tag = NextCommandTag(record_obj.location.function, ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto store_tag = NextCommandTag(record_obj.location.function, SubCommandType::kStoreOp);
     AccessContext &access_context = *GetCurrentAccessContext();
 
     for (const auto &attachment : dynamic_rendering_info_->attachments) {
@@ -1226,9 +1226,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func com
                                                                    const VkRect2D &render_area,
                                                                    const std::vector<const vvl::ImageView *> &attachment_views) {
     // Create an access context the current renderpass.
-    const auto barrier_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    const auto barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
     AddCommandHandle(barrier_tag, rp_state.Handle());
-    const auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
+    const auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
     render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
         rp_state, render_area, GetQueueFlags(), attachment_views, cb_access_context_, current_render_pass_instance_id_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
@@ -1241,11 +1241,15 @@ ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kStoreOp);
+    // At this point current subpass value has not updated yet to the index of "next subpass"
+    const uint32_t previous_subpass = current_renderpass_context_->GetCurrentSubpass();
+    const uint32_t this_subpass = previous_subpass + 1;
+
+    auto store_tag = NextCommandTag(command, SubCommandType::kStoreOp, previous_subpass);
     AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
 
-    auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
-    auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
+    auto barrier_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition, this_subpass);
+    auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, this_subpass);
 
     current_renderpass_context_->RecordNextSubpass(store_tag, barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
@@ -1256,10 +1260,12 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func comma
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag = NextCommandTag(command, ResourceUsageRecord::SubcommandType::kStoreOp);
+    const uint32_t current_subpass = current_renderpass_context_->GetCurrentSubpass();
+
+    auto store_tag = NextCommandTag(command, SubCommandType::kStoreOp, current_subpass);
     AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
 
-    auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    auto barrier_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition);
 
     current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
     current_context_ = &cb_access_context_;
@@ -1310,11 +1316,11 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
     }
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
+ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass) {
     command_number_++;
     current_command_tag_ = access_log_->size();
 
-    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_);
+    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_, subpass);
 
     if (!cb_state_->GetLabelCommands().empty()) {
         record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
@@ -1323,9 +1329,9 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, R
     return current_command_tag_;
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
+ResourceUsageTag CommandBufferAccessContext::NextSubCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass) {
     const ResourceUsageTag tag = access_log_->size();
-    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_);
+    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_, subpass);
 
     // By default copy handle range from the main command, but can be overwritten with AddSubcommandHandle.
     const auto &main_command_record = (*access_log_)[current_command_tag_];
@@ -1915,12 +1921,11 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *subpass_
 
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index,
                                                  const Location &loc) {
-    const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
     if (cmd_index == 0) {
-        ResourceUsageTag cb_tag = access_context.NextCommandTag(loc.function, subcommand);
+        ResourceUsageTag cb_tag = access_context.NextCommandTag(loc.function, SubCommandType::kIndex);
         access_context.AddCommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
     } else {
-        ResourceUsageTag cb_tag = access_context.NextSubcommandTag(loc.function, subcommand);
+        ResourceUsageTag cb_tag = access_context.NextSubCommandTag(loc.function, SubCommandType::kIndex);
         access_context.AddSubcommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
     }
     access_context.RecordExecutedCommandBuffer(*GetAccessContext(secondary_command_buffer));
