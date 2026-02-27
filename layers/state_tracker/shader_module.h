@@ -329,9 +329,8 @@ enum NumericType {
     NumericTypeBool = 5,
 };
 
-uint32_t GetFormatType(VkFormat format);
-const char *string_NumericType(uint32_t type);
-VkFormat GetTensorFormat(NumericType numeric_type, uint32_t bit_width, spv::FPEncoding encoding);
+uint32_t GetFormatNumericType(VkFormat format);
+const char* string_NumericType(uint32_t type);
 
 // Common info needed for all OpVariable
 struct VariableBase {
@@ -476,8 +475,6 @@ struct ResourceInterfaceVariable : public VariableBase {
         NumericType numeric_type{NumericTypeUnknown};
         // the width in bits of the 'Type' operand of OpTypeImage/OpTypeTensorARM (64 is the largest bit width in SPIR-V)
         uint8_t bit_width{0};
-        // the encoding of some float types
-        spv::FPEncoding encoding{spv::FPEncoding::FPEncodingMax};
 
         spv::Dim image_dim;
         bool is_image_array{false};
@@ -821,9 +818,9 @@ struct Module {
 
     uint32_t GetLocationsConsumedByType(const Instruction* insn) const;
     uint32_t GetComponentsConsumedByType(const Instruction* insn) const;
-    NumericType GetNumericType(uint32_t type) const;
     NumericType GetNumericType(const Instruction &insn) const;
-    bool IsTensorFormatCompatible(VkFormat format, const spirv::Instruction &element_type_instr) const;
+    bool IsTensorFormatCompatible(VkFormat format, const spirv::Instruction& type_inst) const;
+    VkFormat GetTensorFormat(const spirv::Instruction& type_inst) const;
 
     bool HasRuntimeArray(uint32_t type_id) const;
 

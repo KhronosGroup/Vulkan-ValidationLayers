@@ -456,7 +456,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 DescribeInstruction().c_str());
         }
 
-        const uint32_t view_numeric_type = spirv::GetFormatType(image_view_ci.format);
+        const uint32_t view_numeric_type = spirv::GetFormatNumericType(image_view_ci.format);
         const uint32_t variable_numeric_type = resource_variable.info.numeric_type;
         // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
         // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter.
@@ -1021,7 +1021,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     const VkFormat buffer_view_format = buffer_view_state->create_info.format;
-    const uint32_t view_numeric_type = spirv::GetFormatType(buffer_view_format);
+    const uint32_t view_numeric_type = spirv::GetFormatNumericType(buffer_view_format);
     const uint32_t variable_numeric_type = resource_variable.info.numeric_type;
     if ((variable_numeric_type & view_numeric_type) == 0) {
         spirv::ImageInstruction image_insn = (is_gpu_av && original_spirv)

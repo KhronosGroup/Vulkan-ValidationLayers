@@ -2166,14 +2166,15 @@ std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
 
 const char* string_SpvFPEncoding(spv::FPEncoding value) {
     switch (value) {
-        case spv::FPEncoding::FPEncodingBFloat16KHR:
-            return "FPEncodingBFloat16KHR";
-        case spv::FPEncoding::FPEncodingFloat8E4M3EXT:
-            return "FPEncodingFloat8E4M3EXT";
-        case spv::FPEncoding::FPEncodingFloat8E5M2EXT:
-            return "FPEncodingFloat8E5M2EXT";
+        case spv::FPEncodingBFloat16KHR:
+            return "BFloat16KHR";
+        case spv::FPEncodingFloat8E4M3EXT:
+            return "Float8E4M3EXT";
+        case spv::FPEncodingFloat8E5M2EXT:
+            return "Float8E5M2EXT";
+
         default:
-            return "Unknown";
+            return "IEEE-754";  // default for 16-bit
     }
 }
 

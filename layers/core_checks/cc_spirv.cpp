@@ -3031,15 +3031,15 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module &module_
             }
 
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(resource.pNext)) {
-                const spirv::Instruction *element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
-                if (!module_spirv.IsTensorFormatCompatible(tensor_desc->format, *element_type_instr)) {
+                const spirv::Instruction& element_type_instr = *module_spirv.FindDef(tensor_type_instr.Word(2));
+                if (!module_spirv.IsTensorFormatCompatible(tensor_desc->format, element_type_instr)) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09923", device,
                                      resource_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
                                      "(%s) is incompatible with the element type (%s) of the tensor type definition (%s) for spirv "
                                      "descriptor %s.",
                                      string_VkFormat(tensor_desc->format),
-                                     module_spirv.DescribeTypeInstruction(*element_type_instr).c_str(),
-                                     element_type_instr->Describe().c_str(), variable.DescribeDescriptor().c_str());
+                                     module_spirv.DescribeTypeInstruction(element_type_instr).c_str(),
+                                     element_type_instr.Describe().c_str(), variable.DescribeDescriptor().c_str());
                 }
 
                 const uint32_t spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
@@ -3055,10 +3055,10 @@ bool CoreChecks::ValidateDataGraphResourceVariables(const spirv::Module &module_
 
                 // nothing to check here if the tensor has no shape
                 if (tensor_type_instr.Length() > 4) {
-                    const spirv::Instruction *shape_instr = module_spirv.FindDef(tensor_type_instr.Word(4));
+                    const spirv::Instruction& shape_instr = *module_spirv.FindDef(tensor_type_instr.Word(4));
                     const uint32_t max_dim = std::min(tensor_desc->dimensionCount, spirv_rank);
                     for (uint32_t i = 0; i < max_dim; i++) {
-                        const uint32_t spirv_dim_i = module_spirv.GetConstantValueById(shape_instr->Word(3 + i));
+                        const uint32_t spirv_dim_i = module_spirv.GetConstantValueById(shape_instr.Word(3 + i));
                         if (tensor_desc->pDimensions[i] != spirv_dim_i) {
                             skip |= LogError("VUID-RuntimeSpirv-pNext-09923", device,
                                              resource_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::pDimensions, i),
@@ -3153,18 +3153,15 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module &module_spirv, c
             const VkDataGraphPipelineConstantARM &vk_constant = dg_shader_ci.pConstants[vk_index];
             const Location vk_constant_loc = dg_shader_ci_loc.dot(Field::pConstants, vk_index);
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(vk_constant.pNext)) {
-                const spirv::Instruction *element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
-                spirv::NumericType numeric_type = module_spirv.GetNumericType(*element_type_instr);
-                uint32_t bit_width = element_type_instr->GetBitWidth();
-                spv::FPEncoding encoding = element_type_instr->GetFPEncoding();
-                const VkFormat spirv_vk_format = spirv::GetTensorFormat(numeric_type, bit_width, encoding);
+                const spirv::Instruction& element_type_instr = *module_spirv.FindDef(tensor_type_instr.Word(2));
+                const VkFormat spirv_vk_format = module_spirv.GetTensorFormat(element_type_instr);
                 if (tensor_desc->format != spirv_vk_format) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                      vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
                                      "(%s) is incompatible with the element type (%s) of the spirv definition (%s)",
                                      string_VkFormat(tensor_desc->format),
-                                     module_spirv.DescribeTypeInstruction(*element_type_instr).c_str(),
-                                     element_type_instr->Describe().c_str());
+                                     module_spirv.DescribeTypeInstruction(element_type_instr).c_str(),
+                                     element_type_instr.Describe().c_str());
                 }
 
                 const uint32_t spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
