@@ -1706,7 +1706,6 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const vvl::CommandBuffer &cb_state,
                                  inline_session_params->pStdPPS->seq_parameter_set_id,
                                  inline_session_params->pStdPPS->pic_parameter_set_id, std_picture_info->seq_parameter_set_id,
                                  std_picture_info->pic_parameter_set_id, std_picture_info_loc.Fields().c_str());
-                ;
             }
         }
 

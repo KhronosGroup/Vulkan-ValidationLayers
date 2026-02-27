@@ -2489,7 +2489,6 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& crea
     // "If pDepthStencilResolveAttachment is not NULL"
     if (resolve == nullptr || resolve->pDepthStencilResolveAttachment == nullptr) {
         return skip;
-        ;
     }
 
     // The spec says
@@ -5594,7 +5593,6 @@ bool CoreChecks::ValidateFrameBufferSubpasses(const VkFramebufferCreateInfo &cre
     bool skip = false;
     for (uint32_t subpass = 0; subpass < rpci.subpassCount; subpass++) {
         const VkSubpassDescription2& subpass_description = rpci.pSubpasses[subpass];
-        ;
         // Verify input attachments:
         skip |= MatchUsage(subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, create_info,
                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879", create_info_loc);
