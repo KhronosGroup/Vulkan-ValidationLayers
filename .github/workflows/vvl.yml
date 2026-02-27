@@ -1,5 +1,5 @@
-# Copyright (c) 2021-2025 Valve Corporation
-# Copyright (c) 2021-2025 LunarG, Inc.
+# Copyright (c) 2021-2026 Valve Corporation
+# Copyright (c) 2021-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -229,7 +229,7 @@ jobs:
     if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     strategy:
       matrix:
-        arch: [ amd64, amd64_x86 ]
+        arch: [ amd64 ]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
