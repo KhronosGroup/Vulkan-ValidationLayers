@@ -908,9 +908,9 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 location_provided = true;
 
                 const uint32_t var_base_type_id = variable_ptr->base_type.ResultId();
-                const uint32_t attribute_type = spirv::GetFormatType(attrib->desc.format);
-                const uint32_t var_numeric_type = vert_spirv_state.GetNumericType(var_base_type_id);
+                const uint32_t attribute_type = spirv::GetFormatNumericType(attrib->desc.format);
                 const spirv::Instruction* var_base_type = vert_spirv_state.FindDef(var_base_type_id);
+                const uint32_t var_numeric_type = vert_spirv_state.GetNumericType(*var_base_type);
 
                 const bool attribute64 = vkuFormatIs64bit(attrib->desc.format);
                 const bool shader64 = vert_spirv_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;

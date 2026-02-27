@@ -132,10 +132,10 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             }
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
-            const uint32_t attribute_type = spirv::GetFormatType(attribute_format);
+            const uint32_t attribute_type = spirv::GetFormatNumericType(attribute_format);
             const uint32_t var_base_type_id = shader_input->ResultId();
             const spirv::Instruction* var_base_type = module_state.FindDef(var_base_type_id);
-            const uint32_t var_numeric_type = module_state.GetNumericType(var_base_type_id);
+            const uint32_t var_numeric_type = module_state.GetNumericType(*var_base_type);
 
             const bool attribute64 = vkuFormatIs64bit(attribute_format);
             const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type)->GetBitWidth() == 64;
@@ -598,8 +598,9 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                               attachment_states[location].colorWriteMask);
                 }
             } else {
-                const uint32_t attachment_type = spirv::GetFormatType(attachment->format);
-                const uint32_t output_type = module_state.GetNumericType(output->type_id);
+                const uint32_t attachment_type = spirv::GetFormatNumericType(attachment->format);
+                const spirv::Instruction* type_inst = module_state.FindDef(output->type_id);
+                const uint32_t output_type = module_state.GetNumericType(*type_inst);
 
                 // Type checking
                 if ((output_type & attachment_type) == 0) {
@@ -766,8 +767,9 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                                               msg.str().c_str());
                 }
             } else {
-                const uint32_t attachment_type = spirv::GetFormatType(image_view_state->create_info.format);
-                const uint32_t output_type = module_state->GetNumericType(output->type_id);
+                const uint32_t attachment_type = spirv::GetFormatNumericType(image_view_state->create_info.format);
+                const spirv::Instruction* type_inst = module_state->FindDef(output->type_id);
+                const uint32_t output_type = module_state->GetNumericType(*type_inst);
 
                 // Type checking
                 if ((output_type & attachment_type) == 0) {

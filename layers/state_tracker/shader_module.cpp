@@ -1600,13 +1600,14 @@ std::string Module::DescribeInstruction(const Instruction& error_insn) const {
 }
 
 std::string Module::DescribeTypeInstruction(const Instruction& type_instr) const {
-    NumericType numeric_type = GetNumericType(type_instr);
-    uint32_t bit_width = type_instr.GetBitWidth();
-    spv::FPEncoding encoding = type_instr.GetFPEncoding();
+    const NumericType numeric_type = GetNumericType(type_instr);
+    const uint32_t bit_width = type_instr.GetBitWidth();
+    const spv::FPEncoding encoding = type_instr.GetFPEncoding();
 
     std::stringstream ss;
     ss << "[" << string_NumericType(numeric_type) << ", " << bit_width;
-    if (numeric_type == NumericTypeFloat && (bit_width == 8 || (bit_width == 16 && encoding != spv::FPEncoding::FPEncodingMax))) {
+    // Currently (in SPIR-V) 8-bit floats must have an encoding, 16-bit can have it
+    if (numeric_type == NumericTypeFloat && (bit_width == 8 || bit_width == 16)) {
         ss << ", " << string_SpvFPEncoding(encoding);
     }
     ss << "]";
@@ -1842,11 +1843,6 @@ uint32_t Module::GetComponentsConsumedByType(const Instruction* insn) const {
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
 // also used for input attachments, as we statically know their format.
-NumericType Module::GetNumericType(uint32_t type) const {
-    const Instruction *insn = FindDef(type);
-    return GetNumericType(*insn);
-}
-
 NumericType Module::GetNumericType(const Instruction& insn) const {
     switch (insn.Opcode()) {
         case spv::OpTypeBool:
@@ -1861,28 +1857,84 @@ NumericType Module::GetNumericType(const Instruction& insn) const {
         case spv::OpTypeArray:
         case spv::OpTypeRuntimeArray:
         case spv::OpTypeImage:
-            return GetNumericType(insn.Word(2));
+            return GetNumericType(*FindDef(insn.Word(2)));
         case spv::OpTypePointer:
-            return GetNumericType(insn.Word(3));
+            return GetNumericType(*FindDef(insn.Word(3)));
         default:
             return NumericTypeUnknown;
     }
 }
 
 // See compatibility table: vkspec.html#spirvenv-tensor-formats
-bool Module::IsTensorFormatCompatible(VkFormat format, const spirv::Instruction& element_type_instr) const {
-    NumericType numeric_type = GetNumericType(element_type_instr);
-    uint32_t bit_width = element_type_instr.GetBitWidth();
-    spv::FPEncoding encoding = element_type_instr.GetFPEncoding();
+bool Module::IsTensorFormatCompatible(VkFormat format, const spirv::Instruction& type_inst) const {
+    NumericType numeric_type = GetNumericType(type_inst);
+    uint32_t bit_width = type_inst.GetBitWidth();
     // Spirv uint is really "signless", i.e. we don't care about the sign
     if (numeric_type == NumericTypeUint) {
-        if (bit_width == 8) return (format == VK_FORMAT_R8_UINT || format == VK_FORMAT_R8_SINT);
-        if (bit_width == 16) return (format == VK_FORMAT_R16_UINT || format == VK_FORMAT_R16_SINT);
-        if (bit_width == 32) return (format == VK_FORMAT_R32_UINT || format == VK_FORMAT_R32_SINT);
-        if (bit_width == 64) return (format == VK_FORMAT_R64_UINT || format == VK_FORMAT_R64_SINT);
+        if (bit_width == 8) {
+            return (format == VK_FORMAT_R8_UINT || format == VK_FORMAT_R8_SINT);
+        } else if (bit_width == 16) {
+            return (format == VK_FORMAT_R16_UINT || format == VK_FORMAT_R16_SINT);
+        } else if (bit_width == 32) {
+            return (format == VK_FORMAT_R32_UINT || format == VK_FORMAT_R32_SINT);
+        } else if (bit_width == 64) {
+            return (format == VK_FORMAT_R64_UINT || format == VK_FORMAT_R64_SINT);
+        }
     }
     // for non-int types sign isn't an issue and there is 1-to-1 correspondence
-    return format == GetTensorFormat(numeric_type, bit_width, encoding);
+    return format == GetTensorFormat(type_inst);
+}
+
+VkFormat Module::GetTensorFormat(const spirv::Instruction& type_inst) const {
+    NumericType numeric_type = GetNumericType(type_inst);
+    uint32_t bit_width = type_inst.GetBitWidth();
+    spv::FPEncoding encoding = type_inst.GetFPEncoding();
+
+    if (numeric_type == NumericTypeBool) {
+        return VK_FORMAT_R8_BOOL_ARM;
+    } else if (numeric_type == NumericTypeFloat) {
+        if (bit_width == 8) {
+            if (encoding == spv::FPEncodingFloat8E4M3EXT) {
+                return VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM;
+            } else if (encoding == spv::FPEncodingFloat8E5M2EXT) {
+                return VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E5M2_ARM;
+            }
+        } else if (bit_width == 16) {
+            if (encoding == spv::FPEncodingBFloat16KHR) {
+                return VK_FORMAT_R16_SFLOAT_FPENCODING_BFLOAT16_ARM;
+            } else if (encoding == spv::FPEncodingMax) {
+                // encoding undefined for regular FP16
+                return VK_FORMAT_R16_SFLOAT;
+            }
+        } else if (bit_width == 32) {
+            return VK_FORMAT_R32_SFLOAT;
+        } else if (bit_width == 64) {
+            return VK_FORMAT_R64_SFLOAT;
+        }
+    } else if (numeric_type == NumericTypeSint) {
+        if (bit_width == 8) {
+            return VK_FORMAT_R8_SINT;
+        } else if (bit_width == 16) {
+            return VK_FORMAT_R16_SINT;
+        } else if (bit_width == 32) {
+            return VK_FORMAT_R32_SINT;
+        } else if (bit_width == 64) {
+            return VK_FORMAT_R64_SINT;
+        }
+    } else if (numeric_type == NumericTypeUint) {
+        if (bit_width == 8) {
+            return VK_FORMAT_R8_UINT;
+        } else if (bit_width == 16) {
+            return VK_FORMAT_R16_UINT;
+        } else if (bit_width == 32) {
+            return VK_FORMAT_R32_UINT;
+        } else if (bit_width == 64) {
+            return VK_FORMAT_R64_UINT;
+        }
+    }
+    // invalid [type, width, encoding] combination
+    assert(false);
+    return VK_FORMAT_UNDEFINED;
 }
 
 bool Module::HasRuntimeArray(uint32_t type_id) const {
@@ -1907,7 +1959,7 @@ std::string InterfaceSlot::Describe() const {
     return msg.str();
 }
 
-uint32_t GetFormatType(VkFormat format) {
+uint32_t GetFormatNumericType(VkFormat format) {
     if (vkuFormatIsSINT(format)) return NumericTypeSint;
     if (vkuFormatIsUINT(format)) return NumericTypeUint;
     if (vkuFormatIsBOOL(format)) return NumericTypeBool;
@@ -1924,51 +1976,6 @@ const char* string_NumericType(uint32_t type) {
     if (type == NumericTypeBool) return "BOOL";
     if (type == NumericTypeFloat) return "FLOAT";
     return "(none)";
-}
-
-VkFormat GetTensorFormat(NumericType numeric_type, uint32_t bit_width, spv::FPEncoding encoding) {
-    if (numeric_type == NumericTypeBool) {
-        return VK_FORMAT_R8_BOOL_ARM;
-    } else if (numeric_type == NumericTypeFloat) {
-        if (bit_width == 8) {
-            if (encoding == spv::FPEncodingFloat8E4M3EXT) {
-                return VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM;
-            } else if (encoding == spv::FPEncodingFloat8E5M2EXT) {
-                return VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E5M2_ARM;
-            } else {
-                // invalid [type, width, encoding] combination
-                assert(false);
-                return VK_FORMAT_UNDEFINED;
-            }
-        }
-        if (bit_width == 16) {
-            if (encoding == spv::FPEncodingBFloat16KHR) {
-                return VK_FORMAT_R16_SFLOAT_FPENCODING_BFLOAT16_ARM;
-            } else if (encoding == spv::FPEncodingMax) {
-                // encoding undefined for regular FP16
-                return VK_FORMAT_R16_SFLOAT;
-            } else {
-                // invalid [type, width, encoding] combination
-                assert(false);
-                return VK_FORMAT_UNDEFINED;
-            }
-        }
-        if (bit_width == 32) return VK_FORMAT_R32_SFLOAT;
-        if (bit_width == 64) return VK_FORMAT_R64_SFLOAT;
-    } else if (numeric_type == NumericTypeSint) {
-        if (bit_width == 8) return VK_FORMAT_R8_SINT;
-        if (bit_width == 16) return VK_FORMAT_R16_SINT;
-        if (bit_width == 32) return VK_FORMAT_R32_SINT;
-        if (bit_width == 64) return VK_FORMAT_R64_SINT;
-    } else if (numeric_type == NumericTypeUint) {
-        if (bit_width == 8) return VK_FORMAT_R8_UINT;
-        if (bit_width == 16) return VK_FORMAT_R16_UINT;
-        if (bit_width == 32) return VK_FORMAT_R32_UINT;
-        if (bit_width == 64) return VK_FORMAT_R64_UINT;
-    }
-    // invalid [type, width, encoding] combination
-    assert(false);
-    return VK_FORMAT_UNDEFINED;
 }
 
 const Instruction* VariableBase::FindDebugGlobalVariable(const VariableBase& variable, const Module& module_state,
@@ -2435,10 +2442,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
     // Handle anything specific to the base type
     if (base_type.Opcode() == spv::OpTypeImage) {
-        const spirv::Instruction *element_type_instr = module_state.FindDef(base_type.Word(2));
-        info.numeric_type = module_state.GetNumericType(*element_type_instr);
-        info.bit_width = static_cast<uint8_t>(element_type_instr->GetBitWidth());
-        info.encoding = element_type_instr->GetFPEncoding();
+        const spirv::Instruction& element_type_instr = *module_state.FindDef(base_type.Word(2));
+        info.numeric_type = module_state.GetNumericType(element_type_instr);
+        info.bit_width = static_cast<uint8_t>(element_type_instr.GetBitWidth());
         info.vk_format = CompatibleSpirvImageFormat(base_type.Word(8));
 
         // Things marked regardless of the image being accessed or not
@@ -2533,11 +2539,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         }
     } else if (base_type.Opcode() == spv::OpTypeTensorARM) {
         is_storage_tensor = true;
-        const spirv::Instruction *element_type_instr = module_state.FindDef(base_type.Word(2));
-        info.numeric_type = module_state.GetNumericType(*element_type_instr);
-        info.bit_width = static_cast<uint8_t>(element_type_instr->GetBitWidth());
-        info.encoding = element_type_instr->GetFPEncoding();
-        info.vk_format = GetTensorFormat(info.numeric_type, info.bit_width, info.encoding);
+        const spirv::Instruction& element_type_instr = *module_state.FindDef(base_type.Word(2));
+        info.numeric_type = module_state.GetNumericType(element_type_instr);
+        info.bit_width = static_cast<uint8_t>(element_type_instr.GetBitWidth());
+        info.vk_format = module_state.GetTensorFormat(element_type_instr);
         info.tensor_rank = module_state.GetConstantValueById(base_type.Word(3));
     } else if (base_type.Opcode() == spv::OpTypeSampler) {
         is_sampler = true;

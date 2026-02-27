@@ -44,6 +44,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.builtInList = []
         self.dimList = []
         self.cooperativeMatrixList = []
+        self.fpEncodingList = []
         self.hasType = []
         self.hasResult = []
         self.provisionalList = []
@@ -108,6 +109,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 self.addToStringList(operandKind, 'BuiltIn', self.builtInList)
                 self.addToStringList(operandKind, 'Dim', self.dimList)
                 self.addToStringList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
+                self.addToStringList(operandKind, 'FPEncoding', self.fpEncodingList)
 
                 if 'enumerants' in operandKind:
                     for enum in operandKind['enumerants']:
@@ -647,15 +649,12 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             }}
 
             const char* string_SpvFPEncoding(spv::FPEncoding value) {{
-                switch (value) {{
-                    case spv::FPEncoding::FPEncodingBFloat16KHR:
-                        return "FPEncodingBFloat16KHR";
-                    case spv::FPEncoding::FPEncodingFloat8E4M3EXT:
-                        return "FPEncodingFloat8E4M3EXT";
-                    case spv::FPEncoding::FPEncodingFloat8E5M2EXT:
-                        return "FPEncodingFloat8E5M2EXT";
+                switch(value) {{
+            {"".join([f"""        case spv::FPEncoding{x}:
+                        return "{x}";
+            """ for x in self.fpEncodingList if x not in self.provisionalList])}
                     default:
-                        return "Unknown";
+                        return "IEEE-754";  // default for 16-bit
                 }}
             }}
             ''')
