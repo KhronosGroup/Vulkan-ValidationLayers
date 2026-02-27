@@ -2309,9 +2309,9 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         if (cb_index == 0) {
-            proxy_cb_context.NextCommandTag(error_obj.location.function, ResourceUsageRecord::SubcommandType::kIndex);
+            proxy_cb_context.NextCommandTag(error_obj.location.function, SubCommandType::kIndex);
         } else {
-            proxy_cb_context.NextSubcommandTag(error_obj.location.function, ResourceUsageRecord::SubcommandType::kIndex);
+            proxy_cb_context.NextSubCommandTag(error_obj.location.function, SubCommandType::kIndex);
         }
 
         const auto recorded_cb = Get<vvl::CommandBuffer>(pCommandBuffers[cb_index]);
