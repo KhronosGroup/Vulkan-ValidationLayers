@@ -13,22 +13,32 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_helper.h"
 
 class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
-    void TestHelper(const char *source, uint32_t count, const char *error = "SharedMemoryDataRace");
+    void TestHelper(const char* source, int source_type, uint32_t count, const char* error = "SharedMemoryDataRace");
 };
 
-void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, uint32_t count, const char* error) {
-    TEST_DESCRIPTION("Shared memory, data race");
+void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, uint32_t count, const char* error) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace(count));
+    if (source_type == SPV_SOURCE_SLANG) {
+        RETURN_IF_SKIP(CheckSlangSupport());
+    }
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, (SpvSourceType)source_type);
     pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -48,7 +58,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleScalar) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleElementArray) {
@@ -62,7 +72,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleElementArray) {
         }
     )glsl";
 
-    TestHelper(shader_source, 2);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 2);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
@@ -77,7 +87,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
         }
     )glsl";
 
-    TestHelper(shader_source, 2);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 2);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
@@ -92,7 +102,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
         }
     )glsl";
 
-    TestHelper(shader_source, 3);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 3);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStructRace) {
@@ -116,7 +126,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStructRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalarRace) {
@@ -137,7 +147,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalarRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalarRace) {
@@ -156,7 +166,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalarRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariablesRace) {
@@ -179,7 +189,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariablesRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectorsRace) {
@@ -202,7 +212,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectorsRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArrayRace) {
@@ -220,7 +230,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArrayRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
@@ -241,7 +251,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
         }
     )glsl";
 
-    TestHelper(shader_source, 1);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArrayRace) {
@@ -257,7 +267,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArrayRace) {
         }
     )glsl";
 
-    TestHelper(shader_source, 2);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 2);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VariableName) {
@@ -297,5 +307,538 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VariableName) {
         }
     )glsl";
 
-    TestHelper(shader_source, 2, "temp6");
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 2, "temp6");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicThenStore) {
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+
+        layout(local_size_x = 1) in;
+        shared uint temp;
+        void main() {
+            atomicStore(temp, 0u, gl_ScopeWorkgroup, 0, 0);
+            temp = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreThenAtomic) {
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+
+        layout(local_size_x = 1) in;
+        shared uint temp;
+        void main() {
+            temp = 0;
+            atomicStore(temp, 0u, gl_ScopeWorkgroup, 0, 0);
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnAtomic");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicThenLoad) {
+    const char* shader_source = R"glsl(
+        #version 450
+
+        layout(local_size_x = 1) in;
+        shared uint temp;
+        void main() {
+            atomicAdd(temp, 1);
+            uint x = temp;
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic");
+}
+
+// Need to understand why this is not an error
+TEST_F(NegativeGpuAVSharedMemoryDataRace, DISABLED_LoadThenAtomic) {
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+
+        layout(local_size_x = 1) in;
+        shared uint temp;
+        void main() {
+            uint x = temp;
+            atomicAdd(temp, 1);
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnAtomic");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, MultipleFunction) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        shared uint temp[4];
+        void A() {
+            if (gl_LocalInvocationIndex == 0) {
+                temp[1] = 1;
+            }
+        }
+        void B() {
+            temp[2] = 2; // race
+        }
+        void C() {
+            if (gl_LocalInvocationIndex == 1) {
+                temp[3] = 3;
+            }
+            B();
+        }
+        void main() {
+            if (gl_LocalInvocationIndex == 2) {
+                temp[0] = 0; // not touched
+            }
+            A();
+            C();
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, WorkgroupSize) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_2 = OpConstant %uint 2
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_2 %uint_1 %uint_1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, WorkgroupSizeSpecConstant) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpDecorate %x SpecId 0
+               OpDecorate %y SpecId 1
+               OpDecorate %z SpecId 2
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+          %x = OpSpecConstant %uint 2
+          %y = OpSpecConstant %uint 1
+          %z = OpSpecConstant %uint 1
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %x %y %z
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, LocalSizeId) {
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpExecutionModeId %main LocalSizeId %uint_2 %uint_1 %uint_1
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_2 = OpConstant %uint 2
+     %uint_1 = OpConstant %uint 1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, LocalSizeIdSpecConstant) {
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpExecutionModeId %main LocalSizeId %x %y %z
+               OpDecorate %x SpecId 0
+               OpDecorate %y SpecId 1
+               OpDecorate %z SpecId 2
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+          %x = OpSpecConstant %uint 2
+          %y = OpSpecConstant %uint 1
+          %z = OpSpecConstant %uint 1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangScalar) {
+    const char* shader_source = R"slang(
+        RWStructuredBuffer<uint> outputBuffer;
+
+        [numthreads(2, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID)
+        {
+            static groupshared uint temp;
+            temp = 0;
+            GroupMemoryBarrierWithGroupSync();
+
+            if (groupThreadID.x == 0) {
+                outputBuffer[0] = temp;
+            }
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, NoOpName) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpExecutionMode %main LocalSize 2 1 1
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_2 = OpConstant %uint 2
+     %uint_1 = OpConstant %uint 1
+         %14 = OpConstantComposite %v3uint %uint_2 %uint_1 %uint_1
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, DebugGlobalVariable) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp
+               OpExecutionMode %main LocalSize 2 1 1
+     %string = OpString "MyAwesomeVariable"
+      %empty = OpString ""
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+       %temp = OpVariable %_ptr_Workgroup_uint Workgroup
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_2 = OpConstant %uint 2
+     %uint_1 = OpConstant %uint 1
+         %14 = OpConstantComposite %v3uint %uint_2 %uint_1 %uint_1
+
+   %d_source = OpExtInst %void %2 DebugSource %empty %empty
+     %d_unit = OpExtInst %void %2 DebugCompilationUnit %uint_0 %uint_0 %d_source %uint_0
+    %d_basic = OpExtInst %void %2 DebugTypeBasic %empty %uint_0 %uint_0 %uint_0
+    %d_array = OpExtInst %void %2 DebugTypeArray %d_basic %uint_0
+      %d_var = OpExtInst %void %2 DebugGlobalVariable %string %d_array %d_source %uint_0 %uint_0 %d_unit %empty %temp %uint_0
+
+       %main = OpFunction %void None %3
+          %6 = OpLabel
+               OpStore %temp %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1, "MyAwesomeVariable");
+}
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, ShaderDebugInfo) {
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %temp1 %temp2 %temp3 %outputBuffer %gl_LocalInvocationID
+               OpExecutionMode %main LocalSize 2 1 1
+          %1 = OpString "RWStructuredBuffer<uint> outputBuffer;
+[[vk::constant_id(0)]]
+const uint TEMP1_SIZE = 2;
+[[vk::constant_id(1)]]
+const uint TEMP2_SIZE = 2;
+[[vk::constant_id(2)]]
+const uint TEMP3_SIZE = 2;
+
+[numthreads(2, 1, 1)]
+void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID)
+{
+    static groupshared uint temp1[TEMP1_SIZE];
+    static groupshared uint temp2[TEMP2_SIZE];
+    static groupshared uint temp3[TEMP3_SIZE];
+    if (groupThreadID.x == 0) {
+        temp1[0] = 0;
+        temp2[1] = 0;
+    }
+    temp3[0] = 0;
+
+    GroupMemoryBarrierWithGroupSync();
+
+    if (groupThreadID.x == 0) {
+        outputBuffer[0] = temp1[0];
+        outputBuffer[1] = temp1[1];
+        outputBuffer[2] = temp2[0];
+        outputBuffer[3] = temp2[1];
+        outputBuffer[4] = temp3[0];
+        outputBuffer[5] = temp3[1];
+    }
+}"
+          %5 = OpString "my_clever_code.slang"
+               OpSource Slang 1
+         %19 = OpString "uint"
+         %30 = OpString "main"
+         %43 = OpString "slangc"
+         %44 = OpString "-target spir -matrix-layout-column-major -stage compute -entry main -g2"
+         %46 = OpString "groupThreadID"
+         %55 = OpString "dispatchThreadID"
+         %94 = OpString "temp1"
+        %108 = OpString "temp2"
+        %123 = OpString "temp3"
+        %145 = OpString "unnamed"
+        %147 = OpString "RWStructuredBuffer"
+        %149 = OpString "outputBuffer"
+               OpName %groupThreadID "groupThreadID"
+               OpName %dispatchThreadID "dispatchThreadID"
+               OpName %TEMP1_SIZE "TEMP1_SIZE"
+               OpName %temp1 "temp1"
+               OpName %TEMP2_SIZE "TEMP2_SIZE"
+               OpName %temp2 "temp2"
+               OpName %TEMP3_SIZE "TEMP3_SIZE"
+               OpName %temp3 "temp3"
+               OpName %RWStructuredBuffer "RWStructuredBuffer"
+               OpName %outputBuffer "outputBuffer"
+               OpName %main "main"
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+               OpDecorate %TEMP1_SIZE SpecId 0
+               OpDecorate %TEMP2_SIZE SpecId 1
+               OpDecorate %TEMP3_SIZE SpecId 2
+               OpDecorate %_ptr_StorageBuffer_uint ArrayStride 4
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %outputBuffer Binding 0
+               OpDecorate %outputBuffer DescriptorSet 0
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+    %uint_11 = OpConstant %uint 11
+     %uint_5 = OpConstant %uint 5
+   %uint_100 = OpConstant %uint 100
+         %12 = OpTypeFunction %void
+     %v3uint = OpTypeVector %uint 3
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+%uint_131072 = OpConstant %uint 131072
+     %uint_3 = OpConstant %uint 3
+     %uint_7 = OpConstant %uint 7
+     %uint_0 = OpConstant %uint 0
+    %uint_10 = OpConstant %uint 10
+     %uint_2 = OpConstant %uint 2
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+     %uint_1 = OpConstant %uint 1
+    %uint_12 = OpConstant %uint 12
+    %uint_24 = OpConstant %uint 24
+    %uint_25 = OpConstant %uint 25
+    %uint_13 = OpConstant %uint 13
+    %uint_14 = OpConstant %uint 14
+    %uint_15 = OpConstant %uint 15
+       %bool = OpTypeBool
+    %uint_26 = OpConstant %uint 26
+    %uint_16 = OpConstant %uint 16
+     %uint_9 = OpConstant %uint 9
+ %TEMP1_SIZE = OpSpecConstant %uint 2
+        %int = OpTypeInt 32 1
+         %88 = OpSpecConstantOp %int UConvert %TEMP1_SIZE
+%_arr_uint_88 = OpTypeArray %uint %88
+%_ptr_Workgroup__arr_uint_88 = OpTypePointer Workgroup %_arr_uint_88
+%uint_2147483647 = OpConstant %uint 2147483647
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+      %int_0 = OpConstant %int 0
+    %uint_17 = OpConstant %uint 17
+ %TEMP2_SIZE = OpSpecConstant %uint 2
+        %103 = OpSpecConstantOp %int UConvert %TEMP2_SIZE
+%_arr_uint_103 = OpTypeArray %uint %103
+%_ptr_Workgroup__arr_uint_103 = OpTypePointer Workgroup %_arr_uint_103
+      %int_1 = OpConstant %int 1
+    %uint_19 = OpConstant %uint 19
+ %TEMP3_SIZE = OpSpecConstant %uint 2
+        %118 = OpSpecConstantOp %int UConvert %TEMP3_SIZE
+%_arr_uint_118 = OpTypeArray %uint %118
+%_ptr_Workgroup__arr_uint_118 = OpTypePointer Workgroup %_arr_uint_118
+    %uint_21 = OpConstant %uint 21
+   %uint_264 = OpConstant %uint 264
+    %uint_23 = OpConstant %uint 23
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+      %int_2 = OpConstant %int 2
+    %uint_27 = OpConstant %uint 27
+      %int_3 = OpConstant %int 3
+    %uint_28 = OpConstant %uint 28
+      %int_4 = OpConstant %int 4
+    %uint_29 = OpConstant %uint 29
+      %int_5 = OpConstant %int 5
+    %uint_31 = OpConstant %uint 31
+%gl_LocalInvocationID = OpVariable %_ptr_Input_v3uint Input
+      %temp1 = OpVariable %_ptr_Workgroup__arr_uint_88 Workgroup
+      %temp2 = OpVariable %_ptr_Workgroup__arr_uint_103 Workgroup
+      %temp3 = OpVariable %_ptr_Workgroup__arr_uint_118 Workgroup
+%outputBuffer = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+        %227 = OpExtInst %void %2 DebugInfoNone
+         %48 = OpExtInst %void %2 DebugExpression
+          %4 = OpExtInst %void %2 DebugSource %5 %1
+         %10 = OpExtInst %void %2 DebugCompilationUnit %uint_100 %uint_5 %4 %uint_11
+         %18 = OpExtInst %void %2 DebugTypeBasic %19 %uint_32 %uint_6 %uint_131072
+         %23 = OpExtInst %void %2 DebugTypeVector %18 %uint_3
+         %25 = OpExtInst %void %2 DebugTypePointer %23 %uint_7 %uint_131072
+         %27 = OpExtInst %void %2 DebugTypeFunction %uint_0 %void %25 %25
+         %29 = OpExtInst %void %2 DebugFunction %30 %27 %4 %uint_10 %uint_6 %10 %30 %uint_0 %uint_10
+         %42 = OpExtInst %void %2 DebugEntryPoint %29 %10 %43 %44
+%groupThreadID = OpExtInst %void %2 DebugLocalVariable %46 %23 %4 %uint_10 %uint_6 %29 %uint_0 %uint_2
+%dispatchThreadID = OpExtInst %void %2 DebugLocalVariable %55 %23 %4 %uint_10 %uint_6 %29 %uint_0 %uint_1
+         %91 = OpExtInst %void %2 DebugTypeArray %18 %uint_2147483647
+        %106 = OpExtInst %void %2 DebugTypeArray %18 %uint_2147483647
+        %121 = OpExtInst %void %2 DebugTypeArray %18 %uint_2147483647
+        %143 = OpExtInst %void %2 DebugTypeArray %18 %uint_0
+        %144 = OpExtInst %void %2 DebugTypeMember %145 %143 %4 %uint_0 %uint_0 %uint_0 %uint_0 %uint_0
+        %146 = OpExtInst %void %2 DebugTypeComposite %147 %uint_1 %4 %uint_0 %uint_0 %10 %147 %uint_0 %uint_131072 %144
+         %93 = OpExtInst %void %2 DebugGlobalVariable %94 %91 %4 %uint_0 %uint_0 %10 %94 %temp1 %uint_0
+        %107 = OpExtInst %void %2 DebugGlobalVariable %108 %106 %4 %uint_0 %uint_0 %10 %108 %temp2 %uint_0
+        %122 = OpExtInst %void %2 DebugGlobalVariable %123 %121 %4 %uint_0 %uint_0 %10 %123 %temp3 %uint_0
+        %148 = OpExtInst %void %2 DebugGlobalVariable %149 %146 %4 %uint_1 %uint_26 %10 %149 %outputBuffer %uint_0
+       %main = OpFunction %void None %12
+         %13 = OpLabel
+         %32 = OpExtInst %void %2 DebugFunctionDefinition %29 %main
+        %228 = OpExtInst %void %2 DebugScope %29
+         %61 = OpLoad %v3uint %gl_LocalInvocationID
+         %62 = OpExtInst %void %2 DebugLine %4 %uint_12 %uint_12 %uint_5 %uint_6
+         %65 = OpExtInst %void %2 DebugLine %4 %uint_12 %uint_12 %uint_24 %uint_25
+         %68 = OpExtInst %void %2 DebugLine %4 %uint_13 %uint_13 %uint_24 %uint_25
+         %70 = OpExtInst %void %2 DebugLine %4 %uint_14 %uint_14 %uint_24 %uint_25
+         %72 = OpExtInst %void %2 DebugLine %4 %uint_15 %uint_15 %uint_5 %uint_6
+         %74 = OpCompositeExtract %uint %61 0
+         %76 = OpIEqual %bool %74 %uint_0
+         %77 = OpExtInst %void %2 DebugLine %4 %uint_15 %uint_15 %uint_25 %uint_26
+        %229 = OpExtInst %void %2 DebugNoScope
+               OpSelectionMerge %36 None
+               OpBranchConditional %76 %34 %36
+         %34 = OpLabel
+        %230 = OpExtInst %void %2 DebugScope %29
+         %80 = OpExtInst %void %2 DebugLine %4 %uint_16 %uint_16 %uint_9 %uint_10
+         %96 = OpAccessChain %_ptr_Workgroup_uint %temp1 %int_0
+               OpStore %96 %uint_0
+         %99 = OpExtInst %void %2 DebugLine %4 %uint_17 %uint_17 %uint_9 %uint_10
+        %109 = OpAccessChain %_ptr_Workgroup_uint %temp2 %int_1
+               OpStore %109 %uint_0
+               OpBranch %36
+         %36 = OpLabel
+        %231 = OpExtInst %void %2 DebugScope %29
+        %113 = OpExtInst %void %2 DebugLine %4 %uint_19 %uint_19 %uint_5 %uint_6
+        %124 = OpAccessChain %_ptr_Workgroup_uint %temp3 %int_0
+               OpStore %124 %uint_0
+        %126 = OpExtInst %void %2 DebugLine %4 %uint_21 %uint_21 %uint_5 %uint_6
+               OpControlBarrier %uint_2 %uint_2 %uint_264
+        %130 = OpExtInst %void %2 DebugLine %4 %uint_23 %uint_23 %uint_5 %uint_6
+        %132 = OpExtInst %void %2 DebugLine %4 %uint_23 %uint_23 %uint_25 %uint_26
+        %232 = OpExtInst %void %2 DebugNoScope
+               OpSelectionMerge %40 None
+               OpBranchConditional %76 %38 %40
+         %38 = OpLabel
+        %233 = OpExtInst %void %2 DebugScope %29
+        %134 = OpExtInst %void %2 DebugLine %4 %uint_24 %uint_24 %uint_9 %uint_10
+        %138 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_0
+        %150 = OpAccessChain %_ptr_Workgroup_uint %temp1 %int_0
+        %151 = OpLoad %uint %150
+               OpStore %138 %151
+        %153 = OpExtInst %void %2 DebugLine %4 %uint_25 %uint_25 %uint_9 %uint_10
+        %154 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_1
+        %155 = OpAccessChain %_ptr_Workgroup_uint %temp1 %int_1
+        %156 = OpLoad %uint %155
+               OpStore %154 %156
+        %158 = OpExtInst %void %2 DebugLine %4 %uint_26 %uint_26 %uint_9 %uint_10
+        %160 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_2
+        %161 = OpAccessChain %_ptr_Workgroup_uint %temp2 %int_0
+        %162 = OpLoad %uint %161
+               OpStore %160 %162
+        %164 = OpExtInst %void %2 DebugLine %4 %uint_27 %uint_27 %uint_9 %uint_10
+        %167 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_3
+        %168 = OpAccessChain %_ptr_Workgroup_uint %temp2 %int_1
+        %169 = OpLoad %uint %168
+               OpStore %167 %169
+        %171 = OpExtInst %void %2 DebugLine %4 %uint_28 %uint_28 %uint_9 %uint_10
+        %174 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_4
+        %175 = OpLoad %uint %124
+               OpStore %174 %175
+        %177 = OpExtInst %void %2 DebugLine %4 %uint_29 %uint_29 %uint_9 %uint_10
+        %180 = OpAccessChain %_ptr_StorageBuffer_uint %outputBuffer %int_0 %int_5
+        %181 = OpAccessChain %_ptr_Workgroup_uint %temp3 %int_1
+        %182 = OpLoad %uint %181
+               OpStore %180 %182
+               OpBranch %40
+         %40 = OpLabel
+        %234 = OpExtInst %void %2 DebugScope %29
+        %185 = OpExtInst %void %2 DebugLine %4 %uint_31 %uint_31 %uint_1 %uint_2
+               OpReturn
+        %235 = OpExtInst %void %2 DebugNoScope
+               OpFunctionEnd
+    )";
+
+    TestHelper(shader_source, SPV_SOURCE_ASM, 1, "temp3[0] = 0;");
 }

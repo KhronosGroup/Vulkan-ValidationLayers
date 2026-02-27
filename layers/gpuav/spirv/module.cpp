@@ -761,11 +761,16 @@ void Module::LinkFunctions(const LinkInfo& info) {
             // Currently we use the fact the only private variable that are struct are for error payload
             if (pointer_type->spv_type_ == SpvType::kStruct && is_private_var &&
                 ((info.module.flags & UseErrorPayloadVariable) != 0)) {
-                // Variable already is in shader, just mark the new result ID
-                AddInterfaceVariables(error_payload_variable_id_, storage_class);
-                id_swap_map[old_result_id] = error_payload_variable_id_;
+                // TODO - This a hack because SharedMemoryDataRace can inject init_shadow, but never have anything to validate, so
+                // we don't actually need the error logging
+                if (error_payload_variable_id_ != 0) {
+                    // Variable already is in shader, just mark the new result ID
+                    AddInterfaceVariables(error_payload_variable_id_, storage_class);
+                    id_swap_map[old_result_id] = error_payload_variable_id_;
+                }
             } else if (pointer_type->spv_type_ == SpvType::kArray && storage_class == spv::StorageClassWorkgroup &&
                        ((info.module.flags & SharedMemoryDataRace) != 0)) {
+                assert(shared_memory_shadow_variable_id_ != 0);
                 id_swap_map[old_result_id] = shared_memory_shadow_variable_id_;
                 AddInterfaceVariables(shared_memory_shadow_variable_id_, storage_class);
             } else if (storage_class == spv::StorageClassInput && ((info.module.flags & SharedMemoryDataRace) != 0)) {

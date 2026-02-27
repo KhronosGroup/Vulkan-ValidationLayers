@@ -16,8 +16,8 @@
 
 #include <vulkan/vulkan.h>
 #include <stdint.h>
+#include "containers/custom_containers.h"
 #include "pass.h"
-#include <map>
 
 namespace gpuav {
 namespace spirv {
@@ -41,8 +41,7 @@ class SharedMemoryDataRacePass : public Pass {
         uint32_t start;
         // number of scalar elements touched by this access
         uint32_t num_elements;
-        // given the set of workgroup storage opvariables in the order they appear in the program,
-        // this is the index into that set for the variable that is the base of the access chain.
+        // The OpVariable ID of the memory being accessed
         uint32_t variable_idx;
     };
 
@@ -50,16 +49,26 @@ class SharedMemoryDataRacePass : public Pass {
                                  InstructionMeta& meta);
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
+    uint32_t GetWorkgroupSize();
+
     uint32_t GetLinkFunctionId(const InstructionMeta& meta);
 
     // Function IDs to link in
-    uint32_t link_function_id_[4]{};
+    enum FunctionNames {
+        INIT_SHADOW = 0,
+        DO_STORE = 1,
+        DO_LOAD = 2,
+        DO_ATOMIC = 3,
+        FUNC_COUNT = 4,
+    };
+    uint32_t link_function_id_[FUNC_COUNT]{};
     // Map shared memory variables to start offset in shadow memory
-    std::map<const Variable*, uint32_t> slot_start;
-    // index of variable in GetSharedMemoryVariables
-    std::map<const Variable*, uint32_t> variable_to_idx;
+    // < variable ID, starting slot >
+    vvl::unordered_map<uint32_t, uint32_t> slot_start_;
     // number of slots in shadow memory
-    uint32_t num_slots{};
+    uint32_t num_slots_ = 0;
+    // Constant ID of known total workgroup size (X * Y * Z)
+    uint32_t work_group_size_id_ = 0;
 };
 
 }  // namespace spirv

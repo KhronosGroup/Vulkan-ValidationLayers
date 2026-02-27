@@ -18,6 +18,7 @@
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "state_tracker/shader_module.h"
+#include "error_message/spirv_logging.h"
 
 namespace gpuav {
 
@@ -39,51 +40,44 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
             }
             error_found = true;
 
-            std::ostringstream strm;
-
+            // TODO - We shouldn't need to grab the core Module object here...
+            // The issue is we don't get the raw SPIR-V until LogInstrumentationError;
             auto &module = last_bound.pipeline_state
                                ? last_bound.pipeline_state->GetShaderStageState(VK_SHADER_STAGE_COMPUTE_BIT)->spirv_state
                                : last_bound.GetShaderObjectState(ShaderObjectStage::COMPUTE)->stage.spirv_state;
 
-            auto &shared_memory_variables = module->static_data_.shared_memory_variables;
-
-            uint32_t variable_idx = error_record[kInst_LogError_ParameterOffset_2];
-
-            assert(variable_idx < shared_memory_variables.size());
-            auto &var = shared_memory_variables[variable_idx];
-            std::string name = module->GetName(var->Word(2));
+            const uint32_t thread_id = error_record[kInst_LogError_ParameterOffset_0];
+            const uint32_t collide_id = error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF;
+            uint32_t variable_id = error_record[kInst_LogError_ParameterOffset_2];
 
             const uint32_t error_sub_code = GetSubError(error_record);
-
+            std::ostringstream strm;
+            strm << "A data race was detected on the shared memory variable \"";
+            ::spirv::FindOpVariableName(strm, module->words_, variable_id);
+            strm << "\" in local invocation index " << thread_id << " while performing a ";
             switch (error_sub_code) {
                 case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
-                    strm << "Shared memory race detected on variable named \"" << name
-                         << "\" when performing store in local invocation index " << error_record[kInst_LogError_ParameterOffset_0]
-                         << ", likely against local invocation index " << (error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF);
+                    strm << "store";
                     out_vuid_msg = "SharedMemoryDataRace-RaceOnStore";
                 } break;
                 case kErrorSubCode_SharedMemoryDataRace_RaceOnLoad: {
-                    strm << "Shared memory race detected on variable named \"" << name
-                         << "\" when performing load in local invocation index " << error_record[kInst_LogError_ParameterOffset_0]
-                         << ", likely against local invocation index " << (error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF);
+                    strm << "load";
                     out_vuid_msg = "SharedMemoryDataRace-RaceOnLoad";
                 } break;
                 case kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic: {
-                    strm << "Shared memory race detected on variable named \"" << name
-                         << "\" when performing load or store in local invocation index "
-                         << error_record[kInst_LogError_ParameterOffset_0] << ", against an atomic in another thread";
+                    strm << "load or store";
                     out_vuid_msg = "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic";
                 } break;
                 case kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic: {
-                    strm << "Shared memory race detected on variable named \"" << name
-                         << "\" when performing atomic in local invocation index " << error_record[kInst_LogError_ParameterOffset_0]
-                         << ", likely against local invocation index " << (error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF);
+                    strm << "atomic";
                     out_vuid_msg = "SharedMemoryDataRace-RaceOnAtomic";
                 } break;
                 default:
+                    strm << "UNKNOWN";
                     error_found = false;
                     break;
             }
+            strm << " operation. (Likely against local invocation index " << collide_id << ")";
 
             out_error_msg += strm.str();
             return error_found;

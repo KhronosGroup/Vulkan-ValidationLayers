@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_helper.h"
 #include "generated/vk_function_pointers.h"
 
 void GpuAVSharedMemoryDataRaceTest::InitSharedMemoryDataRace(uint32_t message_limit) {
@@ -28,19 +29,28 @@ void GpuAVSharedMemoryDataRaceTest::InitSharedMemoryDataRace(uint32_t message_li
 
 class PositiveGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
-    void TestHelper(const char* source, spv_target_env env = SPV_ENV_VULKAN_1_2);
+    void TestHelper(const char* source, int source_type, spv_target_env env = SPV_ENV_VULKAN_1_2);
 };
 
-void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, spv_target_env env) {
-    TEST_DESCRIPTION("Shared memory, no data race");
+void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, spv_target_env env) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace());
+    if (source_type == SPV_SOURCE_SLANG) {
+        RETURN_IF_SKIP(CheckSlangSupport());
+    }
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, env);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, env, (SpvSourceType)source_type);
     pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -59,7 +69,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleScalar) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleElementAccess) {
@@ -73,7 +83,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleElementAccess) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
@@ -89,7 +99,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayBarrier) {
@@ -105,7 +115,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayNoRace) {
@@ -120,7 +130,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayNoRace) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, BasicStructBarrier) {
@@ -145,7 +155,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, BasicStructBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, StructVsScalarBarrier) {
@@ -167,7 +177,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, StructVsScalarBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorVsScalarBarrier) {
@@ -187,7 +197,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorVsScalarBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVariablesBarrier) {
@@ -211,7 +221,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVariablesBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVectorsBarrier) {
@@ -235,7 +245,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVectorsBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoadNoRace) {
@@ -251,7 +261,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoadNoRace) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorArrayBarrier) {
@@ -270,7 +280,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorArrayBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SpecConstantArrayBarrier) {
@@ -287,7 +297,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SpecConstantArrayBarrier) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, NoLocalSize) {
@@ -301,7 +311,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, NoLocalSize) {
         }
     )glsl";
 
-    TestHelper(shader_source);
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SpvEnvVulkan1_3) {
@@ -316,5 +326,43 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SpvEnvVulkan1_3) {
         }
     )glsl";
 
-    TestHelper(shader_source, SPV_ENV_VULKAN_1_3);
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_3);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SharedMemoryDeclaredNotUsed) {
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0) buffer foo {
+            uint x;
+        };
+        shared uint temp; // not used, glslang still declares it
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
+    const char* shader_source = R"slang(
+        RWStructuredBuffer<uint> outputBuffer;
+
+        [numthreads(2, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID)
+        {
+            static groupshared uint temp;
+            if (groupThreadID.x == 0) {
+                temp = 0;
+            }
+            GroupMemoryBarrierWithGroupSync();
+
+            if (groupThreadID.x == 0) {
+                outputBuffer[0] = temp;
+            }
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG);
 }

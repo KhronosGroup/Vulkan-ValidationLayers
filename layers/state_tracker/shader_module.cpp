@@ -1033,9 +1033,6 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpVariable:
             case spv::OpUntypedVariableKHR:
                 variable_inst.push_back(&insn);
-                if (insn.StorageClass() == spv::StorageClassWorkgroup) {
-                    shared_memory_variables.push_back(&insn);
-                }
                 break;
 
             case spv::OpEmitStreamVertex:

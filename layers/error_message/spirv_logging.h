@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<uint32_t> &in
 // Will either call GetShaderSourceInfo or print out the raw SPIR-V info
 void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only);
+
+// Will inject the name found from OpName (or DebugGlobalVariable in ShaderDebugInfo if no OpName is present)
+// (Assumes a global variable, not a function variable)
+void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t variable_id);
 
 // These are used where we can't use normal spirv::Instructions.
 // The main spot is post-processisng error message in GPU-AV, the time it takes to interchange back from a vector<uint32_t> to a

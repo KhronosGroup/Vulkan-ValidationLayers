@@ -41,6 +41,8 @@
 // locations without a barrier in between, this could lead to false positives.
 // This assumes barrier() is used for all shared memory synchronization.
 
+// The thread ID is stored in the lower bits, we "could" possibly only use 16-bit,
+// but 16-bit atomics are not fully supported everywhere
 const uint STORE_BIT = 0x80000000;
 const uint ATOMIC_BIT = 0x40000000;
 const uint MULTI_LOAD_BIT = 0x20000000;
@@ -49,9 +51,8 @@ const uint SENTINEL = 0x1FFFFFFF;
 // This array has a placeholder size and the whole array is replaced in LinkFunctions
 shared uint shadow[99999];
 
-void init_shadow(const in uint length, const in uvec3 workgroupsize) {
+void init_shadow(const in uint length, const in uint wg_size) {
     barrier();
-    const uint wg_size = workgroupsize.x * workgroupsize.y * workgroupsize.z;
     for (uint i = gl_LocalInvocationIndex; i < length; i += wg_size) {
         shadow[i] = SENTINEL;
     }

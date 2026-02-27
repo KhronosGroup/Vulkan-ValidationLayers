@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -487,6 +487,47 @@ void FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instr
     } else {
         ss << "(This check was instrumented at the start of your entrypoint function)\n";
     }
+}
+
+void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t variable_id) {
+    uint32_t shader_debug_info_set_id = 0;
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        if (opcode == spv::OpFunction) {
+            break;  // no more OpName/OpString
+        } else if (opcode == spv::OpDecorate && shader_debug_info_set_id == 0) {
+            // If no ShaderDebugInfo, the OpName have to before an OpDecorate
+            break;
+        }
+
+        if (opcode == spv::OpName && instructions[offset + 1] == variable_id) {
+            const char* str = reinterpret_cast<const char*>(&instructions[offset + 2]);
+            ss << str;
+            return;
+        }
+
+        if (opcode == spv::OpExtInstImport) {
+            const char* str = reinterpret_cast<const char*>(&instructions[offset + 2]);
+            if (strcmp(str, "NonSemantic.Shader.DebugInfo.100") == 0) {
+                shader_debug_info_set_id = instructions[offset + 1];
+            }
+        }
+
+        if (opcode == spv::OpExtInst && instructions[offset + 3] == shader_debug_info_set_id &&
+            instructions[offset + 4] == NonSemanticShaderDebugInfo100DebugGlobalVariable &&
+            instructions[offset + 12] == variable_id) {
+            ss << spirv::GetOpString(instructions, instructions[offset + 5]);
+            return;
+        }
+
+        offset += length;
+    }
+
+    ss << "[No OpName found, ID " << variable_id << "]";
 }
 
 }  // namespace spirv
