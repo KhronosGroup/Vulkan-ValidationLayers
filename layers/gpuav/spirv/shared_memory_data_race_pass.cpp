@@ -135,8 +135,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         // Get the base pointer pointee type.
         ptr_elem_type = type_manager_.FindChildType(*base_ptr_type, 0);
 
-        for (uint32_t i = 4; i < access_chain_inst->Length(); ++i) {
-            uint32_t idx_id = access_chain_inst->Word(i);
+        for (uint32_t i = 4; i < ac->Length(); ++i) {
+            uint32_t idx_id = ac->Word(i);
             auto idx_inst = function.FindInstruction(idx_id);
             auto idx_type = type_manager_.FindTypeById(idx_inst->Word(1));
             assert(idx_type->inst_.Opcode() == spv::OpTypeInt);

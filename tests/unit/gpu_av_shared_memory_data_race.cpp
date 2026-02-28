@@ -537,6 +537,33 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangScalar) {
     TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
 }
 
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangNestedStruct) {
+    const char* shader_source = R"slang(
+        RWStructuredBuffer<float> outputBuffer;
+
+        [numthreads(2, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID)
+        {
+            struct A {
+                uint32_t b;
+                uint32_t c;
+            };
+            struct S {
+                uint32_t x;
+                uint32_t y;
+                A z[2];
+            };
+
+            static groupshared S temp;
+            temp.z[groupThreadID.x].b = 0;
+
+            outputBuffer[groupThreadID.x] = temp.z[1 - groupThreadID.x].b;
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
+}
+
 TEST_F(NegativeGpuAVSharedMemoryDataRace, NoOpName) {
     const char* shader_source = R"(
                OpCapability Shader

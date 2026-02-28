@@ -366,3 +366,35 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
 
     TestHelper(shader_source, SPV_SOURCE_SLANG);
 }
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
+    const char *shader_source = R"slang(
+        RWStructuredBuffer<float> outputBuffer;
+
+        [numthreads(2, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV_GroupThreadID)
+        {
+            struct A {
+                uint32_t b;
+                uint32_t c;
+            };
+            struct S {
+                uint32_t x;
+                uint32_t y;
+                A z[2];
+            };
+
+            static groupshared S temp;
+            if (groupThreadID.x == 0) {
+                temp.z[1].b = 0;
+            }
+            GroupMemoryBarrierWithGroupSync();
+
+            if (groupThreadID.x == 0) {
+                outputBuffer[0] = temp.z[1].b;
+            }
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG);
+}
