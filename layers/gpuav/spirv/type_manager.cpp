@@ -756,6 +756,7 @@ uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
     switch (type.spv_type_) {
         case SpvType::kStruct:
             return GetNumScalarElementsBeforeCompositeMember(type, type.inst_.Length() - 2);
+        case SpvType::kVectorIdEXT:
         case SpvType::kArray: {
             const Constant* count = FindConstantById(type.inst_.Operand(1));
             // TODO - Need to handle spec constant here, for now return zero to have things not blowup
@@ -819,6 +820,7 @@ const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
         case SpvType::kArray:
             assert(idx == 0);
             return FindTypeById(type.inst_.Word(2));
+        case SpvType::kVectorIdEXT:
         case SpvType::kVector:
         case SpvType::kMatrix:
             assert(idx == 0);

@@ -869,3 +869,25 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupThreadID : SV
 
     TestHelper(shader_source, SPV_SOURCE_ASM, 1, "temp3[0] = 0;");
 }
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, LongVectorArrayRace) {
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+
+        layout(constant_id = 0) const uint N = 5;
+        layout(local_size_x = 5) in;
+        shared vector<uint, N> v;
+        void main() {
+            v[gl_LocalInvocationIndex] = gl_LocalInvocationIndex;
+            uint sum;
+            for (uint i = 0; i < N; ++i) {
+                sum += v[i];
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
+}
