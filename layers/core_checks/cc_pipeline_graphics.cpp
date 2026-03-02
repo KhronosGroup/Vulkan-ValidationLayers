@@ -3552,7 +3552,7 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
     const uint32_t subpass = pipeline.Subpass();
     if (subpass != cb_state.GetActiveSubpass()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle());
-        skip |= LogError(vuid.subpass_index_02685, objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::SUBPASS_INDEX_02685), objlist, vuid.loc(),
                          "Pipeline was built for subpass %" PRIu32 " but used in subpass %" PRIu32 ".", subpass,
                          cb_state.GetActiveSubpass());
     }

@@ -19,23 +19,16 @@
  */
 
 #include "drawdispatch_vuids.h"
+#include "error_message/logging.h"
 
 namespace vvl {
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid(Func::vkCmdDraw) {
         pipeline_bound_08606                     = "VUID-vkCmdDraw-None-08606";
-        vertex_binding_04007                     = "VUID-vkCmdDraw-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDraw-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDraw-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDraw-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDraw-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDraw-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDraw-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDraw-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDraw-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDraw-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDraw-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDraw-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDraw-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDraw-viewportCount-03417";
@@ -282,11 +275,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDraw-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDraw-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDraw-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDraw-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDraw-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDraw-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDraw-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDraw-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-07481";
         vertex_input_09461                       = "VUID-vkCmdDraw-pNext-09461";
@@ -310,17 +298,9 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
     DispatchVuidsCmdDrawMultiEXT() : DrawDispatchVuid(Func::vkCmdDrawMultiEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMultiEXT-None-08606";
-        vertex_binding_04007                     = "VUID-vkCmdDrawMultiEXT-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawMultiEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMultiEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMultiEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMultiEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMultiEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMultiEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMultiEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMultiEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMultiEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMultiEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMultiEXT-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDrawMultiEXT-viewportCount-03417";
@@ -567,11 +547,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMultiEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMultiEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMultiEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         vertex_input_09461                       = "VUID-vkCmdDrawMultiEXT-pNext-09461";
@@ -596,17 +571,9 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid(Func::vkCmdDrawIndexed) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexed-None-08606";
         index_binding_07312                      = "VUID-vkCmdDrawIndexed-None-07312";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndexed-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndexed-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexed-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexed-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndexed-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndexed-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexed-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndexed-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndexed-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndexed-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndexed-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndexed-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDrawIndexed-viewportCount-03417";
@@ -853,11 +820,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexed-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexed-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexed-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndexed-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexed-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-07481";
         vertex_input_09461                       = "VUID-vkCmdDrawIndexed-pNext-09461";
@@ -882,17 +844,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
     DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid(Func::vkCmdDrawMultiIndexedEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08606";
         index_binding_07312                      = "VUID-vkCmdDrawMultiIndexedEXT-None-07312";
-        vertex_binding_04007                     = "VUID-vkCmdDrawMultiIndexedEXT-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawMultiIndexedEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMultiIndexedEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMultiIndexedEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMultiIndexedEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMultiIndexedEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMultiIndexedEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMultiIndexedEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMultiIndexedEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMultiIndexedEXT-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03417";
@@ -1139,11 +1093,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiIndexedEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMultiIndexedEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMultiIndexedEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMultiIndexedEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMultiIndexedEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         vertex_input_09461                       = "VUID-vkCmdDrawMultiIndexedEXT-pNext-09461";
@@ -1167,17 +1116,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid(Func::vkCmdDrawIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirect-None-08606";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndirect-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndirect-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirect-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirect-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndirect-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndirect-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirect-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirect-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndirect-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndirect-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndirect-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirect-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirect-commandBuffer-02711";
@@ -1425,11 +1366,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirect-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirect-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirect-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndirect-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirect-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawIndirect-None-07627";
@@ -1452,17 +1388,9 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirect-None-08606";
         index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirect-None-07312";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndexedIndirect-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndexedIndirect-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirect-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndexedIndirect-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirect-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndexedIndirect-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndexedIndirect-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndexedIndirect-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndexedIndirect-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndexedIndirect-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
@@ -1710,11 +1638,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirect-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirect-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirect-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndexedIndirect-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexedIndirect-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawIndexedIndirect-None-07627";
@@ -1737,10 +1660,6 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
     DispatchVuidsCmdDispatch() : DrawDispatchVuid(Func::vkCmdDispatch) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatch-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdDispatch-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdDispatch-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDispatch-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDispatch-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDispatch-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDispatch-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDispatch-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDispatch-flags-02696";
@@ -1793,10 +1712,6 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid(Func::vkCmdDispatchIndirect) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchIndirect-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdDispatchIndirect-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdDispatchIndirect-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDispatchIndirect-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDispatchIndirect-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDispatchIndirect-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDispatchIndirect-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDispatchIndirect-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDispatchIndirect-commandBuffer-02711";
@@ -1849,17 +1764,9 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid(Func::vkCmdDrawIndirectCount) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirectCount-None-08606";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndirectCount-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndirectCount-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirectCount-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirectCount-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndirectCount-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndirectCount-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectCount-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirectCount-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndirectCount-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndirectCount-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndirectCount-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirectCount-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirectCount-commandBuffer-02711";
@@ -2110,11 +2017,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectCount-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirectCount-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirectCount-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndirectCount-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirectCount-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawIndirectCount-None-07627";
@@ -2137,17 +2039,9 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirectCount) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08606";
         index_binding_07312                      = "VUID-vkCmdDrawIndexedIndirectCount-None-07312";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndexedIndirectCount-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndexedIndirectCount-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirectCount-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndexedIndirectCount-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndexedIndirectCount-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndexedIndirectCount-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndexedIndirectCount-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndexedIndirectCount-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
@@ -2398,11 +2292,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirectCount-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirectCount-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirectCount-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndexedIndirectCount-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndexedIndirectCount-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawIndexedIndirectCount-None-07627";
@@ -2425,10 +2314,6 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid(Func::vkCmdTraceRaysNV) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysNV-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysNV-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdTraceRaysNV-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdTraceRaysNV-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdTraceRaysNV-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysNV-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysNV-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysNV-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysNV-flags-02696";
@@ -2479,10 +2364,6 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid(Func::vkCmdTraceRaysKHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysKHR-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysKHR-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdTraceRaysKHR-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdTraceRaysKHR-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdTraceRaysKHR-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysKHR-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysKHR-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysKHR-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysKHR-flags-02696";
@@ -2533,10 +2414,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid(Func::vkCmdTraceRaysIndirectKHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysIndirectKHR-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysIndirectKHR-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdTraceRaysIndirectKHR-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysIndirectKHR-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysIndirectKHR-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysIndirectKHR-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysIndirectKHR-flags-02696";
@@ -2587,10 +2464,6 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirect2KHR() : DrawDispatchVuid(Func::vkCmdTraceRaysIndirect2KHR) {
         pipeline_bound_08606                     = "VUID-vkCmdTraceRaysIndirect2KHR-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdTraceRaysIndirect2KHR-None-08600";
-        linear_filter_sampler_04553              = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdTraceRaysIndirect2KHR-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysIndirect2KHR-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysIndirect2KHR-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysIndirect2KHR-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysIndirect2KHR-flags-02696";
@@ -2643,12 +2516,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksNV-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksNV-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksNV-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksNV-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksNV-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksNV-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksNV-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDrawMeshTasksNV-viewportCount-03417";
@@ -2874,13 +2741,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksNV-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksNV-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksNV-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksNV-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksNV-None-07627";
@@ -2905,12 +2767,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectNV-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksIndirectNV-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksIndirectNV-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
@@ -3139,13 +2995,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectNV-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07627";
@@ -3170,12 +3021,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
@@ -3407,13 +3252,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07627";
@@ -3438,12 +3278,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksEXT-None-02692";
         viewport_count_03417                     = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-03417";
@@ -3669,13 +3503,8 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksEXT-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksEXT-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksEXT-None-07627";
@@ -3700,12 +3529,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksIndirectEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksIndirectEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksIndirectEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectEXT-commandBuffer-02711";
@@ -3934,13 +3757,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07627";
@@ -3965,12 +3783,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commandBuffer-02711";
@@ -4202,13 +4014,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-07487";
         xfb_queries_07074                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07074";
         pg_queries_07075                         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07075";
-        rasterization_samples_09211              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07627";
@@ -4230,17 +4037,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid(Func::vkCmdDrawIndirectByteCountEXT) {
         pipeline_bound_08606                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08606";
-        vertex_binding_04007                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-04007";
-        vertex_binding_null_04008                = "VUID-vkCmdDrawIndirectByteCountEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirectByteCountEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDrawIndirectByteCountEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDrawIndirectByteCountEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDrawIndirectByteCountEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-02692";
         indirect_protected_cb_02711              = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
@@ -4488,11 +4287,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectByteCountEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdDrawIndirectByteCountEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdDrawIndirectByteCountEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdDrawIndirectByteCountEXT-None-07627";
@@ -4514,10 +4308,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid(Func::vkCmdDispatchBase) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchBase-None-08606";
-        linear_filter_sampler_04553              = "VUID-vkCmdDispatchBase-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdDispatchBase-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDispatchBase-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdDispatchBase-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDispatchBase-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDispatchBase-None-02692";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDispatchBase-flags-02696";
@@ -4571,12 +4361,6 @@ struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdExecuteGeneratedCommandsEXT-renderPass-02684";
         render_pass_began_08876                  = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08876";
-        subpass_index_02685                      = "VUID-vkCmdExecuteGeneratedCommandsEXT-subpass-02685";
-        sample_location_02689                    = "VUID-vkCmdExecuteGeneratedCommandsEXT-sampleLocationsEnable-02689";
-        linear_filter_sampler_04553              = "VUID-vkCmdExecuteGeneratedCommandsEXT-magFilter-04553";
-        linear_mipmap_sampler_04770              = "VUID-vkCmdExecuteGeneratedCommandsEXT-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdExecuteGeneratedCommandsEXT-magFilter-09598";
-        linear_mipmap_sampler_09599              = "VUID-vkCmdExecuteGeneratedCommandsEXT-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdExecuteGeneratedCommandsEXT-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-02692";
         viewport_count_03417                     = "VUID-vkCmdExecuteGeneratedCommandsEXT-viewportCount-03417";
@@ -4775,11 +4559,6 @@ struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
         convervative_rasterization_07499         = "VUID-vkCmdExecuteGeneratedCommandsEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdExecuteGeneratedCommandsEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdExecuteGeneratedCommandsEXT-samples-07473";
-        sample_locations_enable_07484            = "VUID-vkCmdExecuteGeneratedCommandsEXT-sampleLocationsEnable-07484";
-        sample_locations_enable_07485            = "VUID-vkCmdExecuteGeneratedCommandsEXT-sampleLocationsEnable-07485";
-        sample_locations_enable_07486            = "VUID-vkCmdExecuteGeneratedCommandsEXT-sampleLocationsEnable-07486";
-        sample_locations_enable_07487            = "VUID-vkCmdExecuteGeneratedCommandsEXT-sampleLocationsEnable-07487";
-        rasterization_samples_09211              = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-09211";
         dynamic_rendering_undefined_depth_format_08913 = "VUID-vkCmdExecuteGeneratedCommandsEXT-dynamicRenderingUnusedAttachments-08913";
         primitives_generated_query_07481         = "VUID-vkCmdExecuteGeneratedCommandsEXT-primitivesGeneratedQueryWithNonZeroStreams-07481";
         color_blend_enable_07627                 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-07627";
@@ -4861,4 +4640,66 @@ const DrawDispatchVuid& GetDrawDispatchVuid(Func function) {
         return vuids.at(Func::Empty);
     }
 }
+
+// The reason we keep strings of ALL the VUIDs is to make it easier to search and know what is covered or not.
+// The reality is the "action" commands (draw/dispatch/traceRays) VUID list has got stupidly large with 30+ ways to invoke work,
+// each having over 250 VUs, large enough that we are breaking stack limits from how many strings we have!!
+// (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11779)
+//
+// ... So this is "THE EXCEPTION, NOT THE NORMAL" here that we just concatenate the VUID from a number/enum
+// The scripts/vk_validation_stats.py is adjusted to handle this.
+//
+// TODO - This is an ongoing thing that will be too hard to do "all at once", so there might be some overlap between here and the
+// original DrawDispatchVuid list for a while.
+//
+std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
+    const char* suffix = nullptr;
+
+    // clang-format off
+    switch (id) {
+        // We use the three # to reference one real example, for the scripts/vk_validation_stats.py to parse
+        //
+        // ### VUID-vkCmdDraw-None-04007
+        case ActionVUID::VERTEX_BINDING_04007: suffix = "None-04007"; break;
+        // ### VUID-vkCmdDraw-None-04008
+        case ActionVUID::VERTEX_BINDING_04008: suffix = "None-04008"; break;
+
+        // ### VUID-vkCmdDraw-subpass-02685
+        case ActionVUID::SUBPASS_INDEX_02685: suffix = "subpass-02685"; break;
+
+        // ### VUID-vkCmdDraw-sampleLocationsEnable-02689
+        case ActionVUID::SAMPLE_LOCATION_02689: suffix = "sampleLocationsEnable-02689"; break;
+        // ### VUID-vkCmdDraw-sampleLocationsEnable-07484
+        case ActionVUID::SAMPLE_LOCATION_07484: suffix = "sampleLocationsEnable-07484"; break;
+        // ### VUID-vkCmdDraw-sampleLocationsEnable-07485
+        case ActionVUID::SAMPLE_LOCATION_07485: suffix = "sampleLocationsEnable-07485"; break;
+        // ### VUID-vkCmdDraw-sampleLocationsEnable-07486
+        case ActionVUID::SAMPLE_LOCATION_07486: suffix = "sampleLocationsEnable-07486"; break;
+        // ### VUID-vkCmdDraw-sampleLocationsEnable-07487
+        case ActionVUID::SAMPLE_LOCATION_07487: suffix = "sampleLocationsEnable-07487"; break;
+
+        // ### VUID-vkCmdDraw-None-09211
+        case ActionVUID::RASTERIZATION_SAMPLES_09211: suffix = "None-09211"; break;
+
+        // ### VUID-vkCmdDraw-magFilter-04553
+        case ActionVUID::LINEAR_FILTER_04553: suffix = "magFilter-04553"; break;
+        // ### VUID-vkCmdDraw-magFilter-09598
+        case ActionVUID::LINEAR_FILTER_09598: suffix = "magFilter-09598"; break;
+        // ### VUID-vkCmdDraw-mipmapMode-04770
+        case ActionVUID::LINEAR_MIPMAP_04770: suffix = "mipmapMode-04770"; break;
+        // ### VUID-vkCmdDraw-mipmapMode-09599
+        case ActionVUID::LINEAR_MIPMAP_09599: suffix = "mipmapMode-09599"; break;
+    }
+    // clang-format on
+
+    if (!suffix) {
+        return kVUIDUndefined;
+    }
+    // When c++20 is added, turn to std::format
+    return std::string("VUID-") + String(function) + "-" + suffix;
+}
+
+// Helper to migrate from GetDrawDispatchVuid()
+std::string CreateActionVuid(const DrawDispatchVuid& vuid, const ActionVUID id) { return CreateActionVuid(vuid.function, id); }
+
 }  // namespace vvl

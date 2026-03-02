@@ -20,6 +20,7 @@
 #pragma once
 
 #include "error_message/error_location.h"
+#include "generated/error_location_helper.h"
 
 namespace vvl {
 
@@ -32,18 +33,10 @@ struct DrawDispatchVuid {
 
     const char* pipeline_bound_08606 = kVUIDUndefined;
     const char* index_binding_07312 = kVUIDUndefined;
-    const char* vertex_binding_04007 = kVUIDUndefined;
-    const char* vertex_binding_null_04008 = kVUIDUndefined;
     const char* compatible_pipeline_08600 = kVUIDUndefined;
     const char* render_pass_compatible_02684 = kVUIDUndefined;
     const char* render_pass_began_08876 = kVUIDUndefined;
-    const char* subpass_index_02685 = kVUIDUndefined;
-    const char* sample_location_02689 = kVUIDUndefined;
-    const char* linear_filter_sampler_04553 = kVUIDUndefined;
-    const char* linear_mipmap_sampler_04770 = kVUIDUndefined;
-    const char* linear_filter_sampler_09598 = kVUIDUndefined;
     const char* unnormalized_coordinates_09635 = kVUIDUndefined;
-    const char* linear_mipmap_sampler_09599 = kVUIDUndefined;
     const char* cubic_sampler_02692 = kVUIDUndefined;
     const char* indirect_protected_cb_02711 = kVUIDUndefined;
     const char* indirect_contiguous_memory_02708 = kVUIDUndefined;
@@ -305,13 +298,8 @@ struct DrawDispatchVuid {
     const char* convervative_rasterization_07499 = kVUIDUndefined;
     const char* sample_mask_07472 = kVUIDUndefined;
     const char* sample_mask_07473 = kVUIDUndefined;
-    const char* sample_locations_enable_07484 = kVUIDUndefined;
-    const char* sample_locations_enable_07485 = kVUIDUndefined;
-    const char* sample_locations_enable_07486 = kVUIDUndefined;
-    const char* sample_locations_enable_07487 = kVUIDUndefined;
     const char* xfb_queries_07074 = kVUIDUndefined;
     const char* pg_queries_07075 = kVUIDUndefined;
-    const char* rasterization_samples_09211 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_depth_format_08913 = kVUIDUndefined;
     const char* primitives_generated_query_07481 = kVUIDUndefined;
     const char* vertex_input_09461 = kVUIDUndefined;
@@ -335,4 +323,24 @@ struct DrawDispatchVuid {
 };
 
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);
-}
+
+enum class ActionVUID {
+    VERTEX_BINDING_04007,
+    VERTEX_BINDING_04008,
+    SUBPASS_INDEX_02685,
+    SAMPLE_LOCATION_02689,
+    SAMPLE_LOCATION_07484,
+    SAMPLE_LOCATION_07485,
+    SAMPLE_LOCATION_07486,
+    SAMPLE_LOCATION_07487,
+    RASTERIZATION_SAMPLES_09211,
+    LINEAR_FILTER_04553,
+    LINEAR_FILTER_09598,
+    LINEAR_MIPMAP_04770,
+    LINEAR_MIPMAP_09599,
+};
+
+std::string CreateActionVuid(vvl::Func function, const ActionVUID id);
+std::string CreateActionVuid(const DrawDispatchVuid& vuid, const ActionVUID id);
+
+}  // namespace vvl
