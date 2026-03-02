@@ -802,13 +802,13 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
                 constexpr uint32_t shader_wg_size_x = 64;
                 if (setup_triangle_indices_validation) {
-                    auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
-                    if (!as_state) {
-                        gpuav.InternalError(info.srcAccelerationStructure, loc,
-                                            "gpuav::valcmd::BLAS(): Unrecognized acceleration structure.");
+                    auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+                    if (!dst_as_state) {
+                        gpuav.InternalError(info.dstAccelerationStructure, loc,
+                                            "gpuav::valcmd::BLAS(): Unrecognized destination acceleration structure.");
                         return;
                     }
-                    AccelerationStructureKHRSubState& as_gpuav_state = SubState(*as_state);
+                    AccelerationStructureKHRSubState& dst_as_gpuav_state = SubState(*dst_as_state);
 
                     const auto index_buffers = gpuav.GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
                     if (index_buffers.empty()) {
@@ -832,12 +832,17 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                             }
                         }
                     }
-                    if (gpuav.gpuav_settings.ray_tracing_index_buffer_consistency) {
+                    const bool as_build_allowing_updates = (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) &&
+                                                           (info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+                    const bool as_update = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+                    const bool validate_index_buffer_consistency =
+                        gpuav.gpuav_settings.ray_tracing_index_buffer_consistency && (as_build_allowing_updates || as_update);
+                    if (validate_index_buffer_consistency) {
                         const VkDeviceSize index_buffer_byte_size = VkDeviceSize(3) * build_range_info.primitiveCount *
                                                                     IndexTypeByteSize(geom_data.geometry.triangles.indexType);
                         if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
-                            as_gpuav_state.index_buffer_copies.resize(info.geometryCount);
-                            vko::BufferRange& index_buffer_copy = as_gpuav_state.index_buffer_copies[geom_i];
+                            dst_as_gpuav_state.index_buffer_copies.resize(info.geometryCount);
+                            vko::BufferRange& index_buffer_copy = dst_as_gpuav_state.index_buffer_copies[geom_i];
                             if (index_buffer_copy.buffer != VK_NULL_HANDLE) {
                                 gpuav.gpu_resources_manager_.ReturnDeviceLocalBufferRange(index_buffer_copy);
                             }
@@ -864,13 +869,13 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                         }
                         // Core checks already validates that index count is the same as last build
                         else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
-                                 (geom_i < as_gpuav_state.index_buffer_copies.size()) &&
-                                 (index_buffer_byte_size == as_gpuav_state.index_buffer_copies[geom_i].size)) {
+                                 (geom_i < dst_as_gpuav_state.index_buffer_copies.size()) &&
+                                 (index_buffer_byte_size == dst_as_gpuav_state.index_buffer_copies[geom_i].size)) {
                             MemcmpShader memcmp_shader_resources;
                             memcmp_shader_resources.push_constants.updated_indices =
                                 geom_data.geometry.triangles.indexData.deviceAddress + build_range_info.primitiveOffset;
                             memcmp_shader_resources.push_constants.original_indices =
-                                as_gpuav_state.index_buffer_copies[geom_i].offset_address;
+                                dst_as_gpuav_state.index_buffer_copies[geom_i].offset_address;
                             memcmp_shader_resources.push_constants.uvec4_count =
                                 uint32_t(index_buffer_byte_size / (4 * sizeof(uint32_t)));
                             uint32_t index_buffer_bytes_leftover =
