@@ -153,7 +153,7 @@ class TypeManager {
     const Constant& CreateConstantUInt32(uint32_t value);
     const Constant& CreateConstantScalar(uint64_t value, const Type& type, uint32_t result_id = 0);
     const Constant& GetConstantUInt32(uint32_t value);
-    const Constant& GetConstantUInt32FromId(uint32_t id);  // get a uint32 constant from an integer constant of any type
+    uint32_t GetConstantUInt32FromId(uint32_t id);  // get a uint32 constant from an integer constant of any type
     const Constant& GetConstantZeroUint32();
     const Constant& GetConstantOneUint32();
     const Constant& GetConstantZeroFloat16();

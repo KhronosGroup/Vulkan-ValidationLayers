@@ -92,11 +92,11 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
                 } else {
                     coopmat_type = type_manager_.FindTypeById(inst.TypeId());
                 }
-                const uint32_t scope_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(3)).Id();
-                uint32_t rows_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(4)).Id();
-                uint32_t cols_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(5)).Id();
-                const uint32_t memory_layout_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 3 : 4)).Id();
-                uint32_t stride_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 4 : 5)).Id();
+                const uint32_t scope_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(3));
+                uint32_t rows_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(4));
+                uint32_t cols_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(5));
+                const uint32_t memory_layout_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 3 : 4));
+                uint32_t stride_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 4 : 5));
 
                 uint32_t ptr_id = inst.Word(store ? 1 : 3);
 
@@ -168,30 +168,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
                                                        const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
-    if (!IsValueIn(opcode, {
-                               spv::OpLoad,
-                               spv::OpStore,
-                               spv::OpControlBarrier,
-                               spv::OpAtomicLoad,
-                               spv::OpAtomicStore,
-                               spv::OpAtomicExchange,
-                               spv::OpAtomicIIncrement,
-                               spv::OpAtomicIDecrement,
-                               spv::OpAtomicIAdd,
-                               spv::OpAtomicISub,
-                               spv::OpAtomicSMin,
-                               spv::OpAtomicUMin,
-                               spv::OpAtomicSMax,
-                               spv::OpAtomicUMax,
-                               spv::OpAtomicAnd,
-                               spv::OpAtomicOr,
-                               spv::OpAtomicXor,
-                               spv::OpAtomicFMinEXT,
-                               spv::OpAtomicFMaxEXT,
-                               spv::OpAtomicFAddEXT,
-                               spv::OpCooperativeMatrixLoadKHR,
-                               spv::OpCooperativeMatrixStoreKHR,
-                           })) {
+    if (!AtomicOperation(opcode) && !IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpControlBarrier,
+                                                        spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
         return false;
     }
     meta.target_instruction = &inst;

@@ -27,65 +27,65 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
         return;
     }
 
-    cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,
-                                                                          const LastBound &last_bound) {
-        CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [&last_bound](Validator &gpuav, const Location &loc,
-                                                                                            const uint32_t *error_record,
-                                                                                            std::string &out_error_msg,
-                                                                                            std::string &out_vuid_msg) {
-            using namespace glsl;
-            bool error_found = false;
-            if (GetErrorGroup(error_record) != kErrorGroup_SharedMemoryDataRace) {
-                return error_found;
-            }
-            error_found = true;
+    cb.on_instrumentation_error_logger_register_functions.emplace_back(
+        [](Validator &gpuav, CommandBufferSubState &cb, const LastBound &last_bound) {
+            CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
+                [](Validator &gpuav, const Location &loc, const uint32_t *error_record, std::string &out_error_msg,
+                   std::string &out_vuid_msg) {
+                    using namespace glsl;
+                    bool error_found = false;
+                    if (GetErrorGroup(error_record) != kErrorGroup_SharedMemoryDataRace) {
+                        return error_found;
+                    }
+                    error_found = true;
 
-            const InstrumentedShader *instrumented_shader = nullptr;
-            const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
-            auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
-            if (it != gpuav.instrumented_shaders_map_.end()) {
-                instrumented_shader = &it->second;
-            }
+                    // TODO - We shouldn't need to grab the core Module object here...
+                    const InstrumentedShader *instrumented_shader = nullptr;
+                    const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
+                    auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
+                    if (it != gpuav.instrumented_shaders_map_.end()) {
+                        instrumented_shader = &it->second;
+                    }
 
-            const uint32_t thread_id = error_record[kInst_LogError_ParameterOffset_0];
-            const uint32_t collide_id = error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF;
-            uint32_t variable_id = error_record[kInst_LogError_ParameterOffset_2];
+                    const uint32_t thread_id = error_record[kInst_LogError_ParameterOffset_0];
+                    const uint32_t collide_id = error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF;
+                    uint32_t variable_id = error_record[kInst_LogError_ParameterOffset_2];
 
-            const uint32_t error_sub_code = GetSubError(error_record);
-            std::ostringstream strm;
-            strm << "A data race was detected on the shared memory variable \"";
-            ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
-            strm << "\" in local invocation index " << thread_id << " while performing a ";
-            switch (error_sub_code) {
-                case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
-                    strm << "store";
-                    out_vuid_msg = "SharedMemoryDataRace-RaceOnStore";
-                } break;
-                case kErrorSubCode_SharedMemoryDataRace_RaceOnLoad: {
-                    strm << "load";
-                    out_vuid_msg = "SharedMemoryDataRace-RaceOnLoad";
-                } break;
-                case kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic: {
-                    strm << "load or store";
-                    out_vuid_msg = "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic";
-                } break;
-                case kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic: {
-                    strm << "atomic";
-                    out_vuid_msg = "SharedMemoryDataRace-RaceOnAtomic";
-                } break;
-                default:
-                    strm << "UNKNOWN";
-                    error_found = false;
-                    break;
-            }
-            strm << " operation. (Likely against local invocation index " << collide_id << ")";
+                    const uint32_t error_sub_code = GetSubError(error_record);
+                    std::ostringstream strm;
+                    strm << "A data race was detected on the shared memory variable \"";
+                    ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
+                    strm << "\" in local invocation index " << thread_id << " while performing a ";
+                    switch (error_sub_code) {
+                        case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
+                            strm << "store";
+                            out_vuid_msg = "SharedMemoryDataRace-RaceOnStore";
+                        } break;
+                        case kErrorSubCode_SharedMemoryDataRace_RaceOnLoad: {
+                            strm << "load";
+                            out_vuid_msg = "SharedMemoryDataRace-RaceOnLoad";
+                        } break;
+                        case kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic: {
+                            strm << "load or store";
+                            out_vuid_msg = "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic";
+                        } break;
+                        case kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic: {
+                            strm << "atomic";
+                            out_vuid_msg = "SharedMemoryDataRace-RaceOnAtomic";
+                        } break;
+                        default:
+                            strm << "UNKNOWN";
+                            error_found = false;
+                            break;
+                    }
+                    strm << " operation. (Likely against local invocation index " << collide_id << ")";
 
-            out_error_msg += strm.str();
-            return error_found;
-        };
+                    out_error_msg += strm.str();
+                    return error_found;
+                };
 
-        return inst_error_logger;
-    });
+            return inst_error_logger;
+        });
 }
 
 }  // namespace gpuav

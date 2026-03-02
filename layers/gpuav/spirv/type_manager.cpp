@@ -584,9 +584,9 @@ const Constant& TypeManager::GetConstantUInt32(uint32_t value) {
 }
 
 // Useful to canonicalize integer constants to uint32.
-const Constant& TypeManager::GetConstantUInt32FromId(uint32_t id) {
+uint32_t TypeManager::GetConstantUInt32FromId(uint32_t id) {
     uint32_t value = FindConstantById(id)->GetValueUint32();
-    return GetConstantUInt32(value);
+    return GetConstantUInt32(value).Id();
 }
 
 // It is common to use uint32_t(0) as a default, so having it cached is helpful

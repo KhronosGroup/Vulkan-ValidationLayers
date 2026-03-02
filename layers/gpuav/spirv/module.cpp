@@ -926,6 +926,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
     }
 
     for (auto& decoration : decorations) {
+        // member decorations have different operand offsets and don't need these checks.
         if (decoration->Opcode() == spv::OpDecorate) {
             if (decoration->Word(2) == spv::DecorationRelaxedPrecision) {
                 continue;
