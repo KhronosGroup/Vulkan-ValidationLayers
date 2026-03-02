@@ -5370,7 +5370,7 @@ bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer command
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     const Location control_info_loc = error_obj.location.dot(Field::pCodingControlInfo);
 
@@ -5438,7 +5438,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     const Location decode_info_loc = error_obj.location.dot(Field::pDecodeInfo);
 
@@ -5819,7 +5819,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return false;
+    if (!vs_state) return skip;
 
     const Location encode_info_loc = error_obj.location.dot(Field::pEncodeInfo);
 
@@ -5887,7 +5887,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
 
         if (quantization_map_info != nullptr && quantization_map_info->quantizationMap != VK_NULL_HANDLE) {
             const auto iv_state = Get<vvl::ImageView>(quantization_map_info->quantizationMap);
-            if (!iv_state) return false;
+            if (!iv_state) return skip;
 
             if ((iv_state->inherited_usage & valid_usage.image_usage_flag) == 0) {
                 const LogObjectList objlist(commandBuffer, iv_state->Handle());
