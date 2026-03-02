@@ -2837,63 +2837,6 @@ bool CoreChecks::ValidateMeshShaderLimits(const spirv::Module &module_state, con
 
     return skip;
 }
-bool CoreChecks::ValidateTaskPayload(const spirv::Module *task_module, const spirv::EntryPoint &mesh_entrypoint,
-                                     const Location &loc) const {
-    bool skip = false;
-
-    uint32_t mesh_payload_size = mesh_entrypoint.task_payload_variable ? mesh_entrypoint.task_payload_variable->size : 0;
-    if (mesh_payload_size == 0) {
-        return skip;  // It is valid to have the Task use the payload, but the mesh to ignore it
-    }
-
-    if (!task_module) {
-        skip |= LogError("VUID-RuntimeSpirv-MeshEXT-10883", device, loc,
-                         "shader %s has a TaskPayloadWorkgroupEXT variable but there is no Task Shader to set the payload values.",
-                         mesh_entrypoint.Describe().c_str());
-        return skip;
-    }
-
-    if (task_module->static_data_.emit_mesh_tasks_inst.size() > 1) {
-        // If there are multiple OpEmitMeshTasksEXT we will need GPU-AV to know which was actually called
-        return skip;
-    }
-
-    uint32_t task_payload_size = 0;
-    if (!task_module->static_data_.emit_mesh_tasks_inst.empty()) {
-        const auto emit_mesh_task = task_module->static_data_.emit_mesh_tasks_inst.front();
-        // Payload is optional
-        if (emit_mesh_task->Length() == 5) {
-            if (task_module->static_data_.has_specialization_constants) {
-                // There is a chance this is not resolvable here to match exact size
-                return skip;
-            }
-            const auto *payload_variable = task_module->FindDef(emit_mesh_task->Word(4));
-            const spirv::Instruction *type = task_module->GetVariablePointerType(*payload_variable);
-            task_payload_size = task_module->GetTypeBytesSize(type);
-        }
-    }
-
-    // If task and mesh are both set and just matter of trying to resolve spec constant values, skip possibly reporting false
-    // positives
-    // TODO - We should be able to just handle this and get the size
-    if (mesh_payload_size == spirv::kSpecConstant && task_payload_size != 0) {
-        return skip;
-    }
-
-    if (task_payload_size != mesh_payload_size) {
-        std::ostringstream ss;
-        ss << "shader " << mesh_entrypoint.Describe() << " has a TaskPayloadWorkgroupEXT variable, but the Task Shader ";
-        if (task_payload_size == 0) {
-            ss << "never sets the TaskPayloadWorkgroupEXT variable in the call to OpEmitMeshTasksEXT";
-        } else {
-            ss << "sets a TaskPayloadWorkgroupEXT variable that is " << task_payload_size << " bytes but needs to match the "
-               << mesh_payload_size << " bytes payload in the Mesh Shader.";
-        }
-        skip |= LogError("VUID-RuntimeSpirv-MeshEXT-10883", device, loc, "%s", ss.str().c_str());
-    }
-
-    return skip;
-}
 
 static const ShaderStageState* GetDataGraphShaderStage(const vvl::Pipeline& pipeline) {
     if (pipeline.stage_states.empty()) {
