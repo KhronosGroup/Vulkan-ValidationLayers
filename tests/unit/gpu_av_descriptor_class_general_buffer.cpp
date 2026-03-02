@@ -2163,6 +2163,22 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicExchange) {
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 16, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicAdd) {
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            uint b;
+        };
+
+        void main() {
+            atomicAdd(b, 1u);
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 16, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
