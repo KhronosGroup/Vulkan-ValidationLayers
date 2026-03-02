@@ -84,8 +84,9 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
                                                                InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
-    if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange,
-                                     spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
+    if (!IsValueIn(spv::Op(opcode),
+                   {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR}) &&
+        !AtomicOperation(opcode)) {
         return false;
     }
 
