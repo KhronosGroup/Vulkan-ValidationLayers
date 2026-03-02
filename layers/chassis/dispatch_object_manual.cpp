@@ -1082,7 +1082,10 @@ VkResult Device::CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
             }
 
             const VkFormat *original_color_attachment_formats = nullptr;
-            auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pCreateInfos[idx0].pNext);
+            const VkPipelineRenderingCreateInfo *dynamic_rendering = nullptr;
+            if (pCreateInfos[idx0].renderPass == VK_NULL_HANDLE) {
+                dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pCreateInfos[idx0].pNext);
+            }
             if (dynamic_rendering) {
                 if (has_fragment_output_state) {
                     uses_color_attachment = (dynamic_rendering->colorAttachmentCount > 0);
