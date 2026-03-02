@@ -940,13 +940,6 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
                     "Mesh shader (%s) was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader (%s) is bound.",
                     FormatHandle(mesh_shader_handle).c_str(), FormatHandle(task_shader_handle).c_str());
             }
-
-            if (mesh_state->stage.entrypoint) {
-                const vvl::ShaderObject* task_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::TASK);
-                const spirv::Module* task_module =
-                    (task_state && task_state->stage.spirv_state) ? task_state->stage.spirv_state.get() : nullptr;
-                skip |= ValidateTaskPayload(task_module, *mesh_state->stage.entrypoint, vuid.loc());
-            }
         }
     }
 

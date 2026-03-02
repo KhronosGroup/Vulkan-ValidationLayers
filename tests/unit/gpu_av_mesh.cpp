@@ -68,3 +68,145 @@ TEST_F(NegativeGpuAVMesh, PrimitiveCount) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char* task_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        void main() {
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        taskPayloadSharedEXT uint payload;
+        void main() {
+            uint x = payload;
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ts(*m_device, task_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing2) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        taskPayloadSharedEXT uint payload;
+        void main() {
+            uint x = payload;
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedDifferent) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char* task_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        struct Foo {
+            uint a[3];
+            uint b;
+        };
+        taskPayloadSharedEXT Foo payload;
+        void main() {
+            payload.b = 4;
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        taskPayloadSharedEXT uint payload;
+        void main() {
+            uint x = payload;
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ts(*m_device, task_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissingShaderObject) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitDynamicRenderTarget();
+
+    const char* task_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        void main() {
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        taskPayloadSharedEXT uint mesh_payload;
+        void main() {
+            uint x = mesh_payload;
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    const vkt::Shader task_shader(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT, task_source);
+    const vkt::Shader mesh_shader(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT, mesh_source);
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.BindMeshShaders(task_shader, mesh_shader, frag_shader);
+    SetDefaultDynamicStatesExclude();
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

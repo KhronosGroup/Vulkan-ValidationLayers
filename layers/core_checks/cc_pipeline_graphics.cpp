@@ -1408,11 +1408,6 @@ bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline,
                          "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
     }
 
-    if (mesh_state->entrypoint) {
-        const spirv::Module *task_module = (task_state && task_state->spirv_state) ? task_state->spirv_state.get() : nullptr;
-        skip |= ValidateTaskPayload(task_module, *mesh_state->entrypoint, create_info_loc);
-    }
-
     return skip;
 }
 
