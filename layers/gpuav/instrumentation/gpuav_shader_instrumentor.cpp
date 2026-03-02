@@ -23,7 +23,6 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/spirv/interface.h"
 #include "utils/shader_utils.h"
 #include "utils/spirv_tools_utils.h"
@@ -51,6 +50,7 @@
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/ray_hit_object_pass.h"
+#include "gpuav/spirv/shared_memory_data_race_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
@@ -277,6 +277,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
         IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     instrumentation_device_settings_.error_buffer_data_length = glsl::kErrorBufferDataLength;
     instrumentation_device_settings_.debug_printf_buffer_size = gpuav_settings.debug_printf_buffer_size;
+    instrumentation_device_settings_.max_compute_shared_memory_size = phys_dev_props.limits.maxComputeSharedMemorySize;
 }
 
 void GpuShaderInstrumentor::Cleanup() {
@@ -1664,6 +1665,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
 
     if (gpuav_settings.shader_instrumentation.ray_hit_object) {
         spirv::RayHitObjectPass pass(module);
+        modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.shared_memory_data_race) {
+        spirv::SharedMemoryDataRacePass pass(module);
         modified |= pass.Run();
     }
 

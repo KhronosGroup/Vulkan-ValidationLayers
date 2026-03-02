@@ -115,6 +115,8 @@ struct DeviceSettings {
     // Lets us embed the size instead of calling OpArrayLength
     uint32_t error_buffer_data_length;
     uint32_t debug_printf_buffer_size;
+    // maxComputeSharedMemorySize limit
+    uint32_t max_compute_shared_memory_size;
 };
 
 // When running the DebugPrintf pass, if we detect an instrumented shader has a printf call (for debugging) we can hold them until

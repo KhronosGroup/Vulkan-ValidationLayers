@@ -761,9 +761,24 @@ void Module::LinkFunctions(const LinkInfo& info) {
             // Currently we use the fact the only private variable that are struct are for error payload
             if (pointer_type->spv_type_ == SpvType::kStruct && is_private_var &&
                 ((info.module.flags & UseErrorPayloadVariable) != 0)) {
-                // Variable already is in shader, just mark the new result ID
-                AddInterfaceVariables(error_payload_variable_id_, storage_class);
-                id_swap_map[old_result_id] = error_payload_variable_id_;
+                // TODO - This a hack because SharedMemoryDataRace can inject init_shadow, but never have anything to validate, so
+                // we don't actually need the error logging
+                if (error_payload_variable_id_ != 0) {
+                    // Variable already is in shader, just mark the new result ID
+                    AddInterfaceVariables(error_payload_variable_id_, storage_class);
+                    id_swap_map[old_result_id] = error_payload_variable_id_;
+                }
+            } else if (pointer_type->spv_type_ == SpvType::kArray && storage_class == spv::StorageClassWorkgroup &&
+                       ((info.module.flags & SharedMemoryDataRace) != 0)) {
+                assert(shared_memory_shadow_variable_id_ != 0);
+                id_swap_map[old_result_id] = shared_memory_shadow_variable_id_;
+                AddInterfaceVariables(shared_memory_shadow_variable_id_, storage_class);
+            } else if (storage_class == spv::StorageClassInput && ((info.module.flags & SharedMemoryDataRace) != 0)) {
+                // Can't have duplicate builtin inputs. The only builtin input used in the
+                // SharedMemoryDataRace pass is localinvocationindex
+                // (We need to replace the gl_LocalInvocationIndex for the incoming shader)
+                const Variable& local_invocation_index = GetBuiltInVariable(spv::BuiltInLocalInvocationIndex);
+                id_swap_map[old_result_id] = local_invocation_index.Id();
             } else {
                 const uint32_t new_result_id = TakeNextId();
                 AddInterfaceVariables(new_result_id, storage_class);
@@ -905,6 +920,22 @@ void Module::LinkFunctions(const LinkInfo& info) {
         } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
             // only should be one DescriptorSet to update
             decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);
+        } else if (decoration->Word(2) == spv::DecorationBuiltIn && decoration->Word(3) == spv::BuiltInLocalInvocationIndex) {
+            // look for a duplicate decoration and don't apply it if found
+            auto id = decoration->Word(1);
+            id = id_swap_map[id];
+            bool found = false;
+            for (const auto& annotation : annotations_) {
+                if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
+                    spv::Decoration(annotation->Word(2)) == decoration->Word(2) &&
+                    spv::Decoration(annotation->Word(3)) == decoration->Word(3)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
         }
 
         decoration->ReplaceLinkedId(id_swap_map);

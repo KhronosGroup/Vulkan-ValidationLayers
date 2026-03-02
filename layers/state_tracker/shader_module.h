@@ -687,7 +687,7 @@ struct Module {
         // Find all decoration instructions to prevent relooping module later - many checks need this info
         std::vector<const Instruction*> decoration_inst;
         // Find all variable instructions to build faster LUT
-        std::vector<const Instruction *> variable_inst;
+        std::vector<const Instruction*> variable_inst;
         // Both variables and instruction explicitly accessing untyped variables
         std::vector<const Instruction *> explicit_memory_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT

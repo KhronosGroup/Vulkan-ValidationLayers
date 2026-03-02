@@ -124,6 +124,9 @@ class Module {
     // Will be set in the LogErrorPass
     uint32_t error_payload_variable_id_ = 0;
 
+    // Used by SharedMemoryDataRacePass, linked by Module::LinkFunctions
+    uint32_t shared_memory_shadow_variable_id_ = 0;
+
   private:
     // This is here to emulate the
     //  spirv-opt --set-spec-const-default-value <values> --freeze-spec-const --fold-spec-const-op-composite

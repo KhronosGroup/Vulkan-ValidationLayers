@@ -90,7 +90,7 @@ class SamplerSubState {
     SamplerSubState &operator=(const SamplerSubState &) = delete;
     virtual ~SamplerSubState() {}
     virtual void Destroy() {}
-    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &, bool) {}
 
     Sampler &base;
 };

@@ -160,6 +160,11 @@ khronos_validation.gpuav_shader_sanitizer = true
 # Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.
 khronos_validation.gpuav_shaders_to_instrument =
 
+# Shared Memory Data Race Detection
+# =====================
+# Detects data races on shared memory (Compute shaders only). Limitations: This does not handle mixing atomics and non-atomics on the same locations without a barrier in between, this could lead to false positives. This assumes barrier() is used for all shared memory synchronization.
+khronos_validation.gpuav_shared_memory_data_race = true
+
 # RayQuery SPIR-V instructions
 # =====================
 # Enable shader instrumentation on OpRayQueryInitializeKHR

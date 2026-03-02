@@ -339,6 +339,7 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/ray_hit_object.cpp
     gpuav/instrumentation/register_validation.h
     gpuav/instrumentation/sanitizer.cpp
+    gpuav/instrumentation/shared_memory_data_race.cpp
     gpuav/instrumentation/vertex_attribute_fetch_oob.cpp
     gpuav/resources/gpuav_state_trackers.cpp
     gpuav/resources/gpuav_state_trackers.h
