@@ -774,11 +774,22 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 id_swap_map[old_result_id] = shared_memory_shadow_variable_id_;
                 AddInterfaceVariables(shared_memory_shadow_variable_id_, storage_class);
             } else if (storage_class == spv::StorageClassInput && ((info.module.flags & SharedMemoryDataRace) != 0)) {
-                // Can't have duplicate builtin inputs. The only builtin input used in the
-                // SharedMemoryDataRace pass is localinvocationindex
-                // (We need to replace the gl_LocalInvocationIndex for the incoming shader)
-                const Variable& local_invocation_index = GetBuiltInVariable(spv::BuiltInLocalInvocationIndex);
-                id_swap_map[old_result_id] = local_invocation_index.Id();
+                uint32_t builtin = 0;
+                for (auto& decoration : decorations) {
+                    if (decoration->Opcode() == spv::OpDecorate && decoration->Word(1) == old_result_id &&
+                        decoration->Word(2) == spv::DecorationBuiltIn &&
+                        (decoration->Word(3) == spv::BuiltInLocalInvocationIndex ||
+                         decoration->Word(3) == spv::BuiltInSubgroupLocalInvocationId ||
+                         decoration->Word(3) == spv::BuiltInSubgroupSize)) {
+                        builtin = decoration->Word(3);
+                        break;
+                    }
+                }
+
+                // Can't have duplicate builtin inputs.
+                // (We need to replace the gl_LocalInvocationIndex/etc for the incoming shader)
+                const Variable& builtin_var = GetBuiltInVariable(builtin);
+                id_swap_map[old_result_id] = builtin_var.Id();
             } else {
                 const uint32_t new_result_id = TakeNextId();
                 AddInterfaceVariables(new_result_id, storage_class);
@@ -915,26 +926,33 @@ void Module::LinkFunctions(const LinkInfo& info) {
     }
 
     for (auto& decoration : decorations) {
-        if (decoration->Word(2) == spv::DecorationLinkageAttributes) {
-            continue;  // remove linkage info
-        } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
-            // only should be one DescriptorSet to update
-            decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);
-        } else if (decoration->Word(2) == spv::DecorationBuiltIn && decoration->Word(3) == spv::BuiltInLocalInvocationIndex) {
-            // look for a duplicate decoration and don't apply it if found
-            auto id = decoration->Word(1);
-            id = id_swap_map[id];
-            bool found = false;
-            for (const auto& annotation : annotations_) {
-                if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
-                    spv::Decoration(annotation->Word(2)) == decoration->Word(2) &&
-                    spv::Decoration(annotation->Word(3)) == decoration->Word(3)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
+        if (decoration->Opcode() == spv::OpDecorate) {
+            if (decoration->Word(2) == spv::DecorationRelaxedPrecision) {
                 continue;
+            } else if (decoration->Word(2) == spv::DecorationLinkageAttributes) {
+                continue;  // remove linkage info
+            } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
+                // only should be one DescriptorSet to update
+                decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);
+            } else if (decoration->Word(2) == spv::DecorationBuiltIn &&
+                       (decoration->Word(3) == spv::BuiltInLocalInvocationIndex ||
+                        decoration->Word(3) == spv::BuiltInSubgroupLocalInvocationId ||
+                        decoration->Word(3) == spv::BuiltInSubgroupSize)) {
+                // look for a duplicate decoration and don't apply it if found
+                auto id = decoration->Word(1);
+                id = id_swap_map[id];
+                bool found = false;
+                for (const auto& annotation : annotations_) {
+                    if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
+                        spv::Decoration(annotation->Word(2)) == decoration->Word(2) &&
+                        spv::Decoration(annotation->Word(3)) == decoration->Word(3)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    continue;
+                }
             }
         }
 

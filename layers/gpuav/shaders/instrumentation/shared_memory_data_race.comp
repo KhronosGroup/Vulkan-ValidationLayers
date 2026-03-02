@@ -20,6 +20,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_debug_printf : enable
 #extension GL_KHR_memory_scope_semantics : enable
+#extension GL_KHR_shader_subgroup_basic : enable
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
@@ -36,6 +37,12 @@
 // use atomicExchange to track accesses to each shared memory location as being either
 // stored by a thread, loaded by a thread, loaded by multiple threads, or accessed
 // by an atomic. If there is a conflicting load/store, report an error.
+//
+// CoopMat load/store is instrumented similarly, but each call needs to touch all
+// the elements of the array that the matrix covers. There's no prescribed mapping
+// of invocations to memory, so the reported thread_id may be meaningless.
+// If the coopmat component type doesn't match the scalar type of the array, then
+// the number of rows/cols is scaled to make it touch the right number of elements.
 
 // Limitations: This does not handle mixing atomics and non-atomics on the same
 // locations without a barrier in between, this could lead to false positives.
@@ -145,5 +152,54 @@ void do_atomic(const in uint start, const in uint idx, const in uint inst_offset
                         ret,
                         variable_idx
                     );
+    }
+}
+
+void do_coopmat_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
+                     const in uint scope, const in uint rows, const in uint cols, const in uint memory_layout, const in uint stride, const in uint wg_size) {
+    uint thread_id = gl_LocalInvocationIndex;
+    uint inv_per_iter = scope == gl_ScopeSubgroup ? gl_SubgroupSize : wg_size;
+    uint first_idx = scope == gl_ScopeSubgroup ? gl_SubgroupInvocationID : gl_LocalInvocationIndex;
+    for (uint i = first_idx; i < rows * cols; i += inv_per_iter) {
+        uint c = i % cols;
+        uint r = i / cols;
+        uint loc = memory_layout == gl_CooperativeMatrixLayoutRowMajor ? (r * stride + c) : (c * stride + r);
+        // Treat coopmat load as multi_load with no known thread id.
+        uint ret = atomicOr(shadow[start + idx + loc], MULTI_LOAD_BIT);
+        if ((ret & (STORE_BIT | ATOMIC_BIT)) != 0) {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnLoad << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        }
+    }
+}
+
+void do_coopmat_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
+                      const in uint scope, const in uint rows, const in uint cols, const in uint memory_layout, const in uint stride, const in uint wg_size) {
+    uint thread_id = gl_LocalInvocationIndex;
+    uint inv_per_iter = scope == gl_ScopeSubgroup ? gl_SubgroupSize : wg_size;
+    uint first_idx = scope == gl_ScopeSubgroup ? gl_SubgroupInvocationID : gl_LocalInvocationIndex;
+    for (uint i = first_idx; i < rows * cols; i += inv_per_iter) {
+        uint c = i % cols;
+        uint r = i / cols;
+        uint loc = memory_layout == gl_CooperativeMatrixLayoutRowMajor ? (r * stride + c) : (c * stride + r);
+
+        // No thread_id
+        uint ret = atomicExchange(shadow[start + idx + loc], STORE_BIT);
+        // The memory can't have been written or read, even by other coopmatload/store calls,
+        // because the mapping of matrix elements to invocations is unknown.
+        if (ret != SENTINEL) {
+            error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryDataRace << kErrorGroup_Shift) | (kErrorSubCode_SharedMemoryDataRace_RaceOnStore << kErrorSubCode_Shift),
+                            thread_id,
+                            ret,
+                            variable_idx
+                        );
+        }
     }
 }

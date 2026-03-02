@@ -40,11 +40,12 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
             }
             error_found = true;
 
-            // TODO - We shouldn't need to grab the core Module object here...
-            // The issue is we don't get the raw SPIR-V until LogInstrumentationError;
-            auto &module = last_bound.pipeline_state
-                               ? last_bound.pipeline_state->GetShaderStageState(VK_SHADER_STAGE_COMPUTE_BIT)->spirv_state
-                               : last_bound.GetShaderObjectState(ShaderObjectStage::COMPUTE)->stage.spirv_state;
+            const InstrumentedShader *instrumented_shader = nullptr;
+            const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
+            auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
+            if (it != gpuav.instrumented_shaders_map_.end()) {
+                instrumented_shader = &it->second;
+            }
 
             const uint32_t thread_id = error_record[kInst_LogError_ParameterOffset_0];
             const uint32_t collide_id = error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF;
@@ -53,7 +54,7 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
             const uint32_t error_sub_code = GetSubError(error_record);
             std::ostringstream strm;
             strm << "A data race was detected on the shared memory variable \"";
-            ::spirv::FindOpVariableName(strm, module->words_, variable_id);
+            ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
             strm << "\" in local invocation index " << thread_id << " while performing a ";
             switch (error_sub_code) {
                 case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
