@@ -2603,3 +2603,218 @@ TEST_F(PositiveGpuAV, ShaderModuleIdentifier) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 }
+
+// TODO - When we add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11773
+// Use this as a way to test it instead of being here
+TEST_F(PositiveGpuAV, ConstantFoldingVectorShuffle) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(constant_id = 0) const uint base_size = 4;
+        const uvec3 dimensions = uvec3(base_size, 8, 16);
+        const uvec3 shuffled = dimensions.zyx;
+        shared float data[shuffled.x]; // Size will be 16 (the 'z' from the original)
+        void main() {
+            data[14] = 1.0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+}
+
+// TODO - When we add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11773
+// Use this as a way to test it instead of being here
+TEST_F(PositiveGpuAV, ConstantFoldingVectorShuffleMix) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // turns into
+    // shared float data[16];
+    // data[14] = 1.0;
+    const char* shader_source = R"glsl(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %data
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %base_size SpecId 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+  %base_size = OpSpecConstant %uint 4
+     %uint_8 = OpConstant %uint 8
+    %uint_16 = OpConstant %uint 16
+     %v2uint = OpTypeVector %uint 2
+     %v3uint = OpTypeVector %uint 3
+         %d1 = OpSpecConstantComposite %v2uint %base_size %uint_8
+         %d2 = OpSpecConstantComposite %v3uint %base_size %uint_8 %uint_16
+   %shuffled = OpSpecConstantOp %v3uint VectorShuffle %d1 %d2 2 1 4
+     %uint_0 = OpConstant %uint 0
+         %16 = OpSpecConstantOp %uint CompositeExtract %shuffled 2
+%_arr_float_16 = OpTypeArray %float %16
+%_ptr_Workgroup__arr_float_16 = OpTypePointer Workgroup %_arr_float_16
+       %data = OpVariable %_ptr_Workgroup__arr_float_16 Workgroup
+        %int = OpTypeInt 32 1
+     %int_14 = OpConstant %int 14
+    %float_1 = OpConstant %float 1
+%_ptr_Workgroup_float = OpTypePointer Workgroup %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %24 = OpAccessChain %_ptr_Workgroup_float %data %int_14
+               OpStore %24 %float_1
+               OpReturn
+               OpFunctionEnd
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+// TODO - When we add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11773
+// Use this as a way to test it instead of being here
+TEST_F(PositiveGpuAV, ConstantFoldingCompositeExtract) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // https://godbolt.org/z/j43eanGvf
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(constant_id = 0) const uint spec_x = 8;
+        const uvec2 vector_A = uvec2(spec_x, 4);
+        layout(constant_id = 1) const uint spec_y = 6;
+        const uvec2 vector_B = uvec2(spec_y, 10);
+        const uvec2 combined = uvec2(vector_A.x, vector_B.y);
+
+        shared float data[combined.y]; // Size is 10 (from Vector B)
+
+        void main() {
+            data[8] = 1.0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+}
+
+// TODO - When we add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11773
+// Use this as a way to test it instead of being here
+TEST_F(PositiveGpuAV, ConstantFoldingCompositeExtractNested) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // turns into
+    // shared uint x[6];
+    // shared uint y[4];
+    // x[5] = 1;
+    // y[3] = 1;
+    const char* shader_source = R"glsl(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %x %y
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %spec_val SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+    %uint_0 = OpConstant %uint 0
+    %uint_2 = OpConstant %uint 2
+    %uint_3 = OpConstant %uint 3
+    %uint_4 = OpConstant %uint 4
+    %uint_5 = OpConstant %uint 5
+    %uint_6 = OpConstant %uint 6
+%arr_v3uint_2 = OpTypeArray %v3uint %uint_2
+   %spec_val = OpSpecConstant %uint 10
+ %inner_v0 = OpSpecConstantComposite %v3uint %spec_val %uint_2 %uint_3
+ %inner_v1 = OpSpecConstantComposite %v3uint %uint_4 %uint_5 %uint_6
+ %data_grid = OpSpecConstantComposite %arr_v3uint_2 %inner_v0 %inner_v1
+%extract_6 = OpSpecConstantOp %uint CompositeExtract %data_grid 1 2
+
+ %extract_v1 = OpSpecConstantOp %v3uint CompositeExtract %data_grid 1
+ %extract_4 = OpSpecConstantOp %uint CompositeExtract %extract_v1 0
+
+%_arr_uint_uint_6 = OpTypeArray %uint %extract_6
+%ptr_workgroup6 = OpTypePointer Workgroup %_arr_uint_uint_6
+%x = OpVariable %ptr_workgroup6 Workgroup
+
+%_arr_uint_uint_4 = OpTypeArray %uint %extract_4
+%ptr_workgroup4 = OpTypePointer Workgroup %_arr_uint_uint_4
+%y = OpVariable %ptr_workgroup4 Workgroup
+
+%ptr_workgroup_uint = OpTypePointer Workgroup %uint
+
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %x_ac = OpAccessChain %ptr_workgroup_uint %x %uint_5
+               OpStore %x_ac %uint_0
+         %y_ac = OpAccessChain %ptr_workgroup_uint %y %uint_3
+               OpStore %y_ac %uint_0
+               OpReturn
+               OpFunctionEnd
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAV, ConstantFoldingCompositeShuffle) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // turns into
+    // shared float x[10];
+    // x[8] = 1.0;
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %data
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %base_size SpecId 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+  %base_size = OpSpecConstant %uint 4
+     %uint_8 = OpConstant %uint 8
+    %uint_10 = OpConstant %uint 10
+    %uint_16 = OpConstant %uint 16
+     %v3uint = OpTypeVector %uint 3
+         %d2 = OpSpecConstantComposite %v3uint %base_size %uint_8 %uint_16
+%insert_comp = OpSpecConstantOp %v3uint CompositeInsert %uint_10 %d2 2
+%array_size = OpSpecConstantOp %uint CompositeExtract %insert_comp 2
+%_arr_float_16 = OpTypeArray %float %array_size
+%_ptr_Workgroup__arr_float_16 = OpTypePointer Workgroup %_arr_float_16
+       %data = OpVariable %_ptr_Workgroup__arr_float_16 Workgroup
+        %int = OpTypeInt 32 1
+     %int_8 = OpConstant %int 8
+    %float_1 = OpConstant %float 1
+%_ptr_Workgroup_float = OpTypePointer Workgroup %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %24 = OpAccessChain %_ptr_Workgroup_float %data %int_8
+               OpStore %24 %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
