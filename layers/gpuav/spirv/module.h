@@ -134,6 +134,9 @@ class Module {
     // the |position_offset| value to know the index of the instructions from the original operation
     void SetSpecConstantValue(Instruction* inst, const Type& type, vvl::unordered_map<uint32_t, uint32_t>& id_to_spec_id);
     bool ConstantFold(Instruction* inst, const Type& type);
+    bool ConstantFoldVectorShuffle(Instruction* inst, const Type& type);
+    bool ConstantFoldCompositeExtract(Instruction* inst, const Type& type);
+    bool ConstantFoldCompositeInsert(Instruction* inst, const Type& type);
 };
 
 }  // namespace spirv

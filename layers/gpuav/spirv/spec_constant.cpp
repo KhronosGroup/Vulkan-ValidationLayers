@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "containers/container_utils.h"
 #include "containers/limits.h"
 #include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"
@@ -238,6 +239,123 @@ static uint64_t EvaluateArithmetic(spv::Op opcode, uint64_t arg0, uint64_t arg1,
     return res & mask;
 }
 
+bool Module::ConstantFoldVectorShuffle(Instruction* inst, const Type& result_type) {
+    assert(result_type.spv_type_ == SpvType::kVector);
+
+    const Constant* vec1 = type_manager_.FindConstantById(inst->Word(4));
+    const Constant* vec2 = type_manager_.FindConstantById(inst->Word(5));
+    if (!vec1 || !vec2) {
+        return false;
+    }
+
+    const uint32_t vec1_length = type_manager_.FindTypeById(vec1->inst_.TypeId())->VectorSize();
+
+    std::vector<uint32_t> words = {result_type.Id(), inst->ResultId()};
+
+    for (uint32_t i = 6; i < inst->Length(); i++) {
+        const uint32_t index = inst->Word(i);
+
+        if (index < vec1_length) {
+            if (vec1->inst_.Opcode() == spv::OpConstantNull) {
+                words.emplace_back(type_manager_.GetConstantZeroUint32().Id());
+            } else {
+                const uint32_t constant_id = vec1->inst_.Word(3 + index);
+                words.emplace_back(constant_id);
+            }
+        } else {
+            if (vec2->inst_.Opcode() == spv::OpConstantNull) {
+                words.emplace_back(type_manager_.GetConstantZeroUint32().Id());
+            } else {
+                const uint32_t vec2_index = index - vec1_length;
+                const uint32_t constant_id = vec2->inst_.Word(3 + vec2_index);
+                words.emplace_back(constant_id);
+            }
+        }
+    }
+
+    auto new_inst = std::make_unique<Instruction>(1 + (uint32_t)words.size(), spv::OpConstantComposite);
+    new_inst->Fill(words);
+    type_manager_.AddConstant(std::move(new_inst), result_type);
+    return true;
+}
+
+bool Module::ConstantFoldCompositeExtract(Instruction* inst, const Type& result_type) {
+
+    // There might be multiple indices
+    uint32_t current_id = inst->Word(4);
+    for (uint32_t i = 5; i < inst->Length(); i++) {
+        const uint32_t index = inst->Word(i);
+        const Constant* composite = type_manager_.FindConstantById(current_id);
+        if (!composite) {
+            assert(false);
+            return false;
+        } else if (composite->inst_.Opcode() == spv::OpConstantNull) {
+            auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantNull);
+            new_inst->Fill({result_type.Id(), inst->ResultId()});
+            type_manager_.AddConstant(std::move(new_inst), result_type);
+            return true;
+        } else if (composite->inst_.Opcode() == spv::OpConstantComposite) {
+            // Move down the tree to the next component ID
+            current_id = composite->inst_.Word(3 + index);
+        } else {
+            assert(false);
+            return false;
+        }
+    }
+
+    // current_id now points to the exact constant instruction we want, so just make a copy
+    const Constant* final_composite = type_manager_.FindConstantById(current_id);
+    if (!final_composite) {
+        return false;
+    }
+    // TODO - Create a helper to make a copy more easily
+    const uint32_t* raw_words = final_composite->inst_.GetRawBytes();
+    std::vector<uint32_t> words(raw_words + 1, raw_words + final_composite->inst_.Length());
+    words[0] = result_type.Id();
+    words[1] = inst->ResultId();
+
+    auto new_inst = std::make_unique<Instruction>(1 + (uint32_t)words.size(), (spv::Op)final_composite->inst_.Opcode());
+    new_inst->Fill(words);
+    type_manager_.AddConstant(std::move(new_inst), result_type);
+    return true;
+}
+
+bool Module::ConstantFoldCompositeInsert(Instruction* inst, const Type& result_type) {
+    const Constant* base_composite = type_manager_.FindConstantById(inst->Word(5));
+    if (!base_composite) {
+        assert(false);
+        return false;
+    }
+
+    // This assumes 1-level insertion (like inserting a scalar into a vector)
+    if (inst->Length() > 7 && result_type.spv_type_ == SpvType::kVector) {
+        assert(false);
+        return false;
+    }
+
+    const uint32_t index = inst->Word(6);
+
+    std::vector<uint32_t> words = {result_type.Id(), inst->ResultId()};
+
+    const uint32_t vec_length = result_type.VectorSize();
+    for (uint32_t i = 0; i < vec_length; i++) {
+        if (i == index) {
+            uint32_t insert_id = inst->Word(4); // |object| operand
+            words.emplace_back(insert_id);
+        } else if (base_composite->inst_.Opcode() == spv::OpConstantNull) {
+            words.emplace_back(type_manager_.GetConstantZeroUint32().Id());
+        } else {
+            const uint32_t constant_id = base_composite->inst_.Word(3 + i);
+            words.emplace_back(constant_id);
+        }
+    }
+
+    auto new_inst = std::make_unique<Instruction>(1 + (uint32_t)words.size(), spv::OpConstantComposite);
+    new_inst->Fill(words);
+    type_manager_.AddConstant(std::move(new_inst), result_type);
+    return true;
+}
+
 bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
     assert(inst->Opcode() == spv::OpSpecConstantOp);
     if (result_type.spv_type_ == SpvType::kStruct) {
@@ -246,22 +364,35 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
 
     spv::Op target_opcode = (spv::Op)inst->Word(3);
 
+    // OpSpecConstantOp has a limited set of instructions it can be, these are not handled the special
+    // TODO - Need to test these with LongVector
+    if (target_opcode == spv::OpVectorShuffle) {
+        return ConstantFoldVectorShuffle(inst, result_type);
+    } else if (target_opcode == spv::OpCompositeExtract) {
+        return ConstantFoldCompositeExtract(inst, result_type);
+    } else if (target_opcode == spv::OpCompositeInsert) {
+        return ConstantFoldCompositeInsert(inst, result_type);
+    }
+
+
     const bool is_vector = result_type.spv_type_ == SpvType::kVector;
     uint32_t vector_length = is_vector ? result_type.inst_.Word(3) : 1;
     const Type& scalar_type = is_vector ? *type_manager_.FindTypeById(result_type.inst_.Word(2)) : result_type;
 
     small_vector<uint32_t, 4> new_composite_components;
 
+    const uint32_t start_operand_index = 4; // into OpSpecConstantOp
+    const uint32_t final_operand_index = inst->Length();
     // Scalar will have a single lane
     for (uint32_t lane = 0; lane < vector_length; lane++) {
         // might be up to 3 for OpSelect
         small_vector<uint64_t, 3> args;
 
-        for (uint32_t i = 4; i < inst->Length(); i++) {
+        for (uint32_t i = start_operand_index; i < final_operand_index; i++) {
             const uint32_t operand_id = inst->Word(i);
             const Constant* constant = type_manager_.FindConstantById(operand_id);
             if (!constant) {
-                assert(false);  // TODO
+                assert(false);  // Something is wrong
                 return false;
             }
 
