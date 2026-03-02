@@ -118,7 +118,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayBarrier) {
     TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayNoRace) {
+TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -248,7 +248,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVectorsBarrier) {
     TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoadNoRace) {
+TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoad) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -314,7 +314,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, NoLocalSize) {
     TestHelper(shader_source, SPV_SOURCE_GLSL);
 }
 
-TEST_F(PositiveGpuAVSharedMemoryDataRace, SpvEnvVulkan1_3) {
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SpvEnvVulkan13) {
     const char *shader_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
@@ -392,6 +392,83 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
 
             if (groupThreadID.x == 0) {
                 outputBuffer[0] = temp.z[1].b;
+            }
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
+    const char *shader_source = R"slang(
+        RWStructuredBuffer<uint4> outputBuffer;
+        groupshared uint4 a;
+        groupshared uint4 b;
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID, uint localIndex : SV_GroupIndex)
+        {
+            if (localIndex == 0) {
+                a = uint4(0);
+            } else {
+                b = uint4(0);
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            outputBuffer[0] = a + b;
+        }
+
+        groupshared uint4 c;
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main_b(uint localIndex : SV_GroupIndex)
+        {
+            if (localIndex == 1) {
+                a = uint4(0);
+            } else {
+                c = uint4(0);
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            outputBuffer[0] = a + c;
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint2) {
+    const char *shader_source = R"slang(
+        RWStructuredBuffer<uint4> outputBuffer;
+        groupshared uint4 a;
+        groupshared uint4 b;
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main(uint localIndex : SV_GroupIndex)
+        {
+            if (localIndex == 0) {
+                a = uint4(0);
+            } else {
+                b = uint4(0);
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            outputBuffer[0] = a + b;
+        }
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main_bad(uint3 groupThreadID : SV_GroupThreadID)
+        {
+            // not called
+            b = uint4(0);
+            GroupMemoryBarrierWithGroupSync();
+
+            if (groupThreadID.x == 0) {
+                outputBuffer[0] = b;
             }
         }
     )slang";

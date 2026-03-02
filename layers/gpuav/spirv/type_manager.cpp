@@ -758,12 +758,11 @@ uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
             return GetNumScalarElementsBeforeCompositeMember(type, type.inst_.Length() - 2);
         case SpvType::kVectorIdEXT:
         case SpvType::kArray: {
-            const Constant* count = FindConstantById(type.inst_.Operand(1));
-            // TODO - Need to handle spec constant here, for now return zero to have things not blowup
+            const Constant* count = FindConstantById(type.inst_.Word(3));
             assert(count && !count->is_spec_constant_);
-            const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 0;
-
-            return array_length * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
+            const uint32_t array_length = count->GetValueUint32();
+            const Type* element_type = FindTypeById(type.inst_.Word(2));
+            return array_length * GetNumScalarElements(*element_type);
         }
         case SpvType::kVector:
             return type.inst_.Word(3);
@@ -774,7 +773,7 @@ uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
         case SpvType::kBool:
             return 1;
         default:
-            assert(0);
+            assert(false);
             return 0;
     }
 }
@@ -836,11 +835,11 @@ const Type* TypeManager::FindChildType(const Type& type, uint32_t idx) const {
 }
 
 uint32_t TypeManager::GetNumScalarElementsBeforeCompositeMember(const Type& type, uint32_t idx) const {
-    uint32_t ret = 0;
+    uint32_t count = 0;
     for (uint32_t i = 0; i < idx; ++i) {
-        ret += GetNumScalarElements(*FindChildType(type, i));
+        count += GetNumScalarElements(*FindChildType(type, i));
     }
-    return ret;
+    return count;
 }
 
 }  // namespace spirv

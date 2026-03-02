@@ -53,6 +53,8 @@ class SharedMemoryDataRacePass : public Pass {
 
     uint32_t GetLinkFunctionId(const InstructionMeta& meta);
 
+    const Instruction* FindInstructionGlobal(const Function& function, uint32_t id) const;
+
     // Function IDs to link in
     enum FunctionNames {
         INIT_SHADOW = 0,
@@ -63,6 +65,10 @@ class SharedMemoryDataRacePass : public Pass {
     };
     uint32_t link_function_id_[FUNC_COUNT]{};
     // Map shared memory variables to start offset in shadow memory
+    // If the shader has multiple shared memory variables, like
+    //   shared A x; // 4 elements
+    //   shared B y; // 2 elements
+    // It will let us know that |y| starts at slot 4
     // < variable ID, starting slot >
     vvl::unordered_map<uint32_t, uint32_t> slot_start_;
     // number of slots in shadow memory

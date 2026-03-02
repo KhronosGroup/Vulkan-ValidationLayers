@@ -105,7 +105,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 3);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStructRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStruct) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -129,7 +129,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStructRace) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalarRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalar) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -150,7 +150,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalarRace) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalarRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalar) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -169,7 +169,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalarRace) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariablesRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariables) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -192,7 +192,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariablesRace) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectorsRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectors) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -215,7 +215,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectorsRace) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArrayRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -254,7 +254,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArrayRace) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArray) {
     const char *shader_source = R"glsl(
         #version 450
 
@@ -310,68 +310,41 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VariableName) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 2, "temp6");
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicThenStore) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicStoreAndStore) {
     const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
 
-        layout(local_size_x = 1) in;
+        layout(local_size_x = 2) in;
         shared uint temp;
         void main() {
-            atomicStore(temp, 0u, gl_ScopeWorkgroup, 0, 0);
-            temp = 0;
+            if (gl_LocalInvocationIndex == 0) {
+                atomicStore(temp, 0u, gl_ScopeWorkgroup, 0, 0);
+            } else {
+                temp = 0;
+            }
         }
     )glsl";
 
-    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic");
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
-TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreThenAtomic) {
-    const char* shader_source = R"glsl(
-        #version 450
-        #extension GL_KHR_memory_scope_semantics : enable
-
-        layout(local_size_x = 1) in;
-        shared uint temp;
-        void main() {
-            temp = 0;
-            atomicStore(temp, 0u, gl_ScopeWorkgroup, 0, 0);
-        }
-    )glsl";
-
-    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnAtomic");
-}
-
-TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicThenLoad) {
+TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicAddAndLoad) {
     const char* shader_source = R"glsl(
         #version 450
 
-        layout(local_size_x = 1) in;
+        layout(local_size_x = 2) in;
         shared uint temp;
         void main() {
-            atomicAdd(temp, 1);
-            uint x = temp;
+            if (gl_LocalInvocationIndex == 0) {
+                atomicAdd(temp, 1);
+            } else {
+                temp = 0;
+            }
         }
     )glsl";
 
-    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic");
-}
-
-// Need to understand why this is not an error
-TEST_F(NegativeGpuAVSharedMemoryDataRace, DISABLED_LoadThenAtomic) {
-    const char* shader_source = R"glsl(
-        #version 450
-        #extension GL_KHR_memory_scope_semantics : enable
-
-        layout(local_size_x = 1) in;
-        shared uint temp;
-        void main() {
-            uint x = temp;
-            atomicAdd(temp, 1);
-        }
-    )glsl";
-
-    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, "SharedMemoryDataRace-RaceOnAtomic");
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, MultipleFunction) {
@@ -563,6 +536,44 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangNestedStruct) {
 
     TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
 }
+
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
+    const char *shader_source = R"slang(
+        RWStructuredBuffer<uint4> outputBuffer;
+        groupshared uint4 a;
+        groupshared uint4 b;
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main(uint3 groupThreadID : SV_GroupThreadID)
+        {
+            b = uint4(0);
+            GroupMemoryBarrierWithGroupSync();
+
+            if (groupThreadID.x == 0) {
+                outputBuffer[0] = b;
+            }
+        }
+
+        [shader("compute")]
+        [numthreads(2, 1, 1)]
+        void main_good(uint localIndex : SV_GroupIndex)
+        {
+            // not called
+            if (localIndex == 0) {
+                a = uint4(0);
+            } else {
+                b = uint4(0);
+            }
+
+            GroupMemoryBarrierWithGroupSync();
+            outputBuffer[0] = a + b;
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
+}
+
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, NoOpName) {
     const char* shader_source = R"(
