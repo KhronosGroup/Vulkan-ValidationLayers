@@ -763,7 +763,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
-                skip |= LogError(vuids->linear_filter_sampler_04553, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_FILTER_04553), objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_LINEAR with compareEnable is set "
                                  "to VK_FALSE, but image view's (%s) format (%s) does not contain "
                                  "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.%s",
@@ -773,7 +773,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if (sampler_state->create_info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
-                skip |= LogError(vuids->linear_mipmap_sampler_04770, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_MIPMAP_04770), objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
                                  "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not contain "
                                  "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.%s",
@@ -789,7 +789,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
-                skip |= LogError(vuids->linear_filter_sampler_09598, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_FILTER_09598), objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_LINEAR with reductionMode is set "
                                  "to %s, but image view's (%s) format (%s) does not contain "
                                  "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.%s",
@@ -801,7 +801,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if (sampler_state->create_info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
-                skip |= LogError(vuids->linear_mipmap_sampler_09599, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_MIPMAP_09599), objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
                                  "reductionMode is set to %s, but image view's (%s) format (%s) does not contain "
                                  "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.%s",

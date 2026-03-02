@@ -2329,10 +2329,10 @@ bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_boun
             }
             if ((attachment->image_state->create_info.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-                const char *err = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
-                                      ? vuid.sample_locations_enable_07484
-                                      : vuid.sample_location_02689;
-                skip |= LogError(err, objlist, vuid.loc(),
+                const vvl::ActionVUID action_id = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
+                                                      ? vvl::ActionVUID::SAMPLE_LOCATION_07484
+                                                      : vvl::ActionVUID::SAMPLE_LOCATION_02689;
+                skip |= LogError(CreateActionVuid(vuid, action_id), objlist, vuid.loc(),
                                  "sampleLocationsEnable is true, but %s (%s created with %s) was not created with "
                                  "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
                                  attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
@@ -2557,10 +2557,10 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
         const auto *vertex_buffer_binding = vvl::Find(cb_state.current_vertex_buffer_binding_info, binding_index);
         if (!vertex_buffer_binding || !vertex_buffer_binding->bound) {
             // Likely to not get
-            skip |=
-                LogError(vuid.vertex_binding_04007, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "%s which didn't have a buffer bound from any vkCmdBindVertexBuffers call in this command buffer.",
-                         print_binding(binding_description).c_str());
+            skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::VERTEX_BINDING_04007),
+                             last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                             "%s which didn't have a buffer bound from any vkCmdBindVertexBuffers call in this command buffer.",
+                             print_binding(binding_description).c_str());
             continue;
         }
 
@@ -2568,17 +2568,18 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
         // Going to hit VUID-vkCmdBindVertexBuffers-pBuffers-04001 first anyway
         if (!vertex_buffer_binding->HasNonNullBuffer()) {
             if (!enabled_features.nullDescriptor) {
-                skip |=
-                    LogError(vuid.vertex_binding_null_04008, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                             vuid.loc(), "%s which was bound with a buffer of VK_NULL_HANDLE, but nullDescriptor is not enabled.",
-                             print_binding(binding_description).c_str());
+                skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::VERTEX_BINDING_04008),
+                                 last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                                 "%s which was bound with a buffer of VK_NULL_HANDLE, but nullDescriptor is not enabled.",
+                                 print_binding(binding_description).c_str());
             }
             continue;
         } else if (vertex_buffer_binding->Buffer() != VK_NULL_HANDLE) {
             const auto vertex_buffer_state = Get<vvl::Buffer>(vertex_buffer_binding->Buffer());
             if (!vertex_buffer_state) {
                 skip |= LogError(
-                    vuid.vertex_binding_04007, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                    CreateActionVuid(vuid, vvl::ActionVUID::VERTEX_BINDING_04007),
+                    last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                     "%s which has an invalid/destroyed buffer bound from a vkCmdBindVertexBuffers call in this command buffer.",
                     print_binding(binding_description).c_str());
                 continue;

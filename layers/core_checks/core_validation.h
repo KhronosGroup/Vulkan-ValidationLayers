@@ -274,7 +274,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                           const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicStateVertex(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                  const vvl::DrawDispatchVuid& vuid) const;

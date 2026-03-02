@@ -811,7 +811,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     skip |= ValidateDrawDynamicStateVertex(last_bound_state, vuid);
-    skip |= ValidateDrawDynamicStateFragment(last_bound_state, vuid);
+    skip |= ValidateDrawDynamicStateFragment(last_bound_state, vuid.loc());
 
     // Once we know for sure state was set, check value is valid
     skip |= ValidateDrawDynamicStateValue(last_bound_state, vuid);
@@ -998,7 +998,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
 
     const ShaderStageState* frag_state = nullptr;
@@ -1024,7 +1024,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                 const auto& gridSize = cb_state.dynamic_state_value.sample_locations_info.sampleLocationGridSize;
                 if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.width, gridSize.width)) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
-                    skip |= LogError(vuid.sample_locations_enable_07485, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATION_07485), objlist, loc,
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
                                      ") with rasterization samples %s is not evenly divided by "
                                      "sampleLocationsInfo.sampleLocationGridSize.width (%" PRIu32
@@ -1034,7 +1034,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                 }
                 if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.height, gridSize.height)) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
-                    skip |= LogError(vuid.sample_locations_enable_07486, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATION_07486), objlist, loc,
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
                                      ") with rasterization samples %s is not evenly divided by "
                                      "sampleLocationsInfo.sampleLocationGridSize.height (%" PRIu32
@@ -1045,7 +1045,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
             }
             if (frag_spirv_state.static_data_.uses_interpolate_at_sample) {
                 const LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
-                skip |= LogError(vuid.sample_locations_enable_07487, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATION_07487), objlist, loc,
                                  "sampleLocationsEnable set with vkCmdSetSampleLocationsEnableEXT() was VK_TRUE, but fragment "
                                  "shader uses InterpolateAtSample instruction.");
             }
@@ -1059,7 +1059,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
             if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
                 LogObjectList objlist(cb_state.Handle(), frag_spirv_state.handle());
-                skip |= LogError(vuid.rasterization_samples_09211, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RASTERIZATION_SAMPLES_09211), objlist, loc,
                                  "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE "
                                  "and VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples are %s, but rasterization "
                                  "samples set with vkCmdSetRasterizationSamplesEXT() were %s.",
