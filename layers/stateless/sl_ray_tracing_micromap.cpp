@@ -77,6 +77,7 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
         }
 
         if (info.triangleArray.deviceAddress == 0) {
+            // TODO - This needs to be in CoreChecks and use cc_buffer_address.cpp
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10897", device,
                              info_loc.dot(Field::triangleArray).dot(Field::deviceAddress), "is NULL.");
         } else if (!IsPointerAligned(info.triangleArray.deviceAddress, 256)) {
@@ -86,6 +87,7 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
         }
 
         if (info.data.deviceAddress == 0) {
+            // TODO - This needs to be in CoreChecks and use cc_buffer_address.cpp
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", device,
                              info_loc.dot(Field::data).dot(Field::deviceAddress), "is NULL.");
         } else if (!IsPointerAligned(info.data.deviceAddress, 256)) {
