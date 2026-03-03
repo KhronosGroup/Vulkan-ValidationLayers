@@ -840,6 +840,9 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
                 const auto first_layout = Get<vvl::DescriptorSetLayout>(first->create_info.pSetLayouts[i]);
                 const auto current_layout = Get<vvl::DescriptorSetLayout>(shader_state->create_info.pSetLayouts[i]);
+                if (!first_layout || !current_layout) {
+                    continue;  // Error will be caught in VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter
+                }
                 if (std::string err_msg; !VerifyDescriptorSetLayoutIsCompatibile(*first_layout, *current_layout, err_msg)) {
                     const LogObjectList objlist(cb_state.Handle(), first_layout->Handle(), current_layout->Handle());
                     skip |= LogError(
