@@ -1371,9 +1371,9 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, loc);
-            skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, vuid);
+            skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, loc);
             const auto &cb_sub_state = core::SubState(cb_state);
-            skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, vuid);
+            skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, loc);
         }
 
         if (cb_state.active_render_pass && enabled_features.tileMemoryHeap) {
@@ -2639,9 +2639,8 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
     return skip;
 }
 
-bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vvl::RenderPass &rp_state,
-                                           const core::CommandBufferSubState &cb_sub_state,
-                                           const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vvl::RenderPass& rp_state,
+                                           const core::CommandBufferSubState& cb_sub_state, const Location& loc) const {
     bool skip = false;
 
     const VkRenderingFlags rendering_flags = rp_state.GetRenderingFlags();
@@ -2649,10 +2648,10 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
                                                                               : vvl::Struct::VkRenderingInfo;
     if (rendering_flags & VK_RENDERING_FRAGMENT_REGION_BIT_EXT) {
         if (last_bound.IsSampleShadingEnabled() && last_bound.GetMinSampleShading() != 0.0) {
-            skip |=
-                LogError(vuid.custom_resolve_11521, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "%s::flags includes VK_RENDERING_FRAGMENT_REGION_BIT_EXT, but minSampleShading needs to be 0\n%s",
-                         String(flags_struct), last_bound.DescribeSampleShading().c_str());
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11521),
+                             cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "%s::flags includes VK_RENDERING_FRAGMENT_REGION_BIT_EXT, but minSampleShading needs to be 0\n%s",
+                             String(flags_struct), last_bound.DescribeSampleShading().c_str());
         }
     }
 
@@ -2669,8 +2668,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
                 if (const auto shader_object_cr_info =
                         vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(shader_object->create_info.pNext)) {
                     if (cb_sub_state.custom_resolve.started && !shader_object_cr_info->customResolve) {
-                        skip |= LogError(vuid.custom_resolve_11529,
-                                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11529),
+                                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                          "vkCmdBeginCustomResolveEXT was called in this render pass, %s is an active "
                                          "FragmentDensityMap attachment, but the bound fragment shader object "
                                          "VkCustomResolveCreateInfoEXT::customResolve is VK_FALSE",
@@ -2680,8 +2679,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
                         // vkCmdExecuteCommands
                         if (!cb_sub_state.base.IsSecondary() || !cb_sub_state.custom_resolve.inherited_resolve) {
                             skip |=
-                                LogError(vuid.custom_resolve_11530,
-                                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                                LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11530),
+                                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                          "vkCmdBeginCustomResolveEXT was not yet called in this render pass, %s is an active "
                                          "FragmentDensityMap attachment, but the bound fragment shader object "
                                          "VkCustomResolveCreateInfoEXT::customResolve is VK_TRUE%s",
@@ -2709,24 +2708,24 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
     if (rp_has_custom_resolve) {
         if (!pipeline_cr_info) {
             if (!enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(vuid.custom_resolve_11522, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11522),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was not "
                                  "created with a VkCustomResolveCreateInfoEXT struct",
                                  String(flags_struct));
             }
         } else if (cb_sub_state.custom_resolve.started && !pipeline_cr_info->customResolve) {
             if (!enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(vuid.custom_resolve_11524, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11524),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "vkCmdBeginCustomResolveEXT was called in this render pass, but the bound pipeline "
                                  "VkCustomResolveCreateInfoEXT::customResolve is VK_FALSE");
             }
         } else if (!cb_sub_state.custom_resolve.started && pipeline_cr_info->customResolve) {
             // Exception if inside the seconary, as the vkCmdBeginCustomResolveEXT can be called prior to vkCmdExecuteCommands
             if (!cb_sub_state.base.IsSecondary() || !cb_sub_state.custom_resolve.inherited_resolve) {
-                skip |= LogError(vuid.custom_resolve_11525, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11525),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "vkCmdBeginCustomResolveEXT was not yet called in this render pass, but the bound pipeline "
                                  "VkCustomResolveCreateInfoEXT::customResolve is VK_TRUE%s",
                                  cb_sub_state.base.IsSecondary()
@@ -2736,7 +2735,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
             }
         }
     } else if (pipeline_cr_info) {
-        skip |= LogError(vuid.custom_resolve_11523, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11523),
+                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "%s::flags did not include VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was "
                          "created with a VkCustomResolveCreateInfoEXT struct",
                          String(flags_struct));
@@ -2751,7 +2751,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
 
     if (pipeline_cr_info->colorAttachmentCount != rendering_info.colorAttachmentCount &&
         !enabled_features.dynamicRenderingUnusedAttachments) {
-        skip |= LogError(vuid.custom_resolve_11861, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11861),
+                         cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline "
                          "VkCustomResolveCreateInfoEXT::colorAttachmentCount (%" PRIu32
                          ") doesn't match %s::colorAttachmentCount (%" PRIu32 ")",
@@ -2769,18 +2770,20 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (pipeline_cr_info->pColorAttachmentFormats[i] != resolve_image_view_state->create_info.format &&
                     pipeline_cr_info->pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) {
-                    skip |= LogError(
-                        vuid.custom_resolve_11864, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                        "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                        "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
-                        "] (%s) doesn't match VkRenderingInfo::pColorAttachments[%" PRIu32
-                        "]->resolveImageView (%s) created with %s",
-                        i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]), i,
-                        FormatHandle(resolve_image_view).c_str(), string_VkFormat(resolve_image_view_state->create_info.format));
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11864),
+                                     cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                                     "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                                     "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
+                                     "] (%s) doesn't match VkRenderingInfo::pColorAttachments[%" PRIu32
+                                     "]->resolveImageView (%s) created with %s",
+                                     i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]), i,
+                                     FormatHandle(resolve_image_view).c_str(),
+                                     string_VkFormat(resolve_image_view_state->create_info.format));
                 }
             } else if (pipeline_cr_info->pColorAttachmentFormats[i] != resolve_image_view_state->create_info.format) {
                 skip |= LogError(
-                    vuid.custom_resolve_11862, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11862),
+                    cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                     "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
                     "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
                     "] (%s) doesn't match VkRenderingInfo::pColorAttachments[%" PRIu32 "]->resolveImageView (%s) created with %s",
@@ -2789,13 +2792,14 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
             }
         } else if (pipeline_cr_info->pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED &&
                    !enabled_features.dynamicRenderingUnusedAttachments) {
-            skip |= LogError(
-                vuid.custom_resolve_11863, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                "VkRenderingInfo::pColorAttachments[%" PRIu32
-                "]->resolveImageView is VK_NULL_HANDLE, but the bound "
-                "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32 "] (%s) is not VK_FORMAT_UNDEFINED",
-                i, i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]));
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11863),
+                             cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                             "VkRenderingInfo::pColorAttachments[%" PRIu32
+                             "]->resolveImageView is VK_NULL_HANDLE, but the bound "
+                             "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
+                             "] (%s) is not VK_FORMAT_UNDEFINED",
+                             i, i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]));
         }
     }
 
@@ -2804,8 +2808,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
         if (resolve_image_view == VK_NULL_HANDLE) {
             if (pipeline_cr_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED &&
                 !enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(vuid.custom_resolve_11865, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11865),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
                                  "VkRenderingInfo::pDepthAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
                                  "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED",
@@ -2818,17 +2822,18 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (pipeline_cr_info->depthAttachmentFormat != resolve_image_view_state->create_info.format &&
                     pipeline_cr_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                    skip |= LogError(
-                        vuid.custom_resolve_11867, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                        "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                        "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) doesn't match "
-                        "VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s",
-                        string_VkFormat(pipeline_cr_info->depthAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
-                        string_VkFormat(resolve_image_view_state->create_info.format));
+                    skip |=
+                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11867),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                                 "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                                 "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) doesn't match "
+                                 "VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s",
+                                 string_VkFormat(pipeline_cr_info->depthAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
+                                 string_VkFormat(resolve_image_view_state->create_info.format));
                 }
             } else if (pipeline_cr_info->depthAttachmentFormat != resolve_image_view_state->create_info.format) {
-                skip |= LogError(vuid.custom_resolve_11866, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11866),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
                                  "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) doesn't match "
                                  "VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s",
@@ -2843,8 +2848,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
         if (resolve_image_view == VK_NULL_HANDLE) {
             if (pipeline_cr_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED &&
                 !enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(vuid.custom_resolve_11868, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                                 vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11868),
+                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
                                  "VkRenderingInfo::pStencilAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
                                  "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED",
@@ -2857,22 +2862,24 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
             if (enabled_features.dynamicRenderingUnusedAttachments) {
                 if (pipeline_cr_info->stencilAttachmentFormat != resolve_image_view_state->create_info.format &&
                     pipeline_cr_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                    skip |= LogError(
-                        vuid.custom_resolve_11870, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                        "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                        "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
-                        "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s",
-                        string_VkFormat(pipeline_cr_info->stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
-                        string_VkFormat(resolve_image_view_state->create_info.format));
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11870),
+                                     cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                                     "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                                     "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
+                                     "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s",
+                                     string_VkFormat(pipeline_cr_info->stencilAttachmentFormat),
+                                     FormatHandle(resolve_image_view).c_str(),
+                                     string_VkFormat(resolve_image_view_state->create_info.format));
                 }
             } else if (pipeline_cr_info->stencilAttachmentFormat != resolve_image_view_state->create_info.format) {
-                skip |= LogError(
-                    vuid.custom_resolve_11869, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                    "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                    "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
-                    "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s",
-                    string_VkFormat(pipeline_cr_info->stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
-                    string_VkFormat(resolve_image_view_state->create_info.format));
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11869),
+                             cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                             "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
+                             "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s",
+                             string_VkFormat(pipeline_cr_info->stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
+                             string_VkFormat(resolve_image_view_state->create_info.format));
             }
         }
     }
@@ -2880,9 +2887,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound &last_bound_state,
-                                                                    const vvl::RenderPass &rp_state,
-                                                                    const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state,
+                                                                    const vvl::RenderPass& rp_state, const Location& loc) const {
     bool skip = false;
 
     if (!last_bound_state.pipeline_state) {
@@ -2903,7 +2909,7 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
         rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
         if (auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView)) {
             if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
-                skip |= LogError(vuid.external_format_resolve_09362, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09362), objlist, loc,
                                  "pipeline externalFormat is %" PRIu64
                                  " but the resolveImageView's image was created with externalFormat %" PRIu64 "",
                                  pipeline_external_format, resolve_image_view_state->image_state->ahb_format);
@@ -2912,7 +2918,7 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
 
         if (auto color_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].imageView)) {
             if (color_image_view_state->image_state->ahb_format != pipeline_external_format) {
-                skip |= LogError(vuid.external_format_resolve_09363, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09363), objlist, loc,
                                  "pipeline externalFormat is %" PRIu64
                                  " but the imageView's image was created with externalFormat %" PRIu64 "",
                                  pipeline_external_format, color_image_view_state->image_state->ahb_format);
@@ -2922,25 +2928,25 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
         cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
-        skip |= LogError(vuid.external_format_resolve_09364, objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09364), objlist, loc,
                          "pipeline externalFormat is %" PRIu64 ", but dynamic blend enable for attachment zero was set to VK_TRUE.",
                          pipeline_external_format);
     }
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
         cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
         skip |=
-            LogError(vuid.external_format_resolve_09365, objlist, vuid.loc(),
+            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09365), objlist, loc,
                      "pipeline externalFormat is %" PRIu64 ", but dynamic rasterization samples set to %s.",
                      pipeline_external_format, string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
     }
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
         if (cb_state.dynamic_state_value.fragment_size.width != 1) {
-            skip |= LogError(vuid.external_format_resolve_09368, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09368), objlist, loc,
                              "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size width is %" PRIu32 ".",
                              pipeline_external_format, cb_state.dynamic_state_value.fragment_size.width);
         }
         if (cb_state.dynamic_state_value.fragment_size.height != 1) {
-            skip |= LogError(vuid.external_format_resolve_09369, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09369), objlist, loc,
                              "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size height is %" PRIu32 ".",
                              pipeline_external_format, cb_state.dynamic_state_value.fragment_size.height);
         }
@@ -2948,11 +2954,11 @@ bool CoreChecks::ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBo
 
     if (auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint()) {
         if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
-            skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09372), objlist, loc,
                              "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
                              pipeline_external_format);
         } else if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
-            skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::EXTERNAL_FORMAT_RESOLVE_09372), objlist, loc,
                              "pipeline externalFormat is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.",
                              pipeline_external_format);
         }

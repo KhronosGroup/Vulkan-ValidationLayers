@@ -213,33 +213,6 @@ struct DrawDispatchVuid {
     const char* shader_object_multiview_10772 = kVUIDUndefined;
     const char* viewport_multiview_12262 = kVUIDUndefined;
     const char* scissor_multiview_12263 = kVUIDUndefined;
-    const char* custom_resolve_11521 = kVUIDUndefined;
-    const char* custom_resolve_11522 = kVUIDUndefined;
-    const char* custom_resolve_11523 = kVUIDUndefined;
-    const char* custom_resolve_11524 = kVUIDUndefined;
-    const char* custom_resolve_11525 = kVUIDUndefined;
-    const char* custom_resolve_11529 = kVUIDUndefined;
-    const char* custom_resolve_11530 = kVUIDUndefined;
-    const char* custom_resolve_11539 = kVUIDUndefined;
-    const char* custom_resolve_11540 = kVUIDUndefined;
-    const char* custom_resolve_11860 = kVUIDUndefined;
-    const char* custom_resolve_11861 = kVUIDUndefined;
-    const char* custom_resolve_11862 = kVUIDUndefined;
-    const char* custom_resolve_11863 = kVUIDUndefined;
-    const char* custom_resolve_11864 = kVUIDUndefined;
-    const char* custom_resolve_11865 = kVUIDUndefined;
-    const char* custom_resolve_11866 = kVUIDUndefined;
-    const char* custom_resolve_11867 = kVUIDUndefined;
-    const char* custom_resolve_11868 = kVUIDUndefined;
-    const char* custom_resolve_11869 = kVUIDUndefined;
-    const char* custom_resolve_11870 = kVUIDUndefined;
-    const char* external_format_resolve_09362 = kVUIDUndefined;
-    const char* external_format_resolve_09363 = kVUIDUndefined;
-    const char* external_format_resolve_09364 = kVUIDUndefined;
-    const char* external_format_resolve_09365 = kVUIDUndefined;
-    const char* external_format_resolve_09368 = kVUIDUndefined;
-    const char* external_format_resolve_09369 = kVUIDUndefined;
-    const char* external_format_resolve_09372 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
     const char* set_line_stipple_enable_08669 = kVUIDUndefined;
@@ -338,6 +311,33 @@ enum class ActionVUID {
     LINEAR_FILTER_09598,
     LINEAR_MIPMAP_04770,
     LINEAR_MIPMAP_09599,
+    EXTERNAL_FORMAT_RESOLVE_09362,
+    EXTERNAL_FORMAT_RESOLVE_09363,
+    EXTERNAL_FORMAT_RESOLVE_09364,
+    EXTERNAL_FORMAT_RESOLVE_09365,
+    EXTERNAL_FORMAT_RESOLVE_09368,
+    EXTERNAL_FORMAT_RESOLVE_09369,
+    EXTERNAL_FORMAT_RESOLVE_09372,
+    CUSTOM_RESOLVE_11521,
+    CUSTOM_RESOLVE_11522,
+    CUSTOM_RESOLVE_11523,
+    CUSTOM_RESOLVE_11524,
+    CUSTOM_RESOLVE_11525,
+    CUSTOM_RESOLVE_11529,
+    CUSTOM_RESOLVE_11530,
+    CUSTOM_RESOLVE_11539,
+    CUSTOM_RESOLVE_11540,
+    CUSTOM_RESOLVE_11860,
+    CUSTOM_RESOLVE_11861,
+    CUSTOM_RESOLVE_11862,
+    CUSTOM_RESOLVE_11863,
+    CUSTOM_RESOLVE_11864,
+    CUSTOM_RESOLVE_11865,
+    CUSTOM_RESOLVE_11866,
+    CUSTOM_RESOLVE_11867,
+    CUSTOM_RESOLVE_11868,
+    CUSTOM_RESOLVE_11869,
+    CUSTOM_RESOLVE_11870,
 };
 
 std::string CreateActionVuid(vvl::Func function, const ActionVUID id);

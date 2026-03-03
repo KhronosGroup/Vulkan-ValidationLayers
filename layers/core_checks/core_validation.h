@@ -290,13 +290,13 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawTessellation(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
-                                   const core::CommandBufferSubState& cb_sub_state, const vvl::DrawDispatchVuid& vuid) const;
+                                   const core::CommandBufferSubState& cb_sub_state, const Location& loc) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
     bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                 const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
-                                                            const vvl::DrawDispatchVuid& vuid) const;
+                                                            const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
                                VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
