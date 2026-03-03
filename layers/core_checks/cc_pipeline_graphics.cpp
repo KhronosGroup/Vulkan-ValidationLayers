@@ -3620,7 +3620,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                         rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment->resolveImageView;
                     if (depth_attachment != VK_NULL_HANDLE) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), depth_attachment);
-                        skip |= LogError(vuid.custom_resolve_11540, objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11540), objlist, vuid.loc(),
                                          "VkRenderingInfo::pDepthAttachment->resolveImageView is %s, but currently bound graphics "
                                          "pipeline %s was created "
                                          "with VkCustomResolveCreateInfoEXT::depthAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3663,7 +3663,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                         rp_state.dynamic_rendering_begin_rendering_info.pStencilAttachment->resolveImageView;
                     if (stencil_attachment != VK_NULL_HANDLE) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), stencil_attachment);
-                        skip |= LogError(vuid.custom_resolve_11860, objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11860), objlist, vuid.loc(),
                                          "VkRenderingInfo::pStencilAttachment->resolveImageView is %s, but currently bound "
                                          "graphics pipeline %s was created "
                                          "with VkCustomResolveCreateInfoEXT::stencilAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3761,7 +3761,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
                 rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].resolveImageView;
             if (resolve_attachment != VK_NULL_HANDLE) {
                 const LogObjectList objlist(last_bound_state.cb_state.Handle(), pipeline.Handle(), resolve_attachment);
-                skip |= LogError(vuid.custom_resolve_11539, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11539), objlist, vuid.loc(),
                                  "VkRenderingInfo::pColorAttachments[%" PRIu32
                                  "].resolveImageView is %s, but currently bound graphics pipeline %s was created with "
                                  "VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32 "] equal to VK_FORMAT_UNDEFINED",
