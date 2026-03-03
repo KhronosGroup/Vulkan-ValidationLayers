@@ -52,8 +52,6 @@ struct DrawDispatchVuid {
     const char* primitive_topology_patch_list_10747 = kVUIDUndefined;
     const char* primitive_topology_point_size_10748 = kVUIDUndefined;
     const char* corner_sampled_address_mode_02696 = kVUIDUndefined;
-    const char* imageview_atomic_02691 = kVUIDUndefined;
-    const char* bufferview_atomic_07888 = kVUIDUndefined;
     const char* push_constants_set_08602 = kVUIDUndefined;
     const char* image_subresources_render_pass_write_06537 = kVUIDUndefined;
     const char* image_subresources_subpass_read_09003 = kVUIDUndefined;
@@ -124,18 +122,6 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_dithering_09642 = kVUIDUndefined;
     const char* dynamic_rendering_dithering_09643 = kVUIDUndefined;
     const char* dynamic_rendering_local_read_11797 = kVUIDUndefined;
-    const char* image_view_access_64_04470 = kVUIDUndefined;
-    const char* image_view_access_32_04471 = kVUIDUndefined;
-    const char* image_view_sparse_64_04474 = kVUIDUndefined;
-    const char* buffer_view_access_64_04472 = kVUIDUndefined;
-    const char* buffer_view_access_32_04473 = kVUIDUndefined;
-    const char* storage_image_read_without_format_07028 = kVUIDUndefined;
-    const char* storage_image_write_without_format_07027 = kVUIDUndefined;
-    const char* storage_texel_buffer_read_without_format_07030 = kVUIDUndefined;
-    const char* storage_texel_buffer_write_without_format_07029 = kVUIDUndefined;
-    const char* storage_image_write_texel_count_08795 = kVUIDUndefined;
-    const char* storage_image_write_texel_count_08796 = kVUIDUndefined;
-    const char* storage_texel_buffer_write_texel_count_04469 = kVUIDUndefined;
     const char* depth_compare_sample_06479 = kVUIDUndefined;
     const char* depth_read_only_06886 = kVUIDUndefined;
     const char* stencil_read_only_06887 = kVUIDUndefined;
@@ -203,10 +189,6 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
     const char* image_view_dim_07752 = kVUIDUndefined;
     const char* image_view_numeric_format_07753 = kVUIDUndefined;
-    const char* stippled_rectangular_lines_07495 = kVUIDUndefined;
-    const char* stippled_bresenham_lines_07496 = kVUIDUndefined;
-    const char* stippled_smooth_lines_07497 = kVUIDUndefined;
-    const char* stippled_default_strict_07498 = kVUIDUndefined;
     const char* viewport_and_scissor_with_count_03419 = kVUIDUndefined;
     const char* viewport_w_scaling_08636 = kVUIDUndefined;
     const char* shading_rate_palette_08637 = kVUIDUndefined;
@@ -338,6 +320,24 @@ enum class ActionVUID {
     CUSTOM_RESOLVE_11868,
     CUSTOM_RESOLVE_11869,
     CUSTOM_RESOLVE_11870,
+    STIPPLED_RECTANGULAR_07495,
+    STIPPLED_BRESENHAM_07496,
+    STIPPLED_SMOOTH_07497,
+    STIPPLED_STRICT_07498,
+    IMAGE_VIEW_ACCESS_04470,
+    IMAGE_VIEW_ACCESS_04471,
+    IMAGE_VIEW_SPARSE_04474,
+    BUFFER_VIEW_ACCESS_04472,
+    BUFFER_VIEW_ACCESS_04473,
+    STORAGE_IMAGE_FORMAT_07028,
+    STORAGE_IMAGE_FORMAT_07027,
+    STORAGE_TEXEL_FORMAT_07030,
+    STORAGE_TEXEL_FORMAT_07029,
+    STORAGE_IMAGE_TEXEL_08795,
+    STORAGE_IMAGE_TEXEL_08796,
+    STORAGE_TEXEL_04469,
+    IMAGE_VIEW_ATOMIC_02691,
+    BUFFER_VIEW_ATOMIC_07888,
 };
 
 std::string CreateActionVuid(vvl::Func function, const ActionVUID id);
