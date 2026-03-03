@@ -22,6 +22,7 @@
 #include "sync/sync_image.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/math_utils.h"
 
 namespace syncval {
 
@@ -127,16 +128,29 @@ static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
     return GetLoadOpUsageIndex(load_op, AttachmentType::kDepth);
 }
 
+static bool IsSubpassIncluded(uint32_t subpass, const vvl::RenderPass::SubpassPerView &subpass_per_view, uint32_t view_mask) {
+    if (view_mask == 0) {
+        return subpass_per_view[0] == subpass;
+    }
+    const auto view_indices = GetSetBitIndices(view_mask);
+    for (uint8_t view_index : view_indices) {
+        if (subpass_per_view[view_index] == subpass) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Caller must manage returned pointer
 static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const vvl::RenderPass &rp_state,
-                                                     uint32_t render_pass_instance_id, uint32_t subpass,
+                                                     uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                                      const AttachmentViewGenVector &attachment_views) {
     auto *proxy = new AccessContext(*context.validator);
     proxy->InitFrom(context);
     RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, render_pass_instance_id, subpass,
                                                            kInvalidTag, *proxy);
-    RenderPassAccessContext::UpdateAttachmentStoreAccess(rp_state, attachment_views, render_pass_instance_id, subpass, kInvalidTag,
-                                                         *proxy);
+    RenderPassAccessContext::UpdateAttachmentStoreAccess(rp_state, attachment_views, render_pass_instance_id, subpass, view_mask,
+                                                         kInvalidTag, *proxy);
     return proxy;
 }
 
@@ -144,8 +158,8 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
 bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context,
                                                         const AccessContext &access_context, const vvl::RenderPass &rp_state,
                                                         const VkRect2D &render_area, uint32_t render_pass_instance_id,
-                                                        uint32_t subpass, const AttachmentViewGenVector &attachment_views,
-                                                        vvl::Func command) {
+                                                        uint32_t subpass, uint32_t view_mask,
+                                                        const AttachmentViewGenVector &attachment_views, vvl::Func command) {
     bool skip = false;
     // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
     // previous subpass, we have to validate them against a copy of the AccessContext, with resolve operations applied, as
@@ -170,7 +184,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
                 // Proxy depends on current iteration (transition.src_subpass), so it should be recreated
                 // each time when needed. Write a test that exposes this and make a fix.
                 src_context_proxy.reset(CreateStoreResolveProxyContext(*subpass_barrier.src_subpass_context, rp_state,
-                                                                       render_pass_instance_id, transition.src_subpass,
+                                                                       render_pass_instance_id, transition.src_subpass, view_mask,
                                                                        attachment_views));
                 proxy_subpass_barrier = subpass_barrier;
                 proxy_subpass_barrier.src_subpass_context = src_context_proxy.get();
@@ -211,7 +225,8 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
 bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_context,
                                                     const AccessContext &access_context, const vvl::RenderPass &rp_state,
                                                     const VkRect2D &render_area, uint32_t render_pass_instance_id, uint32_t subpass,
-                                                    const AttachmentViewGenVector &attachment_views, vvl::Func command) {
+                                                    uint32_t view_mask, const AttachmentViewGenVector &attachment_views,
+                                                    vvl::Func command) {
     bool skip = false;
 
     AttachmentAccess attachment_access;
@@ -220,7 +235,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
     attachment_access.subpass = subpass;
 
     for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
-        if (subpass == rp_state.attachment_first_subpass[i]) {
+        if (IsSubpassIncluded(subpass, rp_state.attachment_first_subpass[i], view_mask)) {
             const auto &view_gen = attachment_views[i];
             const auto &ci = rp_state.create_info.pAttachments[i];
 
@@ -242,9 +257,9 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
 
             bool checked_stencil = false;
             if (is_color && (load_index != SYNC_ACCESS_INDEX_NONE)) {
-                ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kRenderArea);
                 attachment_access.ordering = SyncOrdering::kColorAttachment;
-                hazard = access_context.DetectAttachmentHazard(attachment_range_gen, load_index, attachment_access);
+                hazard = access_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kRenderArea, load_index,
+                                                               attachment_access, view_mask);
                 aspect = "color";
             } else {
                 if (has_depth && (load_index != SYNC_ACCESS_INDEX_NONE)) {
@@ -298,9 +313,10 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
     bool skip = false;
 
     const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kRaster, AttachmentAccessType::StoreOp);
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
-        if (current_subpass_ == rp_state_->attachment_last_subpass[i]) {
+        if (IsSubpassIncluded(current_subpass_, rp_state_->attachment_last_subpass[i], view_mask)) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
             const auto &ci = rp_state_->create_info.pAttachments[i];
 
@@ -317,7 +333,6 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
             const char *aspect = nullptr;
             bool checked_stencil = false;
             if (is_color) {
-                uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
                 hazard = CurrentContext().DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                                  SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
                                                                  attachment_access, view_mask);
@@ -488,7 +503,7 @@ void RenderPassAccessContext::UpdateAttachmentResolveAccess(const vvl::RenderPas
 
 void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state,
                                                           const AttachmentViewGenVector &attachment_views,
-                                                          uint32_t render_pass_instance_id, uint32_t subpass,
+                                                          uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                                           const ResourceUsageTag tag, AccessContext &access_context) {
     AttachmentAccess attachment_access;
     attachment_access.type = AttachmentAccessType::StoreOp;
@@ -497,7 +512,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
     attachment_access.subpass = subpass;
 
     for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
-        if (rp_state.attachment_last_subpass[i] == subpass) {
+        if (IsSubpassIncluded(subpass, rp_state.attachment_last_subpass[i], view_mask)) {
             const auto &view_gen = attachment_views[i];
 
             const auto &ci = rp_state.create_info.pAttachments[i];
@@ -509,7 +524,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
             if (is_color && store_op_stores) {
                 access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                            SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
-                                                           ResourceUsageTagEx{tag});
+                                                           ResourceUsageTagEx{tag}, view_mask);
             } else {
                 if (has_depth && store_op_stores) {
                     access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
@@ -709,9 +724,10 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
     if (next_subpass >= rp_state_->create_info.subpassCount) {
         return skip;
     }
+    const uint32_t next_subpass_view_mask = rp_state_->create_info.pSubpasses[next_subpass].viewMask;
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |= ValidateLayoutTransitions(cb_context, next_context, *rp_state_, render_area_, render_pass_instance_id_, next_subpass,
-                                      attachment_views_, command);
+                                      next_subpass_view_mask, attachment_views_, command);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
@@ -720,7 +736,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
         temp_context.InitFrom(next_context);
         RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
         skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_area_, render_pass_instance_id_, next_subpass,
-                                      attachment_views_, command);
+                                      next_subpass_view_mask, attachment_views_, command);
     }
     return skip;
 }
@@ -735,7 +751,7 @@ bool RenderPassAccessContext::ValidateEndRenderPass(const CommandBufferAccessCon
 
 AccessContext *RenderPassAccessContext::CreateStoreResolveProxy() const {
     return CreateStoreResolveProxyContext(CurrentContext(), *rp_state_, render_pass_instance_id_, current_subpass_,
-                                          attachment_views_);
+                                          rp_state_->create_info.pSubpasses[current_subpass_].viewMask, attachment_views_);
 }
 
 bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context,
@@ -803,9 +819,10 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag
 void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     const auto *attachment_ci = rp_state_->create_info.pAttachments;
     auto &subpass_context = CurrentContext();
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
-        if (rp_state_->attachment_first_subpass[i] == current_subpass_) {
+        if (IsSubpassIncluded(current_subpass_, rp_state_->attachment_first_subpass[i], view_mask)) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
 
             const VkAttachmentDescription2 &ci = *attachment_ci[i].ptr();
@@ -818,7 +835,6 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
                 // The exception is when a feedback loop is enabled for the attachment, then only the render area is accessed.
                 const SyncAccessIndex load_op_access = ColorLoadUsage(ci.loadOp);
                 if (load_op_access != SYNC_ACCESS_INDEX_NONE) {
-                    uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
                     const AttachmentAccess attachment_access =
                         GetAttachmentAccess(SyncOrdering::kColorAttachment, AttachmentAccessType::LoadOp);
                     subpass_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea, load_op_access,
@@ -884,10 +900,12 @@ void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barri
 
 void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag, const ResourceUsageTag barrier_tag,
                                                 const ResourceUsageTag load_tag) {
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
+
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
     UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
                                   CurrentContext());
-    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
+    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                 CurrentContext());
 
     if (current_subpass_ + 1 >= rp_state_->create_info.subpassCount) {
@@ -905,10 +923,12 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag
 
 void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag store_tag,
                                                   const ResourceUsageTag barrier_tag) {
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
+
     // Add the resolve and store accesses
     UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
                                   CurrentContext());
-    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
+    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                 CurrentContext());
 
     // Export the accesses from the renderpass...
