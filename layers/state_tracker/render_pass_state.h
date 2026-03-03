@@ -94,13 +94,19 @@ class RenderPass : public StateObject {
     // Dependency information for each subpass
     const std::vector<SubpassDependencyInfo> subpass_dependency_infos;  // [subpassCount]
 
-    // For each attachment, the index of the first subpass that uses it.
-    // VK_SUBPASS_EXTERNAL if the attachment is unused.
-    const std::vector<uint32_t> attachment_first_subpass;  // [attachmentCount]
+    // Maps view index to subpass index: subpass = SubpassPerView[view_index].
+    // If multiview is not used then this stores a single subpass index as the first element
+    using SubpassPerView = small_vector<uint32_t, 2>;
 
-    // For each attachment, the index of the last subpass that uses it.
+    // For each attachment, the first subpass that uses it.
     // VK_SUBPASS_EXTERNAL if the attachment is unused.
-    const std::vector<uint32_t> attachment_last_subpass;  // [attachmentCount]
+    // If multiview is enabled, the subpass is tracked per view
+    const std::vector<SubpassPerView> attachment_first_subpass;  // [attachmentCount]
+
+    // For each attachment, the last subpass that uses it.
+    // VK_SUBPASS_EXTERNAL if the attachment is unused.
+    // If multiview is enabled the subpass is defined per view
+    const std::vector<SubpassPerView> attachment_last_subpass;  // [attachmentCount]
 
     struct AttachmentTransition {
         // Subpass index or VK_SUBPASS_EXTERNAL for transitions from initialLayout.

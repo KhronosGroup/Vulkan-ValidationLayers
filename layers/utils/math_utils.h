@@ -33,6 +33,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "containers/small_vector.h"
+
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
     static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
@@ -50,6 +52,22 @@ template <typename T>
 constexpr bool IsSingleBitSet(T flags) {
     static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
     return IsPowerOfTwo(flags);
+}
+
+// Return index of each set bit in a 32-bit value (the maximum size of returned vector is 32).
+// Use a practical small vector capacity (usually we have values with only a few flags set).
+static inline small_vector<uint8_t, 8> GetSetBitIndices(uint32_t value) {
+    small_vector<uint8_t, 8> indices;
+    indices.reserve(GetBitSetCount(value));
+    uint8_t index = 0;
+    while (value) {
+        if (value & 1) {
+            indices.emplace_back(index);
+        }
+        value >>= 1;
+        index++;
+    }
+    return indices;
 }
 
 // Returns the 0-based index of the MSB, like the x86 bit scan reverse (bsr) instruction
@@ -180,3 +198,4 @@ static inline uint32_t GetSmallestGreaterOrEquallPowerOfTwo(uint32_t v) {
     v++;
     return v;
 }
+

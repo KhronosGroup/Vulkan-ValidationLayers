@@ -1223,6 +1223,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     auto &rp_state = *rp_state_.get();
 
     const uint32_t subpass = 0;
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[0].viewMask;
 
     // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
     // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
@@ -1243,13 +1244,13 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // operations (though it's currently a messy approach)
     const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
     skip |= RenderPassAccessContext::ValidateLayoutTransitions(cb_context, temp_context, rp_state, render_area,
-                                                               render_pass_instance_id, subpass, view_gens, command_);
+                                                               render_pass_instance_id, subpass, view_mask, view_gens, command_);
 
     // Validate load operations if there were no layout transition hazards
     if (!skip) {
         RenderPassAccessContext::RecordLayoutTransitions(rp_state, subpass, view_gens, kInvalidTag, temp_context);
         skip |= RenderPassAccessContext::ValidateLoadOperation(cb_context, temp_context, rp_state, render_area,
-                                                               render_pass_instance_id, subpass, view_gens, command_);
+                                                               render_pass_instance_id, subpass, view_mask, view_gens, command_);
     }
 
     return skip;

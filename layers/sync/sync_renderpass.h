@@ -93,12 +93,12 @@ class RenderPassAccessContext {
 
     static bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
                                           const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                          uint32_t render_pass_instance_id, uint32_t subpass,
+                                          uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                           const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     static bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
                                       const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                      uint32_t render_pass_instance_id, uint32_t subpass,
+                                      uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                       const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
     bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
@@ -109,8 +109,8 @@ class RenderPassAccessContext {
                                               AccessContext &access_context);
 
     static void UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
-                                            uint32_t render_pass_instance_id, uint32_t subpass, const ResourceUsageTag tag,
-                                            AccessContext &access_context);
+                                            uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
+                                            const ResourceUsageTag tag, AccessContext &access_context);
 
     static void RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
                                         const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,

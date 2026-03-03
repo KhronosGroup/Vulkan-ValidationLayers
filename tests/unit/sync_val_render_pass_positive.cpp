@@ -558,6 +558,191 @@ TEST_F(PositiveSyncValRenderPass, MultiviewAsyncSubpasses3) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncValRenderPass, MultiviewMultipleStoreOps) {
+    TEST_DESCRIPTION("Multiview broadcasts storeOp to different subpasses that write to different views");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    const uint32_t view_masks[2] = {1, 2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    // Each subpass executes storeOp for a separate view
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, MultiviewMultipleLoadOps) {
+    TEST_DESCRIPTION("Multiview broadcasts loadOp to different subpasses that synchronize with external copy");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    vkt::Buffer buffer(*m_device, 128 * 128 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    VkSubpassDependency subpass_dependencies[2] = {};
+    subpass_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependencies[0].dstSubpass = 0;
+    subpass_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    subpass_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependencies[0].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    subpass_dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+    subpass_dependencies[1] = subpass_dependencies[0];
+    subpass_dependencies[1].dstSubpass = 1;
+
+    const uint32_t view_masks[2] = {1, 2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    render_pass_ci.dependencyCount = 2;
+    render_pass_ci.pDependencies = subpass_dependencies;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
+    region.imageExtent = {128, 128, 1};
+
+    m_command_buffer.Begin();
+
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    // loadOp for view 0 happens at the beginning of this subpass (0).
+    // Subpass dependency 0 synchronizes it with copy
+
+    m_command_buffer.NextSubpass();
+    // loadOp for view 1 happens at the beginning of this subpass (1).
+    // Subpass dependency 1 synchronizes it with copy
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, MultiviewAsyncSubpasses3DImage) {
+    TEST_DESCRIPTION("Use slices of 3D image for multiview views");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {128,128, 2};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image image_3d(*m_device, image_ci);
+
+    vkt::ImageView image_view = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2 /*slices*/);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    const uint32_t view_masks[2] = {1, 2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncValRenderPass, MultiviewSubpassDependency) {
     TEST_DESCRIPTION("Use subpass dependency to sync multiview subpasses that have a shared view");
     SetTargetApiVersion(VK_API_VERSION_1_1);
