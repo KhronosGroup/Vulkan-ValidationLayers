@@ -30,8 +30,8 @@ void RayTracingTest::InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* ena
     AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-    VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_ray_tracing_index_buffer_consistency", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
-                                 1, &kVkTrue};
+    VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_ray_tracing_buffers_consistency", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                 &kVkTrue};
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();
     layer_setting_ci.settingCount = 1;

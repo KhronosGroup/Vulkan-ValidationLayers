@@ -93,10 +93,11 @@ void GpuAVSettings::SetOnlyDebugPrintf() {
 
 void GpuAVSettings::TracyLogSettings() const {
 #if defined(TRACY_ENABLE)
+#define VVL_TRACY_PRINT_GPUAV_SETTING(setting) VVL_TracyMessageStream("  " #setting ": " << setting);
     VVL_TracyMessageStream("GpuAVSettings:");
-    VVL_TracyMessageStream("  safe_mode: " << safe_mode);
-    VVL_TracyMessageStream("  force_on_robustness: " << force_on_robustness);
-    VVL_TracyMessageStream("  select_instrumented_shaders: " << select_instrumented_shaders);
+    VVL_TRACY_PRINT_GPUAV_SETTING(safe_mode);
+    VVL_TRACY_PRINT_GPUAV_SETTING(force_on_robustness);
+    VVL_TRACY_PRINT_GPUAV_SETTING(select_instrumented_shaders);
     if (!shader_selection_regexes.empty()) {
         VVL_TracyMessageStream("  shader_selection_regexes:");
         for (size_t i = 0; i < shader_selection_regexes.size(); ++i) {
@@ -105,34 +106,38 @@ void GpuAVSettings::TracyLogSettings() const {
     } else {
         VVL_TracyMessageStream("  shader_selection_regexes: (empty)");
     }
-    VVL_TracyMessageStream("  validate_indirect_draws_buffers: " << validate_indirect_draws_buffers);
-    VVL_TracyMessageStream("  validate_indirect_dispatches_buffers: " << validate_indirect_dispatches_buffers);
-    VVL_TracyMessageStream("  validate_indirect_trace_rays_buffers: " << validate_indirect_trace_rays_buffers);
-    VVL_TracyMessageStream("  validate_buffer_copies: " << validate_buffer_copies);
-    VVL_TracyMessageStream("  validate_copy_memory_indirect: " << validate_copy_memory_indirect);
-    VVL_TracyMessageStream("  validate_index_buffers: " << validate_index_buffers);
-    VVL_TracyMessageStream("  validate_acceleration_structures_builds: " << validate_acceleration_structures_builds);
-    VVL_TracyMessageStream("  ray_tracing_index_buffer_consistency: " << ray_tracing_index_buffer_consistency);
-    VVL_TracyMessageStream("  validate_image_layout: " << validate_image_layout);
-    VVL_TracyMessageStream("  vma_linear_output: " << vma_linear_output);
-    VVL_TracyMessageStream("  debug_validate_instrumented_shaders: " << debug_validate_instrumented_shaders);
-    VVL_TracyMessageStream("  debug_dump_instrumented_shaders: " << debug_dump_instrumented_shaders);
-    VVL_TracyMessageStream("  debug_max_instrumentations_count: " << debug_max_instrumentations_count);
-    VVL_TracyMessageStream("  debug_print_instrumentation_info: " << debug_print_instrumentation_info);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_indirect_draws_buffers);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_indirect_dispatches_buffers);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_indirect_trace_rays_buffers);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_buffer_copies);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_copy_memory_indirect);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_index_buffers);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_acceleration_structures_builds);
+    VVL_TRACY_PRINT_GPUAV_SETTING(ray_tracing_buffers_consistency);
+    VVL_TRACY_PRINT_GPUAV_SETTING(validate_image_layout);
+    VVL_TRACY_PRINT_GPUAV_SETTING(vma_linear_output);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_validate_instrumented_shaders);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_dump_instrumented_shaders);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_max_instrumentations_count);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_print_instrumentation_info);
+#define VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(setting) \
+    VVL_TracyMessageStream("    " #setting ": " << shader_instrumentation.setting);
     VVL_TracyMessageStream("  ShaderInstrumentation:");
-    VVL_TracyMessageStream("    descriptor_checks: " << shader_instrumentation.descriptor_checks);
-    VVL_TracyMessageStream("    buffer_device_address: " << shader_instrumentation.buffer_device_address);
-    VVL_TracyMessageStream("    ray_query: " << shader_instrumentation.ray_query);
-    VVL_TracyMessageStream("    ray_hit_object: " << shader_instrumentation.ray_hit_object);
-    VVL_TracyMessageStream("    mesh_shading: " << shader_instrumentation.mesh_shading);
-    VVL_TracyMessageStream("    post_process_descriptor_indexing: " << shader_instrumentation.post_process_descriptor_indexing);
-    VVL_TracyMessageStream("    vertex_attribute_fetch_oob: " << shader_instrumentation.vertex_attribute_fetch_oob);
-    VVL_TracyMessageStream("    sanitizer: " << shader_instrumentation.sanitizer);
-    VVL_TracyMessageStream("    shared_memory_data_race: " << shader_instrumentation.shared_memory_data_race);
-    VVL_TracyMessageStream("  debug_printf_only: " << debug_printf_only);
-    VVL_TracyMessageStream("  debug_printf_enabled: " << debug_printf_enabled);
-    VVL_TracyMessageStream("  debug_printf_to_stdout: " << debug_printf_to_stdout);
-    VVL_TracyMessageStream("  debug_printf_verbose: " << debug_printf_verbose);
-    VVL_TracyMessageStream("  debug_printf_buffer_size: " << debug_printf_buffer_size);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(descriptor_checks);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(buffer_device_address);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(ray_query);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(ray_hit_object);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(mesh_shading);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(post_process_descriptor_indexing);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(vertex_attribute_fetch_oob);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(sanitizer);
+    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(shared_memory_data_race);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_only);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_enabled);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_to_stdout);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_verbose);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_buffer_size);
+#undef VVL_TRACY_PRINT_GPUAV_SETTING
+#undef VVL_TRACY_PRINT_INSTRUMENTATION_SETTING
 #endif
 }

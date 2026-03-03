@@ -95,6 +95,7 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
     GeometryKHR& SetTrianglesIndexType(VkIndexType index_type);
     GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
+    GeometryKHR& SetTrianglesVertexStride(uint32_t vertex_stride);
     GeometryKHR& SetTrianglesMaxVertex(uint32_t max_vertex);
     GeometryKHR& SetTrianglesTransformBuffer(vkt::Buffer&& transform_buffer);
     GeometryKHR& SetTrianglesTransformatData(VkDeviceAddress address);

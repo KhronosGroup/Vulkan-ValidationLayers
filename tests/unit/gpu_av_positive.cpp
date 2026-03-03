@@ -57,7 +57,7 @@ void GpuAVTest::InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settings
         layer_settings.emplace_back(
             VkLayerSettingEXT{OBJECT_LAYER_NAME, "gpuav_safe_mode", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
     }
-    layer_settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "gpuav_ray_tracing_index_buffer_consistency",
+    layer_settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "gpuav_ray_tracing_buffers_consistency",
                                                   VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();

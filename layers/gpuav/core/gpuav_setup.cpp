@@ -418,18 +418,18 @@ struct AccelerationStructuresBuild : public Setting {
     }
 };
 
-struct RayTracingIndexBufferConsistency : public Setting {
-    bool IsEnabled(const GpuAVSettings& settings) { return settings.ray_tracing_index_buffer_consistency; }
+struct RayTracingBuffersConsistency : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.ray_tracing_buffers_consistency; }
     // Validation shader branches on a push constant value to fetch different descriptors
     bool HasRequiredFeatures(const DeviceFeatures &features) {
         return features.shaderInt64 && features.shaderInt16 && features.shaderInt8;
     }
-    void Disable(GpuAVSettings& settings) { settings.ray_tracing_index_buffer_consistency = false; }
+    void Disable(GpuAVSettings &settings) { settings.ray_tracing_buffers_consistency = false; }
     std::string DisableMessage() {
-        return "\tRay tracing index buffer consistency option was enabled, but the shaderInt64 or shaderInt16 or shaderInt8 "
+        return "\tRay tracing buffers consistency option was enabled, but the shaderInt64 or shaderInt16 or shaderInt8 "
                "features are not "
                "supported. [Disabling "
-               "gpuav_ray_tracing_index_buffer_consistency]\n";
+               "gpuav_ray_tracing_buffers_consistency]\n";
     }
 };
 }  // namespace setting
@@ -444,10 +444,10 @@ void Validator::InitSettings(const Location &loc) {
     setting::BufferCopies buffer_copies;
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
-    setting::RayTracingIndexBufferConsistency rt_index_buffer_consistency;
+    setting::RayTracingBuffersConsistency rt_buffers_consistency;
     std::array<setting::Setting *, 8> all_settings = {
         &buffer_device_address, &ray_query,      &ray_hit_object, &mesh_shading,
-        &buffer_copies,         &buffer_content, &as_builds,      &rt_index_buffer_consistency};
+        &buffer_copies,         &buffer_content, &as_builds,      &rt_buffers_consistency};
 
     std::string adjustment_warnings;
     for (auto &setting_object : all_settings) {

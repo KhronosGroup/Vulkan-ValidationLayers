@@ -16,6 +16,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
@@ -105,71 +106,70 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav](const uint32_t* error_record,
-                                                                   const Location& loc_with_debug_region,
-                                                                   const LogObjectList& objlist) {
-        bool skip = false;
-        using namespace glsl;
+    CommandBufferSubState::ErrorLoggerFunc error_logger =
+        [&gpuav](const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
+            bool skip = false;
+            using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroup_GpuPreTraceRays) {
+            if (GetErrorGroup(error_record) != kErrorGroup_GpuPreTraceRays) {
+                return skip;
+            }
+
+            const uint32_t error_sub_code = GetSubError(error_record);
+            switch (error_sub_code) {
+                case kErrorSubCode_PreTraceRays_LimitWidth: {
+                    const uint32_t width = error_record[kValCmd_ErrorPayloadDword_0];
+                    skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc_with_debug_region,
+                                           "Indirect trace rays of VkTraceRaysIndirectCommandKHR::width of %" PRIu32
+                                           " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] * "
+                                           "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] limit of %" PRIu64 ".",
+                                           width,
+                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
+                                               static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[0]));
+                    break;
+                }
+                case kErrorSubCode_PreTraceRays_LimitHeight: {
+                    const uint32_t height = error_record[kValCmd_ErrorPayloadDword_0];
+                    skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc_with_debug_region,
+                                           "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
+                                           " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] * "
+                                           "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] limit of %" PRIu64 ".",
+                                           height,
+                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
+                                               static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[1]));
+                    break;
+                }
+                case kErrorSubCode_PreTraceRays_LimitDepth: {
+                    const uint32_t depth = error_record[kValCmd_ErrorPayloadDword_0];
+                    skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc_with_debug_region,
+                                           "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
+                                           " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
+                                           "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] limit of %" PRIu64 ".",
+                                           depth,
+                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
+                                               static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]));
+                    break;
+                }
+                case kErrorSubCode_PreTraceRays_LimitVolume: {
+                    const VkExtent3D trace_rays_extent = {error_record[kValCmd_ErrorPayloadDword_0],
+                                                          error_record[kValCmd_ErrorPayloadDword_1],
+                                                          error_record[kValCmd_ErrorPayloadDword_2]};
+                    const uint64_t rays_volume = trace_rays_extent.width * trace_rays_extent.height * trace_rays_extent.depth;
+                    skip |= gpuav.LogError(
+                        "VUID-VkTraceRaysIndirectCommandKHR-width-03641", objlist, loc_with_debug_region,
+                        "Indirect trace rays of volume %" PRIu64
+                        " (%s) would exceed VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount "
+                        "limit of %" PRIu32 ".",
+                        rays_volume, string_VkExtent3D(trace_rays_extent).c_str(),
+                        gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
+                    break;
+                }
+                default:
+                    break;
+            }
+
             return skip;
-        }
-
-        const uint32_t error_sub_code = GetSubError(error_record);
-        switch (error_sub_code) {
-            case kErrorSubCode_PreTraceRays_LimitWidth: {
-                const uint32_t width = error_record[kValCmd_ErrorPayloadDword_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc_with_debug_region,
-                                       "Indirect trace rays of VkTraceRaysIndirectCommandKHR::width of %" PRIu32
-                                       " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] * "
-                                       "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] limit of %" PRIu64 ".",
-                                       width,
-                                       static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
-                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[0]));
-                break;
-            }
-            case kErrorSubCode_PreTraceRays_LimitHeight: {
-                const uint32_t height = error_record[kValCmd_ErrorPayloadDword_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc_with_debug_region,
-                                       "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
-                                       " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] * "
-                                       "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] limit of %" PRIu64 ".",
-                                       height,
-                                       static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
-                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[1]));
-                break;
-            }
-            case kErrorSubCode_PreTraceRays_LimitDepth: {
-                const uint32_t depth = error_record[kValCmd_ErrorPayloadDword_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc_with_debug_region,
-                                       "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
-                                       " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
-                                       "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] limit of %" PRIu64 ".",
-                                       depth,
-                                       static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
-                                           static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]));
-                break;
-            }
-            case kErrorSubCode_PreTraceRays_LimitVolume: {
-                const VkExtent3D trace_rays_extent = {error_record[kValCmd_ErrorPayloadDword_0],
-                                                      error_record[kValCmd_ErrorPayloadDword_1],
-                                                      error_record[kValCmd_ErrorPayloadDword_2]};
-                const uint64_t rays_volume = trace_rays_extent.width * trace_rays_extent.height * trace_rays_extent.depth;
-                skip |= gpuav.LogError(
-                    "VUID-VkTraceRaysIndirectCommandKHR-width-03641", objlist, loc_with_debug_region,
-                    "Indirect trace rays of volume %" PRIu64
-                    " (%s) would exceed VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount "
-                    "limit of %" PRIu32 ".",
-                    rays_volume, string_VkExtent3D(trace_rays_extent).c_str(),
-                    gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
-                break;
-            }
-            default:
-                break;
-        }
-
-        return skip;
-    };
+        };
 
     cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
@@ -427,61 +427,61 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
     vko::BufferRange as_arrays_ptr_buffer =
         cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
 
-    cb_state.on_pre_cb_submission_functions.emplace_back([as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb,
-                                                                                VkCommandBuffer per_submission_cb) {
-        VVL_ZoneScopedN("validate_as_builds_pre_submit");
+    cb_state.on_pre_cb_submission_functions.emplace_back(
+        [as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
+            VVL_ZoneScopedN("validate_as_builds_pre_submit");
 
-        ReadLockGuard lock(gpuav.device_state->as_with_addresses.array_mutex);
+            ReadLockGuard lock(gpuav.device_state->as_with_addresses.array_mutex);
 
-        // valid AS addresses buffer
-        vko::BufferRange as_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-            2 * sizeof(uint32_t) + gpuav.device_state->as_with_addresses.array.size() * sizeof(uint64_t));
-        auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)as_addresses_buffer.offset_mapped_ptr;
+            // valid AS addresses buffer
+            vko::BufferRange as_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+                2 * sizeof(uint32_t) + gpuav.device_state->as_with_addresses.array.size() * sizeof(uint64_t));
+            auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)as_addresses_buffer.offset_mapped_ptr;
 
-        *accel_struct_addresses_buffer_u32_ptr = (uint32_t)gpuav.device_state->as_with_addresses.array.size();
+            *accel_struct_addresses_buffer_u32_ptr = (uint32_t)gpuav.device_state->as_with_addresses.array.size();
 
-        auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
+            auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
 
-        // valid AS metadata buffer
-        vko::BufferRange as_metadatas_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(
-            gpuav.device_state->as_with_addresses.array.size() * sizeof(uint32_t));
-        auto as_metadatas_ptr = (uint32_t*)(as_metadatas_buffer.offset_mapped_ptr);
+            // valid AS metadata buffer
+            vko::BufferRange as_metadatas_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(
+                gpuav.device_state->as_with_addresses.array.size() * sizeof(uint32_t));
+            auto as_metadatas_ptr = (uint32_t*)(as_metadatas_buffer.offset_mapped_ptr);
 
-        // valid AS buffer address ranges buffer
-        vko::BufferRange as_buffer_addr_ranges_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-            gpuav.device_state->as_with_addresses.array.size() * (2 * sizeof(uint64_t)));
-        auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
+            // valid AS buffer address ranges buffer
+            vko::BufferRange as_buffer_addr_ranges_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+                gpuav.device_state->as_with_addresses.array.size() * (2 * sizeof(uint64_t)));
+            auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
 
-        uint32_t written_count = 0;
-        for (const vvl::AccelerationStructureKHR* as : gpuav.device_state->as_with_addresses.array) {
-            as_addresses_ptr[written_count] = as->acceleration_structure_address;
-            uint32_t metadata = 0;
-            const bool is_buffer_destroyed = as->buffer_state && !as->buffer_state->Destroyed();
-            const bool is_buffer_bound_to_memory = is_buffer_destroyed && as->buffer_state->IsMemoryBound();
-            metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed);
-            metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->GetType());
-            metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
-            as_metadatas_ptr[written_count] = metadata;
-            const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->device_address_range;
-            as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
-            as_buffer_addr_ranges_ptr[2 * written_count + 1] = as_buffer_addr_range.end;
+            uint32_t written_count = 0;
+            for (const vvl::AccelerationStructureKHR* as : gpuav.device_state->as_with_addresses.array) {
+                as_addresses_ptr[written_count] = as->acceleration_structure_address;
+                uint32_t metadata = 0;
+                const bool is_buffer_destroyed = as->buffer_state && !as->buffer_state->Destroyed();
+                const bool is_buffer_bound_to_memory = is_buffer_destroyed && as->buffer_state->IsMemoryBound();
+                metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_destroyed);
+                metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->GetType());
+                metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
+                as_metadatas_ptr[written_count] = metadata;
+                const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->device_address_range;
+                as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
+                as_buffer_addr_ranges_ptr[2 * written_count + 1] = as_buffer_addr_range.end;
 
-            ++written_count;
-        }
+                ++written_count;
+            }
 
-        // Fill a GPU buffer with a pointer to the AS metadata
-        vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
-            cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
-        auto submit_time_ptr_to_accel_structs_metadata_buffer_ptr =
-            (glsl::AccelerationStructureArraysPtr*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr;
+            // Fill a GPU buffer with a pointer to the AS metadata
+            vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
+            auto submit_time_ptr_to_accel_structs_metadata_buffer_ptr =
+                (glsl::AccelerationStructureArraysPtr*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr;
 
-        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->addresses_ptr = as_addresses_buffer.offset_address;
-        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->metadata_ptr = as_metadatas_buffer.offset_address;
-        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->buffer_ranges_ptr = as_buffer_addr_ranges_buffer.offset_address;
+            submit_time_ptr_to_accel_structs_metadata_buffer_ptr->addresses_ptr = as_addresses_buffer.offset_address;
+            submit_time_ptr_to_accel_structs_metadata_buffer_ptr->metadata_ptr = as_metadatas_buffer.offset_address;
+            submit_time_ptr_to_accel_structs_metadata_buffer_ptr->buffer_ranges_ptr = as_buffer_addr_ranges_buffer.offset_address;
 
-        vko::CmdSynchronizedCopyBufferRange(per_submission_cb, as_arrays_ptr_buffer,
-                                            submit_time_ptr_to_accel_structs_metadata_buffer);
-    });
+            vko::CmdSynchronizedCopyBufferRange(per_submission_cb, as_arrays_ptr_buffer,
+                                                submit_time_ptr_to_accel_structs_metadata_buffer);
+        });
 
     // Setup Validation pipeline
     // ---
@@ -649,8 +649,7 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidASType: {
                 std::stringstream ss_as_type;
                 if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {
-                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->GetType())
-                               << ". ";
+                    ss_as_type << ", but has type " << string_VkAccelerationStructureTypeKHR((*as_found_it)->GetType()) << ". ";
                 }
                 const std::string ss_as_type_str = ss_as_type.str();
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12281", objlist, loc_with_debug_region,
@@ -775,13 +774,12 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
                 const VkAccelerationStructureGeometryKHR& geom_data = rt::GetGeometry(info, geom_i);
 
-                const bool setup_triangle_indices_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
-                                                               geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR;
+                const bool setup_triangles_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR;
                 const bool setup_aabbs_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR;
                 const bool setup_transform_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
                                                         geom_data.geometry.triangles.transformData.deviceAddress != 0;
 
-                if (!setup_triangle_indices_validation && !setup_aabbs_validation && !setup_transform_validation) {
+                if (!setup_triangles_validation && !setup_aabbs_validation && !setup_transform_validation) {
                     continue;
                 }
 
@@ -792,16 +790,64 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 error_info.info_i = info_i;
                 error_info.geom_i = geom_i;
                 error_info.geom_type = geom_data.geometryType;
+                error_info.geom = geom_data.geometry;
                 error_info.build_range_info = build_range_info;
 
                 glsl::BLASValidationShaderPushData blash_shader_common_pc{};
                 blash_shader_common_pc.first_vertex = build_range_info.firstVertex;
-                blash_shader_common_pc.address_byte_offset = build_range_info.primitiveOffset;
+                blash_shader_common_pc.primitive_offset = build_range_info.primitiveOffset;
                 blash_shader_common_pc.primitive_count = build_range_info.primitiveCount;
                 blash_shader_common_pc.error_info_i = uint32_t(error_infos.size() - 1);
 
                 constexpr uint32_t shader_wg_size_x = 64;
-                if (setup_triangle_indices_validation) {
+
+                auto copy_geom_buffer = [&gpuav, &cb_state](vko::BufferRange& copy_buffer_range, VkDeviceSize copy_byte_size,
+                                                            VkDeviceAddress geom_addr, vvl::Buffer* const copied_geom_buffer) {
+                    if (copy_buffer_range.buffer != VK_NULL_HANDLE) {
+                        gpuav.gpu_resources_manager_.ReturnDeviceLocalBufferRange(copy_buffer_range);
+                    }
+                    copy_buffer_range = gpuav.gpu_resources_manager_.GetDeviceLocalBufferRange(copy_byte_size);
+
+                    VkBufferCopy region{};
+                    region.srcOffset = geom_addr - copied_geom_buffer->deviceAddress;
+                    region.dstOffset = copy_buffer_range.offset;
+                    region.size = copy_byte_size;
+                    DispatchCmdCopyBuffer(cb_state.VkHandle(), copied_geom_buffer->VkHandle(), copy_buffer_range.buffer, 1,
+                                          &region);
+
+                    VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                    barrier_read_after_write.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                    barrier_read_after_write.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+                    barrier_read_after_write.buffer = copied_geom_buffer->VkHandle();
+                    barrier_read_after_write.offset = 0;
+                    barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                    DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                               &barrier_read_after_write, 0, nullptr);
+                };
+
+                // By definition, a buffer containing the full vertex/index buffers range should exist.
+                // Just use the biggest buffer at least containing this full index buffer range
+                // for validation purposes.
+                auto get_buffer_with_max_addr_range = [](vvl::span<vvl::Buffer* const> buffers, VkDeviceAddress addr) {
+                    size_t max_buffer_addr_range_i = 0;
+                    VkDeviceSize max_buffer_addr_range = (buffers[0]->deviceAddress + buffers[0]->safe_create_info.size) - addr;
+                    {
+                        for (const auto [buffer_i, buffer] : vvl::enumerate(buffers.data(), buffers.size())) {
+                            const VkDeviceSize buffer_range =
+                                (buffers[buffer_i]->deviceAddress + buffers[buffer_i]->safe_create_info.size) - addr;
+                            if (buffer_range > max_buffer_addr_range) {
+                                max_buffer_addr_range = buffer_range;
+                                max_buffer_addr_range_i = buffer_i;
+                            }
+                        }
+                    }
+
+                    return max_buffer_addr_range_i;
+                };
+
+                if (setup_triangles_validation) {
                     auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
                     if (!dst_as_state) {
                         gpuav.InternalError(info.dstAccelerationStructure, loc,
@@ -810,143 +856,191 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     }
                     AccelerationStructureKHRSubState& dst_as_gpuav_state = SubState(*dst_as_state);
 
-                    const auto index_buffers = gpuav.GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
-                    if (index_buffers.empty()) {
-                        return;
-                    }
-                    // By definition, a buffer containing the full index buffer range should exist.
-                    // Just use the biggest buffer at least containing this full index buffer range
-                    // for validation purposes.
-                    size_t max_buffer_addr_range_i = 0;
-                    VkDeviceSize max_buffer_addr_range =
-                        (index_buffers[0]->deviceAddress + index_buffers[0]->safe_create_info.size) -
-                        geom_data.geometry.triangles.indexData.deviceAddress;
-                    {
-                        for (const auto [buffer_i, buffer] : vvl::enumerate(index_buffers.data(), index_buffers.size())) {
-                            const VkDeviceSize buffer_range =
-                                (index_buffers[buffer_i]->deviceAddress + index_buffers[buffer_i]->safe_create_info.size) -
-                                geom_data.geometry.triangles.indexData.deviceAddress;
-                            if (buffer_range > max_buffer_addr_range) {
-                                max_buffer_addr_range = buffer_range;
-                                max_buffer_addr_range_i = buffer_i;
-                            }
-                        }
-                    }
                     const bool as_build_allowing_updates = (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) &&
                                                            (info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
                     const bool as_update = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
-                    const bool validate_index_buffer_consistency =
-                        gpuav.gpuav_settings.ray_tracing_index_buffer_consistency && (as_build_allowing_updates || as_update);
-                    if (validate_index_buffer_consistency) {
-                        const VkDeviceSize index_buffer_byte_size = VkDeviceSize(3) * build_range_info.primitiveCount *
-                                                                    IndexTypeByteSize(geom_data.geometry.triangles.indexType);
-                        if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
-                            dst_as_gpuav_state.index_buffer_copies.resize(info.geometryCount);
-                            vko::BufferRange& index_buffer_copy = dst_as_gpuav_state.index_buffer_copies[geom_i];
-                            if (index_buffer_copy.buffer != VK_NULL_HANDLE) {
-                                gpuav.gpu_resources_manager_.ReturnDeviceLocalBufferRange(index_buffer_copy);
-                            }
-                            index_buffer_copy = gpuav.gpu_resources_manager_.GetDeviceLocalBufferRange(index_buffer_byte_size);
+                    const VkFormat vertex_format = geom_data.geometry.triangles.vertexFormat;
+                    const bool validated_vertex_format = vertex_format == VK_FORMAT_R32G32B32_SFLOAT;
+                    const bool validate_vertex_buffer_consistency = gpuav.gpuav_settings.ray_tracing_buffers_consistency &&
+                                                                    validated_vertex_format &&
+                                                                    (as_build_allowing_updates || as_update);
 
-                            VkBufferCopy region{};
-                            region.srcOffset = geom_data.geometry.triangles.indexData.deviceAddress -
-                                               index_buffers[max_buffer_addr_range_i]->deviceAddress;
-                            region.dstOffset = index_buffer_copy.offset;
-                            region.size = index_buffer_byte_size;
-                            DispatchCmdCopyBuffer(cb_state.VkHandle(), index_buffers[max_buffer_addr_range_i]->VkHandle(),
-                                                  index_buffer_copy.buffer, 1, &region);
-
-                            VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
-                            barrier_read_after_write.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                            barrier_read_after_write.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-                            barrier_read_after_write.buffer = index_buffers[max_buffer_addr_range_i]->VkHandle();
-                            barrier_read_after_write.offset = 0;
-                            barrier_read_after_write.size = VK_WHOLE_SIZE;
-
-                            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                                       VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
-                                                       &barrier_read_after_write, 0, nullptr);
+                    if (validate_vertex_buffer_consistency) {
+                        const auto vertex_buffers =
+                            gpuav.GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
+                        if (vertex_buffers.empty()) {
+                            return;
                         }
-                        // Core checks already validates that index count is the same as last build
-                        else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
-                                 (geom_i < dst_as_gpuav_state.index_buffer_copies.size()) &&
-                                 (index_buffer_byte_size == dst_as_gpuav_state.index_buffer_copies[geom_i].size)) {
-                            MemcmpShader memcmp_shader_resources;
-                            memcmp_shader_resources.push_constants.updated_indices =
-                                geom_data.geometry.triangles.indexData.deviceAddress + build_range_info.primitiveOffset;
-                            memcmp_shader_resources.push_constants.original_indices =
-                                dst_as_gpuav_state.index_buffer_copies[geom_i].offset_address;
-                            memcmp_shader_resources.push_constants.uvec4_count =
-                                uint32_t(index_buffer_byte_size / (4 * sizeof(uint32_t)));
-                            uint32_t index_buffer_bytes_leftover =
-                                uint32_t(index_buffer_byte_size -
-                                         (memcmp_shader_resources.push_constants.uvec4_count * 4 * sizeof(uint32_t)));
-                            memcmp_shader_resources.push_constants.u32_count = index_buffer_bytes_leftover / sizeof(uint32_t);
-                            index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u32_count * sizeof(uint32_t);
-                            memcmp_shader_resources.push_constants.u16_count = index_buffer_bytes_leftover / sizeof(uint16_t);
-                            index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u16_count * sizeof(uint16_t);
-                            (void)index_buffer_bytes_leftover;
-                            assert(index_buffer_bytes_leftover == 0);
 
-                            memcmp_shader_resources.push_constants.error_info_i = uint32_t(error_infos.size() - 1);
+                        const size_t max_buffer_addr_range_i =
+                            get_buffer_with_max_addr_range(vertex_buffers, geom_data.geometry.triangles.vertexData.deviceAddress);
 
-                            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, memcmp_pipeline.pipeline);
+                        // const uint32_t format_byte_size = vkuFormatTexelBlockSize(vertex_format);
+                        const VkDeviceSize vertex_buffer_byte_size =
+                            (geom_data.geometry.triangles.maxVertex + 1) * geom_data.geometry.triangles.vertexStride;
 
-                            if (!BindShaderResources(memcmp_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                     cb_state.GetErrorLoggerIndex(), memcmp_shader_resources)) {
+                        if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+                            // Copy vertex buffer
+                            dst_as_gpuav_state.vertex_buffer_copies.resize(info.geometryCount);
+                            AccelerationStructureKHRSubState::VertexBufferRange& vertex_buffer_copy =
+                                dst_as_gpuav_state.vertex_buffer_copies[geom_i];
+                            vertex_buffer_copy.vertex_stride = geom_data.geometry.triangles.vertexStride;
+                            VkDeviceAddress vertices_addr = geom_data.geometry.triangles.vertexData.deviceAddress;
+                            vertices_addr += build_range_info.primitiveOffset +
+                                             geom_data.geometry.triangles.vertexStride * build_range_info.firstVertex;
+                            copy_geom_buffer(vertex_buffer_copy.range, vertex_buffer_byte_size, vertices_addr,
+                                             vertex_buffers[max_buffer_addr_range_i]);
+                        } else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+                                   (geom_i < dst_as_gpuav_state.vertex_buffer_copies.size()) &&
+                                   (vertex_buffer_byte_size == dst_as_gpuav_state.vertex_buffer_copies[geom_i].range.size)) {
+                            // Validate that vertex buffer supplied during last build still has the same inactive primitives at the
+                            // same positions
+                            AccelerationStructureKHRSubState::VertexBufferRange& vertex_buffer_copy =
+                                dst_as_gpuav_state.vertex_buffer_copies[geom_i];
+                            BLASValidationShader blas_shader_resources{};
+                            blas_shader_resources.push_constants = blash_shader_common_pc;
+                            blas_shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_active_triangles;
+                            blas_shader_resources.push_constants.address = geom_data.geometry.triangles.indexData.deviceAddress;
+                            blas_shader_resources.push_constants.address_2 = geom_data.geometry.triangles.vertexData.deviceAddress;
+                            blas_shader_resources.push_constants.address_3 = vertex_buffer_copy.range.offset_address;
+                            blas_shader_resources.push_constants.updated_stride = geom_data.geometry.triangles.vertexStride;
+                            blas_shader_resources.push_constants.original_stride = vertex_buffer_copy.vertex_stride;
+                            blas_shader_resources.push_constants.index_type = geom_data.geometry.triangles.indexType;
+                            blas_shader_resources.push_constants.vertex_format = vertex_format;
+                            blas_shader_resources.push_constants.first_vertex = build_range_info.firstVertex;
+                            blas_shader_resources.push_constants.primitive_offset = build_range_info.primitiveOffset;
+                            blas_shader_resources.push_constants.primitive_count = build_range_info.primitiveCount;
+                            blas_shader_resources.push_constants.error_info_i = uint32_t(error_infos.size() - 1);
+
+                            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
+
+                            if (!BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                                     cb_state.GetErrorLoggerIndex(), blas_shader_resources)) {
                                 assert(false);
                                 return;
                             }
 
-                            const uint32_t shader_threads_count = memcmp_shader_resources.push_constants.uvec4_count +
-                                                                  memcmp_shader_resources.push_constants.u32_count +
-                                                                  memcmp_shader_resources.push_constants.u16_count;
-                            const uint32_t wg_count_x =
-                                shader_threads_count / shader_wg_size_x + uint32_t((shader_threads_count % shader_wg_size_x) > 0);
+                            const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
+                                                        uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
                             DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+
+                            VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                            barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                            barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+                            barrier_read_after_write.buffer = vertex_buffers[max_buffer_addr_range_i]->VkHandle();
+                            barrier_read_after_write.offset = 0;
+                            barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                       VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                                       &barrier_read_after_write, 0, nullptr);
                         }
                     }
 
-                    error_info.geom.triangles = geom_data.geometry.triangles;
-                    BLASValidationShader blas_shader_resources{};
-                    blas_shader_resources.push_constants = blash_shader_common_pc;
-                    blas_shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_triangles_indices;
-                    blas_shader_resources.push_constants.address = geom_data.geometry.triangles.indexData.deviceAddress;
-                    blas_shader_resources.push_constants.index_type = geom_data.geometry.triangles.indexType;
-                    blas_shader_resources.push_constants.max_vertex = geom_data.geometry.triangles.maxVertex;
+                    const bool setup_triangle_indices_validation = geom_data.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
+                                                                   geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR;
+                    if (setup_triangle_indices_validation) {
+                        const auto index_buffers = gpuav.GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
+                        if (index_buffers.empty()) {
+                            return;
+                        }
 
-                    DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
+                        const size_t max_buffer_addr_range_i =
+                            get_buffer_with_max_addr_range(index_buffers, geom_data.geometry.triangles.indexData.deviceAddress);
 
-                    if (!BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
-                                             blas_shader_resources)) {
-                        assert(false);
-                        return;
+                        const bool validate_index_buffer_consistency =
+                            gpuav.gpuav_settings.ray_tracing_buffers_consistency && (as_build_allowing_updates || as_update);
+                        if (validate_index_buffer_consistency) {
+                            const VkDeviceSize index_buffer_byte_size = VkDeviceSize(3) * build_range_info.primitiveCount *
+                                                                        IndexTypeByteSize(geom_data.geometry.triangles.indexType);
+                            if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+                                dst_as_gpuav_state.index_buffer_copies.resize(info.geometryCount);
+                                vko::BufferRange& index_buffer_copy = dst_as_gpuav_state.index_buffer_copies[geom_i];
+                                VkDeviceAddress indices_addr = geom_data.geometry.triangles.indexData.deviceAddress;
+                                indices_addr += build_range_info.primitiveOffset;
+                                // #ARNO_TODO add test playing on primitiveOffset
+                                copy_geom_buffer(index_buffer_copy, index_buffer_byte_size, indices_addr,
+                                                 index_buffers[max_buffer_addr_range_i]);
+                            }
+                            // Core checks already validates that index count is the same as last build
+                            else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+                                     (geom_i < dst_as_gpuav_state.index_buffer_copies.size()) &&
+                                     (index_buffer_byte_size == dst_as_gpuav_state.index_buffer_copies[geom_i].size)) {
+                                MemcmpShader memcmp_shader_resources;
+                                memcmp_shader_resources.push_constants.updated_indices =
+                                    geom_data.geometry.triangles.indexData.deviceAddress + build_range_info.primitiveOffset;
+                                memcmp_shader_resources.push_constants.original_indices =
+                                    dst_as_gpuav_state.index_buffer_copies[geom_i].offset_address;
+                                memcmp_shader_resources.push_constants.uvec4_count =
+                                    uint32_t(index_buffer_byte_size / (4 * sizeof(uint32_t)));
+                                uint32_t index_buffer_bytes_leftover =
+                                    uint32_t(index_buffer_byte_size -
+                                             (memcmp_shader_resources.push_constants.uvec4_count * 4 * sizeof(uint32_t)));
+                                memcmp_shader_resources.push_constants.u32_count = index_buffer_bytes_leftover / sizeof(uint32_t);
+                                index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u32_count * sizeof(uint32_t);
+                                memcmp_shader_resources.push_constants.u16_count = index_buffer_bytes_leftover / sizeof(uint16_t);
+                                index_buffer_bytes_leftover -= memcmp_shader_resources.push_constants.u16_count * sizeof(uint16_t);
+                                (void)index_buffer_bytes_leftover;
+                                assert(index_buffer_bytes_leftover == 0);
+
+                                memcmp_shader_resources.push_constants.error_info_i = uint32_t(error_infos.size() - 1);
+
+                                DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
+                                                        memcmp_pipeline.pipeline);
+
+                                if (!BindShaderResources(memcmp_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                                         cb_state.GetErrorLoggerIndex(), memcmp_shader_resources)) {
+                                    assert(false);
+                                    return;
+                                }
+
+                                const uint32_t shader_threads_count = memcmp_shader_resources.push_constants.uvec4_count +
+                                                                      memcmp_shader_resources.push_constants.u32_count +
+                                                                      memcmp_shader_resources.push_constants.u16_count;
+                                const uint32_t wg_count_x = shader_threads_count / shader_wg_size_x +
+                                                            uint32_t((shader_threads_count % shader_wg_size_x) > 0);
+                                DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+                            }
+                        }
+
+                        BLASValidationShader blas_shader_resources{};
+                        blas_shader_resources.push_constants = blash_shader_common_pc;
+                        blas_shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_triangles_indices;
+                        blas_shader_resources.push_constants.address = geom_data.geometry.triangles.indexData.deviceAddress;
+                        blas_shader_resources.push_constants.index_type = geom_data.geometry.triangles.indexType;
+                        blas_shader_resources.push_constants.max_vertex = geom_data.geometry.triangles.maxVertex;
+
+                        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
+
+                        if (!BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                                 cb_state.GetErrorLoggerIndex(), blas_shader_resources)) {
+                            assert(false);
+                            return;
+                        }
+
+                        const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
+                                                    uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
+                        DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+
+                        VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                        barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+                        barrier_read_after_write.buffer = index_buffers[max_buffer_addr_range_i]->VkHandle();
+                        barrier_read_after_write.offset = 0;
+                        barrier_read_after_write.size = VK_WHOLE_SIZE;
+
+                        DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                   VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
+                                                   &barrier_read_after_write, 0, nullptr);
                     }
-
-                    const uint32_t wg_count_x = (3 * build_range_info.primitiveCount) / shader_wg_size_x +
-                                                uint32_t(((3 * build_range_info.primitiveCount) % shader_wg_size_x) > 0);
-                    DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
-
-                    VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
-                    barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    barrier_read_after_write.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-                    barrier_read_after_write.buffer = index_buffers[max_buffer_addr_range_i]->VkHandle();
-                    barrier_read_after_write.offset = 0;
-                    barrier_read_after_write.size = VK_WHOLE_SIZE;
-
-                    DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
-                                               &barrier_read_after_write, 0, nullptr);
                 }
 
                 if (setup_aabbs_validation) {
-                    error_info.geom.aabbs = geom_data.geometry.aabbs;
-
                     BLASValidationShader blas_shader_resources{};
                     blas_shader_resources.push_constants = blash_shader_common_pc;
                     blas_shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_aabbs;
                     blas_shader_resources.push_constants.address = geom_data.geometry.aabbs.data.deviceAddress;
-                    blas_shader_resources.push_constants.stride = geom_data.geometry.aabbs.stride;
+                    blas_shader_resources.push_constants.updated_stride = geom_data.geometry.aabbs.stride;
 
                     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
 
@@ -976,12 +1070,10 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 }
 
                 if (setup_transform_validation) {
-                    error_info.geom.triangles = geom_data.geometry.triangles;
-
                     BLASValidationShader blas_shader_resources{};
                     blas_shader_resources.push_constants = blash_shader_common_pc;
                     blas_shader_resources.push_constants.validation_mode = glsl::kBLASValidationMode_transform_matrix;
-                    blas_shader_resources.push_constants.address_byte_offset = build_range_info.transformOffset;
+                    blas_shader_resources.push_constants.primitive_offset = build_range_info.transformOffset;
                     blas_shader_resources.push_constants.address = geom_data.geometry.triangles.transformData.deviceAddress;
 
                     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
@@ -1341,6 +1433,82 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     string_VkIndexType(error_info.geom.triangles.indexType), index_buffer_pos, original_index, updated_index,
                     index_address, error_info.geom.triangles.indexData.deviceAddress, error_info.build_range_info.primitiveOffset,
                     error_info.geom.triangles.indexData.deviceAddress + error_info.build_range_info.primitiveOffset,
+
+                    error_info.info_i, string_VkAccelerationStructureTypeKHR(error_info.info.type),
+                    string_VkBuildAccelerationStructureFlagsKHR(error_info.info.flags).c_str(),
+                    string_VkBuildAccelerationStructureModeKHR(error_info.info.mode),
+                    gpuav.FormatHandle(error_info.info.srcAccelerationStructure).c_str(),
+                    gpuav.FormatHandle(error_info.info.dstAccelerationStructure).c_str(), error_info.info.geometryCount,
+                    error_info.info.pGeometries, error_info.info.ppGeometries, error_info.info.scratchData.deviceAddress,
+
+                    error_info.info_i, error_info.geom_i, string_VkFormat(error_info.geom.triangles.vertexFormat),
+                    error_info.geom.triangles.vertexData.deviceAddress, vertex_buffers_str.c_str(),
+                    error_info.geom.triangles.vertexStride, error_info.geom.triangles.maxVertex,
+                    string_VkIndexType(error_info.geom.triangles.indexType), error_info.geom.triangles.indexData.deviceAddress,
+                    index_buffers_str.c_str(), error_info.geom.triangles.transformData.deviceAddress, transform_buffers_str.c_str(),
+
+                    error_info.info_i, error_info.geom_i, error_info.build_range_info.primitiveCount,
+                    error_info.build_range_info.primitiveOffset, error_info.build_range_info.firstVertex,
+                    error_info.build_range_info.transformOffset);
+                break;
+            }
+            case kErrorSubCode_PreBuildAccelerationStructures_VertexBufferActiveStatusUpdated: {
+                const uint32_t index = error_record[kValCmd_ErrorPayloadDword_2];
+                const uint32_t is_original_vertex_nan = error_record[kValCmd_ErrorPayloadDword_3];
+
+                const char* vuid = is_original_vertex_nan ? "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03663"
+                                                          : "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03664";
+                const char* error_type = is_original_vertex_nan ? "inactive to active" : "active to inactive";
+                skip |= gpuav.LogError(
+                    vuid, objlist, loc_with_debug_region,
+                    "Primitive status changed from %s. In terms of vertices of format %s strided by %" PRIu64
+                    " bytes, primitive was found at index %" PRIu32
+                    " in vertex buffer. "
+                    "Corresponding vertex buffer address is 0x%" PRIx64
+                    ".\n\n"
+
+                    "Corresponding BLAS build command info:\n"
+                    "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32
+                    "] was:\n"
+                    "    type: %s\n"
+                    "    flags: %s\n"
+                    "    mode: %s\n"
+                    "    srcAccelerationStructure: %s\n"
+                    "    dstAccelerationStructure: %s\n"
+                    "    geometryCount: %" PRIu32
+                    "\n"
+                    "    pGeometries: %p\n"
+                    "    ppGeometries: %p\n"
+                    "    scratchData: 0x%" PRIx64
+                    "\n\n"
+
+                    "VkAccelerationStructureBuildGeometryInfoKHR[%" PRIu32 "]::VkAccelerationStructureGeometryKHR[%" PRIu32
+                    "]::VkAccelerationStructureGeometryTrianglesDataKHR was:\n"
+                    "    vertexFormat: %s\n"
+                    "    vertexData: 0x%" PRIx64
+                    "%s\n"
+                    "    vertexStride: %" PRIu64
+                    "\n"
+                    "    maxVertex: %" PRIu32
+                    "\n"
+                    "    indexType: %s\n"
+                    "    indexData: 0x%" PRIx64
+                    "%s\n"
+                    "    transformData: 0x%" PRIx64
+                    "%s\n\n"
+
+                    "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32
+                    "] was:\n"
+                    "    primitiveCount: %" PRIu32
+                    "\n"
+                    "    primitiveOffset: %" PRIu32
+                    "\n"
+                    "    firstVertex: %" PRIu32
+                    "\n"
+                    "    transformOffset: %" PRIu32 "\n",
+
+                    error_type, string_VkFormat(error_info.geom.triangles.vertexFormat), error_info.geom.triangles.vertexStride,
+                    index, error_info.geom.triangles.vertexData.deviceAddress + index * error_info.geom.triangles.vertexStride,
 
                     error_info.info_i, string_VkAccelerationStructureTypeKHR(error_info.info.type),
                     string_VkBuildAccelerationStructureFlagsKHR(error_info.info.flags).c_str(),
