@@ -3503,7 +3503,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 
     skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
     skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid);
-    skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid);
+    skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid.loc());
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state->UsesDynamicRendering()) {
         const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
@@ -4455,8 +4455,8 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
-                                                        const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                        const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
@@ -4487,7 +4487,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                 if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR &&
                     (!enabled_features.stippledRectangularLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |= LogError(vuid.stippled_rectangular_lines_07495, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_RECTANGULAR_07495), objlist, loc,
                                      "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -4495,7 +4495,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                 }
                 if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM && (!enabled_features.stippledBresenhamLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |= LogError(vuid.stippled_bresenham_lines_07496, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_BRESENHAM_07496), objlist, loc,
                                      "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -4504,7 +4504,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                 if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH &&
                     (!enabled_features.stippledSmoothLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |= LogError(vuid.stippled_smooth_lines_07497, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_SMOOTH_07497), objlist, loc,
                                      "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -4514,7 +4514,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                     (!enabled_features.stippledRectangularLines || !phys_dev_props.limits.strictLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
                     skip |=
-                        LogError(vuid.stippled_default_strict_07498, objlist, vuid.loc(),
+                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_STRICT_07498), objlist, loc,
                                  "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT (set %s) with "
                                  "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
                                  dynamic_line_raster_mode ? "dynamically" : "in pipeline",

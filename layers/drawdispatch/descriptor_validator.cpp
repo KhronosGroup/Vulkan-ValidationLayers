@@ -516,7 +516,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (image_format_width_64) {
             if (resource_variable.info.bit_width != 64) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-                skip |= LogError(vuids->image_view_access_64_04470, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_ACCESS_04470), objlist, loc.Get(),
                                  "the %s has a 64-bit component ImageView format (%s) but the OpTypeImage's "
                                  "Sampled Type has a width of %" PRIu32 ".%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -525,7 +525,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if (!dev_proxy.enabled_features.sparseImageInt64Atomics && image_state->sparse_residency) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, image_state->Handle());
                 skip |=
-                    LogError(vuids->image_view_sparse_64_04474, objlist, loc.Get(),
+                    LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_SPARSE_04474), objlist, loc.Get(),
                              "the %s has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
                              "sparseImageInt64Atomics is not enabled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), DescribeInstruction().c_str());
@@ -533,7 +533,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         } else if (!image_format_width_64 && resource_variable.info.bit_width != 32) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |=
-                LogError(vuids->image_view_access_32_04471, objlist, loc.Get(),
+                LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_ACCESS_04471), objlist, loc.Get(),
                          "the %s has a 32-bit component ImageView format (%s) but the OpTypeImage's "
                          "Sampled Type has a width of %" PRIu32 ".%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -584,7 +584,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (resource_variable.IsAtomic() && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-        skip |= LogError(vuids->imageview_atomic_02691, objlist, loc.Get(),
+        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_ATOMIC_02691), objlist, loc.Get(),
                          "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
@@ -602,7 +602,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if ((resource_variable.info.is_read_without_format) &&
                 !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-                skip |= LogError(vuids->storage_image_read_without_format_07028, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_FORMAT_07028), objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT.\n"
                                  "(supported features: %s).%s",
@@ -612,7 +612,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if ((resource_variable.info.is_write_without_format) &&
                        !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-                skip |= LogError(vuids->storage_image_write_without_format_07027, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_FORMAT_07027), objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
                                  "(supported features: %s).%s",
@@ -955,7 +955,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (image_view_format == VK_FORMAT_A8_UNORM) {
             if (texel_component_count != 4) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-                skip |= LogError(vuids->storage_image_write_texel_count_08796, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_TEXEL_08796), objlist, loc.Get(),
                                  "the %s (%s) is mapped to a OpImage format of VK_FORMAT_A8_UNORM, "
                                  "but the OpImageWrite Texel "
                                  "operand only contains %" PRIu32 " components.%s",
@@ -964,7 +964,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         } else if (texel_component_count < format_component_count) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids->storage_image_write_texel_count_08795, objlist, loc.Get(),
+            skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_TEXEL_08795), objlist, loc.Get(),
                              "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -1080,14 +1080,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);
     if (buffer_format_width_64 && resource_variable.info.bit_width != 64) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-        skip |= LogError(vuids->buffer_view_access_64_04472, objlist, loc.Get(),
+        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::BUFFER_VIEW_ACCESS_04472), objlist, loc.Get(),
                          "the %s has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                          "Type has a width of %" PRIu32 ".%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), string_VkFormat(buffer_view_format),
                          resource_variable.info.bit_width, DescribeInstruction().c_str());
     } else if (!buffer_format_width_64 && resource_variable.info.bit_width != 32) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-        skip |= LogError(vuids->buffer_view_access_32_04473, objlist, loc.Get(),
+        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::BUFFER_VIEW_ACCESS_04473), objlist, loc.Get(),
                          "the %s has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                          "Type has a width of %" PRIu32 ".%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), string_VkFormat(buffer_view_format),
@@ -1100,7 +1100,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if ((resource_variable.IsAtomic()) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
         !(buffer_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-        skip |= LogError(vuids->bufferview_atomic_07888, objlist, loc.Get(),
+        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::BUFFER_VIEW_ATOMIC_07888), objlist, loc.Get(),
                          "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
@@ -1116,7 +1116,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if ((resource_variable.info.is_read_without_format) &&
                 !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-                skip |= LogError(vuids->storage_texel_buffer_read_without_format_07030, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_TEXEL_FORMAT_07030), objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR.\n"
                                  "(supported features: %s).%s",
@@ -1126,7 +1126,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if ((resource_variable.info.is_write_without_format) &&
                        !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-                skip |= LogError(vuids->storage_texel_buffer_write_without_format_07029, objlist, loc.Get(),
+                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_TEXEL_FORMAT_07029), objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
                                  "(supported features: %s).%s",
@@ -1150,7 +1150,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         const uint32_t format_component_count = vkuFormatComponentCount(buffer_view_format);
         if (texel_component_count < format_component_count) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
-            skip |= LogError(vuids->storage_texel_buffer_write_texel_count_04469, objlist, loc.Get(),
+            skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_TEXEL_04469), objlist, loc.Get(),
                              "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
