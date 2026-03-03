@@ -78,7 +78,7 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
 
         if (info.triangleArray.deviceAddress == 0) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10897", device,
-                             info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is NULL.");
+                             info_loc.dot(Field::triangleArray).dot(Field::deviceAddress), "is NULL.");
         } else if (!IsPointerAligned(info.triangleArray.deviceAddress, 256)) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::triangleArray).dot(Field::deviceAddress),
@@ -86,8 +86,8 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
         }
 
         if (info.data.deviceAddress == 0) {
-            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", device, info_loc.dot(Field::data).dot(Field::hostAddress),
-                             "is NULL.");
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", device,
+                             info_loc.dot(Field::data).dot(Field::deviceAddress), "is NULL.");
         } else if (!IsPointerAligned(info.data.deviceAddress, 256)) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::data).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256.",
