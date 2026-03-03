@@ -28,6 +28,7 @@
 #include <iostream>
 
 #include "generated/device_features.h"
+#include "utils/vk_api_utils.h"
 
 namespace gpuav {
 namespace spirv {
@@ -868,11 +869,18 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 new_inst->UpdateWord(1, id_swap_map[new_inst->Word(1)]);
                 new_inst->UpdateWord(2, link_function.id);
                 // We originally tried to use DontInline...
-                // - Most drivers don't actually support it
-                // - Fun nasty bugs with those that did (since no CTS is written to use it)
+                // - Most drivers don't actually support it (NVIDIA 553.31+ supports it)
                 // - There is zero way to truely check if it supported or not
                 // - We reworked our functions to be smaller because we have to assume it will be inlined
-                new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
+                //
+                // ... With all of that, we still "try" as it "should" be faster if it is not inlined
+                if (interface_.entry_point_stage & kShaderStageAllRayTracing) {
+                    // Found on NVIDIA there are nasty bugs/behavior using this in RTX stages
+                    // (clearly no CTS is written to use it)
+                    new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
+                } else {
+                    new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
+                }
                 new_inst->UpdateWord(4, function_type_id_map[new_inst->Word(4)]);
             } else if (opcode == spv::OpLabel) {
                 uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
