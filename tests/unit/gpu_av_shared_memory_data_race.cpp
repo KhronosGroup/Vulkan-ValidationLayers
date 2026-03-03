@@ -927,8 +927,8 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreCoopMatLoad) {
         shared float16_t arr[16*16];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
-            for (uint i = gl_LocalInvocationIndex; i < 16*16; i += gl_WorkGroupSize.x) {
-                arr[i] = float16_t(i);
+            if (gl_LocalInvocationIndex == 40) {
+                arr[17] = float16_t(40);
             }
             coopMatLoad(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
         }
@@ -947,15 +947,17 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatStoreLoad) {
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
 
         layout(local_size_x = 128) in;
         shared float16_t arr[16*16];
         coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
         void main() {
-            coopMatStore(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
-            float16_t sum = float16_t(0);
-            for (uint i = gl_LocalInvocationIndex; i < 16*16; i += gl_WorkGroupSize.x) {
-                sum += arr[i];
+            if (gl_SubgroupID == 0) {
+                coopMatStore(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+            }
+            if (gl_LocalInvocationIndex == 40) {
+                float16_t sum = arr[17];
             }
         }
     )glsl";
@@ -1010,8 +1012,8 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StoreCoopMatLoadWorkgroup) {
         shared float16_t arr[32*32];
         coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
         void main() {
-            for (uint i = gl_LocalInvocationIndex; i < 32*32; i += gl_WorkGroupSize.x) {
-                arr[i] = float16_t(i);
+            if (gl_LocalInvocationIndex == 40) {
+                arr[17] = float16_t(40);
             }
             coopMatLoad(mat, arr, 0, 32, gl_CooperativeMatrixLayoutRowMajor);
         }
@@ -1039,9 +1041,8 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, CoopMatStoreLoadWorkgroup) {
         coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
         void main() {
             coopMatStore(mat, arr, 0, 32, gl_CooperativeMatrixLayoutRowMajor);
-            float16_t sum = float16_t(0);
-            for (uint i = gl_LocalInvocationIndex; i < 32*32; i += gl_WorkGroupSize.x) {
-                sum += arr[i];
+            if (gl_LocalInvocationIndex == 40) {
+                float16_t sum = arr[17];
             }
         }
     )glsl";

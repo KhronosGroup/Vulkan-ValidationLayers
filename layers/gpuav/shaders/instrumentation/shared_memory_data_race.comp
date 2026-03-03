@@ -95,7 +95,7 @@ void do_load(const in uint start, const in uint idx, const in uint inst_offset, 
 
     uint ret = atomicLoad(shadow[start + idx], gl_ScopeDevice, 0, 0);
     if ((ret & (STORE_BIT | ATOMIC_BIT)) == 0 &&
-        ((ret & MULTI_LOAD_BIT) != 0 || ret == SENTINEL || ret == thread_id)) {
+        ((ret & MULTI_LOAD_BIT) != 0 || ret == thread_id)) {
         return;
     }
 
