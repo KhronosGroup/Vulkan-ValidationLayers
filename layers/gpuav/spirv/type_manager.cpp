@@ -394,6 +394,7 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
         case spv::BuiltInPrimitiveId:
         case spv::BuiltInInvocationId:
         case spv::BuiltInLocalInvocationIndex:
+        case spv::BuiltInSubgroupSize:
         case spv::BuiltInSubgroupLocalInvocationId: {
             const Type& uint_32 = GetTypeInt(32, false);
             return GetTypePointer(spv::StorageClassInput, uint_32);
@@ -580,6 +581,12 @@ const Constant& TypeManager::GetConstantUInt32(uint32_t value) {
         constant = &CreateConstantUInt32(value);
     }
     return *constant;
+}
+
+// Useful to canonicalize integer constants to uint32.
+uint32_t TypeManager::GetConstantUInt32FromId(uint32_t id) {
+    uint32_t value = FindConstantById(id)->GetValueUint32();
+    return GetConstantUInt32(value).Id();
 }
 
 // It is common to use uint32_t(0) as a default, so having it cached is helpful

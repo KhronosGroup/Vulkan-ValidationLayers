@@ -16,6 +16,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_helper.h"
 #include "generated/vk_function_pointers.h"
+#include "cooperative_matrix_helper.h"
 
 void GpuAVSharedMemoryDataRaceTest::InitSharedMemoryDataRace(uint32_t message_limit) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -29,13 +30,21 @@ void GpuAVSharedMemoryDataRaceTest::InitSharedMemoryDataRace(uint32_t message_li
 
 class PositiveGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
-    void TestHelper(const char* source, int source_type, spv_target_env env = SPV_ENV_VULKAN_1_2);
+    void TestHelper(const char *source, int source_type, spv_target_env env = SPV_ENV_VULKAN_1_2,
+                    VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR);
 };
 
-void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, spv_target_env env) {
+void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char *shader_source, int source_type, spv_target_env env,
+                                                   VkScopeKHR coopmat_scope) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace());
     if (source_type == SPV_SOURCE_SLANG) {
         RETURN_IF_SKIP(CheckSlangSupport());
+    }
+    if (coopmat_scope != VK_SCOPE_DEVICE_KHR) {
+        CooperativeMatrixHelper helper(*this);
+        if (!helper.HasValidProperty(coopmat_scope, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+            GTEST_SKIP() << "16x16 float16 Property not found";
+        }
     }
 
     CreateComputePipelineHelper pipe(*this);
@@ -497,4 +506,289 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, LongVectorArrayBarrier) {
     )glsl";
 
     TestHelper(shader_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, StoreBarrierCoopMatLoad) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+
+        layout(local_size_x = 128) in;
+        shared float16_t arr[16*16];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            for (uint i = gl_LocalInvocationIndex; i < 16*16; i += gl_WorkGroupSize.x) {
+                arr[i] = float16_t(i);
+            }
+            barrier();
+            coopMatLoad(mat, arr, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatStoreBarrierLoad) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared float16_t arr[32*32];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID % 2;
+                uint sy = gl_SubgroupID / 2;
+                coopMatStore(mat, arr, sx * 16 + sy * 32 * 16, 32, gl_CooperativeMatrixLayoutRowMajor);
+            }
+            barrier();
+            float16_t sum = float16_t(0);
+            for (uint i = gl_LocalInvocationIndex; i < 32*32; i += gl_WorkGroupSize.x) {
+                sum += arr[i];
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjoint) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared float16_t arr[32*32];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            // load/store disjoint quadrants
+            if (gl_SubgroupID < 2) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = gl_SubgroupID & 1;
+                coopMatStore(mat, arr, sx * 16 + sy * 32 * 16, 32, gl_CooperativeMatrixLayoutRowMajor);
+            } else if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = 1 - (gl_SubgroupID & 1);
+                coopMatLoad(mat, arr, sx * 16 + sy * 32 * 16, 32, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, StoreBarrierCoopMatLoadWorkgroup) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+
+        layout(local_size_x = 128) in;
+        shared float16_t arr[32*32];
+        coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
+        void main() {
+            for (uint i = gl_LocalInvocationIndex; i < 32*32; i += gl_WorkGroupSize.x) {
+                arr[i] = float16_t(i);
+            }
+            barrier();
+            coopMatLoad(mat, arr, 0, 32, gl_CooperativeMatrixLayoutRowMajor);
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_WORKGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatStoreBarrierLoadWorkgroup) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+
+        layout(local_size_x = 128) in;
+        shared float16_t arr[32*32];
+        coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> mat;
+        void main() {
+            coopMatStore(mat, arr, 0, 32, gl_CooperativeMatrixLayoutRowMajor);
+            barrier();
+            float16_t sum = float16_t(0);
+            for (uint i = gl_LocalInvocationIndex; i < 32*32; i += gl_WorkGroupSize.x) {
+                sum += arr[i];
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_WORKGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointVector) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared f16vec4 arr[32*32/4];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            // load/store disjoint quadrants
+            if (gl_SubgroupID < 2) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = gl_SubgroupID & 1;
+                coopMatStore(mat, arr, (sx * 16 + sy * 32 * 16)/4, 32/4, gl_CooperativeMatrixLayoutRowMajor);
+            } else if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = 1 - (gl_SubgroupID & 1);
+                coopMatLoad(mat, arr, (sx * 16 + sy * 32 * 16)/4, 32/4, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointFloat) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared float arr[32*32/2];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            // load/store disjoint quadrants
+            if (gl_SubgroupID < 2) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = gl_SubgroupID & 1;
+                coopMatStore(mat, arr, (sx * 16 + sy * 32 * 16)/2, 32/2, gl_CooperativeMatrixLayoutRowMajor);
+            } else if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = 1 - (gl_SubgroupID & 1);
+                coopMatLoad(mat, arr, (sx * 16 + sy * 32 * 16)/2, 32/2, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointVec4) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared vec4 arr[32*32/8];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            // load/store disjoint quadrants
+            if (gl_SubgroupID < 2) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = gl_SubgroupID & 1;
+                coopMatStore(mat, arr, (sx * 16 + sy * 32 * 16)/8, 32/8, gl_CooperativeMatrixLayoutRowMajor);
+            } else if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = 1 - (gl_SubgroupID & 1);
+                coopMatLoad(mat, arr, (sx * 16 + sy * 32 * 16)/8, 32/8, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointUint8) {
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 128) in;
+        shared uint8_t arr[32*32*2];
+        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> mat;
+        void main() {
+            // load/store disjoint quadrants
+            if (gl_SubgroupID < 2) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = gl_SubgroupID & 1;
+                coopMatStore(mat, arr, (sx * 16 + sy * 32 * 16)*2, 32*2, gl_CooperativeMatrixLayoutRowMajor);
+            } else if (gl_SubgroupID < 4) {
+                uint sx = gl_SubgroupID & 1;
+                uint sy = 1 - (gl_SubgroupID & 1);
+                coopMatLoad(mat, arr, (sx * 16 + sy * 32 * 16)*2, 32*2, gl_CooperativeMatrixLayoutRowMajor);
+            }
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, SPV_ENV_VULKAN_1_2, VK_SCOPE_SUBGROUP_KHR);
 }

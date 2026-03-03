@@ -30,11 +30,13 @@ const static OfflineModule kOfflineModule = {instrumentation_shared_memory_data_
                                              instrumentation_shared_memory_data_race_comp_size,
                                              UseErrorPayloadVariable | SharedMemoryDataRace};
 
-const static OfflineFunction kOfflineFunction[4] = {
+const static OfflineFunction kOfflineFunction[] = {
     {"init_shadow", instrumentation_shared_memory_data_race_comp_function_0_offset},
     {"do_store", instrumentation_shared_memory_data_race_comp_function_1_offset},
     {"do_load", instrumentation_shared_memory_data_race_comp_function_2_offset},
     {"do_atomic", instrumentation_shared_memory_data_race_comp_function_3_offset},
+    {"do_coopmat_load", instrumentation_shared_memory_data_race_comp_function_4_offset},
+    {"do_coopmat_store", instrumentation_shared_memory_data_race_comp_function_5_offset},
 };
 
 SharedMemoryDataRacePass::SharedMemoryDataRacePass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
@@ -58,7 +60,8 @@ const Instruction* SharedMemoryDataRacePass::FindInstructionGlobal(const Functio
     return nullptr;
 }
 
-void SharedMemoryDataRacePass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, BasicBlock& block, InstructionIt* inst_it,
+                                                  const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunctionId(meta);
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
@@ -75,10 +78,85 @@ void SharedMemoryDataRacePass::CreateFunctionCall(BasicBlock& block, Instruction
         for (uint32_t i = 0; i < meta.num_elements; ++i) {
             const uint32_t function_result = module_.TakeNextId();
             uint32_t start = type_manager_.GetConstantUInt32(meta.start + i).Id();
-            block.CreateInstruction(
-                spv::OpFunctionCall,
-                {void_type, function_result, function_def, start, meta.access_chain_idx_id, inst_position_id, variable_idx_id},
-                inst_it);
+
+            // Compute additional parameters for coopmat load/store
+            if (meta.function_idx == DO_COOPMAT_LOAD || meta.function_idx == DO_COOPMAT_STORE) {
+                bool store = meta.function_idx == DO_COOPMAT_STORE;
+                const Instruction& inst = *((*inst_it)->get());
+                // get coopmat type either from resulttype id or object id
+                const Type* coopmat_type;
+                if (store) {
+                    const uint32_t object_id = inst.Word(2);
+                    const Instruction* object_inst = FindInstructionGlobal(function, object_id);
+                    coopmat_type = type_manager_.FindTypeById(object_inst->TypeId());
+                } else {
+                    coopmat_type = type_manager_.FindTypeById(inst.TypeId());
+                }
+                const uint32_t scope_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(3));
+                uint32_t rows_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(4));
+                uint32_t cols_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(5));
+                const uint32_t memory_layout_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 3 : 4));
+                uint32_t stride_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 4 : 5));
+
+                uint32_t ptr_id = inst.Word(store ? 1 : 3);
+
+                // get type of pointee
+                auto ptr_inst = FindInstructionGlobal(function, ptr_id);
+                const Type* ptr_type = type_manager_.FindTypeById(ptr_inst->TypeId());
+                const Type* ptr_elem_type = type_manager_.FindChildType(*ptr_type, 0);
+                const Type* scalar_elem_type = ptr_elem_type;
+
+                const Type& uint32_type = type_manager_.GetTypeInt(32, false);
+
+                // if the pointer is to a vector type, scale stride_id by the vector size
+                if (ptr_elem_type->VectorSize()) {
+                    uint32_t vec_size = ptr_elem_type->VectorSize();
+
+                    uint32_t next_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpIMul,
+                                            {uint32_type.Id(), next_id, stride_id, type_manager_.GetConstantUInt32(vec_size).Id()},
+                                            inst_it);
+                    stride_id = next_id;
+
+                    scalar_elem_type = type_manager_.FindChildType(*ptr_elem_type, 0);
+                }
+
+                // If the size of the scalar element type doesn't match the component size,
+                // scale the rows or cols up or down to touch the correct number of elements
+                uint32_t access_size = type_manager_.TypeLength(*scalar_elem_type);
+                uint32_t coopmat_component_size =
+                    type_manager_.TypeLength(*type_manager_.FindTypeById(coopmat_type->inst_.Word(2)));
+                if (access_size != coopmat_component_size) {
+                    uint32_t memory_layout = type_manager_.FindConstantById(memory_layout_id)->GetValueUint32();
+                    uint32_t& rows_or_cols_id = memory_layout == spv::CooperativeMatrixLayoutRowMajorKHR ? cols_id : rows_id;
+                    if (access_size > coopmat_component_size) {
+                        uint32_t next_id = module_.TakeNextId();
+                        block.CreateInstruction(spv::OpUDiv,
+                                                {uint32_type.Id(), next_id, rows_or_cols_id,
+                                                 type_manager_.GetConstantUInt32(access_size / coopmat_component_size).Id()},
+                                                inst_it);
+                        rows_or_cols_id = next_id;
+                    } else {
+                        uint32_t next_id = module_.TakeNextId();
+                        block.CreateInstruction(spv::OpIMul,
+                                                {uint32_type.Id(), next_id, rows_or_cols_id,
+                                                 type_manager_.GetConstantUInt32(coopmat_component_size / access_size).Id()},
+                                                inst_it);
+                        rows_or_cols_id = next_id;
+                    }
+                }
+
+                block.CreateInstruction(
+                    spv::OpFunctionCall,
+                    {void_type, function_result, function_def, start, meta.access_chain_idx_id, inst_position_id, variable_idx_id,
+                     scope_id, rows_id, cols_id, memory_layout_id, stride_id, work_group_size_id_},
+                    inst_it);
+            } else {
+                block.CreateInstruction(
+                    spv::OpFunctionCall,
+                    {void_type, function_result, function_def, start, meta.access_chain_idx_id, inst_position_id, variable_idx_id},
+                    inst_it);
+            }
         }
 
         // Only need logging when we add non init_shadow call
@@ -90,11 +168,8 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
                                                        const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
-    if (!IsValueIn(opcode, {spv::OpLoad,        spv::OpStore,          spv::OpControlBarrier,   spv::OpAtomicLoad,
-                            spv::OpAtomicStore, spv::OpAtomicExchange, spv::OpAtomicIIncrement, spv::OpAtomicIDecrement,
-                            spv::OpAtomicIAdd,  spv::OpAtomicISub,     spv::OpAtomicSMin,       spv::OpAtomicUMin,
-                            spv::OpAtomicSMax,  spv::OpAtomicUMax,     spv::OpAtomicAnd,        spv::OpAtomicOr,
-                            spv::OpAtomicXor,   spv::OpAtomicFMinEXT,  spv::OpAtomicFMaxEXT,    spv::OpAtomicFAddEXT})) {
+    if (!AtomicOperation(opcode) && !IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpControlBarrier,
+                                                        spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
         return false;
     }
     meta.target_instruction = &inst;
@@ -113,7 +188,9 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         return true;
     }
 
-    uint32_t ptr_id = (opcode == spv::OpStore || opcode == spv::OpAtomicStore) ? inst.Word(1) : inst.Word(3);
+    uint32_t ptr_id = (opcode == spv::OpStore || opcode == spv::OpAtomicStore || opcode == spv::OpCooperativeMatrixStoreKHR)
+                          ? inst.Word(1)
+                          : inst.Word(3);
 
     std::vector<const Instruction*> access_chains;
     const Variable* variable = type_manager_.FindVariableById(ptr_id);
@@ -202,6 +279,14 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         case spv::OpStore:
             meta.function_idx = DO_STORE;
             break;
+        case spv::OpCooperativeMatrixLoadKHR:
+            meta.function_idx = DO_COOPMAT_LOAD;
+            meta.num_elements = 1;
+            break;
+        case spv::OpCooperativeMatrixStoreKHR:
+            meta.function_idx = DO_COOPMAT_STORE;
+            meta.num_elements = 1;
+            break;
         default:
             meta.function_idx = DO_ATOMIC;
             break;
@@ -252,6 +337,12 @@ uint32_t SharedMemoryDataRacePass::GetWorkgroupSize() {
 
 bool SharedMemoryDataRacePass::Instrument() {
     if (module_.interface_.entry_point_stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+        return false;
+    }
+
+    // relies on some subgroup functionality
+    const uint32_t spirv_version_1_3 = 0x00010300;
+    if (module_.header_.version < spirv_version_1_3) {
         return false;
     }
 
@@ -314,7 +405,7 @@ bool SharedMemoryDataRacePass::Instrument() {
                 meta.target_instruction = &*(inst_it->get());
                 meta.function_idx = INIT_SHADOW;
 
-                CreateFunctionCall(current_block, &inst_it, meta);
+                CreateFunctionCall(function, current_block, &inst_it, meta);
                 instrumentations_count_++;
             }
 
@@ -330,7 +421,7 @@ bool SharedMemoryDataRacePass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                CreateFunctionCall(current_block, &inst_it, meta);
+                CreateFunctionCall(function, current_block, &inst_it, meta);
             }
         }
     }

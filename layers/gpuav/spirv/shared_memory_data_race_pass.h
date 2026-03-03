@@ -47,7 +47,7 @@ class SharedMemoryDataRacePass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it, const Instruction& inst,
                                  InstructionMeta& meta);
-    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    void CreateFunctionCall(const Function& function, BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetWorkgroupSize();
 
@@ -61,7 +61,9 @@ class SharedMemoryDataRacePass : public Pass {
         DO_STORE = 1,
         DO_LOAD = 2,
         DO_ATOMIC = 3,
-        FUNC_COUNT = 4,
+        DO_COOPMAT_LOAD = 4,
+        DO_COOPMAT_STORE = 5,
+        FUNC_COUNT = 6,
     };
     uint32_t link_function_id_[FUNC_COUNT]{};
     // Map shared memory variables to start offset in shadow memory
