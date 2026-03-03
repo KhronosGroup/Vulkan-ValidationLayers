@@ -340,6 +340,12 @@ bool SharedMemoryDataRacePass::Instrument() {
         return false;
     }
 
+    // relies on some subgroup functionality
+    const uint32_t spirv_version_1_3 = 0x00010300;
+    if (module_.header_.version < spirv_version_1_3) {
+        return false;
+    }
+
     if (module_.HasCapability(spv::CapabilityWorkgroupMemoryExplicitLayoutKHR)) {
         return false;
     }
