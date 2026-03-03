@@ -1519,3 +1519,104 @@ TEST_F(PositiveGpuAVRayTracing, IndexBufferUpdate) {
         m_default_queue->SubmitAndWait(m_command_buffer);
     }
 }
+
+TEST_F(PositiveGpuAVRayTracing, VertexBufferUpdateStridedVertices) {
+    TEST_DESCRIPTION("In an AS build update, use a different vertex buffer, but having the same data");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    struct Vertex {
+        float x, y, z;
+    };
+    const std::array<Vertex, 9> vertices = {{
+        {99.0f, 2.0f, 3.0f},
+        {NAN, 5.0f, 6.0f},
+        {7.0f, 8.0f, 9.0f},
+
+        {10.0f, 11.0f, 12.0f},
+        {13.0, 14.0f, 15.0f},
+        {16.0f, 17.0f, 18.0f},
+
+        {19.0f, 20.0f, 21.0f},
+        {NAN, 22.0f, 23.0f},
+        {24.0f, 25.0f, 26.0f},
+    }};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    const uint32_t vertex_stride = 2 * 12;
+
+    vkt::Buffer vertex_buffer(*m_device, vertex_stride * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto vertex_buffer_ptr = static_cast<uint8_t*>(vertex_buffer.Memory().Map());
+
+    for (uint32_t vertex_i = 0; vertex_i < vertices.size(); ++vertex_i) {
+        std::memcpy(vertex_buffer_ptr + vertex_i * vertex_stride, vertices.data() + vertex_i, sizeof(Vertex));
+    }
+
+    vertex_buffer.Memory().Unmap();
+
+    vkt::as::GeometryKHR geom;
+    geom.SetType(vkt::as::GeometryKHR::Type::Triangle);
+    geom.SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+    geom.SetPrimitiveCount(3);
+    geom.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() - 1), VK_FORMAT_R32G32B32_SFLOAT,
+                                        vertex_stride);
+    geom.SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+
+    vkt::as::BuildGeometryInfoKHR cube_blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geom));
+    cube_blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    m_command_buffer.Begin();
+    cube_blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    cube_blas.SetSrcAS(cube_blas.GetDstAS());
+    cube_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    // Vertex buffer 3 identical to vertex_buffer, but starting at an offset
+    {
+        uint32_t vertex_buffer_3_byte_offset =
+            4 * vkuFormatTexelBlockSize(cube_blas.GetGeometries()[0].GetVkObj().geometry.triangles.vertexFormat);
+        vertex_buffer_3_byte_offset = 0;
+        vkt::Buffer vertex_buffer_3(*m_device, vertex_stride * vertices.size() + vertex_buffer_3_byte_offset, buffer_usage,
+                                    kHostVisibleMemProps, &alloc_flags);
+        auto vertex_buffer_3_ptr = static_cast<uint8_t*>(vertex_buffer_3.Memory().Map());
+        for (uint32_t vertex_i = 0; vertex_i < vertices.size(); ++vertex_i) {
+            std::memcpy(vertex_buffer_3_ptr + vertex_buffer_3_byte_offset + vertex_i * vertex_stride, vertices.data() + vertex_i,
+                        sizeof(Vertex));
+        }
+
+        vertex_buffer_3.Memory().Unmap();
+
+        cube_blas.GetGeometries()[0].SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer_3), uint32_t(vertices.size() - 1),
+                                                                    VK_FORMAT_R32G32B32_SFLOAT, vertex_stride);
+        auto build_range_infos = cube_blas.GetBuildRangeInfosFromGeometries();
+        build_range_infos[0].primitiveOffset = vertex_buffer_3_byte_offset;
+        cube_blas.SetBuildRanges(build_range_infos);
+
+        m_command_buffer.Begin();
+        cube_blas.BuildCmdBuffer(m_command_buffer);
+        m_command_buffer.End();
+
+        m_default_queue->SubmitAndWait(m_command_buffer);
+    }
+}

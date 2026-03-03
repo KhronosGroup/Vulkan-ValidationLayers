@@ -146,6 +146,11 @@ GeometryKHR &GeometryKHR::SetTrianglesVertexFormat(VkFormat vertex_format) {
     return *this;
 }
 
+GeometryKHR &GeometryKHR::SetTrianglesVertexStride(uint32_t vertex_stride) {
+    vk_obj_.geometry.triangles.vertexStride = vertex_stride;
+    return *this;
+}
+
 GeometryKHR &GeometryKHR::SetTrianglesMaxVertex(uint32_t max_vertex) {
     vk_obj_.geometry.triangles.maxVertex = max_vertex;
     return *this;

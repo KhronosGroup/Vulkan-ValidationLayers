@@ -33,6 +33,7 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 layout(buffer_reference, scalar) buffer ArrayU8 { uint8_t array[]; };
 layout(buffer_reference, scalar) buffer ArrayU16 { uint16_t array[]; };
 layout(buffer_reference, scalar) buffer ArrayU32 { uint array[]; };
+layout(buffer_reference, scalar) buffer ArrayF32 { float array[]; };
 
 // From VkIndexType
 const uint VK_INDEX_TYPE_UINT16 = 0;
@@ -40,32 +41,50 @@ const uint VK_INDEX_TYPE_UINT32 = 1;
 const uint VK_INDEX_TYPE_UINT8 = 1000265000;
 const uint VK_INDEX_TYPE_NONE_KHR = 1000165000;
 
-uint LoadIndex(uint i) {
-    if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.address + pc.address_byte_offset);
+// From VkFormat
+const uint VK_FORMAT_R32G32B32_SFLOAT = 106;
+
+uint LoadIndex(uint64_t address, uint index_type, uint primitive_offset, uint i) {
+    if (pc.index_type == VK_INDEX_TYPE_NONE_KHR) {
+        return i;
+    } else if (index_type == VK_INDEX_TYPE_UINT16) {
+        ArrayU16 array_u16 = ArrayU16(address + primitive_offset);
         return uint(array_u16.array[i]);
-    } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.address + pc.address_byte_offset);
+    } else if (index_type == VK_INDEX_TYPE_UINT32) {
+        ArrayU32 array_u32 = ArrayU32(address + primitive_offset);
         return array_u32.array[i];
-    } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.address + pc.address_byte_offset);
+    } else if (index_type == VK_INDEX_TYPE_UINT8) {
+        ArrayU8 array_u8 = ArrayU8(address + primitive_offset);
         return uint(array_u8.array[i]);
     } else {
         return 0;
     }
 }
 
-void StoreIndex(uint i, uint value) {
-    if (pc.index_type == VK_INDEX_TYPE_UINT16) {
-        ArrayU16 array_u16 = ArrayU16(pc.address + pc.address_byte_offset);
+void StoreIndex(uint64_t address, uint i, uint index_type, uint primitive_offset, uint value) {
+    if (index_type == VK_INDEX_TYPE_UINT16) {
+        ArrayU16 array_u16 = ArrayU16(address + primitive_offset);
         array_u16.array[i] = uint16_t(value);
-    } else if (pc.index_type == VK_INDEX_TYPE_UINT32) {
-        ArrayU32 array_u32 = ArrayU32(pc.address + pc.address_byte_offset);
+    } else if (index_type == VK_INDEX_TYPE_UINT32) {
+        ArrayU32 array_u32 = ArrayU32(address + primitive_offset);
         array_u32.array[i] = value;
-    } else if (pc.index_type == VK_INDEX_TYPE_UINT8) {
-        ArrayU8 array_u8 = ArrayU8(pc.address + pc.address_byte_offset);
+    } else if (index_type == VK_INDEX_TYPE_UINT8) {
+        ArrayU8 array_u8 = ArrayU8(address + primitive_offset);
         array_u8.array[i] = uint8_t(value);
     }
+}
+
+// Reference:
+// https://docs.vulkan.org/refpages/latest/refpages/source/VkAccelerationStructureBuildRangeInfoKHR.html#_description
+float LoadVertexX(uint64_t vertices_addr, uint64_t stride, uint index, uint format) {
+    float vertex_x = 0;
+
+    if (format == VK_FORMAT_R32G32B32_SFLOAT) {
+        // #ARNO_TODO check stride computations
+        ArrayF32 array_f32 = ArrayF32(vertices_addr + index * stride);
+        vertex_x = array_f32.array[0];
+    }
+    return vertex_x;
 }
 
 struct VkAabbPositionsKHR {
@@ -88,12 +107,45 @@ void main() {
             return;
         }
 
-        const uint fetched_index = LoadIndex(gid);
+        const uint64_t indices_addr = pc.address;
+        const uint fetched_index = LoadIndex(indices_addr, pc.index_type, pc.primitive_offset, gid);
         if (pc.max_vertex < (pc.first_vertex + fetched_index)) {
             // In practice an invalid index does not cause a device loss, so don't bother changing its value.
             // Should someone add this back, a write barrier needs to be added on the CPU side.
             // StoreIndex(gid, 0);
-            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex, pc.error_info_i, gid, fetched_index, 0);
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex,
+                           pc.error_info_i,
+                           gid,
+                           fetched_index,
+                           0);
+        }
+    } else if (pc.validation_mode == kBLASValidationMode_active_triangles) {
+        if (gid >= (3 * pc.primitive_count)) {
+            return;
+        }
+
+        const uint64_t indices_addr = pc.address;
+        const uint fetched_index = LoadIndex(indices_addr, pc.index_type, pc.primitive_offset, gid);
+
+        uint64_t updated_vertices_addr = pc.address_2 + pc.updated_stride * pc.first_vertex;
+        if (pc.index_type == VK_INDEX_TYPE_NONE_KHR) {
+            updated_vertices_addr += pc.primitive_offset;
+        }
+        const float updated_vertex_x = LoadVertexX(updated_vertices_addr, pc.updated_stride, fetched_index, pc.vertex_format);
+        const bool is_updated_vertex_nan = isnan(updated_vertex_x);
+
+        const uint64_t original_vertices_addr = pc.address_3;
+        const float original_vertex_x = LoadVertexX(original_vertices_addr, pc.original_stride, fetched_index, pc.vertex_format);
+        const bool is_original_vertex_nan = isnan(original_vertex_x);
+
+        if (is_updated_vertex_nan != is_original_vertex_nan) {
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_VertexBufferActiveStatusUpdated,
+                           pc.error_info_i,
+                           gid,
+                           fetched_index,
+                           uint(is_original_vertex_nan));
         }
     } else if (pc.validation_mode == kBLASValidationMode_aabbs) {
         if (gid >= pc.primitive_count) {
@@ -101,23 +153,38 @@ void main() {
         }
 
         const uint64_t aabb_i = gid;
-        AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.address_byte_offset) + aabb_i * pc.stride);
+        AabbsPtr aabb = AabbsPtr(pc.address + uint64_t(pc.primitive_offset) + aabb_i * pc.updated_stride);
         if (aabb.coords.minX > aabb.coords.maxX) {
-            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minX), floatBitsToUint(aabb.coords.maxX));
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X,
+                           pc.error_info_i,
+                           gid,
+                           floatBitsToUint(aabb.coords.minX),
+                           floatBitsToUint(aabb.coords.maxX));
         }
 
         if (aabb.coords.minY > aabb.coords.maxY) {
-            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minY), floatBitsToUint(aabb.coords.maxY));
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y,
+                           pc.error_info_i,
+                           gid,
+                           floatBitsToUint(aabb.coords.minY),
+                           floatBitsToUint(aabb.coords.maxY));
         }
         if (aabb.coords.minZ > aabb.coords.maxZ) {
-            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z, pc.error_info_i, gid, floatBitsToUint(aabb.coords.minZ), floatBitsToUint(aabb.coords.maxZ));
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z,
+                           pc.error_info_i,
+                           gid,
+                           floatBitsToUint(aabb.coords.minZ),
+                           floatBitsToUint(aabb.coords.maxZ));
         }
     } else if (pc.validation_mode == kBLASValidationMode_transform_matrix) {
         if (gid > 0) {
             return;
         }
 
-        TransformPtr transform = TransformPtr(pc.address + uint64_t(pc.address_byte_offset));
+        TransformPtr transform = TransformPtr(pc.address + uint64_t(pc.primitive_offset));
         const mat3 transform3x3 = mat3(
             transform.mat[0].xyz,
             transform.mat[1].xyz,
@@ -125,7 +192,12 @@ void main() {
         );
         const float det = determinant(transform3x3);
         if (abs(det) < 1e-6) {
-            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures, kErrorSubCode_PreBuildAccelerationStructures_Transform, pc.error_info_i, gid, 0, 0);
+            GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                           kErrorSubCode_PreBuildAccelerationStructures_Transform,
+                           pc.error_info_i,
+                           gid,
+                           0,
+                           0);
         }
     }
 }

@@ -973,11 +973,11 @@
                                     ]
                                 },
                                 {
-                                    "key": "gpuav_ray_tracing_index_buffer_consistency",
-                                    "label": "Ray tracing index buffer consistency",
+                                    "key": "gpuav_ray_tracing_buffers_consistency",
+                                    "label": "Ray tracing buffers consistency",
                                     "type": "BOOL",
                                     "default": false,
-                                    "description": "Validate that between a BLAS build and its update, triangle geometries using index buffer keep its content identical (VUID 03768). Warning: a record of index buffers will be maintained in device local memory, so validation can be GPU memory heavy.",
+                                    "description": "Validate that between a BLAS build and its update, triangle geometries using index buffer keep its content identical (VUID 03768), and that active/inactive primitives do not change this status (VUIDs 03663 and 03664). Warning: a record of vertex/index buffers will be maintained in device local memory, so validation can be GPU memory heavy.",
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [

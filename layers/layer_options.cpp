@@ -209,7 +209,7 @@ const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
 const char *VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT = "gpuav_copy_memory_indirect";
 const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
 const char *VK_LAYER_GPUAV_ACCELERATION_STRUCTURES_BUILDS = "gpuav_acceleration_structures_builds";
-const char *VK_LAYER_GPUAV_RAY_TRACING_INDEX_BUFFER_CONSISTENCY = "gpuav_ray_tracing_index_buffer_consistency";
+const char *VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY = "gpuav_ray_tracing_buffers_consistency";
 
 // A temporary workaround until we get proper Descriptor Buffer support
 const char *VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE = "gpuav_descriptor_buffer_override";
@@ -1072,9 +1072,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                 gpuav_settings.validate_acceleration_structures_builds);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_INDEX_BUFFER_CONSISTENCY)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_INDEX_BUFFER_CONSISTENCY,
-                                gpuav_settings.ray_tracing_index_buffer_consistency);
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_RAY_TRACING_BUFFERS_CONSISTENCY,
+                                gpuav_settings.ray_tracing_buffers_consistency);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE)) {

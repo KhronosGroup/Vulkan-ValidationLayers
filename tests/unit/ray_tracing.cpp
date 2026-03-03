@@ -2880,9 +2880,16 @@ TEST_F(NegativeRayTracing, TrianglesFormatMissingFeature) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
+    for (uint32_t i = 0; i < 185; ++i) {
+        const VkFormat f = VkFormat(i);
+        if (BufferFormatAndFeaturesSupported(Gpu(), f, VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+            printf("Format %s\n", string_VkFormat(f));
+        }
+    }
+
     const VkFormat triangles_vertex_format = VK_FORMAT_R32_UINT;
-    if (!BufferFormatAndFeaturesSupported(Gpu(), triangles_vertex_format,
-                                          VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+    if (BufferFormatAndFeaturesSupported(Gpu(), triangles_vertex_format,
+                                         VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
         GTEST_SKIP()
             << "Hard coded vertex format has VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR, skipping test.";
     }
