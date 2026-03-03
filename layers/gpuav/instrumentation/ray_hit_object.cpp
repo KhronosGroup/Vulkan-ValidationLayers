@@ -42,20 +42,25 @@ void RegisterRayHitObjectValidation(Validator &gpuav, CommandBufferSubState &cb)
             std::ostringstream strm;
 
             const uint32_t error_sub_code = GetSubError(error_record);
-            const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_1];
+            const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_2];
 
             switch (error_sub_code) {
                 case kErrorSubCode_RayHitObject_NegativeMin: {
-                    // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values
-                    strm << string_SpvOpcode(opcode) << " operand Ray Tmin value is negative. ";
+                    // Should use std::bit_cast but requires c++20
+                    const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    strm << string_SpvOpcode(opcode) << " operand Ray Tmin value (" << tmin << ") is negative. ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpHitObjectTraceRayEXT-11879";
                 } break;
                 case kErrorSubCode_RayHitObject_NegativeMax: {
-                    strm << string_SpvOpcode(opcode) << " operand Ray Tmax value is negative. ";
+                    const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    strm << string_SpvOpcode(opcode) << " operand Ray Tmax value (" << tmax << ") is negative. ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpHitObjectTraceRayEXT-11879";
                 } break;
                 case kErrorSubCode_RayHitObject_MinMax: {
-                    strm << string_SpvOpcode(opcode) << " operand Ray Tmax is less than RayTmin. ";
+                    const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_1);
+                    strm << string_SpvOpcode(opcode) << " operand Ray Tmax (" << tmax << ") is less than Ray Tmin (" << tmin
+                         << "). ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpHitObjectTraceRayEXT-11880";
                 } break;
                 case kErrorSubCode_RayHitObject_MinNaN: {

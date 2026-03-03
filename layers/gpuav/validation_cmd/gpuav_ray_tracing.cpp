@@ -1129,6 +1129,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X:
             case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y:
             case kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z: {
+                // Should use std::bit_cast but requires c++20
                 const float min = *(float*)(error_record + kValCmd_ErrorPayloadDword_2);
                 const float max = *(float*)(error_record + kValCmd_ErrorPayloadDword_3);
                 vvl::Field min_field{};

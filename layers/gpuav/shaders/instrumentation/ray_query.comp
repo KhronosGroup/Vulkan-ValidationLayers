@@ -25,6 +25,7 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
 {
     uint error = 0u;
     uint param_0 = 0u;
+    uint param_1 = 0u;
 
     if (isnan(ray_tmin)) {
         error = kErrorSubCode_RayQuery_MinNaN;
@@ -40,10 +41,14 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
         error = kErrorSubCode_RayQuery_DirectionFinite;
     } else if (ray_tmin < 0.0f) {
         error = kErrorSubCode_RayQuery_NegativeMin;
+        param_0 = floatBitsToUint(ray_tmin);
     } else if (ray_tmax < 0.0f) {
         error = kErrorSubCode_RayQuery_NegativeMax;
+        param_0 = floatBitsToUint(ray_tmax);
     } else if (ray_tmax < ray_tmin) {
         error = kErrorSubCode_RayQuery_MinMax;
+        param_0 = floatBitsToUint(ray_tmin);
+        param_1 = floatBitsToUint(ray_tmax);
     } else {
         // From SPIRV-Headers
         const uint OpaqueKHR = 0x00000001;
@@ -76,7 +81,7 @@ bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstRayQuery << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             param_0,
-                            0,
+                            param_1,
                             0
                         );
         return false;

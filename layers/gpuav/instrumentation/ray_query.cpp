@@ -44,16 +44,20 @@ void RegisterRayQueryValidation(Validator &gpuav, CommandBufferSubState &cb) {
 
             switch (error_sub_code) {
                 case kErrorSubCode_RayQuery_NegativeMin: {
-                    // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values
-                    strm << "OpRayQueryInitializeKHR operand Ray Tmin value is negative. ";
+                    // Should use std::bit_cast but requires c++20
+                    const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    strm << "OpRayQueryInitializeKHR operand Ray Tmin value (" << tmin << ") is negative. ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
                 } break;
                 case kErrorSubCode_RayQuery_NegativeMax: {
-                    strm << "OpRayQueryInitializeKHR operand Ray Tmax value is negative. ";
+                    const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    strm << "OpRayQueryInitializeKHR operand Ray Tmax value (" << tmax << ") is negative. ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06349";
                 } break;
                 case kErrorSubCode_RayQuery_MinMax: {
-                    strm << "OpRayQueryInitializeKHR operand Ray Tmax is less than RayTmin. ";
+                    const float tmin = *(float*)(error_record + kInst_LogError_ParameterOffset_0);
+                    const float tmax = *(float*)(error_record + kInst_LogError_ParameterOffset_1);
+                    strm << "OpRayQueryInitializeKHR operand Ray Tmax (" << tmax << ") is less than Ray Tmin (" << tmin << "). ";
                     out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06350";
                 } break;
                 case kErrorSubCode_RayQuery_MinNaN: {
