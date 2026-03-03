@@ -360,6 +360,8 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     const auto &error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    // VU was removed in 1.4.344
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4725
     skip |= context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount),
                                             create_info_loc.dot(Field::ppEnabledLayerNames), pCreateInfo->enabledLayerCount,
                                             pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,

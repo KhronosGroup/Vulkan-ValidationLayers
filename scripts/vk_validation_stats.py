@@ -65,6 +65,7 @@ class ValidationSource:
         self.explicit_vuids = set()
         self.implicit_vuids = set()
         self.all_vuids = set()
+        self.action_set = set()
 
     def dedup(self):
         unique_explicit_vuids = {}
@@ -73,6 +74,14 @@ class ValidationSource:
             unique_explicit_vuids[key] = item
 
         self.explicit_vuids = set(list(unique_explicit_vuids.values()))
+        self.all_vuids = self.explicit_vuids | self.implicit_vuids
+
+    # https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/11781
+    def action_dedup(self, spec_set):
+        target_numbers = {int(num) for num in self.action_set}
+        for vuid in spec_set:
+            if int(vuid[-5:]) in target_numbers:
+                self.explicit_vuids.add(vuid)
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
 
     def parse(self, spirv_val):
@@ -95,6 +104,11 @@ class ValidationSource:
                     if prepend is not None:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
                         prepend = None
+
+                    # Our hacked way to detect "common" draw/dispatch/traceRay VUIDs
+                    if sf.endswith('drawdispatch_vuids.cpp') and '###' in line:
+                        self.action_set.add(line[-5:])
+
                     if any(prefix in line for prefix in vuid_prefixes):
                         # Replace the '(' of lines containing validation helper functions with ' ' to make them easier to parse
                         line = line.replace("(", " ")
@@ -239,7 +253,10 @@ class Consistency:
         self.tests = all_tests
         # don't report
         self.discard = [
-            'VUID-PrimitiveTriangleIndicesEXT-' # Currently a bug with clang-format in spirv-tools
+            # Currently a bug with clang-format in spirv-tools
+            'VUID-',
+            'VUID-PrimitiveTriangleIndicesEXT-',
+            'VUID-HitTriangleVertexPositionsKHR-',
         ]
 
     # Report undefined VUIDs in source code
@@ -530,6 +547,7 @@ def main(argv):
     val_source.parse(spirv_val)
     if remove_duplicates:
         val_source.dedup()
+    val_source.action_dedup(val_json.explicit_vuids)
     exp_checks = len(val_source.explicit_vuids)
     imp_checks = len(val_source.implicit_vuids)
     all_checks = exp_checks + imp_checks

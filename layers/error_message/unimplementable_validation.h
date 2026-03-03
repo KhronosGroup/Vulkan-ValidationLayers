@@ -676,11 +676,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkVideoEncodeAV1SessionParametersCreateInfoKHR-pStdDecoderModelInfo-parameter",
     "VUID-VkVideoEncodeAV1SessionParametersCreateInfoKHR-pStdOperatingPoints-parameter",
 
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11382
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4615
-    "VUID-VkVideoBeginCodingInfoKHR-videoSessionParameters-parent",
-    "VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-parent",
-
     // Acceleration structure replay related,
     // but VVL has no way of tracking needed info (typically stored offline)
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488"
