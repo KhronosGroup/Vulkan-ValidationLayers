@@ -78,8 +78,9 @@ bool Device::ValidateExternalFenceHandleType(VkFence fence, const char* vuid, co
     return skip;
 }
 
-static constexpr VkExternalSemaphoreHandleTypeFlags kSemFdHandleTypes =
-    VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+static constexpr VkExternalSemaphoreHandleTypeFlags kSemFdHandleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT |
+                                                                        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT |
+                                                                        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT;
 
 bool Device::manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                      const Context& context) const {

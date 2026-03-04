@@ -358,6 +358,8 @@ struct DeviceFeatures {
     bool externalMemoryRDMA;
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     bool screenBufferImport;
+    // VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT
+    bool externalSemaphoreDrmSyncobj;
     // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
     bool deviceFault;
     // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR

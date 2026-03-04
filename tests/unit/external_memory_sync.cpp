@@ -1460,7 +1460,8 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
-    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    exportable_types &= ~VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT;
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -1478,6 +1479,110 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     VkSemaphore semaphore = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
     vk::CreateSemaphore(device(), &create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, SyncobjImportWithoutFeature) {
+    TEST_DESCRIPTION("Import a syncobj without enabling externalSemaphoreDrmSyncobj");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    // AddRequiredFeature(vkt::Feature::externalSemaphoreDrmSyncobj);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto importable_types =
+        FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT);
+    if (!(importable_types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+        GTEST_SKIP() << "Device does not support importing syncobjs";
+    }
+
+    vkt::Semaphore semaphore = vkt::Semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_errorMonitor->SetDesiredError("VUID-VkImportSemaphoreFdInfoKHR-handleType-XXXXX1");
+    semaphore.ImportHandle(-1, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, SyncobjImportIntoBinary) {
+    TEST_DESCRIPTION("Import a syncobj into a binary semaphore");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::externalSemaphoreDrmSyncobj);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto importable_types =
+        FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT);
+    if (!(importable_types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+        GTEST_SKIP() << "Device does not support importing syncobjs";
+    }
+
+    vkt::Semaphore semaphore = vkt::Semaphore(*m_device);
+    m_errorMonitor->SetDesiredError("VUID-VkImportSemaphoreFdInfoKHR-handleType-XXXXX2");
+    semaphore.ImportHandle(-1, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, SyncobjExportWithoutFeature) {
+    TEST_DESCRIPTION("Export a syncobj without enabling externalSemaphoreDrmSyncobj");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    // AddRequiredFeature(vkt::Feature::externalSemaphoreDrmSyncobj);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto exportable_types =
+        FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    if (!(exportable_types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+        GTEST_SKIP() << "Device does not support exporting syncobjs";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT;
+    VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper(&export_info);
+    type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&type_info);
+
+    // The driver might or might not report this type as exportable without the feature
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
+    m_errorMonitor->SetDesiredError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX3");
+    vkt::Semaphore semaphore = vkt::Semaphore(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, SyncobjExportFromBinary) {
+    TEST_DESCRIPTION("Export a syncobj from a binary semaphore");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::externalSemaphoreDrmSyncobj);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto exportable_types =
+        FindSupportedExternalSemaphoreHandleTypes(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    if (!(exportable_types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+        GTEST_SKIP() << "Device does not support exporting syncobjs";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
+
+    // The driver might or might not report this type as exportable from binary semaphores
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
+    m_errorMonitor->SetDesiredError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX4");
+    vkt::Semaphore semaphore = vkt::Semaphore(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
 

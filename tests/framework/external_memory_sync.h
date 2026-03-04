@@ -26,6 +26,8 @@ VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu
 
 VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalDevice gpu,
                                                                      VkExternalFenceFeatureFlags requested_features);
+VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu, VkSemaphoreType type,
+                                                                             VkExternalSemaphoreFeatureFlags requested_features);
 VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
                                                                              VkExternalSemaphoreFeatureFlags requested_features);
 

@@ -102,12 +102,14 @@ VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalD
     return supported_types;
 }
 
-VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
+VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu, VkSemaphoreType type,
                                                                              VkExternalSemaphoreFeatureFlags requested_features) {
     VkExternalSemaphoreHandleTypeFlags supported_types = 0;
     IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(
         AllVkExternalSemaphoreHandleTypeFlagBits, [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper();
+            VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper();
+            type_info.semaphoreType = type;
+            VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper(&type_info);
             external_info.handleType = flag;
             VkExternalSemaphoreProperties external_properties = vku::InitStructHelper();
             vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &external_info, &external_properties);
@@ -116,6 +118,11 @@ VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkP
             }
         });
     return supported_types;
+}
+
+VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
+                                                                             VkExternalSemaphoreFeatureFlags requested_features) {
+    return FindSupportedExternalSemaphoreHandleTypes(gpu, VK_SEMAPHORE_TYPE_BINARY, requested_features);
 }
 
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,

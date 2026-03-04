@@ -758,6 +758,19 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
                              string_VkExternalSemaphoreHandleTypeFlags(sem_export_info->handleTypes).c_str(),
                              string_VkExternalSemaphoreHandleTypeFlags(external_properties.compatibleHandleTypes).c_str());
         }
+        if ((sem_export_info->handleTypes & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT) != 0) {
+            if (!enabled_features.externalSemaphoreDrmSyncobj) {
+                skip |= LogError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX3", device,
+                                 create_info_loc.pNext(Struct::VkExportSemaphoreCreateInfo, Field::handleTypes),
+                                 "contains VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT, but externalSemaphoreDrmSyncobj "
+                                 "feature was not enabled.");
+            }
+            if (semaphoreType != VK_SEMAPHORE_TYPE_TIMELINE) {
+                skip |= LogError("VUID-VkExportSemaphoreCreateInfo-handleTypes-XXXXX4", device,
+                                 create_info_loc.pNext(Struct::VkExportSemaphoreCreateInfo, Field::handleTypes),
+                                 "semaphoreType is %s.", string_VkSemaphoreType(semaphoreType));
+            }
+        }
     }
 
     return skip;

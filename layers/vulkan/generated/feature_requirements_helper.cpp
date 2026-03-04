@@ -2983,6 +2983,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
         }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+        case Feature::externalSemaphoreDrmSyncobj: {
+            auto vk_struct = const_cast<VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->externalSemaphoreDrmSyncobj,
+                    "VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT::externalSemaphoreDrmSyncobj"};
+        }
+
         case Feature::deviceFault: {
             auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(*inout_pnext_chain));

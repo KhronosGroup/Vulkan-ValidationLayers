@@ -1370,6 +1370,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 break;
             }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_FEATURES_EXT: {
+                VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT*>(current);
+                if (enabling->externalSemaphoreDrmSyncobj && !supported.externalSemaphoreDrmSyncobj) {
+                    ss << "VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT::externalSemaphoreDrmSyncobj is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT: {
                 VkPhysicalDeviceFaultFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

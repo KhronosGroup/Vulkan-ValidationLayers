@@ -708,3 +708,33 @@ TEST_F(PositiveExternalMemorySync, BinarySyncDependsOnExternalTimelineSignal) {
     m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
     m_device->Wait();
 }
+
+TEST_F(PositiveExternalMemorySync, SyncobjExportImport) {
+    TEST_DESCRIPTION("Export/import a syncobj");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_SEMAPHORE_DRM_SYNCOBJ_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::externalSemaphoreDrmSyncobj);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    const auto types = FindSupportedExternalSemaphoreHandleTypes(
+        Gpu(), VK_SEMAPHORE_TYPE_TIMELINE,
+        VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT);
+    if (!(types & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+        GTEST_SKIP() << "Device does not support exporting/importing syncobjs";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT;
+    VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper(&export_info);
+    type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&type_info);
+
+    vkt::Semaphore semaphore = vkt::Semaphore(*m_device, create_info);
+    int handle;
+    semaphore.ExportHandle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT);
+    semaphore.ImportHandle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT);
+}
