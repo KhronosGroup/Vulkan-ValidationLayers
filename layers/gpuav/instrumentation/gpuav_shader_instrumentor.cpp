@@ -1830,6 +1830,7 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
         } break;
         case glsl::kExecutionModel_Fragment: {
             // Should use std::bit_cast but requires c++20
+            // need memcpy or -Wstrict-aliasing will yell
             float x_coord;
             float y_coord;
             std::memcpy(&x_coord, &shader_info.stage_info_0, sizeof(float));

@@ -38,6 +38,7 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
 {
     uint error = 0u;
     uint param_0 = 0u;
+    uint param_1 = 0u;
 
     const bool is_motion_opcode = (opcode_type == OpHitObjectTraceRayMotionEXT || opcode_type == OpHitObjectTraceMotionReorderExecuteEXT);
 
@@ -57,10 +58,14 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
         error = kErrorSubCode_RayHitObject_DirectionFinite;
     } else if (ray_tmin < 0.0f) {
         error = kErrorSubCode_RayHitObject_NegativeMin;
+        param_0 = floatBitsToUint(ray_tmin);
     } else if (ray_tmax < 0.0f) {
         error = kErrorSubCode_RayHitObject_NegativeMax;
+        param_0 = floatBitsToUint(ray_tmax);
     } else if (ray_tmax < ray_tmin) {
         error = kErrorSubCode_RayHitObject_MinMax;
+        param_0 = floatBitsToUint(ray_tmin);
+        param_1 = floatBitsToUint(ray_tmax);
     } else {
         // From SPIRV-Headers
         const uint OpaqueKHR = 0x00000001;
@@ -105,8 +110,8 @@ bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const u
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstRayHitObject << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                             param_0,
-                            opcode_type,
-                            0
+                            param_1,
+                            opcode_type
                         );
         return false;
     }

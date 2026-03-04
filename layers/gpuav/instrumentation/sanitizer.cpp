@@ -83,11 +83,9 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                 case kErrorSubCode_Sanitizer_Pow: {
                     // Pow is only valid with a scalar/vector of 16/32-bit float
                     const uint32_t vector_size = error_record[kInst_LogError_ParameterOffset_0];
-                    // Casting produces artifacts in float value, need to memcpy
-                    float x_value = 0.0f;
-                    float y_value = 0.0f;
-                    memcpy(&x_value, &error_record[kInst_LogError_ParameterOffset_1], sizeof(float));
-                    memcpy(&y_value, &error_record[kInst_LogError_ParameterOffset_2], sizeof(float));
+                    // Should use std::bit_cast but requires c++20
+                    const float x_value = *(float*)(error_record + kInst_LogError_ParameterOffset_1);
+                    const float y_value = *(float*)(error_record + kInst_LogError_ParameterOffset_2);
                     strm << "Pow (from GLSL.std.450) has an undefined result because operand (x < 0) or (x == 0 && y <= 0)\n  ";
                     if (vector_size > 0) {
                         // Would need a new way to print more than 2 bytes out to get this to work
