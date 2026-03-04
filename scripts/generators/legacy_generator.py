@@ -197,6 +197,13 @@ class LegacyGenerator(BaseGenerator):
             namespace legacy {
         ''')
 
+        # Currently we only validate the incoming commands, not the <deprecate> tags around flags/enums/etc
+        #
+        # 1. It is easier to just do this as must things marked as "legacy" can't be used without being
+        #    called in a vulkan command anyway.
+        # 2. If we do decide to add them one day, we need to be VERY cautious as there are things like
+        #    VkPipelineCreateFlags that is "supersededby" by VkPipelineCreateFlags2, but really we don't
+        #    want to report those (as discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8072).
         for command in [x for x in self.vk.commands.values() if x.legacy]:
             # There is really no good use to warn developer both the create and destroy are superseded
             if command.name.startswith('vkDestroy'):
