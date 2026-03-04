@@ -281,7 +281,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                    const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                const vvl::DrawDispatchVuid& vuid) const;
+                                                const Location& loc) const;
     bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawFragmentShadingRate(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawAttachmentColorBlend(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
@@ -749,14 +749,13 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateActionStateDescriptorsShaderObject(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                                     const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
-                                                   const VkPipelineBindPoint bind_point, const vvl::DrawDispatchVuid& vuid) const;
+                                                   const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const ShaderStageState& stage_state,
-                                           const bool has_embedded_samplers, const vvl::DrawDispatchVuid& vuid) const;
+                                           const bool has_embedded_samplers, const Location& loc) const;
     bool ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
-                                         const vvl::DrawDispatchVuid& vuid) const;
+                                         const Location& loc) const;
     bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,
-                                                       const VkPipelineBindPoint bind_point,
-                                                       const vvl::DrawDispatchVuid& vuid) const;
+                                                       const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                             const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid) const;
     static bool ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, size_t eventCount, size_t firstEventIndex,
@@ -1129,7 +1128,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                        VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
-                                       subresource_adapter::RangeGenerator&& range_gen, const vvl::DrawDispatchVuid& vuids,
+                                       subresource_adapter::RangeGenerator&& range_gen, const Location& loc,
                                        std::function<std::string()> describe_descriptor_callback) const override;
 
     // NOTE: depth_offset/depth_extent parameters are used to support per-slice image layout transitions in 3d image

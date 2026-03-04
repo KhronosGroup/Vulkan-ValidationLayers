@@ -831,7 +831,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     if (unset_status_pipeline.any()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-        skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::DYNAMIC_STATE_ALL_SET_08608), objlist, vuid.loc(),
                          "%s doesn't set up %s, but since the vkCmdBindPipeline, the related dynamic state commands (%s) have been "
                          "called in this command buffer.",
                          FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
@@ -1444,14 +1444,14 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
 }
 
 bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                        const vvl::DrawDispatchVuid& vuid) const {
+                                                        const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
         if (!cb_state.dynamic_state_status.rtx_stack_size_cb) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.ray_tracing_pipeline_stack_size_09458, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RTX_STACK_SIZE_09458), objlist, loc,
                              "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR state is dynamic, but the command buffer never "
                              "called vkCmdSetRayTracingPipelineStackSizeKHR().");
         }
@@ -1459,7 +1459,7 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
         if (cb_state.dynamic_state_status.rtx_stack_size_pipeline) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(
-                vuid.dynamic_state_setting_commands_08608, objlist, vuid.loc(),
+                CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_STATE_ALL_SET_08608), objlist, loc,
                 "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR,  but since the vkCmdBindPipeline, the "
                 "related dynamic state commands (vkCmdSetRayTracingPipelineStackSizeKHR) have been called in this command buffer.",
                 FormatHandle(pipeline).c_str());
