@@ -2345,7 +2345,7 @@ class DeviceProxy : public vvl::base::Device {
     virtual bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state,
                                                VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
                                                const CommandBufferImageLayoutMap& cb_layout_map,
-                                               subresource_adapter::RangeGenerator&& range_gen, const DrawDispatchVuid& vuids,
+                                               subresource_adapter::RangeGenerator&& range_gen, const Location& loc,
                                                std::function<std::string()> describe_descriptor_callback) const {
         return false;
     }

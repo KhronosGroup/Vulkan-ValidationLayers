@@ -37,7 +37,6 @@ struct DrawDispatchVuid {
     const char* render_pass_compatible_02684 = kVUIDUndefined;
     const char* render_pass_began_08876 = kVUIDUndefined;
     const char* unnormalized_coordinates_09635 = kVUIDUndefined;
-    const char* cubic_sampler_02692 = kVUIDUndefined;
     const char* indirect_protected_cb_02711 = kVUIDUndefined;
     const char* indirect_contiguous_memory_02708 = kVUIDUndefined;
     const char* indirect_count_contiguous_memory_02714 = kVUIDUndefined;
@@ -51,29 +50,14 @@ struct DrawDispatchVuid {
     const char* primitive_topology_patch_list_10286 = kVUIDUndefined;
     const char* primitive_topology_patch_list_10747 = kVUIDUndefined;
     const char* primitive_topology_point_size_10748 = kVUIDUndefined;
-    const char* corner_sampled_address_mode_02696 = kVUIDUndefined;
-    const char* push_constants_set_08602 = kVUIDUndefined;
-    const char* image_subresources_render_pass_write_06537 = kVUIDUndefined;
-    const char* image_subresources_subpass_read_09003 = kVUIDUndefined;
-    const char* image_subresources_subpass_color_12338 = kVUIDUndefined;
-    const char* image_subresources_subpass_depth_12339 = kVUIDUndefined;
-    const char* image_subresources_subpass_stencil_12340 = kVUIDUndefined;
-    const char* sampler_imageview_type_08609 = kVUIDUndefined;
-    const char* sampler_implicitLod_dref_proj_08610 = kVUIDUndefined;
-    const char* sampler_bias_offset_08611 = kVUIDUndefined;
     const char* vertex_binding_attribute_02721 = kVUIDUndefined;
-    const char* dynamic_state_setting_commands_08608 = kVUIDUndefined;
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
     const char* compute_not_bound_10743 = kVUIDUndefined;
     const char* compute_inside_rp_10672 = kVUIDUndefined;
-    const char* ray_query_protected_cb_03635 = kVUIDUndefined;
     const char* ray_query_04617 = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
     const char* max_multiview_instance_index_02688 = kVUIDUndefined;
-    const char* img_filter_cubic_02693 = kVUIDUndefined;
-    const char* filter_cubic_02694 = kVUIDUndefined;
-    const char* filter_cubic_min_max_02695 = kVUIDUndefined;
     const char* viewport_count_primitive_shading_rate_04552 = kVUIDUndefined;
     const char* patch_control_points_04875 = kVUIDUndefined;
     const char* rasterizer_discard_enable_04876 = kVUIDUndefined;
@@ -187,8 +171,6 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_bit_set_08114 = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set_08115 = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
-    const char* image_view_dim_07752 = kVUIDUndefined;
-    const char* image_view_numeric_format_07753 = kVUIDUndefined;
     const char* viewport_and_scissor_with_count_03419 = kVUIDUndefined;
     const char* viewport_w_scaling_08636 = kVUIDUndefined;
     const char* shading_rate_palette_08637 = kVUIDUndefined;
@@ -261,16 +243,10 @@ struct DrawDispatchVuid {
     const char* vertex_input_09462 = kVUIDUndefined;
     const char* color_blend_enable_07627 = kVUIDUndefined;
     const char* color_write_mask_07629 = kVUIDUndefined;
-    const char* image_layout_00344 = kVUIDUndefined;
     const char* image_layout_09600 = kVUIDUndefined;
     const char* rendering_contents_10582 = kVUIDUndefined;
     const char* line_rasterization_10608 = kVUIDUndefined;
-    const char* descriptor_heap_11308 = kVUIDUndefined;
-    const char* descriptor_heap_11375 = kVUIDUndefined;
-    const char* descriptor_heap_11376 = kVUIDUndefined;
     const char* tile_memory_heap_10746 = kVUIDUndefined;
-    // Ray tracing
-    const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
     // TensorARM
     const char* tensorARM_pDescription_09900 = kVUIDUndefined;
     const char* tensorARM_dimensionCount_09905 = kVUIDUndefined;
@@ -338,6 +314,29 @@ enum class ActionVUID {
     STORAGE_TEXEL_04469,
     IMAGE_VIEW_ATOMIC_02691,
     BUFFER_VIEW_ATOMIC_07888,
+    IMAGE_VIEW_DIM_07752,
+    IMAGE_VIEW_NUMERIC_07753,
+    SUBRESOURCE_RP_WRTIE_06537,
+    SUBRESOURCE_SUBPASS_12338,
+    SUBRESOURCE_SUBPASS_12339,
+    SUBRESOURCE_SUBPASS_12340,
+    DESCRIPTOR_HEAP_11308,
+    DESCRIPTOR_HEAP_11375,
+    DESCRIPTOR_HEAP_11376,
+    SAMPLER_TYPE_08609,
+    SAMPLER_DREF_PROJ_08610,
+    SAMPLER_BIAS_OFFSET_08611,
+    SAMPLER_CUBIC_02692,
+    SAMPLER_CORNER_02696,
+    FILTER_CUBIC_02693,
+    FILTER_CUBIC_02694,
+    FILTER_CUBIC_02695,
+    IMAGE_LAYOUT_00344,
+    PUSH_CONSTANT_08602,
+    DYNAMIC_STATE_ALL_SET_08608,
+
+    RTX_STACK_SIZE_09458,
+    RAY_QUERY_PROTECT_03635,
 };
 
 std::string CreateActionVuid(vvl::Func function, const ActionVUID id);

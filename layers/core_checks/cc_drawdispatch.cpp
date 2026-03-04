@@ -27,6 +27,7 @@
 #include "core_checks/cc_state_tracker.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
+#include "error_message/error_location.h"
 #include "error_message/error_strings.h"
 #include "error_message/logging.h"
 #include "generated/error_location_helper.h"
@@ -1400,11 +1401,11 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         if (pipeline) {
-            skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, *pipeline, vuid);
+            skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, *pipeline, loc);
         }
         if (!cb_state.unprotected) {
-            skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.GetObjectList(bind_point), loc,
-                             "called in a protected command buffer.");
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RAY_QUERY_PROTECT_03635),
+                             cb_state.GetObjectList(bind_point), loc, "called in a protected command buffer.");
         }
     }
 
@@ -1417,7 +1418,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateActionStateDescriptorsShaderObject(last_bound_state, bind_point, vuid);
     }
 
-    skip |= ValidateActionStatePushConstant(last_bound_state, pipeline, vuid);
+    skip |= ValidateActionStatePushConstant(last_bound_state, pipeline, loc);
 
     if (!cb_state.unprotected) {
         skip |= ValidateActionStateProtectedMemory(last_bound_state, bind_point, pipeline, vuid);
@@ -1453,11 +1454,11 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             }
             const bool has_embedded_samplers = pipeline.descriptor_heap_embedded_samplers_count != 0;
 
-            skip |= ValidateActionStateDescriptorHeap(last_bound_state, stage_state, has_embedded_samplers, vuid);
+            skip |= ValidateActionStateDescriptorHeap(last_bound_state, stage_state, has_embedded_samplers, vuid.loc());
 
             // Only need to validate if we know there is a embedded sampler to check against
             if (has_embedded_samplers) {
-                skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, stage_state, bind_point, vuid);
+                skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, stage_state, bind_point, vuid.loc());
             }
         }
     }
@@ -1583,7 +1584,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
 }
 
 bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_state, const ShaderStageState& stage_state,
-                                                   const bool has_embedded_samplers, const vvl::DrawDispatchVuid& vuid) const {
+                                                   const bool has_embedded_samplers, const Location& loc) const {
     bool skip = false;
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -1624,13 +1625,15 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.sampler_bound) {
                 skip |= LogError(
-                    vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                    cb_state.GetObjectList(last_bound_state.bind_point), loc,
                     "The shader %s uses sampler descriptors, but a sampler heap was not bound with vkCmdBindSamplerHeapEXT.%s%s",
                     entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
                     print_used_variables(true).c_str());
             }
         } else if (!cb_state.inheritance_descriptor_heap_info.pSamplerHeapBindInfo) {
-            skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                             cb_state.GetObjectList(last_bound_state.bind_point), loc,
                              "The shader %s uses sampler descriptors, but "
                              "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo is NULL.%s",
                              entry_point.Describe().c_str(), print_used_variables(true).c_str());
@@ -1639,13 +1642,15 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
         if (cb_state.IsPrimary()) {
             if (!cb_state.descriptor_heap.resource_bound) {
                 skip |= LogError(
-                    vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                    cb_state.GetObjectList(last_bound_state.bind_point), loc,
                     "The shader %s uses resource descriptors, but a resource heap was not bound with vkCmdBindResourceHeapEXT.%s%s",
                     entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
                     print_used_variables(false).c_str());
             }
         } else if (!cb_state.inheritance_descriptor_heap_info.pResourceHeapBindInfo) {
-            skip |= LogError(vuid.descriptor_heap_11308, cb_state.GetObjectList(last_bound_state.bind_point), vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
+                             cb_state.GetObjectList(last_bound_state.bind_point), loc,
                              "The shader %s uses resource descriptors, but "
                              "VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo is NULL%s",
                              entry_point.Describe().c_str(), print_used_variables(false).c_str());
@@ -1655,8 +1660,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
 }
 
 bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuffer& cb_state, const ShaderStageState& stage_state,
-                                                           const VkPipelineBindPoint bind_point,
-                                                           const vvl::DrawDispatchVuid& vuid) const {
+                                                           const VkPipelineBindPoint bind_point, const Location& loc) const {
     bool skip = false;
 
     // It is possible to only have embedded samplers, in that case, you are not required to
@@ -1714,7 +1718,8 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
 
             if (cb_state.descriptor_heap.sampler_reserved.distance() <
                 phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
-                skip |= LogError(vuid.descriptor_heap_11375, cb_state.GetObjectList(bind_point), vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11375),
+                                 cb_state.GetObjectList(bind_point), loc,
                                  "The shader %s uses %s which is an embedded sampler set with pMappings[%" PRIu32
                                  "].sourceData.%s.pEmbeddedSampler\n"
                                  "The last call to vkCmdBindSamplerHeapEXT sets reservedRangeSize to %" PRIu64
@@ -1747,11 +1752,11 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
             if (shader_object.stage.HasSpirv()) {
                 const bool has_embedded_samplers = shader_object.descriptor_heap_embedded_samplers_count != 0;
 
-                skip |= ValidateActionStateDescriptorHeap(last_bound_state, shader_object.stage, has_embedded_samplers, vuid);
+                skip |= ValidateActionStateDescriptorHeap(last_bound_state, shader_object.stage, has_embedded_samplers, vuid.loc());
 
                 // Only need to validate if we know there is a embedded sampler to check against
                 if (has_embedded_samplers) {
-                    skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, shader_object.stage, bind_point, vuid);
+                    skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, shader_object.stage, bind_point, vuid.loc());
                 }
             }
             continue;
@@ -1827,8 +1832,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
 
 bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state,
                                                                const spirv::EntryPoint* entry_point,
-                                                               const VkPipelineBindPoint bind_point,
-                                                               const vvl::DrawDispatchVuid& vuid) const {
+                                                               const VkPipelineBindPoint bind_point, const Location& loc) const {
     bool skip = false;
     if (!entry_point || !entry_point->push_constant_variable) {
         return skip;
@@ -1855,31 +1859,32 @@ bool CoreChecks::ValidateActionStatePushConstantDescriptorHeap(const vvl::Comman
                 }
             }
             if (unset_start != size) {
-                skip |= LogError(vuid.descriptor_heap_11376, cb_state.GetObjectList(bind_point), vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376),
+                                 cb_state.GetObjectList(bind_point), loc,
                                  "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
                                  "), but vkCmdPushDataEXT was never called for range [%" PRIu32 ", %" PRIu32 ").",
                                  string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset,
                                  pc_variable.offset + pc_variable.size, unset_start, unset_end);
             }
         } else {
-            skip |= LogError(vuid.descriptor_heap_11376, cb_state.GetObjectList(bind_point), vuid.loc(),
-                             "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
-                             "), while there was no call to vkCmdPushDataEXT.",
-                             string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset,
-                             pc_variable.offset + pc_variable.size);
+            skip |= LogError(
+                CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11376), cb_state.GetObjectList(bind_point), loc,
+                "Shader in %s uses push-constant statically at range [%" PRIu32 ", %" PRIu32
+                "), while there was no call to vkCmdPushDataEXT.",
+                string_VkShaderStageFlags(entry_point->stage).c_str(), pc_variable.offset, pc_variable.offset + pc_variable.size);
         }
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_state, const vvl::Pipeline *pipeline,
-                                                 const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateActionStatePushConstant(const LastBound& last_bound_state, const vvl::Pipeline* pipeline,
+                                                 const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     // Push constants validation for DGC will need to be done in GPU-AV
-    if (vuid.loc().function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
+    if (loc.function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
         return skip;
     }
 
@@ -1891,7 +1896,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
         if (pipeline->descriptor_heap_mode) {
             for (const auto& stage_state : pipeline->stage_states) {
                 skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, stage_state.entrypoint.get(),
-                                                                      last_bound_state.bind_point, vuid);
+                                                                      last_bound_state.bind_point, loc);
             }
         }
         auto const &pipeline_layout = pipeline->PipelineLayoutState();
@@ -1906,7 +1911,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), pipeline->Handle());
-                        skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08602), objlist, loc,
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                          "%s bound by vkCmdBindPipeline.",
                                          string_VkShaderStageFlags(stage.GetStage()).c_str(),
@@ -1924,12 +1929,12 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
                 }
                 if (shader_object->descriptor_heap_mode) {
                     skip |= ValidateActionStatePushConstantDescriptorHeap(cb_state, shader_object->stage.entrypoint.get(),
-                                                                          last_bound_state.bind_point, vuid);
+                                                                          last_bound_state.bind_point, loc);
                 } else {
                     // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
                     if (!cb_state.push_constant_ranges_layout && !enabled_features.maintenance4) {
                         const LogObjectList objlist(cb_state.Handle(), shader_object->Handle());
-                        skip |= LogError(vuid.push_constants_set_08602, objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PUSH_CONSTANT_08602), objlist, loc,
                                          "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet.",
                                          string_VkShaderStageFlags(shader_object->create_info.stage).c_str());
                     }
