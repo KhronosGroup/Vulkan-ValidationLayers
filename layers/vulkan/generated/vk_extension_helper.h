@@ -51,9 +51,9 @@ enum ExtEnabled : unsigned char {
 // Map of promoted extension information per version (a separate map exists for instance and device extensions).
 // The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
 // version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
-typedef vvl::unordered_map<uint32_t, std::pair<const char *, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
-const PromotedExtensionInfoMap &GetInstancePromotionInfoMap();
-const PromotedExtensionInfoMap &GetDevicePromotionInfoMap();
+typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
+const PromotedExtensionInfoMap& GetInstancePromotionInfoMap();
+const PromotedExtensionInfoMap& GetDevicePromotionInfoMap();
 
 /*
 This function is a helper to know if the extension is enabled.
@@ -135,21 +135,21 @@ struct InstanceExtensions {
     ExtEnabled vk_sec_ubm_surface{kNotSupported};
 
     struct Requirement {
-        const ExtEnabled InstanceExtensions::*enabled;
-        const char *name;
+        const ExtEnabled InstanceExtensions::* enabled;
+        const char* name;
     };
     typedef std::vector<Requirement> RequirementVec;
     struct Info {
-        Info(ExtEnabled InstanceExtensions::*state_, const RequirementVec requirements_)
+        Info(ExtEnabled InstanceExtensions::* state_, const RequirementVec requirements_)
             : state(state_), requirements(requirements_) {}
-        ExtEnabled InstanceExtensions::*state;
+        ExtEnabled InstanceExtensions::* state;
         RequirementVec requirements;
     };
 
-    const Info &GetInfo(vvl::Extension extension_name) const;
+    const Info& GetInfo(vvl::Extension extension_name) const;
 
     InstanceExtensions() = default;
-    InstanceExtensions(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo);
+    InstanceExtensions(APIVersion requested_api_version, const VkInstanceCreateInfo* pCreateInfo);
 };
 
 struct DeviceExtensions : public InstanceExtensions {
@@ -556,36 +556,37 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
     ExtEnabled vk_ext_shader_subgroup_partitioned{kNotSupported};
     ExtEnabled vk_valve_shader_mixed_float_dot_product{kNotSupported};
+    ExtEnabled vk_ext_external_semaphore_drm_syncobj{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
     ExtEnabled vk_khr_ray_query{kNotSupported};
     ExtEnabled vk_ext_mesh_shader{kNotSupported};
 
     struct Requirement {
-        const ExtEnabled DeviceExtensions::*enabled;
-        const char *name;
+        const ExtEnabled DeviceExtensions::* enabled;
+        const char* name;
     };
     typedef std::vector<Requirement> RequirementVec;
     struct Info {
-        Info(ExtEnabled DeviceExtensions::*state_, const RequirementVec requirements_)
+        Info(ExtEnabled DeviceExtensions::* state_, const RequirementVec requirements_)
             : state(state_), requirements(requirements_) {}
-        ExtEnabled DeviceExtensions::*state;
+        ExtEnabled DeviceExtensions::* state;
         RequirementVec requirements;
     };
 
-    const Info &GetInfo(vvl::Extension extension_name) const;
+    const Info& GetInfo(vvl::Extension extension_name) const;
 
     DeviceExtensions() = default;
-    DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
+    DeviceExtensions(const InstanceExtensions& instance_ext) : InstanceExtensions(instance_ext) {}
 
-    DeviceExtensions(const InstanceExtensions &instance_extensions, APIVersion requested_api_version,
-                     const VkDeviceCreateInfo *pCreateInfo = nullptr);
-    DeviceExtensions(const InstanceExtensions &instance_ext, APIVersion requested_api_version,
-                     const std::vector<VkExtensionProperties> &props);
+    DeviceExtensions(const InstanceExtensions& instance_extensions, APIVersion requested_api_version,
+                     const VkDeviceCreateInfo* pCreateInfo = nullptr);
+    DeviceExtensions(const InstanceExtensions& instance_ext, APIVersion requested_api_version,
+                     const std::vector<VkExtensionProperties>& props);
 };
 
-const InstanceExtensions::Info &GetInstanceVersionMap(const char *version);
-const DeviceExtensions::Info &GetDeviceVersionMap(const char *version);
+const InstanceExtensions::Info& GetInstanceVersionMap(const char* version);
+const DeviceExtensions::Info& GetDeviceVersionMap(const char* version);
 
 constexpr bool IsInstanceExtension(vvl::Extension extension) {
     switch (extension) {
@@ -1039,6 +1040,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_compute_occupancy_priority:
         case vvl::Extension::_VK_EXT_shader_subgroup_partitioned:
         case vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product:
+        case vvl::Extension::_VK_EXT_external_semaphore_drm_syncobj:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

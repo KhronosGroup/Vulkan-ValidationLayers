@@ -45,14 +45,14 @@ struct FeaturePointer {
     // Default and nullptr constructor to create an empty FeaturePointer
     FeaturePointer() : IsEnabled(nullptr) {}
     FeaturePointer(std::nullptr_t ptr) : IsEnabled(nullptr) {}
-    FeaturePointer(bool DeviceFeatures::*ptr) : IsEnabled([=](const DeviceFeatures& features) { return features.*ptr; }) {}
+    FeaturePointer(bool DeviceFeatures::* ptr) : IsEnabled([=](const DeviceFeatures& features) { return features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
 struct RequiredSpirvInfo {
     uint32_t version;
     FeaturePointer feature;
-    ExtEnabled DeviceExtensions::*extension;
+    ExtEnabled DeviceExtensions::* extension;
     const char* property;  // For human readability and make some capabilities unique
 };
 
