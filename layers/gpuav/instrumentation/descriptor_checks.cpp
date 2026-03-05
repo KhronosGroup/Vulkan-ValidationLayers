@@ -131,6 +131,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [&cb, descriptor_binding_index](
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
+                                                                                  const InstrumentedShader*,
                                                                                   std::string& out_error_msg,
                                                                                   std::string& out_vuid_msg) {
             using namespace glsl;
@@ -230,6 +231,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [&cb, descriptor_binding_index, uses_shader_object](
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
+                                                                                  const InstrumentedShader*,
                                                                                   std::string& out_error_msg,
                                                                                   std::string& out_vuid_msg) {
             using namespace glsl;

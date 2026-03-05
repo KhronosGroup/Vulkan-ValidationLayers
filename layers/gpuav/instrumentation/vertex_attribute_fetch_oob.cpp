@@ -167,6 +167,7 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [local_error_info = std::move(local_error_info)](
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
+                                                                                  const InstrumentedShader*,
                                                                                   std::string& out_error_msg,
                                                                                   std::string& out_vuid_msg) {
             if (GetErrorGroup(error_record) != glsl::kErrorGroup_InstIndexedDraw) {

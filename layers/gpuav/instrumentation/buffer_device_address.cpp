@@ -39,6 +39,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                                                           const LastBound& last_bound) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [](Validator& gpuav, const Location&,
                                                                                  const uint32_t* error_record,
+                                                                                 const InstrumentedShader*,
                                                                                  std::string& out_error_msg,
                                                                                  std::string& out_vuid_msg) {
             using namespace glsl;

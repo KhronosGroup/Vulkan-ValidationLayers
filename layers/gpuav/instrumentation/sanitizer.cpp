@@ -34,12 +34,13 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
         return;
     }
 
-    cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,
-                                                                          const LastBound &last_bound) {
-        CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [](Validator &gpuav, const Location &loc,
-                                                                                 const uint32_t *error_record,
-                                                                                 std::string &out_error_msg,
-                                                                                 std::string &out_vuid_msg) {
+    cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                                          const LastBound& last_bound) {
+        CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [](Validator& gpuav, const Location& loc,
+                                                                                 const uint32_t* error_record,
+                                                                                 const InstrumentedShader*,
+                                                                                 std::string& out_error_msg,
+                                                                                 std::string& out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
             if (GetErrorGroup(error_record) != kErrorGroup_InstSanitizer) {
