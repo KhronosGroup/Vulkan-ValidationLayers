@@ -477,6 +477,7 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_V
     interface.entry_point_name = modified_create_info.pName;
     interface.entry_point_stage = modified_create_info.stage;
     interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
+    interface.has_task_shader = (modified_create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0;
     interface.core_module = module_state;
     BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
 
@@ -1258,6 +1259,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_name = stage_state.GetPName();
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
+        interface.has_task_shader = (pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
         interface.core_module = stage_state.spirv_state.get();
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
@@ -1456,6 +1458,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_name = modified_stage_state.GetPName();
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
+            interface.has_task_shader = (linked_pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
             interface.core_module = modified_stage_state.spirv_state.get();
             const bool is_shader_instrumented =
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);

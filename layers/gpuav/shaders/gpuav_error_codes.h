@@ -129,6 +129,7 @@ const int kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic = 4;
 // MeshShading
 //
 const int kErrorSubCode_MeshShading_SetMeshOutputs = 1;
+const int kErrorSubCode_MeshShading_TaskPayloadAlways = 2;
 
 // Indexed Draw
 //

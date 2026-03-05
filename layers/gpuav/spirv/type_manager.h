@@ -167,6 +167,7 @@ class TypeManager {
     const Variable* FindVariableById(uint32_t id) const;
     const Variable* FindPushConstantVariable() const;
     const std::vector<const Variable*>& GetSharedMemoryVariables() const { return shared_memory_variables_; }
+    const std::vector<const Variable*>& GetTaskPayloadVariables() const { return task_payload_variables_; }
 
     const Type* FindChildType(const Type& type, uint32_t idx) const;
 
@@ -223,6 +224,7 @@ class TypeManager {
     // There is invalid to have more than 1 push constant variable per entrypoint
     const Variable* push_constant_variable_ = nullptr;
     std::vector<const Variable*> shared_memory_variables_;
+    std::vector<const Variable*> task_payload_variables_;
 
     // Save the length of a struct so we don't have to look it up everytime
     // <struct_id, struct size>

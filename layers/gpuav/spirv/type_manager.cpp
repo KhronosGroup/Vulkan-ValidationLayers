@@ -726,6 +726,8 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
         push_constant_variable_ = new_variable;
     } else if (new_variable->StorageClass() == spv::StorageClassWorkgroup) {
         shared_memory_variables_.push_back(new_variable);
+    } else if (new_variable->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
+        task_payload_variables_.push_back(new_variable);
     }
 
     return *new_variable;
