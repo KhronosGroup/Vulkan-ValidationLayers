@@ -131,12 +131,12 @@ class TypeManager {
     const Type& GetTypeAccelerationStructure();
     const Type& GetTypeInt(uint32_t bit_width, bool is_signed);
     const Type& GetTypeFloat(uint32_t bit_width);
-    const Type& GetTypeArray(const Type& element_type, const Constant& length);
-    const Type& GetTypeRuntimeArray(const Type& element_type);
+    const Type& GetTypeArray(const Type& element_type, const Constant& length, bool get_explicit_layout = true);
+    const Type& GetTypeRuntimeArray(const Type& element_type, bool get_explicit_layout = true);
     const Type& GetTypeVector(const Type& component_type, uint32_t component_count);
     const Type& GetTypeMatrix(const Type& column_type, uint32_t column_count);
     const Type& GetTypeSampledImage(const Type& image_type);
-    const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type);
+    const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type, bool get_explicit_layout = true);
     const Type& GetTypePointerBuiltInInput(spv::BuiltIn built_in);
     uint32_t TypeLength(const Type& type);
 
@@ -230,6 +230,8 @@ class TypeManager {
 
     // The use of OpUndef is sometime misused, we store all OpUndef here as way to check if we have it one by accident
     vvl::unordered_set<uint32_t> undef_ids_;
+
+    bool IsExplicitLayoutType(const Type& type) const;
 };
 
 }  // namespace spirv

@@ -2644,3 +2644,40 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DualShaderLibraryDestroyModule) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, LinkingSameStruct) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/918");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : require
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_ARB_gpu_shader_int64 : require
+
+        // Matches that foudn in inst_buffer_device_address_range()
+        // to ensure the linking of structs work
+        struct Range {
+            uint64_t a;
+            uint64_t b;
+        };
+
+        layout(buffer_reference, buffer_reference_align = 8, scalar) buffer BufferDeviceAddressRanges {
+            Range bda_ranges;
+        };
+
+        layout(set = 0, binding = 0, scalar) buffer BuffAddrInputBuffer {
+            BufferDeviceAddressRanges bda_ranges_ptr;
+        };
+
+        void main() {
+            Range cache_range = bda_ranges_ptr.bda_ranges;
+            cache_range.a = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+}

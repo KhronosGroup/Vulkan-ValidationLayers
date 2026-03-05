@@ -129,6 +129,7 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
 // We don't want to waste time trying to look up potential recursive struct type
 // This is added for those we want to spend time to not duplicate and link with.
 // We also will hit spirv-val errors if using 2 OpTypeStruct, even if same internals
+// (https://gitlab.khronos.org/spirv/SPIR-V/-/issues/918)
 void TypeManager::AddStructTypeForLinking(const Type* new_type) {
     assert(new_type && new_type->spv_type_ == SpvType::kStruct);
     linking_struct_types_.push_back(new_type);
@@ -284,12 +285,14 @@ const Type& TypeManager::GetTypeFloat(uint32_t bit_width) {
     return AddType(std::move(new_inst), SpvType::kFloat);
 }
 
-const Type& TypeManager::GetTypeArray(const Type& element_type, const Constant& length) {
-    for (const auto type : array_types_) {
-        const Type* this_element_type = FindTypeById(type->inst_.Word(2));
-        if (this_element_type && (*this_element_type == element_type)) {
-            if (type->inst_.Word(3) == length.Id()) {
-                return *type;
+const Type& TypeManager::GetTypeArray(const Type& element_type, const Constant& length, bool get_explicit_layout) {
+    if (get_explicit_layout || !IsExplicitLayoutType(element_type)) {
+        for (const auto type : array_types_) {
+            const Type* this_element_type = FindTypeById(type->inst_.Word(2));
+            if (this_element_type && (*this_element_type == element_type)) {
+                if (type->inst_.Word(3) == length.Id()) {
+                    return *type;
+                }
             }
         }
     }
@@ -300,11 +303,13 @@ const Type& TypeManager::GetTypeArray(const Type& element_type, const Constant& 
     return AddType(std::move(new_inst), SpvType::kArray);
 }
 
-const Type& TypeManager::GetTypeRuntimeArray(const Type& element_type) {
-    for (const auto type : runtime_array_types_) {
-        const Type* this_element_type = FindTypeById(type->inst_.Word(2));
-        if (this_element_type && (*this_element_type == element_type)) {
-            return *type;
+const Type& TypeManager::GetTypeRuntimeArray(const Type& element_type, bool get_explicit_layout) {
+    if (get_explicit_layout || !IsExplicitLayoutType(element_type)) {
+        for (const auto type : runtime_array_types_) {
+            const Type* this_element_type = FindTypeById(type->inst_.Word(2));
+            if (this_element_type && (*this_element_type == element_type)) {
+                return *type;
+            }
         }
     }
 
@@ -364,15 +369,17 @@ const Type& TypeManager::GetTypeSampledImage(const Type& image_type) {
     return AddType(std::move(new_inst), SpvType::kSampledImage);
 }
 
-const Type& TypeManager::GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type) {
-    for (const auto type : pointer_types_) {
-        if (type->inst_.Word(2) != storage_class) {
-            continue;
-        }
+const Type& TypeManager::GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type, bool get_explicit_layout) {
+    if (get_explicit_layout || !IsExplicitLayoutType(pointer_type)) {
+        for (const auto type : pointer_types_) {
+            if (type->inst_.Word(2) != storage_class) {
+                continue;
+            }
 
-        const Type* this_pointer_type = FindTypeById(type->inst_.Word(3));
-        if (this_pointer_type && (*this_pointer_type == pointer_type)) {
-            return *type;
+            const Type* this_pointer_type = FindTypeById(type->inst_.Word(3));
+            if (this_pointer_type && (*this_pointer_type == pointer_type)) {
+                return *type;
+            }
         }
     }
 
@@ -848,6 +855,11 @@ uint32_t TypeManager::GetNumScalarElementsBeforeCompositeMember(const Type& type
     }
     return count;
 }
+
+// This stems from the fact even if you have two OpTypeStruct that are the EXACT SAME, it is not valid to mix and match them
+// (https://gitlab.khronos.org/spirv/SPIR-V/-/issues/918) The idea is when linking, to ignore anything that has any reference to an
+// explicit layout types (like structs) that might collide with our incoming GLSL code
+bool TypeManager::IsExplicitLayoutType(const Type& type) const { return type.spv_type_ == SpvType::kStruct; }
 
 }  // namespace spirv
 }  // namespace gpuav
