@@ -3134,7 +3134,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
 
 TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     TEST_DESCRIPTION("go over the VK_LAYER_PRINTF_BUFFER_SIZE limit");
-    uint32_t value = 128;
+    uint32_t value = 100;
     const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, "printf_buffer_size", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &settings};
@@ -3167,7 +3167,7 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
 
 TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
     TEST_DESCRIPTION("go over the VK_LAYER_PRINTF_BUFFER_SIZE limit... by a LOT");
-    uint32_t value = 128;
+    uint32_t value = 100;
     const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, "printf_buffer_size", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &settings};

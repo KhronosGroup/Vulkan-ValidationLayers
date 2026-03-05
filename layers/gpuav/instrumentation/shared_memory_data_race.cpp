@@ -17,7 +17,6 @@
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
-#include "state_tracker/shader_module.h"
 #include "error_message/spirv_logging.h"
 
 namespace gpuav {

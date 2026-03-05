@@ -168,18 +168,20 @@ static std::vector<Substring> ParseFormatString(const std::string &format_string
 #endif
 
 // The contents each "printf" is writting to the output buffer streams
+//
+// We make sure the first few bytes match the header of the shader instrumentation
+// (this allows it easier to parse the shader debug info the same)
 struct OutputRecord {
-    uint32_t size;
-    uint32_t shader_id;
-    uint32_t instruction_position_offset;
+    uint32_t size;                  // kHeader_ErrorRecordSizeOffset
+    uint32_t shader_id;             // kHeader_ShaderIdErrorOffset
+    uint32_t stage_instruction_id;  // kHeader_StageInstructionIdOffset
+    uint32_t stage_info_0;  // kHeader_StageInfoOffset_0
+    uint32_t stage_info_1;  // kHeader_StageInfoOffset_1
+    uint32_t stage_info_2;  // kHeader_StageInfoOffset_2
     uint32_t format_string_id;
     uint32_t double_bitmask;     // used to distinguish if float is 1 or 2 dwords
     uint32_t signed_8_bitmask;   // used to distinguish if signed int is a int8_t
     uint32_t signed_16_bitmask;  // used to distinguish if signed int is a int16_t
-    uint32_t stage_id;
-    uint32_t stage_info_0;
-    uint32_t stage_info_1;
-    uint32_t stage_info_2;
     uint32_t values;  // place holder to be casted to get rest of items in record
 };
 
@@ -204,8 +206,8 @@ struct DebugPrintfCbState {
     std::vector<DebugPrintfBufferInfo> buffer_infos;
 };
 
-void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer, DebugPrintfBufferInfo &buffer_info,
-                               uint32_t *const debug_output_buffer, const Location &loc) {
+void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, DebugPrintfBufferInfo& buffer_info,
+                               const uint32_t* debug_output_buffer, const Location& loc) {
     uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount];
     if (!output_buffer_dwords_counts) return;
 
@@ -213,7 +215,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
     while (debug_output_buffer[output_record_i]) {
         std::ostringstream shader_message;
 
-        OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[output_record_i]);
+        const OutputRecord* debug_record = reinterpret_cast<const OutputRecord*>(&debug_output_buffer[output_record_i]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const gpuav::InstrumentedShader *instrumented_shader = nullptr;
@@ -246,7 +248,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
-        void *current_value = static_cast<void *>(&debug_record->values);
+        const void* current_value = static_cast<const void*>(&debug_record->values);
         // Sprintf each format substring into a temporary string then add that to the message
         for (size_t substring_i = 0; substring_i < format_substrings.size(); substring_i++) {
             auto &substring = format_substrings[substring_i];
@@ -268,7 +270,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                             break;
                         }
 
-                        const uint64_t value = *static_cast<uint64_t *>(current_value);
+                        const uint64_t value = *static_cast<const uint64_t*>(current_value);
                         // +1 for null terminator
                         needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
@@ -282,7 +284,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                                                   "Trying to DebugPrintf a 64-bit signed int but not using \"%%ld\" to print it.");
                         }
 
-                        const uint32_t *current_ptr = static_cast<uint32_t *>(current_value);
+                        const uint32_t* current_ptr = static_cast<const uint32_t*>(current_value);
                         const uint64_t value_unsigned = glsl::GetUint64(current_ptr);
                         const int64_t value = static_cast<int64_t>(value_unsigned);
 
@@ -295,7 +297,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 } else {
                     if (substring.type == NumericTypeUint) {
                         // +1 for null terminator
-                        const uint32_t value = *static_cast<uint32_t *>(current_value);
+                        const uint32_t value = *static_cast<const uint32_t*>(current_value);
                         needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
                         std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
@@ -303,17 +305,17 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                     } else if (substring.type == NumericTypeSint) {
                         // When dealing with signed int, we need to know which size the int was to print the correct value
                         if (debug_record->signed_8_bitmask & (1 << substring_i)) {
-                            const int8_t value = *static_cast<int8_t *>(current_value);
+                            const int8_t value = *static_cast<const int8_t*>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
                         } else if (debug_record->signed_16_bitmask & (1 << substring_i)) {
-                            const int16_t value = *static_cast<int16_t *>(current_value);
+                            const int16_t value = *static_cast<const int16_t*>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
                         } else {
-                            const int32_t value = *static_cast<int32_t *>(current_value);
+                            const int32_t value = *static_cast<const int32_t*>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
@@ -326,12 +328,12 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                         // This is much simpler than enforcing a %lf which doesn't line up with how the CPU side works
                         if (debug_record->double_bitmask & (1 << substring_i)) {
                             substring.is_64_bit = true;
-                            const double value = *static_cast<double *>(current_value);
+                            const double value = *static_cast<const double*>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
                         } else {
-                            const float value = *static_cast<float *>(current_value);
+                            const float value = *static_cast<const float*>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
@@ -340,7 +342,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 }
 
                 const uint32_t offset = substring.is_64_bit ? 2 : 1;
-                current_value = static_cast<uint32_t *>(current_value) + offset;
+                current_value = static_cast<const uint32_t*>(current_value) + offset;
 
             } else {
                 // incase where someone just printing a string with no arguments to it
@@ -354,16 +356,9 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
         const bool use_stdout = gpuav.gpuav_settings.debug_printf_to_stdout;
         if (gpuav.gpuav_settings.debug_printf_verbose) {
-            GpuShaderInstrumentor::ShaderMessageInfo shader_info{debug_record->stage_id,
-                                                                 debug_record->stage_info_0,
-                                                                 debug_record->stage_info_1,
-                                                                 debug_record->stage_info_2,
-                                                                 debug_record->instruction_position_offset,
-                                                                 debug_record->shader_id};
-
             std::string debug_info_message =
-                gpuav.GenerateDebugInfoMessage(command_buffer, shader_info, instrumented_shader, buffer_info.pipeline_bind_point,
-                                               buffer_info.action_command_index);
+                gpuav.GenerateDebugInfoMessage(command_buffer, (uint32_t*)debug_record, instrumented_shader,
+                                               buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {
                 std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
@@ -401,7 +396,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
     uint32_t clear_size = sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount] +
                                               gpuav::kDebugPrintf_OutputBuffer_Data);
     clear_size = std::min(gpuav.gpuav_settings.debug_printf_buffer_size, clear_size);
-    memset(debug_output_buffer, 0, clear_size);
+    memset((void*)debug_output_buffer, 0, clear_size);
 }
 
 #if defined(__GNUC__)
