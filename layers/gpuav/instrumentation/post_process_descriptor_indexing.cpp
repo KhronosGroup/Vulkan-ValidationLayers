@@ -201,7 +201,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 const uint32_t invalid_index_command = gpuav.gpuav_settings.invalid_index_command;
                 for (const DescriptorAccess& descriptor_access : descriptor_accesses) {
                     if (descriptor_access.error_logger_i == invalid_index_command) {
-                        gpuav.LogError("GPUAV-Overflow-Unknown", LogObjectList(), Location(vvl::Func::Empty),
+                        gpuav.LogError("GPUAV-Overflow-Unknown", LogObjectList(), submission_loc,
                                        "Cannot perform runtime descriptor access validation, access was done in a command past the "
                                        "internal limit of %" PRIu32
                                        " draw/dispatch/traceRays commands in a command buffer.\nThis can be adjusted setting env "
