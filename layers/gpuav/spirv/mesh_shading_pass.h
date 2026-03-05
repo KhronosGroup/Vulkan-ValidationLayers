@@ -1,4 +1,4 @@
-/* Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,29 @@ class MeshShading : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
+        // linked function index
+        uint32_t function_id;
     };
 
-    bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
-    uint32_t GetLinkFunctionId();
+    uint32_t GetLinkFunctionId(const InstructionMeta& meta);
 
     // Function IDs to link in
-    uint32_t link_function_id_ = 0;
+    enum FunctionNames {
+        SET_MESH_OUTPUT = 0,
+        TASK_PAYLOAD_ALWAYS = 1,
+        FUNC_COUNT = 2,
+    };
+    uint32_t link_function_id_[FUNC_COUNT]{};
 
     // OpExecutionMode OutputVertices
     uint32_t output_vertices_id_ = 0;
     // OpExecutionModeId OutputPrimitivesEXT
     uint32_t output_primitives_id_ = 0;
+
+    bool guard_all_task_payloads_ = false;
 };
 
 }  // namespace spirv

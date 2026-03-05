@@ -60,6 +60,7 @@ extern const uint32_t instrumentation_mesh_shading_comp_size;
 extern const uint32_t instrumentation_mesh_shading_comp[];
 // These offset match the function in the order they are declared in the GLSL source
 extern const uint32_t instrumentation_mesh_shading_comp_function_0_offset;
+extern const uint32_t instrumentation_mesh_shading_comp_function_1_offset;
 
 extern const uint32_t instrumentation_post_process_descriptor_index_comp_size;
 extern const uint32_t instrumentation_post_process_descriptor_index_comp[];

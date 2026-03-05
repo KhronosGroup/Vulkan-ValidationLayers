@@ -66,6 +66,13 @@ void RegisterMeshShadingValidation(Validator &gpuav, CommandBufferSubState &cb) 
                                     "indices uint3 primitives["
                                  << output_primitive << "], out vertices MeshOutput vertices[" << output_vertices << "])\"";
                         } break;
+                        case kErrorSubCode_MeshShading_TaskPayloadAlways: {
+                            out_vuid_msg = "VUID-RuntimeSpirv-MeshEXT-10883";
+                            // TODO - Print the variable name
+                            strm << "The mesh shader is accessing a TaskPayloadWorkgroupEXT variable, but there is no Task Shader "
+                                    "to set the payload values.";
+                            break;
+                        }
                         default:
                             error_found = false;
                             break;

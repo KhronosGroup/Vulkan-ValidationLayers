@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_helper.h"
 
 class NegativeGpuAVMesh : public GpuAVMesh {};
 
@@ -103,7 +104,7 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing2) {
+TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTask) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
@@ -115,6 +116,8 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing2) {
         void main() {
             uint x = payload;
             SetMeshOutputsEXT(3,1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
         }
     )glsl";
 
@@ -123,8 +126,113 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing2) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
     pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTaskStruct) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        struct S {
+            uint x;
+            uint y[4];
+        };
+        taskPayloadSharedEXT S payload;
+        void main() {
+            uint a = payload.y[2];
+            SetMeshOutputsEXT(3,1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTaskSlang) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    RETURN_IF_SKIP(CheckSlangSupport());
+    InitRenderTarget();
+
+    const char* mesh_source = R"glsl(
+        struct S {
+            uint x;
+            uint y[4];
+        };
+        struct VertexOut {
+            float4 position : SV_Position;
+        };
+
+        [shader("mesh")]
+        [numthreads(1, 1, 1)]
+        [outputtopology("triangle")]
+        void main(
+            in payload S payloadData,
+            OutputVertices<VertexOut, 32> vertices,
+            OutputIndices<uint3, 32> indices
+        ) {
+            uint a = payloadData.y[2];
+
+            SetMeshOutputCounts(3, 1);
+
+            VertexOut v;
+            v.position = float4(0.0, 0.0, 0.0, 0.0);
+            vertices[0] = v;
+
+            if (a > 2) {
+                a = 2; // prevent dead code
+            }
+            indices[0] = uint3(0, 1, a);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

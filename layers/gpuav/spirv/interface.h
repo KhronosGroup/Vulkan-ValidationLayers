@@ -83,7 +83,10 @@ struct InstrumentationInterface {
     VkShaderStageFlagBits entry_point_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
-    const VkSpecializationInfo* specialization_info;
+    const VkSpecializationInfo* specialization_info = nullptr;
+
+    // Used for MeshPass to know if a task will be used as well
+    bool has_task_shader = false;
 
     // There are TWO spirv::Module !??
     // Yes, it was a very conscious decision to have a "read-only" version in Core Validation be different than the
