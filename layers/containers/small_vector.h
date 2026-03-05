@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
  */
 
 #pragma once
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -106,7 +105,7 @@ class small_vector {
                 auto dest = GetWorkingStore();
                 auto source = other.GetWorkingStore();
 
-                const auto overlap = std::min(size_, other.size_);
+                const auto overlap = size_ < other.size_ ? size_ : other.size_;
                 // Copy assign anywhere we have objects in this
                 // Note: usually cheaper than destruct/construct
                 for (size_type i = 0; i < overlap; i++) {
@@ -146,7 +145,7 @@ class small_vector {
                 auto dest = GetWorkingStore();
                 auto source = other.GetWorkingStore();
 
-                const auto overlap = std::min(size_, other.size_);
+                const auto overlap = size_ < other.size_ ? size_ : other.size_;
 
                 // Move assign where we have objects in this
                 // Note: usually cheaper than destruct/construct
@@ -237,7 +236,14 @@ class small_vector {
         size_ = new_size;
     }
 
-    bool Contains(const T &value) const { return std::find(cbegin(), cend(), value) != cend(); }
+    bool Contains(const T& value) const {
+        for (const auto& element : *this) {
+            if (element == value) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     void reserve(size_type new_cap) {
         // Since this can't shrink, if we're growing we're newing
