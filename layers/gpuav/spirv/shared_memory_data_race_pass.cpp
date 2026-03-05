@@ -98,7 +98,7 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
                 const uint32_t memory_layout_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 3 : 4));
                 uint32_t stride_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 4 : 5));
 
-                uint32_t ptr_id = inst.Word(store ? 1 : 3);
+                const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
 
                 // get type of pointee
                 auto ptr_inst = FindInstructionGlobal(function, ptr_id);
@@ -188,9 +188,7 @@ bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function,
         return true;
     }
 
-    uint32_t ptr_id = (opcode == spv::OpStore || opcode == spv::OpAtomicStore || opcode == spv::OpCooperativeMatrixStoreKHR)
-                          ? inst.Word(1)
-                          : inst.Word(3);
+    const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
 
     std::vector<const Instruction*> access_chains;
     const Variable* variable = type_manager_.FindVariableById(ptr_id);
