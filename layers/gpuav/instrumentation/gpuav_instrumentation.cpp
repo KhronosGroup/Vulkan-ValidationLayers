@@ -338,8 +338,17 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
     std::string vuid_msg;
     bool error_found = false;
 
+    // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
+    // by the instrumented shader.
+    const InstrumentedShader* instrumented_shader = nullptr;
+    const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
+    auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
+    if (it != gpuav.instrumented_shaders_map_.end()) {
+        instrumented_shader = &it->second;
+    }
+
     for (const CommandBufferSubState::InstrumentationErrorLogger &error_logger : error_loggers) {
-        error_found = error_logger(gpuav, loc_with_debug_region, error_record, error_msg, vuid_msg);
+        error_found = error_logger(gpuav, loc_with_debug_region, error_record, instrumented_shader, error_msg, vuid_msg);
         if (error_found) {
             break;
         }
@@ -347,17 +356,7 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
 
     // We should find an error, otherwise this means we are not registering a check somewhere
     assert(error_found);
-
     if (error_found) {
-        // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
-        // by the instrumented shader.
-        const InstrumentedShader *instrumented_shader = nullptr;
-        const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
-        auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
-        if (it != gpuav.instrumented_shaders_map_.end()) {
-            instrumented_shader = &it->second;
-        }
-
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
             cb_handle, error_record, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
 

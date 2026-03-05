@@ -27,24 +27,16 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
     }
 
     cb.on_instrumentation_error_logger_register_functions.emplace_back(
-        [](Validator &gpuav, CommandBufferSubState &cb, const LastBound &last_bound) {
+        [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {
             CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
-                [](Validator &gpuav, const Location &loc, const uint32_t *error_record, std::string &out_error_msg,
-                   std::string &out_vuid_msg) {
+                [](Validator& gpuav, const Location& loc, const uint32_t* error_record,
+                   const InstrumentedShader* instrumented_shader, std::string& out_error_msg, std::string& out_vuid_msg) {
                     using namespace glsl;
                     bool error_found = false;
                     if (GetErrorGroup(error_record) != kErrorGroup_SharedMemoryDataRace) {
                         return error_found;
                     }
                     error_found = true;
-
-                    // TODO - We shouldn't need to grab the core Module object here...
-                    const InstrumentedShader *instrumented_shader = nullptr;
-                    const uint32_t unique_shader_id = error_record[glsl::kHeader_ShaderIdErrorOffset] & glsl::kShaderIdMask;
-                    auto it = gpuav.instrumented_shaders_map_.find(unique_shader_id);
-                    if (it != gpuav.instrumented_shaders_map_.end()) {
-                        instrumented_shader = &it->second;
-                    }
 
                     const uint32_t thread_id = error_record[kInst_LogError_ParameterOffset_0];
                     const uint32_t collide_id = error_record[kInst_LogError_ParameterOffset_1] & 0xFFFF;
@@ -53,7 +45,11 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
                     const uint32_t error_sub_code = GetSubError(error_record);
                     std::ostringstream strm;
                     strm << "A data race was detected on the shared memory variable \"";
-                    ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
+                    if (instrumented_shader) {
+                        ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
+                    } else {
+                        strm << "[error, original SPIR-V not found]";
+                    }
                     strm << "\" in local invocation index " << thread_id << " while performing a ";
                     switch (error_sub_code) {
                         case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
