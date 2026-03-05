@@ -661,7 +661,20 @@ bool Instance::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, 
 }
 
 void Device::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanTypedHandle>& leaked_list) const {
-    auto snapshot = tracker.object_map[object_type].snapshot();
+    // The state tracker also tracks implicit images created for swapchains and reports them as leak.
+    // This is entirely incorrect and unfortunately the machinery does not allow distinguishing between
+    // implicitly and explicitly created swapchain images, so the best we can do is to ignore any leaked
+    // images that have swapchain parents.
+    auto snapshot =
+        (object_type == kVulkanObjectTypeImage)
+            ? tracker.object_map[object_type].snapshot(
+                  [swapchain_snapshot =
+                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState> &pNode) {
+                      return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto &swapchain_item) {
+                                 return pNode->parent_object == swapchain_item.second->handle;
+                             }) == swapchain_snapshot.end();
+                  })
+            : tracker.object_map[object_type].snapshot();
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
         leaked_list.emplace_back(ObjTrackStateTypedHandle(*object_info));
