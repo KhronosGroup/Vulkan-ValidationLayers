@@ -320,10 +320,10 @@ static bool WasInstrumented(const LastBound &last_bound) {
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_state, const LogObjectList &objlist,
-                             const CommonInstrumentationErrorInfo &error_info, const uint32_t *error_record,
-                             const Location &loc_with_debug_region,
-                             const std::vector<CommandBufferSubState::InstrumentationErrorLogger> &error_loggers) {
+bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, const LogObjectList& objlist,
+                             const CommonInstrumentationErrorInfo& error_info, const uint32_t* error_record,
+                             const Location& loc_with_debug_region,
+                             const std::vector<CommandBufferSubState::InstrumentationErrorLogger>& error_loggers) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
@@ -345,6 +345,9 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         }
     }
 
+    // We should find an error, otherwise this means we are not registering a check somewhere
+    assert(error_found);
+
     if (error_found) {
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
@@ -355,17 +358,8 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
             instrumented_shader = &it->second;
         }
 
-        const uint32_t stage_id = error_record[glsl::kHeader_StageInstructionIdOffset] >> glsl::kStageId_Shift;
-        const uint32_t instruction_position_offset =
-            error_record[glsl::kHeader_StageInstructionIdOffset] & glsl::kInstructionId_Mask;
-        GpuShaderInstrumentor::ShaderMessageInfo shader_info{stage_id,
-                                                             error_record[glsl::kHeader_StageInfoOffset_0],
-                                                             error_record[glsl::kHeader_StageInfoOffset_1],
-                                                             error_record[glsl::kHeader_StageInfoOffset_2],
-                                                             instruction_position_offset,
-                                                             unique_shader_id};
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-            cb_state.VkHandle(), shader_info, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
+            cb_handle, error_record, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
 
         gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
     }
@@ -376,10 +370,11 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
 void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, CommandBufferSubState &cb_state,
                                                        const LastBound &last_bound,
                                                        const InstBindingPipeLayout &inst_binding_pipe_layout, const Location &loc) {
+    const VkCommandBuffer cb_handle = cb_state.VkHandle();
     VkDescriptorSet instrumentation_desc_set =
         cb_state.gpu_resources_manager.GetManagedDescriptorSet(cb_state.GetInstrumentationDescriptorSetLayout());
     if (!instrumentation_desc_set) {
-        gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate instrumentation descriptor sets.");
+        gpuav.InternalError(cb_handle, loc, "Unable to allocate instrumentation descriptor sets.");
         return;
     }
 
@@ -402,7 +397,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
     if (inst_binding_pipe_layout.handle != VK_NULL_HANDLE) {
         if (inst_binding_pipe_layout.state &&
             (uint32_t)inst_binding_pipe_layout.state->set_layouts.list.size() > gpuav.instrumentation_desc_set_bind_index_) {
-            gpuav.InternalWarning(cb_state.Handle(), loc,
+            gpuav.InternalWarning(cb_handle, loc,
                                   "Unable to bind instrumentation descriptor set, it would override application's bound set");
             return;
         }
@@ -413,7 +408,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
                 assert(false);
                 break;
             case PipelineLayoutSource::LastBoundPipeline:
-                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), last_bound.bind_point, inst_binding_pipe_layout.handle,
+                DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point, inst_binding_pipe_layout.handle,
                                               gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
                                               static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
                 break;
@@ -442,7 +437,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
                         gpuav.instrumentation_desc_set_bind_index_);
 
                     if (instrumentation_pipe_layout != VK_NULL_HANDLE) {
-                        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), last_bound.bind_point, instrumentation_pipe_layout,
+                        DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point, instrumentation_pipe_layout,
                                                       gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
                                                       static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
                         DispatchDestroyPipelineLayout(gpuav.device, instrumentation_pipe_layout, nullptr);
@@ -452,8 +447,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
                     }
                 } else {
                     // No incompatibility detected, safe to use pipeline layout for last bound descriptor set/push constants.
-                    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), last_bound.bind_point,
-                                                  inst_binding_pipe_layout.state->VkHandle(),
+                    DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point, inst_binding_pipe_layout.state->VkHandle(),
                                                   gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
                                                   static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
                 }
@@ -463,7 +457,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, and no push constants, bind
         // the instrumentation pipeline layout
-        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), last_bound.bind_point,
+        DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point,
                                       gpuav.GetInstrumentationPipelineLayout(vvl::DescriptorModeClassic),
                                       gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
                                       static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
@@ -474,13 +468,14 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
         error_loggers.emplace_back(func(gpuav, cb_state, last_bound));
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, error_info, error_loggers = std::move(error_loggers)](
-                                                              const uint32_t *error_record, const Location &loc_with_debug_region,
-                                                              const LogObjectList &objlist) {
-        bool skip = false;
-        skip |= LogInstrumentationError(gpuav, cb_state, objlist, error_info, error_record, loc_with_debug_region, error_loggers);
-        return skip;
-    };
+    CommandBufferSubState::ErrorLoggerFunc error_logger =
+        [&gpuav, &cb_handle, error_info, error_loggers = std::move(error_loggers)](
+            const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
+            bool skip = false;
+            skip |=
+                LogInstrumentationError(gpuav, cb_handle, objlist, error_info, error_record, loc_with_debug_region, error_loggers);
+            return skip;
+        };
 
     cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
