@@ -610,12 +610,12 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 case SpvType::kArray: {
                     const Type* element_type = type_manager_.FindTypeById(id_swap_map[new_inst->Word(2)]);
                     const Constant* element_length = type_manager_.FindConstantById(id_swap_map[new_inst->Word(3)]);
-                    type_id = type_manager_.GetTypeArray(*element_type, *element_length).Id();
+                    type_id = type_manager_.GetTypeArray(*element_type, *element_length, false).Id();
                     break;
                 }
                 case SpvType::kRuntimeArray: {
                     const Type* element_type = type_manager_.FindTypeById(id_swap_map[new_inst->Word(2)]);
-                    type_id = type_manager_.GetTypeRuntimeArray(*element_type).Id();
+                    type_id = type_manager_.GetTypeRuntimeArray(*element_type, false).Id();
                     break;
                 }
                 case SpvType::kVector: {
@@ -646,7 +646,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
                     } else {
                         spv::StorageClass storage_class = spv::StorageClass(new_inst->Word(2));
                         const Type* pointer_type = type_manager_.FindTypeById(id_swap_map[new_inst->Word(3)]);
-                        type_id = type_manager_.GetTypePointer(storage_class, *pointer_type).Id();
+                        type_id = type_manager_.GetTypePointer(storage_class, *pointer_type, false).Id();
                     }
                     break;
                 }
