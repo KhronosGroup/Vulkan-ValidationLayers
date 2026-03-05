@@ -361,6 +361,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                         " draw/dispatch/traceRays commands in a command buffer, we are unable to track which validation error "
                         "occured.\nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value.",
                         gpuav_.gpuav_settings.invalid_index_command);
+                    break;  // only report once
                 } else {
                     // normal case
                     const CommandErrorLogger &error_logger = GetErrorLogger(error_logger_i);
