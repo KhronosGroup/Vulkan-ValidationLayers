@@ -1363,21 +1363,19 @@ bool CoreChecks::ValidateVectorTypes(const spirv::Module& module_state, const sp
                                      const Location& loc) const {
     bool skip = false;
 
-    const bool valid_long_vector = enabled_features.longVector == VK_TRUE;
+    if (!enabled_features.longVector) {
+        return skip;
+    }
 
-    if (valid_long_vector) {
-        const uint32_t maxVectorComponents = phys_dev_ext_props.shader_long_vector_props.maxVectorComponents;
-
-        for (const spirv::Instruction *vec_type_inst : module_state.static_data_.vector_type_inst) {
-            const spirv::Instruction &insn = *vec_type_inst;
-
-            uint32_t components = module_state.GetNumComponentsInBaseType(&insn);
-            if (components > maxVectorComponents) {
-                skip |= LogError(
-                    "VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
-                    "shader %s vector type component count (%" PRIu32 ") exceeds maxVectorComponents (%" PRIu32 ").\n%s\n",
-                    entrypoint.Describe().c_str(), components, maxVectorComponents, module_state.DescribeInstruction(insn).c_str());
-            }
+    const uint32_t max_vector_components = phys_dev_ext_props.shader_long_vector_props.maxVectorComponents;
+    for (const spirv::Instruction* insn : module_state.static_data_.vector_type_inst) {
+        const uint32_t components = module_state.GetNumComponentsInBaseType(insn);
+        if (components > max_vector_components) {
+            skip |= LogError("VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
+                             "shader %s has a %s with a Component Count (%" PRIu32 ") which exceeds maxVectorComponents (%" PRIu32
+                             ").\n%s\n",
+                             entrypoint.Describe().c_str(), string_SpvOpcode(insn->Opcode()), components, max_vector_components,
+                             module_state.DescribeInstruction(*insn).c_str());
         }
     }
     return skip;

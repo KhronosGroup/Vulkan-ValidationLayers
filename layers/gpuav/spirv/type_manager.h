@@ -53,7 +53,7 @@ static constexpr bool ConstantOperation(uint32_t opcode) {
 // trade-off to doing complex logic to resolve more complex types). The class also takes advantage that while Instrumenting we are
 // always aware of our types we are adding or just explictly found.
 struct Type {
-    Type(SpvType spv_type, const Instruction& inst) : spv_type_(spv_type), inst_(inst) {}
+    Type(SpvType spv_type, const Instruction& inst, const TypeManager& type_manager);
 
     bool operator==(Type const& other) const;
     uint32_t Id() const { return inst_.ResultId(); }
@@ -69,6 +69,31 @@ struct Type {
 
     const SpvType spv_type_;
     const Instruction& inst_;
+
+    // Some metadata depending on the type. Some things can't be detected without full view of the module, instead of passing in
+    // TypeManager as an argument to helper functions, it can just get the information once at construction time Want to keep this
+    // *simple* and at most 8 bytes (since Type is aligned up to 24 bytes currently)
+    struct VectorMeta {
+        uint32_t component_count;
+    };
+    struct MatrixMeta {
+        uint32_t component_count;
+    };
+    struct ArrayMeta {
+        uint32_t length;
+    };
+    struct ScalarMeta {
+        uint32_t bit_width;
+        bool is_signed;
+    };
+    union Meta {
+        VectorMeta vector;
+        MatrixMeta matrix;
+        ArrayMeta array;
+        ScalarMeta scalar;
+    };
+    const Meta meta_;
+    static Meta SetMeta(SpvType spv_type, const Instruction& inst, const TypeManager& type_manager);
 };
 
 static bool IsSpecConstant(uint32_t opcode) {
