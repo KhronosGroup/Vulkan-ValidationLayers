@@ -736,9 +736,9 @@ void Module::LinkFunctions(const LinkInfo& info) {
             // (we want lenght of 4 as that means it is 32-bit)
             if (opcode == spv::OpConstant && new_inst->Length() == 4) {
                 const uint32_t constant_value = new_inst->Word(3);
-                if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
+                if (type.spv_type_ == SpvType::kInt && type.meta_.scalar.bit_width == 32) {
                     constant = type_manager_.FindConstantInt32(type.Id(), constant_value);
-                } else if (type.inst_.Opcode() == spv::OpTypeFloat && type.inst_.Word(2) == 32) {
+                } else if (type.spv_type_ == SpvType::kFloat && type.meta_.scalar.bit_width == 32) {
                     constant = type_manager_.FindConstantFloat32(type.Id(), constant_value);
                 }
             }

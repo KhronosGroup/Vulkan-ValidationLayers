@@ -248,6 +248,7 @@ bool Module::ConstantFoldVectorShuffle(Instruction* inst, const Type& result_typ
         return false;
     }
 
+    // LongVectors should not be possible as it would require the user to know the number of literal operands to use
     const uint32_t vec1_length = type_manager_.FindTypeById(vec1->inst_.TypeId())->VectorSize();
 
     std::vector<uint32_t> words = {result_type.Id(), inst->ResultId()};
@@ -365,7 +366,6 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
     spv::Op target_opcode = (spv::Op)inst->Word(3);
 
     // OpSpecConstantOp has a limited set of instructions it can be, these are not handled the special
-    // TODO - Need to test these with LongVector
     if (target_opcode == spv::OpVectorShuffle) {
         return ConstantFoldVectorShuffle(inst, result_type);
     } else if (target_opcode == spv::OpCompositeExtract) {
@@ -432,7 +432,7 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
         }
 
         uint64_t lane_result = 0;
-        const uint32_t result_bit_width = scalar_type.inst_.GetBitWidth();
+        const uint32_t result_bit_width = scalar_type.meta_.scalar.bit_width;
         if (target_opcode == spv::OpSConvert || target_opcode == spv::OpUConvert) {
             uint64_t mask = (result_bit_width == 64) ? ~0ULL : (1ULL << result_bit_width) - 1;
             lane_result = args[0] & mask;
