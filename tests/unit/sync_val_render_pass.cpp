@@ -933,3 +933,59 @@ TEST_F(NegativeSyncValRenderPass, MultiviewMultipleLoadOps) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncValRenderPass, MultiviewClearAttachments) {
+    TEST_DESCRIPTION("Test that CmdClearAttachment clear itw own view");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    vkt::Buffer buffer(*m_device, 128 * 128 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    const uint32_t view_mask = 2;
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 1;
+    multiview_ci.pViewMasks = &view_mask;
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                         VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_STORE);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass(&multiview_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // With multi view clear rect baseLayer/layerCount is not used (should be 0/1)
+    // and the actual layers are selected based on view mask. In our case it's layer 1.
+    VkClearRect clear_rect{};
+    clear_rect.rect.extent = {128, 128};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};  // copy to layer 1
+    region.imageExtent = {128, 128, 1};
+
+    m_command_buffer.Begin();
+
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Even though clear rect references layer 0, the actual layer that is cleared is layer 1 (based on view mask).
+    // The copy also writes to layer mask which causes harard.
+    //
+    // NOTE: Without multiview this test would pass: the clear rect selects layer 0 to clear
+    // and this does not interfere with the copy layer (1). In this regard this test works as
+    // a regression test: if multiview breaks (or disabled by mistake) we would not get hazard
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
