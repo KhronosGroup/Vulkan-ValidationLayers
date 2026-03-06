@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,13 +24,14 @@
 #include <memory>
 
 #include "containers/custom_containers.h"
+#include "containers/small_range_map.h"
 #include "state_tracker/subresource_adapter.h"
 
 constexpr VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
 // Stores the image layout of each subresource of a single image.
 // It is used to track the actual current layout (as opposed to record time tracking)
-using ImageLayoutMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
+using ImageLayoutMap = sparse_container::SmallRangeMap<VkImageLayout, 16>;
 
 // Image layout state during command buffer recording
 struct ImageLayoutState {
@@ -54,10 +55,10 @@ struct ImageLayoutState {
 
 // Tracks image layout state of each subresource of a single image during record time.
 // Each command buffer has ImageLayoutRegistery that tracks all images.
-class CommandBufferImageLayoutMap : public subresource_adapter::BothRangeMap<ImageLayoutState, 16> {
+class CommandBufferImageLayoutMap : public sparse_container::SmallRangeMap<ImageLayoutState, 16> {
   public:
-    CommandBufferImageLayoutMap(subresource_adapter::IndexType subresource_count, uint32_t image_id)
-        : subresource_adapter::BothRangeMap<ImageLayoutState, 16>(subresource_count), image_id(image_id) {}
+    CommandBufferImageLayoutMap(sparse_container::IndexType subresource_count, uint32_t image_id)
+        : sparse_container::SmallRangeMap<ImageLayoutState, 16>(subresource_count), image_id(image_id) {}
     const uint32_t image_id;
 };
 using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;

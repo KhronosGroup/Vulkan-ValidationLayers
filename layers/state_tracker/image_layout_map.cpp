@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -77,13 +77,13 @@ template <typename LayoutMap>
 static bool UpdateLayoutMap(LayoutMap& image_layout_map, RangeGenerator&& range_gen, const ImageLayoutState& entry) {
     bool updated = false;
     // Unwrap the BothMaps entry here as this is a performance hotspot
-    if (image_layout_map.UsesSmallMap()) {
-        auto& layout_map = image_layout_map.GetSmallMap();
+    if (image_layout_map.UsesArrayMap()) {
+        auto& layout_map = image_layout_map.GetArrayMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutMapRange(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = image_layout_map.GetBigMap();
+        auto& layout_map = image_layout_map.GetRangeMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutMapRange(layout_map, *range_gen, entry);
         }
