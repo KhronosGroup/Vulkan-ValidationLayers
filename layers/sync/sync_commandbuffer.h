@@ -312,6 +312,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void RecordSyncOp(SyncOpPointer &&sync_op);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
+    // Should be called only during render pass instance
+    uint32_t GetViewMask() const;
+
     struct ClearAttachmentInfo {
         const vvl::ImageView &attachment_view;
         VkImageSubresourceRange subresource_range{};

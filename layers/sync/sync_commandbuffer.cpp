@@ -1143,54 +1143,106 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
     const ClearAttachmentInfo &info = *optional_info;
     const VkImageSubresourceRange subresource_range = info.subresource_range;
     const VkImageAspectFlags aspects_to_clear = subresource_range.aspectMask;
+    const uint32_t view_mask = GetViewMask();
+    const ImageSubState &sub_state = SubState(*info.attachment_view.image_state);
 
+    // NOTE: when we teach ImageRangeGen to work with view masks all logic will be much simplified
+
+    // Validate Color clear
+    auto report_color_hazard = [this, &skip, &loc, &info](const HazardResult &hazard, const VkClearAttachment &clear_attachment,
+                                                          uint32_t clear_rect_index, const VkClearRect &clear_rect) {
+        std::ostringstream ss;
+        ss << string_VkImageAspectFlags(clear_attachment.aspectMask);
+        ss << " aspect of color attachment " << clear_attachment.colorAttachment;
+        ss << " (" << sync_state_.FormatHandle(info.attachment_view) << ")";
+        if (current_renderpass_context_) {
+            ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
+        }
+        const std::string resource_description = ss.str();
+        const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
+        const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
+                                                                clear_attachment.aspectMask, clear_rect_index, clear_rect);
+        skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
     if (aspects_to_clear & kColorAspects) {
         // [core validation check]: if COLOR_ASPECT is included then PLANE aspects are not allowed,
         // and if PLANE aspect is included then only one is allowed.
         assert(GetBitSetCount(aspects_to_clear) == 1);
 
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
-        HazardResult hazard = current_context_->DetectAttachmentHazard(
-            *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
-            SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
-        if (hazard.IsHazard()) {
-            std::ostringstream ss;
-            ss << string_VkImageAspectFlags(clear_attachment.aspectMask);
-            ss << " aspect of color attachment " << clear_attachment.colorAttachment;
-            ss << " (" << sync_state_.FormatHandle(info.attachment_view) << ")";
-            if (current_renderpass_context_) {
-                ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
+        if (view_mask == 0) {
+            HazardResult hazard = current_context_->DetectAttachmentHazard(
+                *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
+                SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
+            if (hazard.IsHazard()) {
+                report_color_hazard(hazard, clear_attachment, clear_rect_index, clear_rect);
             }
-            const std::string resource_description = ss.str();
-            const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
-            const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
-                                                                    clear_attachment.aspectMask, clear_rect_index, clear_rect);
-            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+        } else {
+            const auto view_indices = GetSetBitIndices(view_mask);
+            const VkImageSubresourceRange &attachment_subresource = info.attachment_view.normalized_subresource_range;
+            for (uint32_t view_index : view_indices) {
+                if (view_index < attachment_subresource.layerCount) {
+                    VkImageSubresourceRange view_subresource = attachment_subresource;
+                    view_subresource.baseArrayLayer += view_index;
+                    view_subresource.layerCount = 1;
+
+                    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(view_subresource, info.attachment_view.is_depth_sliced);
+                    HazardResult hazard = current_context_->DetectAttachmentHazard(
+                        range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
+                    if (hazard.IsHazard()) {
+                        report_color_hazard(hazard, clear_attachment, clear_rect_index, clear_rect);
+                    }
+                }
+            }
         }
     }
 
+    // Validate Depth-Stencil clear
+    auto report_depth_stencil_hazard = [this, &skip, &loc, &info](const HazardResult &hazard,
+                                                                  const VkClearAttachment &clear_attachment,
+                                                                  uint32_t clear_rect_index, const VkClearRect &clear_rect) {
+        std::ostringstream ss;
+        ss << string_VkImageAspectFlags(clear_attachment.aspectMask);
+        ss << " aspect(s) of depth-stencil attachment (";
+        ss << sync_state_.FormatHandle(info.attachment_view) << ")";
+        if (current_renderpass_context_) {
+            ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
+        }
+        const std::string resource_description = ss.str();
+        const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
+        const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
+                                                                clear_attachment.aspectMask, clear_rect_index, clear_rect);
+        skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
     if (aspects_to_clear & kDepthStencilAspects) {
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
 
-        // vkCmdClearAttachments depth/stencil writes are executed by the EARLY_FRAGMENT_TESTS_BIT and LATE_FRAGMENT_TESTS_BIT
-        // stages. The implementation tracks the most recent access, which happens in the LATE_FRAGMENT_TESTS_BIT stage.
-        HazardResult hazard = current_context_->DetectAttachmentHazard(
-            *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
-            SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
-
-        if (hazard.IsHazard()) {
-            std::ostringstream ss;
-            ss << string_VkImageAspectFlags(clear_attachment.aspectMask);
-            ss << " aspect(s) of depth-stencil attachment (";
-            ss << sync_state_.FormatHandle(info.attachment_view) << ")";
-            if (current_renderpass_context_) {
-                ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
+        if (view_mask == 0) {
+            // vkCmdClearAttachments depth/stencil writes are executed by the EARLY_FRAGMENT_TESTS_BIT and LATE_FRAGMENT_TESTS_BIT
+            // stages. The implementation tracks the most recent access, which happens in the LATE_FRAGMENT_TESTS_BIT stage.
+            HazardResult hazard = current_context_->DetectAttachmentHazard(
+                *info.attachment_view.image_state, subresource_range, info.attachment_view.is_depth_sliced,
+                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+            if (hazard.IsHazard()) {
+                report_depth_stencil_hazard(hazard, clear_attachment, clear_rect_index, clear_rect);
             }
-            const std::string resource_description = ss.str();
-            const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
-            const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description,
-                                                                    clear_attachment.aspectMask, clear_rect_index, clear_rect);
-            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+        } else {
+            const auto view_indices = GetSetBitIndices(view_mask);
+            const VkImageSubresourceRange &attachment_subresource = info.attachment_view.normalized_subresource_range;
+            for (uint32_t view_index : view_indices) {
+                if (view_index < attachment_subresource.layerCount) {
+                    VkImageSubresourceRange view_subresource = attachment_subresource;
+                    view_subresource.baseArrayLayer += view_index;
+                    view_subresource.layerCount = 1;
+
+                    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(view_subresource, info.attachment_view.is_depth_sliced);
+                    HazardResult hazard = current_context_->DetectAttachmentHazard(
+                        range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+                    if (hazard.IsHazard()) {
+                        report_depth_stencil_hazard(hazard, clear_attachment, clear_rect_index, clear_rect);
+                    }
+                }
+            }
         }
     }
     return skip;
@@ -1205,20 +1257,36 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
     const ClearAttachmentInfo &info = *optional_info;
     const VkImageSubresourceRange subresource_range = info.subresource_range;
     const VkImageAspectFlags aspects_to_clear = subresource_range.aspectMask;
+    const uint32_t view_mask = GetViewMask();
+    const ImageSubState &sub_state = SubState(*info.attachment_view.image_state);
 
-    const auto &sub_state = SubState(*info.attachment_view.image_state);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
-
-    if (aspects_to_clear & kColorAspects) {
-        assert((aspects_to_clear & kDepthStencilAspects) == 0);
-        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
-        current_context_->UpdateAttachmentAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                      attachment_access, ResourceUsageTagEx{tag});
+    auto update_access_state = [this, aspects_to_clear, tag](ImageRangeGen &range_gen) {
+        if (aspects_to_clear & kColorAspects) {
+            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
+            current_context_->UpdateAttachmentAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                          attachment_access, ResourceUsageTagEx{tag});
+        } else {
+            const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
+            current_context_->UpdateAttachmentAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                          attachment_access, ResourceUsageTagEx{tag});
+        }
+    };
+    // NOTE: when we teach ImageRangeGen to work with view masks all logic will be much simplified
+    if (view_mask == 0) {
+        ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
+        update_access_state(range_gen);
     } else {
-        assert((aspects_to_clear & kColorAspects) == 0);
-        const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-        current_context_->UpdateAttachmentAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                                      attachment_access, ResourceUsageTagEx{tag});
+        const auto view_indices = GetSetBitIndices(view_mask);
+        const VkImageSubresourceRange &attachment_subresource = info.attachment_view.normalized_subresource_range;
+        for (uint32_t view_index : view_indices) {
+            if (view_index < attachment_subresource.layerCount) {
+                VkImageSubresourceRange view_subresource = attachment_subresource;
+                view_subresource.baseArrayLayer += view_index;
+                view_subresource.layerCount = 1;
+                ImageRangeGen range_gen = sub_state.MakeImageRangeGen(view_subresource, false);
+                update_access_state(range_gen);
+            }
+        }
     }
 }
 
@@ -1416,6 +1484,19 @@ AttachmentAccess CommandBufferAccessContext::GetAttachmentAccess(SyncOrdering or
     attachment_access.render_pass_instance_id = current_render_pass_instance_id_;
     attachment_access.subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
     return attachment_access;
+}
+
+uint32_t CommandBufferAccessContext::GetViewMask() const {
+    if (dynamic_rendering_info_) {
+        return dynamic_rendering_info_->info.viewMask;
+    } else if (current_renderpass_context_) {
+        const auto &render_pass_ci = current_renderpass_context_->GetRenderPassState()->create_info;
+        const uint32_t subpass = current_renderpass_context_->GetCurrentSubpass();
+        return render_pass_ci.pSubpasses[subpass].viewMask;
+    } else {
+        assert(false && "GetViewMask musk be called only during render pass instance");
+        return 0;
+    }
 }
 
 // NOTE: debug location reporting feature works only for reproducible application sessions

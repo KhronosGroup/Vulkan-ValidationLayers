@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
- * Copyright (C) 2019-2025 Google Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
+ * Copyright (C) 2019-2026 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,6 +389,9 @@ class ImageRangeEncoder : public RangeEncoder {
     bool is_compressed_;
 };
 
+// TODO: add support for view mask. If specified, the ragne generator iterates only over
+// the view layers. Currently we have to organize an external loop to go over view layers
+// and we create range generator for each view.
 class ImageRangeGenerator {
   public:
     using RangeType = IndexRange;
