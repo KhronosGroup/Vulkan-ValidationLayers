@@ -694,9 +694,10 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                              .c_str());
     }
 
+    VkAccelerationStructureBuildSizesInfoKHR accelerationStructure_size = vku::InitStructHelper();
+    DispatchGetClusterAccelerationStructureBuildSizesNV(device, &(pCommandInfos->input), &accelerationStructure_size);
+
     {
-        VkAccelerationStructureBuildSizesInfoKHR accelerationStructure_size = vku::InitStructHelper();
-        DispatchGetClusterAccelerationStructureBuildSizesNV(device, &(pCommandInfos->input), &accelerationStructure_size);
         BufferAddressValidation<2> scratch_buffer_validator = {{{
             {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-12300",
              [&accelerationStructure_size](const vvl::Buffer& buffer_state) {
@@ -791,51 +792,30 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
     }
 
     if (pCommandInfos->scratchData && pCommandInfos->dstImplicitData) {
-        const auto scratch_buffer_states = GetBuffersByAddress(pCommandInfos->scratchData);
-        const auto dst_implicit_buffer_states = GetBuffersByAddress(pCommandInfos->dstImplicitData);
-        for (const auto& scratch_buffer_state : scratch_buffer_states) {
-            vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
-
-            if (!scratch_address_range.empty()) {
-                for (const auto& dst_implicit_buffer_state : dst_implicit_buffer_states) {
-                    const vvl::range<VkDeviceAddress> dst_implicit_address_range = dst_implicit_buffer_state->DeviceAddressRange();
-                    if (dst_implicit_address_range.intersects(scratch_address_range)) {
-                        const LogObjectList objlist_implicit(commandBuffer, dst_implicit_buffer_state->Handle(),
-                                                             scratch_buffer_state->Handle());
-                        skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstImplicitData-12303",
-                                         objlist_implicit, command_infos_loc.dot(Field::dstImplicitData),
-                                         "%s address range %s intersects with scratchData address range %s",
-                                         FormatHandle(dst_implicit_buffer_state->Handle()).c_str(),
-                                         string_range_hex(dst_implicit_address_range).c_str(),
-                                         string_range_hex(scratch_address_range).c_str());
-                    }
-                }
-            }
+        const vvl::range<VkDeviceAddress> scratch_range = {
+            pCommandInfos->scratchData, pCommandInfos->scratchData + accelerationStructure_size.buildScratchSize};
+        const vvl::range<VkDeviceAddress> dst_implicit_range = {
+            pCommandInfos->dstImplicitData, pCommandInfos->dstImplicitData + accelerationStructure_size.accelerationStructureSize};
+        if (scratch_range.intersects(dst_implicit_range)) {
+            skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstImplicitData-12303", objlist,
+                             command_infos_loc.dot(Field::dstImplicitData),
+                             "dstImplicitData address range %s intersects with scratchData address range %s",
+                             string_range_hex(dst_implicit_range).c_str(), string_range_hex(scratch_range).c_str());
         }
     }
 
     if (pCommandInfos->scratchData && pCommandInfos->dstAddressesArray.deviceAddress) {
-        const auto scratch_buffer_states = GetBuffersByAddress(pCommandInfos->scratchData);
-        const auto dst_addresses_buffer_states = GetBuffersByAddress(pCommandInfos->dstAddressesArray.deviceAddress);
-        for (const auto& scratch_buffer_state : scratch_buffer_states) {
-            vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
-
-            if (!scratch_address_range.empty()) {
-                for (const auto& dst_addresses_buffer_state : dst_addresses_buffer_states) {
-                    const vvl::range<VkDeviceAddress> dst_addresses_address_range =
-                        dst_addresses_buffer_state->DeviceAddressRange();
-                    if (dst_addresses_address_range.intersects(scratch_address_range)) {
-                        const LogObjectList objlist_addresses(commandBuffer, dst_addresses_buffer_state->Handle(),
-                                                              scratch_buffer_state->Handle());
-                        skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstAddressesArray-12302",
-                                         objlist_addresses, command_infos_loc.dot(Field::dstAddressesArray),
-                                         "%s address range %s intersects with scratchData address range %s",
-                                         FormatHandle(dst_addresses_buffer_state->Handle()).c_str(),
-                                         string_range_hex(dst_addresses_address_range).c_str(),
-                                         string_range_hex(scratch_address_range).c_str());
-                    }
-                }
-            }
+        const vvl::range<VkDeviceAddress> scratch_range = {
+            pCommandInfos->scratchData, pCommandInfos->scratchData + accelerationStructure_size.buildScratchSize};
+        const VkDeviceSize dst_addresses_size =
+            pCommandInfos->dstAddressesArray.stride * pCommandInfos->input.maxAccelerationStructureCount;
+        const vvl::range<VkDeviceAddress> dst_addresses_range = {
+            pCommandInfos->dstAddressesArray.deviceAddress, pCommandInfos->dstAddressesArray.deviceAddress + dst_addresses_size};
+        if (scratch_range.intersects(dst_addresses_range)) {
+            skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstAddressesArray-12302", objlist,
+                             command_infos_loc.dot(Field::dstAddressesArray),
+                             "dstAddressesArray address range %s intersects with scratchData address range %s",
+                             string_range_hex(dst_addresses_range).c_str(), string_range_hex(scratch_range).c_str());
         }
     }
 

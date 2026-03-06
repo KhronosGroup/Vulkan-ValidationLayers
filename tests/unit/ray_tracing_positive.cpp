@@ -2279,6 +2279,93 @@ TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirect) {
     ASSERT_TRUE(has_data);
 }
 
+TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirectSameBufferNonOverlapping) {
+    TEST_DESCRIPTION(
+        "Validate vkCmdBuildClusterAccelerationStructureIndirectNV does not report overlap errors when "
+        "dstImplicitData and scratchData use the same buffer at non-overlapping offsets");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::clusterAccelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    uint32_t total_triangles = 1;
+    uint32_t total_vertices = 3 * total_triangles;
+
+    VkClusterAccelerationStructureTriangleClusterInputNV tri_cluster = vku::InitStructHelper();
+    tri_cluster.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    tri_cluster.maxGeometryIndexValue = total_triangles - 1;
+    tri_cluster.maxClusterUniqueGeometryCount = 0;
+    tri_cluster.maxClusterTriangleCount = 1;
+    tri_cluster.maxClusterVertexCount = 3;
+    tri_cluster.maxTotalTriangleCount = total_triangles;
+    tri_cluster.maxTotalVertexCount = total_vertices;
+    tri_cluster.minPositionTruncateBitCount = 0;
+
+    VkClusterAccelerationStructureOpInputNV input = {};
+    input.pTriangleClusters = &tri_cluster;
+    VkClusterAccelerationStructureInputInfoNV input_info = vku::InitStructHelper();
+    input_info.maxAccelerationStructureCount = 1;
+    input_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    input_info.opType = VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV;
+    input_info.opInput = input;
+
+    VkAccelerationStructureBuildSizesInfoKHR clas_size_info = vku::InitStructHelper();
+    vk::GetClusterAccelerationStructureBuildSizesNV(*m_device, &input_info, &clas_size_info);
+
+    VkPhysicalDeviceClusterAccelerationStructurePropertiesNV accel_struct_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(accel_struct_props);
+    const VkDeviceSize scratch_alignment = accel_struct_props.clusterScratchByteAlignment;
+
+    const VkDeviceSize implicit_size = clas_size_info.accelerationStructureSize;
+    const VkDeviceSize combined_size = implicit_size + scratch_alignment + clas_size_info.buildScratchSize;
+
+    vkt::Buffer combined_buffer(*m_device, combined_size,
+                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+                                vkt::device_address);
+
+    const VkDeviceAddress base_addr = combined_buffer.Address();
+    const VkDeviceAddress scratch_addr =
+        (base_addr + implicit_size + scratch_alignment - 1) / scratch_alignment * scratch_alignment;
+
+    vkt::Buffer src_info_buffer(
+        *m_device, sizeof(VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
+
+    vkt::Buffer count_buffer(
+        *m_device, sizeof(uint32_t),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
+    uint32_t input_count = 1;
+    auto* count_data = static_cast<uint32_t*>(count_buffer.Memory().Map());
+    memcpy(count_data, &input_count, sizeof(input_count));
+
+    vkt::Buffer dst_addresses_buffer(
+        *m_device, sizeof(VkDeviceAddress),
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
+
+    VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
+    command_info.input = input_info;
+    command_info.input.opMode = VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV;
+    command_info.dstImplicitData = base_addr;
+    command_info.scratchData = scratch_addr;
+    command_info.dstAddressesArray.deviceAddress = dst_addresses_buffer.Address();
+    command_info.dstAddressesArray.stride = sizeof(VkDeviceAddress);
+    command_info.srcInfosArray.deviceAddress = src_info_buffer.Address();
+    command_info.srcInfosArray.stride = sizeof(VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV);
+    command_info.srcInfosCount = count_buffer.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveRayTracing, GetClusterAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION(
         "Test vKGetClusterAccelerationStructureBuildSizes can retrieve the buffer allocation requirements for cluster geometry "
