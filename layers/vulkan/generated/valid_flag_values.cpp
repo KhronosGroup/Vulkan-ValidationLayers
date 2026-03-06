@@ -1040,6 +1040,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_FUCHSIA_external_semaphore};
                 }
             }
+            if (value & (VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_DRM_SYNCOBJ_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ext_external_semaphore_drm_syncobj)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ext_external_semaphore_drm_syncobj))) {
+                    return {vvl::Extension::_VK_EXT_external_semaphore_drm_syncobj};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkResolveModeFlagBits:
             if (value & (VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID)) {

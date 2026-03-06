@@ -1158,6 +1158,9 @@
                     "presentTiming": true,
                     "presentAtAbsoluteTime": true,
                     "presentAtRelativeTime": true
+                },
+                "VkPhysicalDeviceExternalSemaphoreDrmSyncobjFeaturesEXT": {
+                    "externalSemaphoreDrmSyncobj": true
                 }
             },
             "properties": {
@@ -2750,7 +2753,8 @@
                 "VK_VALVE_fragment_density_map_layered": 1,
                 "VK_VALVE_video_encode_rgb_conversion": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
-                "VK_EXT_dynamic_rendering_unused_attachments": 1
+                "VK_EXT_dynamic_rendering_unused_attachments": 1,
+                "VK_EXT_external_semaphore_drm_syncobj": 1
             },
             "formats": {
                 "VK_FORMAT_UNDEFINED": {
