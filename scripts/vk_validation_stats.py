@@ -17,7 +17,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
-import csv
 import glob
 import os
 import re
@@ -31,24 +30,20 @@ _VENDOR_SUFFIXES = ['IMG', 'AMD', 'AMDX', 'ARM', 'FSL', 'BRCM', 'NXP', 'NV', 'NV
                     'GOOGLE', 'QCOM', 'LUNARG', 'NZXT', 'SAMSUNG', 'SEC', 'TIZEN',
                     'RENDERDOC', 'NN', 'MVK', 'MESA', 'INTEL', 'HUAWEI', 'VALVE',
                     'QNX', 'JUICE', 'FB', 'RASTERGRID', 'MSFT']
-_CROSS_VENDOR_SUFFIXES = ['KHR', 'EXT']
 
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
-def IsVendor(vuid : str, target_vendor : str = None):
+def IsVendor(vuid : str = None):
     vkObject = vuid.split('-')[1]
-
-    if target_vendor and target_vendor != "ALL":
-        return vkObject.endswith(target_vendor)
 
     for vendor in _VENDOR_SUFFIXES:
         if vkObject.endswith(vendor):
-            return True
-    return False
+            return vendor
 
-verbose_mode = False
+    return None
+
 remove_duplicates = False
 vuid_prefixes = ['VUID-']
 
@@ -107,7 +102,7 @@ class ValidationSource:
 
                     # Our hacked way to detect "common" draw/dispatch/traceRay VUIDs
                     if sf.endswith('drawdispatch_vuids.cpp') and '###' in line:
-                        self.action_set.add(line[-5:])
+                        self.action_set.add(line.strip()[-5:])
 
                     if any(prefix in line for prefix in vuid_prefixes):
                         # Replace the '(' of lines containing validation helper functions with ' ' to make them easier to parse
@@ -302,119 +297,252 @@ class Consistency:
 # Class to output database in various flavors
 #
 class OutputDatabase:
-    def __init__(self, val_json, val_source, val_tests, spirv_val, target_vendor=None):
+    def __init__(self, val_json, val_source, val_tests, spirv_val):
         self.vj = val_json
         self.vs = val_source
         self.vt = val_tests
         self.sv = spirv_val
-        self.target_vendor = target_vendor
 
-    def _is_vendor_skip(self, vuid):
-        return self.target_vendor and not IsVendor(vuid, self.target_vendor)
+        # < Github Issue number : [VUIDs]>
+        self.issue_map = {
+            "3289" : ["06353", "06552", "06553", "06554", "06892", "06893", "06998", "08750", "08751", "08761"],
+            "3305" : ["06276", "06277"],
+            "4047" : ["01104"],
+            "5431" : ["00643", "00644", "00647", "00648", "00668", "01133", "01134", "01135", "01455", "01518", "01519", "01520", "01539", "01540", "01541", "01542", "01543", "01544", "01746", "01747", "01750", "01751", "01754", "01755", "03264", "12331", "12332"],
+            "5724" : ["03511", "03512", "03513", "03514", "03638", "03639", "03640", "03641", "03680", "03681", "03682", "03683", "03684", "03685", "03686", "03687", "03688", "03689", "03690", "03691", "03692", "03693", "03694", "03696", "03697", "04029", "04035", "04041", "04735", "04736"],
+            "5749" : ["06289", "06290", "06291", "06292"],
+            "5796" : ["06172", "06173", "06174", "06175", "06176", "06177"],
+            "5858" : ["03407", "03645", "03646", "03647", "03651", "03652", "03653", "03663", "03664", "03671", "03672", "03703", "03704", "03705", "03706", "03709", "03717", "03724", "03768", "03769", "03770", "03773", "03777", "03801", "03808", "10607", "11845", "12281"],
+            "6656" : ["08756", "08757"],
+            "6801" : ["00708", "00709", "00710", "00713", "00715", "08448", "08449", "08450", "08453", "08454", "08455"],
+            "7141" : ["09366", "09367", "09373", "09374"],
+            "7481" : ["03561"],
+            "7580" : ["06352", "06359"],
+            "7688" : ["09588", "09590", "09592"],
+            "8095" : ["10795", "10796", "10797"],
+            "8605" : ["02707", "09370", "09371", "10198", "10929", "11004", "11029", "11034", "11038", "11044", "11046", "11048", "11049", "11051", "11052", "11055", "11056", "11065", "11066", "11068", "11117", "11118", "11120", "11122", "11140", "11142", "11144", "11149", "11150"],
+            "9065" : ["10389", "10390"],
+            "9081" : ["06344", "06345", "06346", "06347"],
+            "9102" : ["08727", "09595", "09596", "09597"],
+            "9103" : ["01182"],
+            "9104" : ["06632"],
+            "9176" : ["02777", "02779", "06738"],
+            "9250" : ["08899", "08900", "08903", "08904", "08906", "08907"],
+            "9251" : ["04475"],
+            "9447" : ["03429", "03511", "03636", "03679", "04735", "04736"],
+            "10618" : ["03049", "03050", "10915", "10916"],
+            "11117" : ["11527", "11529", "11530", "11532", "11533", "11534", "11535", "11536", "11537", "11538", "11539", "11540", "11856", "11857", "11858", "11859", "11871", "11872", "11873"],
+            "11332" : ["12289", "12290", "12291", "12292"],
+            "11376" : ["00657", "00659", "00660", "00661", "00663", "01125", "01127", "01129", "01130", "01439", "01440", "01441", "01447", "01449", "01451", "01460", "01461", "01467", "01468", "03261", "03262"],
+            "11377" : ["01307", "02673"],
+            "11386" : ["01181", "03839", "03840", "03841", "03847"],
+            "11388" : ["03821", "03822"],
+            "11413" : ["01246", "01253", "01258", "01259", "06740", "10284"],
+            "11414" : ["02317", "02319", "02320", "11006"],
+            "11415" : ["09308", "09317"],
+            "11416" : ["02263", "02264", "02265", "06420"],
+            "11418" : ["09601", "10749", "10750", "11800", "11801"],
+            "11419" : ["00062", "01239", "01240", "01241", "01498", "01815", "01911", "02591"],
+            "11420" : ["02873", "02876", "02903", "06993", "06995", "10202"],
+            "11421" : ["01524", "01530", "06013", "06017", "06023"],
+            "11422" : ["09586"],
+            "11423" : ["07890"],
+            "11425" : ["09578"],
+            "11426" : ["03592"],
+            "11429" : ["09589", "09591", "09593"],
+            "11431" : ["08053", "08054", "08116", "08119", "08604", "08605"],
+            "11436" : ["01094", "01095", "08744", "08745"],
+            "11443" : ["02741", "02742"],
+            "11444" : ["02808", "03855", "10910", "10911"],
+            "11445" : ["01565", "07468", "07469"],
+            "11446" : ["02596", "02597", "06685", "06686", "08456", "08457", "08459"],
+            "11447" : ["01245", "01282", "01293", "10285"],
+            "11448" : ["00065", "03867"],
+            "11451" : ["07474"],
+            "11452" : ["00740", "04331", "04332", "04335", "04487", "04488", "04489", "06264", "07045", "07051", "07057", "10595", "10596", "10597", "12333", "12335", "12336", "12337"],
+            "11453" : ["06022", "06533", "06534", "06535", "06536", "09299", "09300"],
+            "11481" : ["02532", "02533", "03049", "03050", "09044", "09045", "09046"],
+            "11793" : ["12379"],
+            "11811" : ["11219", "11221"],
+            "11812" : ["11295", "11296"],
+            "11813" : ["11387", "11388"],
+            "11814" : ["12348"],
+            "11815" : ["11328", "11329", "11330", "11331"]
+        }
 
-    def dump_txt(self, filename, only_unimplemented=False):
-        print(f'\nDumping database to text file: {filename}')
-        with open(filename, 'w', encoding='utf-8') as txt:
-            txt.write("## VUID Database\n")
-            txt.write("## Format: VUID_NAME | CHECKED | SPIRV-TOOL | TEST | TYPE | API/STRUCT | VUID_TEXT\n##\n")
-            vuid_list = list(self.vj.all_vuids)
-            vuid_list.sort()
-            for vuid in vuid_list:
-                if self._is_vendor_skip(vuid):
-                    continue
+        self.issue_topic_map = {
+            '5431'  : 'external',
+            '11376' : 'external',
+            '9250'  : 'gpl',
+            '3305'  : 'gpuav',
+            '5796'  : 'gpuav',
+            '8605'  : 'gpuav',
+            '9081'  : 'gpuav',
+            '9251'  : 'gpuav',
+            '11332' : 'gpuav',
+            '11431' : 'gpuav',
+            '11446' : 'gpuav',
+            '11452' : 'gpuav',
+            '11793' : 'gpuav',
+            '3289'  : 'rtx',
+            '5724'  : 'rtx',
+            '5858'  : 'rtx',
+            '7481'  : 'rtx',
+            '7580'  : 'rtx',
+            '9447'  : 'rtx',
+            '4047'  : 'sparse',
+            '11377' : 'wsi',
+            '11413' : 'wsi',
+            '11447' : 'wsi',
+        }
 
-                db_list = self.vj.vuid_db[vuid]
-                for db_entry in db_list:
-                    checked = 'N'
-                    spirv = 'N'
-                    if vuid in self.vs.all_vuids:
-                        if only_unimplemented:
-                            continue
-                        else:
-                            checked = 'Y'
-                            if vuid in self.sv.source_all_vuids:
-                                spirv = 'Y'
-                    test = 'None'
-                    if vuid in self.vt.vuid_to_tests:
-                        test_list = list(self.vt.vuid_to_tests[vuid])
-                        test_list.sort()   # sort tests, for diff-ability
-                        sep = ', '
-                        test = sep.join(test_list)
+        # < Vendor : [VUIDs]>
+        self.vendor_map = {
+            'AMD' : ['06767', '06768', '06769', '06770', '06771', '06772', '06773'],
+            'AMDX' : ['09178', '09191', '09192', '09193', '09194', '09195', '09196', '09197', '10187', '10188', '10189', '10190', '10191', '10884', '10893', '10898', '10899', '10900', '10901', '10902', '10903', '10905', '10906'],
+            'ARM' : ['09396', '09397', '09398', '09399', '09682', '09683', '09698', '09699', '09711', '09753', '09754', '09759', '09762', '09858', '09878', '09879', '09908', '09909', '09912', '09913', '09914', '09915', '09918', '09931', '09932', '09933', '09940', '09941', '09942', '09946', '09947', '09948', '09949', '09952', '09953', '09956', '12372', '12373'],
+            'FUCHSIA' : ['04749', '04751', '04752', '06380', '06381', '06382', '06383', '06384', '06385', '06386', '06387', '06389', '06390', '06392', '06408', '07902', '07903'],
+            'HUAWEI' : ['04949', '04950', '04992', '04993', '07813'],
+            'IMG' : ['09583', '09584'],
+            'NV' : ['01038', '01050', '02805', '02966', '04137', '04139', '04141', '04142', '04569', '04570', '04571', '04572', '04573', '04574', '04575', '04672', '04673', '04674', '04684', '04778', '04927', '04928', '04929', '04930', '04954', '04955', '06324', '06519', '06569', '06570', '06571', '06572', '06648', '06649', '07063', '07488', '07489', '07491', '07492', '07494', '07920', '08701', '09008', '09228', '09383', '09384', '09385', '09386', '09463', '09464', '09466', '10096', '10097', '10098', '10099', '10100', '10101', '11467', '11820', '11875', '11876'],
+            'NVX' : ['04951', '06595', '06596', '06597', '06598', '06599', '10578'],
+            'QCOM' : ['00207', '00208', '00209', '02627', '02864', '02865', '02866', '02867', '02868', '02869', '02870', '02871', '02872', '04554', '04555', '04557', '04558', '04560', '04561', '04565', '04566', '06203', '06204', '06205', '06206', '06207', '06208', '06971', '06972', '06973', '06974', '06975', '06976', '06977', '06978', '06979', '06980', '06981', '06982', '06983', '06984', '06985', '06986', '06987', '06988', '06989', '06990', '08723', '09204', '09207', '09208', '09209', '09210', '09212', '09213', '09214', '09215', '09216', '09217', '09219', '09220', '09221', '09222', '09223', '09224', '09225', '09226', '10051', '10052', '10053', '10054', '10055', '10056', '10057', '10058', '10614', '10615', '10616', '10617', '10618', '10619', '10620', '10621', '10622', '10623', '10624', '10625', '10626', '10627', '10628', '10629', '10630', '10631', '10632', '10633', '10634', '10635', '10639', '10640', '10641', '10642', '10643', '10644', '10645', '10646', '10647', '10648', '10649', '10650', '10651', '10652', '10653', '10654', '10655', '10656', '10657', '10658', '10659', '10660', '10661', '10662', '10663', '10664', '10665', '10666', '10667', '10670', '10671', '10673', '10674', '10675', '10676', '10677', '10678', '10679', '10681', '10682', '10683', '10686', '10687', '10688', '10689', '10690', '10691', '10692', '10693', '10694', '10695', '10696', '10697', '10698', '10699', '10700', '10701', '10702', '10703', '10704', '10705', '10706', '10707', '10708', '10709', '10710', '10711', '10712', '10713', '10714', '10755', '11830', '11831', '11832', '11833', '11834', '11835', '11836', '11837', '11838', '11842', '11843', '11844', '11877', '12352', '12353', '12354'],
+            'QNX' : ['08941', '08942', '08943', '08944', '08945', '08946', '08951', '08952', '08953', '08954', '08955', '08957', '08958', '08959', '08960', '08961', '08962'],
+            'VAVLE' : ['10918', '10919', '10920', '10921', '10922', '10923', '10924']
+        }
 
-                    vuid_text = db_entry["text"].replace('\n', ' ')
-                    txt.write(f'{vuid} | {checked} | {test} | {spirv} | {db_entry["type"]} | {db_entry["api"]} | {vuid_text}\n')
+        self.topic_vuid_map = {
+        'VK_EXT_graphics_pipeline_library' : ['06611', '06616', '06617', '06618', '06619', '06623', '06624', '06628', '06684'],
+            'VK_EXT_opacity_micromap' : ['03678', '07334', '07335', '07432', '07433', '07434', '07435', '07436', '07437', '07438', '07440', '07441', '07461', '07462', '07463', '07464', '07465', '07466', '07467', '07501', '07502', '07508', '07509', '07510', '07511', '07512', '07517', '07518', '07519', '07520', '07521', '07522', '07523', '07524', '07525', '07526', '07527', '07528', '07529', '07530', '07532', '07533', '07534', '07535', '07538', '07539', '07540', '07541', '07545', '07546', '07547', '07549', '07550', '07552', '07556', '07557', '07558', '07559', '07561', '07562', '07565', '07567', '07568', '07572', '07576', '07577', '07578', '07579', '08704', '08705', '08706', '08707', '08708', '08709', '09180', '10071', '10072', '10719', '10722', '10723', '10904', '11821'],
+            'devicegroup' : ['00085', '00376', '00377', '00691', '00692', '00693', '00694', '01118', '01119', '01152', '01157', '01167', '01297', '01298', '01299', '01300', '01301', '01302', '01303', '01605', '01626', '01628', '01629', '01635', '01637', '01638', '01639', '01640', '01641', '03826', '03833', '03846', '03888', '03889'],
+            'external' : ['08922'],
+            'gpuav' : ['02713', '04745', '07117', '07118', '07288', '07699', '08601', '08731', '09003', '09190', '09218', '09565', '09645', '10134', '10135', '10136', '10137', '10138', '10139', '10140', '10141', '10142', '10143', '10144', '10145', '10146', '10147', '10148', '10149', '10934', '10945', '10950', '10961', '10962', '10966', '10967', '10968', '10969', '10970', '10971', '10975', '11166', '11297', '11298', '11299', '11300', '11301', '11302', '11304', '11305', '11306', '11309', '11319', '11340', '11341', '11342', '11343', '11345', '11348', '11349', '11350', '11372', '11373', '11374', '11379', '11380', '11382', '11383', '11384', '11397', '11398', '11437', '11438', '11439', '11440', '11441', '11442', '11443', '11450', '11455', '11456', '11481', '11769', '12211', '12212', '12214', '12282', '12283', '12284', '12285', '12286', '12287'],
+            'rtx' : ['03414', '03746', '04960', '10418', '11485', '11855'],
+            'sparse' : ['01103', '06287', '10938', '10939'],
+            'wsi' : ['00081', '10409', '10411', '10412', '10416']
+        }
 
-    def dump_csv(self, filename, only_unimplemented=False):
-        print(f'\nDumping database to csv file: {filename}')
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            cw = csv.writer(csvfile)
-            cw.writerow(['VUID_NAME','CHECKED','SPIRV-TOOL', 'TEST','TYPE','API/STRUCT','VUID_TEXT'])
-            vuid_list = list(self.vj.all_vuids)
-            vuid_list.sort()
-            for vuid in vuid_list:
-                if self._is_vendor_skip(vuid):
-                    continue
+    def dump_html(self, filename):
+        print(f'\nDumping TODO list to html file: {filename}')
+        preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>List of current Valid Usages not being validated</h2>\n<font size="2" face="Arial">\n'
+        table = []
+        table.append('<table style="width:100%">\n<tr><th>VUID</th><th>TYPE</th><th>Comment</th></tr>\n')
 
-                for db_entry in self.vj.vuid_db[vuid]:
-                    row = [vuid]
-                    if vuid in self.vs.all_vuids:
-                        if only_unimplemented:
-                            continue
-                        else:
-                            row.append('Y') # checked
-                            if vuid in self.sv.source_all_vuids:
-                                row.append('Y') # spirv-tool
-                            else:
-                                row.append('N') # spirv-tool
+        total_count = 0
+        vendor_count = 0
+        micro_map_count = 0
+        gpl_count = 0
+        rtx_count = 0
+        wsi_count = 0
+        gpuav_count = 0
+        device_group_count = 0
+        external_count = 0
+        sparse_count = 0
 
-                    else:
-                        row.append('N') # checked
-                        row.append('N') # spirv-tool
-                    test = 'None'
-                    if vuid in self.vt.vuid_to_tests:
-                        sep = ', '
-                        test = sep.join(sorted(self.vt.vuid_to_tests[vuid]))
-                    row.append(test)
-                    row.append(db_entry['type'])
-                    row.append(db_entry['api'])
-                    row.append(db_entry['text'])
-                    cw.writerow(row)
+        vuid_list = list(self.vj.all_vuids)
+        vuid_list.sort()
+        for vuid in vuid_list:
+            if vuid in self.vs.all_vuids:
+                continue
+            total_count += 1
+            table.append(f'<tr><th>{vuid}</th>')
+            assert(len(self.vj.vuid_db[vuid]) == 1)
+            table.append(f'<th>{self.vj.vuid_db[vuid][0]["type"]}</th>')
 
-    def dump_html(self, filename, only_unimplemented=False):
-        print(f'\nDumping database to html file: {filename}')
-        preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>Valid Usage Database</h2>\n<font size="2" face="Arial">\n<table style="width:100%">\n'
-        headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>SPIRV-TOOL</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>VUID TEXT</th></tr>\n'
+            vendor = IsVendor(vuid)
+            if vendor is not None:
+                vendor_count += 1
+                table.append(f'<th>{vendor} vendor extension</th></tr>')
+                continue
+
+            vendor = None
+            for key, list_of_vuids in self.vendor_map.items():
+                if vuid[-5:] in list_of_vuids:
+                    vendor = key
+                    break
+            if vendor:
+                vendor_count += 1
+                table.append(f'<th>{vendor} vendor extension</th></tr>')
+                continue
+
+            issue_number = None
+            for key, list_of_vuids in self.issue_map.items():
+                if vuid[-5:] in list_of_vuids:
+                    issue_number = key
+                    break
+            if issue_number:
+                table.append(f'<th><a href=https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/{issue_number}> Issue {issue_number}</th></tr>')
+                if issue_number in self.issue_topic_map:
+                    if self.issue_topic_map[issue_number] == 'gpuav':
+                        gpuav_count += 1
+                    elif self.issue_topic_map[issue_number] == 'external':
+                        external_count += 1
+                    elif self.issue_topic_map[issue_number] == 'rtx':
+                        rtx_count += 1
+                        gpuav_count += 1
+                    elif self.issue_topic_map[issue_number] == 'wsi':
+                        wsi_count += 1
+                    elif self.issue_topic_map[issue_number] == 'gpl':
+                        gpl_count += 1
+                    elif self.issue_topic_map[issue_number] == 'sparse':
+                        sparse_count += 1
+                continue
+
+            topic = None
+            for key, list_of_vuids in self.topic_vuid_map.items():
+                if vuid[-5:] in list_of_vuids:
+                    topic = key
+                    break
+            if topic:
+                if topic == 'VK_EXT_opacity_micromap':
+                    micro_map_count += 1
+                    table.append(f'<th>VK_EXT_opacity_micromap</th></tr>')
+                elif topic == 'VK_EXT_graphics_pipeline_library':
+                    gpl_count += 1
+                    table.append(f'<th>VK_EXT_graphics_pipeline_library</th></tr>')
+                elif topic == 'gpuav':
+                    gpuav_count += 1
+                    table.append(f'<th>Requires GPU-AV</th></tr>')
+                elif topic == 'rtx':
+                    rtx_count += 1
+                    gpuav_count += 1
+                    table.append(f'<th>RTX with GPU-AV</th></tr>')
+                elif topic == 'devicegroup':
+                    device_group_count += 1
+                    table.append(f'<th>Device Groups</th></tr>')
+                elif topic == 'external':
+                    external_count += 1
+                    table.append(f'<th>External Memory/Sync</th></tr>')
+                elif topic == 'sparse':
+                    sparse_count += 1
+                    table.append(f'<th>Sparse Memory</th></tr>')
+                elif topic == 'wsi':
+                    wsi_count += 1
+                    table.append(f'<th>WSI</th></tr>')
+                continue
+
+            table.append('<th>To be categorized</th></tr>')
+
+        table.append('</table>\n</body>\n</html>\n')
+
+        stats = []
+        stats.append(f'<h1>Total Remaing VUs: {total_count}</h1>')
+        stats.append('<ul>')
+        stats.append(f'<li><b>Vendor extensions</b>: {vendor_count} ({(vendor_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>VK_EXT_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>VK_EXT_graphics_pipeline_library</b>: {gpl_count} ({(gpl_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>External Memory/Sync</b>: {external_count} ({(external_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>WSI</b>: {wsi_count} ({(wsi_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>Device Groups</b>: {device_group_count} ({(device_group_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>Sparse Memory</b>: {sparse_count} ({(sparse_count / total_count):.1%})</li>')
+        stats.append(f'<li><b>Require GPU-AV support</b>: {gpuav_count} ({(gpuav_count / total_count):.1%})</li>')
+        stats.append(f'<ul><li><b>Ray Tracing (GPU-AV)</b>: {rtx_count} ({(rtx_count / total_count):.1%})</li></ul>')
+        stats.append('</ul>')
+
         with open(filename, 'w', encoding='utf-8') as hfile:
             hfile.write(preamble)
-            hfile.write(headers)
-            vuid_list = list(self.vj.all_vuids)
-            vuid_list.sort()
-            for vuid in vuid_list:
-                if self._is_vendor_skip(vuid):
-                    continue
-
-                for db_entry in self.vj.vuid_db[vuid]:
-                    checked = '<span style="color:red;">N</span>'
-                    spirv = ''
-                    if vuid in self.vs.all_vuids:
-                        if only_unimplemented:
-                            continue
-                        else:
-                            checked = '<span style="color:limegreen;">Y</span>'
-                            if vuid in self.sv.source_all_vuids:
-                                spirv = 'Y'
-                    hfile.write(f'<tr><th>{vuid}</th>')
-                    hfile.write(f'<th>{checked}</th>')
-                    hfile.write(f'<th>{spirv}</th>')
-                    test = 'None'
-                    if vuid in self.vt.vuid_to_tests:
-                        sep = ', '
-                        test = sep.join(sorted(self.vt.vuid_to_tests[vuid]))
-                    hfile.write(f'<th>{test}</th>')
-                    hfile.write(f'<th>{db_entry["type"]}</th>')
-                    hfile.write(f'<th>{db_entry["api"]}</th>')
-                    hfile.write(f'<th>{db_entry["text"]}</th></tr>\n')
-            hfile.write('</table>\n</body>\n</html>\n')
+            hfile.write(''.join(stats))
+            hfile.write(''.join(table))
 
 class SpirvValidation:
     def __init__(self, repo_path):
@@ -429,7 +557,7 @@ class SpirvValidation:
         self.test_explicit_vuids = set()
         self.test_implicit_vuids = set()
 
-    def load(self, verbose):
+    def load(self):
         if self.enabled is False:
             return
         # Get hash from git if available
@@ -439,12 +567,9 @@ class SpirvValidation:
             self.version = process.communicate()[0].strip().decode('utf-8')[:7]
             if process.poll() != 0:
                 throw
-            elif verbose:
-                print(f'Found SPIR-V Tools version {self.version}')
         except:
             # leave as default
-            if verbose:
-                print(f'Could not find .git file for version of SPIR-V tools, marking as {self.version}')
+            print(f'Could not find .git file for version of SPIR-V tools, marking as {self.version}')
 
         # Find and parse files with VUIDs in source
         for path in spirvtools_source_files:
@@ -454,8 +579,6 @@ class SpirvValidation:
 
 
 def main(argv):
-    TXT_FILENAME = "validation_error_database.txt"
-    CSV_FILENAME = "validation_error_database.csv"
     HTML_FILENAME = "validation_error_database.html"
 
     parser = argparse.ArgumentParser()
@@ -466,26 +589,14 @@ def main(argv):
                         help='Specify API name to use')
     parser.add_argument('-c', action='store_true',
                         help='report consistency warnings')
-    parser.add_argument('-todo', action='store_true',
-                        help='report unimplemented VUIDs')
-    parser.add_argument('-vuid', metavar='VUID_NAME',
-                        help='report status of individual VUID <VUID_NAME>')
     parser.add_argument('-spirvtools', metavar='PATH',
                         help='when pointed to root directory of SPIRV-Tools repo, will search the repo for VUs that are implemented there')
-    parser.add_argument('-text', nargs='?', const=TXT_FILENAME, metavar='FILENAME',
-                        help=f'export the error database in text format to <FILENAME>, defaults to {TXT_FILENAME}')
-    parser.add_argument('-csv', nargs='?', const=CSV_FILENAME, metavar='FILENAME',
-                        help=f'export the error database in csv format to <FILENAME>, defaults to {CSV_FILENAME}')
     parser.add_argument('-html', nargs='?', const=HTML_FILENAME, metavar='FILENAME',
-                        help=f'export the error database in html format to <FILENAME>, defaults to {HTML_FILENAME}')
+                        help=f'export the TODO error database in html format to <FILENAME>, defaults to {HTML_FILENAME}')
     parser.add_argument('-remove_duplicates', action='store_true',
                         help='remove duplicate VUID numbers')
     parser.add_argument('-summary', action='store_true',
                         help='output summary of VUID coverage')
-    parser.add_argument('-verbose', action='store_true',
-                        help='show your work (to stdout)')
-    parser.add_argument('-vendor', default=None, choices=_VENDOR_SUFFIXES + _CROSS_VENDOR_SUFFIXES + ["ALL"],
-                        help='report only vendor specific vuids, defaults to none, "ALL" means only vendor specific vuids')
     args = parser.parse_args()
 
     # We need python modules found in the registry directory. This assumes that the validusage.json file is in that directory,
@@ -519,15 +630,12 @@ def main(argv):
 
     test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
-    global verbose_mode
-    verbose_mode = args.verbose
-
     global remove_duplicates
     remove_duplicates = args.remove_duplicates
 
     # Load in SPIRV-Tools if passed in
     spirv_val = SpirvValidation(args.spirvtools)
-    spirv_val.load(verbose_mode)
+    spirv_val.load()
 
     # Parse validusage json
     val_json = ValidationJSON(args.json_file)
@@ -537,10 +645,6 @@ def main(argv):
     exp_json = len(val_json.explicit_vuids)
     imp_json = len(val_json.implicit_vuids)
     all_json = len(val_json.all_vuids)
-    if verbose_mode:
-        print('Found {all_json} unique error vuids in validusage.json file.')
-        print(f'  {exp_json} explicit')
-        print(f'  {imp_json} implicit')
 
     # Parse layer source files
     val_source = ValidationSource(layer_source_files)
@@ -554,15 +658,6 @@ def main(argv):
     spirv_exp_checks = len(spirv_val.source_explicit_vuids) if spirv_val.enabled else 0
     spirv_imp_checks = len(spirv_val.source_implicit_vuids) if spirv_val.enabled else 0
     spirv_all_checks = (spirv_exp_checks + spirv_imp_checks) if spirv_val.enabled else 0
-    if verbose_mode:
-        print('Found {all_checks} unique vuid checks in layer source code.')
-        print(f'  {exp_checks} explicit')
-        if spirv_val.enabled:
-            print(f'    SPIR-V Tool make up {spirv_exp_checks}')
-        print(f'  {imp_checks} implicit')
-        if spirv_val.enabled:
-            print(f'    SPIR-V Tool make up {spirv_imp_checks}')
-        print(f'  {val_source.duplicated_checks} checks are implemented more that once')
 
     # Parse test files
     val_tests = ValidationTests(test_source_files)
@@ -575,14 +670,6 @@ def main(argv):
     spirv_exp_tests = len(spirv_val.test_explicit_vuids) if spirv_val.enabled else 0
     spirv_imp_tests = len(spirv_val.test_implicit_vuids) if spirv_val.enabled else 0
     spirv_all_tests = (spirv_exp_tests + spirv_imp_tests) if spirv_val.enabled else 0
-    if verbose_mode:
-        print('Found {all_tests} unique error vuids in test source code.')
-        print('  {exp_tests} explicit')
-        if spirv_val.enabled:
-            print('    From SPIRV-Tools: {spirv_exp_tests}')
-        print('  {imp_tests} implicit')
-        if spirv_val.enabled:
-            print('    From SPIRV-Tools: {spirv_imp_tests}')
 
     # Process stats
     if args.summary:
@@ -604,48 +691,13 @@ def main(argv):
         print(f"  Overall VUIDs checked:  {(100.0 * all_checks / all_json):.1f}% ({all_checks} checked vs {all_json} defined)")
 
         unimplemented_explicit = val_json.all_vuids - val_source.all_vuids
-        vendor_count = sum(1 for vuid in unimplemented_explicit if IsVendor(vuid))
+        vendor_count = sum(1 for vuid in unimplemented_explicit if IsVendor(vuid) is not None)
         print(f'    {len(unimplemented_explicit)} VUID checks remain unimplemented ({vendor_count} are from Vendor objects)')
 
         print("\nVUID test coverage")
         print(f"  Explicit VUIDs tested: {(100.0 * exp_tests / exp_checks):.1f}% ({exp_tests} tested vs {exp_checks} checks)")
         print(f"  Implicit VUIDs tested: {(100.0 * imp_tests / imp_checks):.1f}% ({imp_tests} tested vs {imp_checks} checks)")
         print(f"  Overall VUIDs tested:  {(100.0 * all_tests / all_checks):.1f}% ({all_tests} tested vs {all_checks} checks)")
-
-    # Report status of a single VUID
-    if args.vuid:
-        print(f'\n\nChecking status of <{args.vuid}>')
-        if args.vuid not in val_json.all_vuids:
-            print('  Not a valid VUID string.')
-        else:
-            if args.vuid in val_source.explicit_vuids:
-                print('  Implemented!')
-                line_list = val_source.vuid_count_dict[args.vuid]['file_line']
-                for line in line_list:
-                    print(f'    => {line}')
-            elif args.vuid in val_source.implicit_vuids:
-                print('  Implemented! (Implicit)')
-                line_list = val_source.vuid_count_dict[args.vuid]['file_line']
-                for line in line_list:
-                    print(f'    => {line}')
-            else:
-                print('  Not implemented.')
-            if args.vuid in val_tests.all_vuids:
-                print('  Has a test!')
-                test_list = val_tests.vuid_to_tests[args.vuid]
-                for test in test_list:
-                    print(f'    => {test}')
-            else:
-                print('  Not tested.')
-
-    # Report unimplemented explicit VUIDs
-    if args.todo:
-        unim_explicit = val_json.explicit_vuids - val_source.explicit_vuids
-        print(f'\n\n{len(unim_explicit)} explicit VUID checks remain unimplemented:')
-        ulist = list(unim_explicit)
-        ulist.sort()
-        for vuid in ulist:
-            print(f'  => {vuid}')
 
     # Consistency tests
     if args.c:
@@ -659,13 +711,10 @@ def main(argv):
             print("  OK! No inconsistencies found.")
 
     # Output database in requested format(s)
-    db_out = OutputDatabase(val_json, val_source, val_tests, spirv_val, args.vendor)
-    if args.text:
-        db_out.dump_txt(args.text, args.todo)
-    if args.csv:
-        db_out.dump_csv(args.csv, args.todo)
+    # (We use to support CSV and Text, but neither were used and not worth maintaining)
     if args.html:
-        db_out.dump_html(args.html, args.todo)
+        db_out = OutputDatabase(val_json, val_source, val_tests, spirv_val)
+        db_out.dump_html(args.html)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
