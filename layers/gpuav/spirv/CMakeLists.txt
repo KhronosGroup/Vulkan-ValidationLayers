@@ -93,6 +93,11 @@ elseif(MSVC)
     )
 endif()
 
+# No matter what I do, MinGW is unaware how small_vector works
+if(MINGW)
+    target_compile_options(gpu_av_spirv PRIVATE -Wno-maybe-uninitialized)
+endif()
+
 # Auto generate Shaders' SPIR-V code upon GLSL changes
 set(GPUAV_SHADERS_DIR "${VVL_SOURCE_DIR}/layers/gpuav/shaders")
 file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS

@@ -49,7 +49,7 @@ const Type* Variable::PointerType(TypeManager& type_manager_) const {
 const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType spv_type) {
     const auto& inst = module_.types_values_constants_.emplace_back(std::move(new_inst));
 
-    id_to_type_[inst->ResultId()] = std::make_unique<Type>(spv_type, *inst);
+    id_to_type_[inst->ResultId()] = std::make_unique<Type>(spv_type, *inst, *this);
     const Type* new_type = id_to_type_[inst->ResultId()].get();
 
     switch (spv_type) {
@@ -259,8 +259,7 @@ const Type& TypeManager::GetTypeAccelerationStructure() {
 
 const Type& TypeManager::GetTypeInt(uint32_t bit_width, bool is_signed) {
     for (const auto type : int_types_) {
-        const bool int_is_signed = type->inst_.Word(3) != 0;
-        if (type->inst_.Word(2) == bit_width && int_is_signed == is_signed) {
+        if (type->meta_.scalar.bit_width == bit_width && type->meta_.scalar.is_signed == is_signed) {
             return *type;
         }
     }
@@ -274,7 +273,7 @@ const Type& TypeManager::GetTypeInt(uint32_t bit_width, bool is_signed) {
 
 const Type& TypeManager::GetTypeFloat(uint32_t bit_width) {
     for (const auto type : float_types_) {
-        if (type->inst_.Word(2) == bit_width) {
+        if (type->meta_.scalar.bit_width == bit_width) {
             return *type;
         }
     }
@@ -321,7 +320,7 @@ const Type& TypeManager::GetTypeRuntimeArray(const Type& element_type, bool get_
 
 const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t component_count) {
     for (const auto type : vector_types_) {
-        if (type->inst_.Word(3) != component_count) {
+        if (type->meta_.vector.component_count != component_count) {
             continue;
         }
 
@@ -339,7 +338,7 @@ const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t comp
 
 const Type& TypeManager::GetTypeMatrix(const Type& column_type, uint32_t column_count) {
     for (const auto type : matrix_types_) {
-        if (type->inst_.Word(3) != column_count) {
+        if (type->meta_.matrix.component_count != column_count) {
             continue;
         }
 
@@ -431,28 +430,28 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
 }
 
 uint32_t TypeManager::TypeLength(const Type& type) {
-    switch (type.inst_.Opcode()) {
-        case spv::OpTypeFloat:
-        case spv::OpTypeInt:
-            return type.inst_.Operand(0) / 8u;
-        case spv::OpTypeVector:
-        case spv::OpTypeMatrix: {
-            const Type* count = FindTypeById(type.inst_.Operand(0));
-            return type.inst_.Operand(1) * TypeLength(*count);
+    switch (type.spv_type_) {
+        case SpvType::kFloat:
+        case SpvType::kInt:
+            return type.meta_.scalar.bit_width / 8u;
+        case SpvType::kVector:
+        case SpvType::kVectorIdEXT: {
+            const Type* count_type = FindTypeById(type.inst_.Operand(0));
+            return type.meta_.vector.component_count * TypeLength(*count_type);
         }
-        case spv::OpTypePointer:
+        case SpvType::kMatrix: {
+            const Type* column_type = FindTypeById(type.inst_.Operand(0));
+            return type.meta_.matrix.component_count * TypeLength(*column_type);
+        }
+        case SpvType::kPointer:
             assert(type.inst_.Operand(0) == spv::StorageClassPhysicalStorageBuffer && "unexpected pointer type");
             // always will be PhysicalStorageBuffer64 addressing model
             return 8u;
-        case spv::OpTypeArray: {
+        case SpvType::kArray: {
             const Type* element_type = FindTypeById(type.inst_.Operand(0));
-            const Constant* count = FindConstantById(type.inst_.Operand(1));
-            // TODO - Need to handle spec constant here, for now return zero to have things not blowup
-            assert(count && !count->is_spec_constant_);
-            const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 0;
-            return array_length * TypeLength(*element_type);
+            return type.meta_.array.length * TypeLength(*element_type);
         }
-        case spv::OpTypeStruct: {
+        case SpvType::kStruct: {
             // Get the offset of the last member and then figure out it's size
             // Note: the largest offset doesn't have to be the last element index of the struct
             uint32_t last_offset = 0;
@@ -485,7 +484,7 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             struct_size_map_[struct_id] = struct_size;
             return struct_size;
         }
-        case spv::OpTypeRuntimeArray:
+        case SpvType::kRuntimeArray:
             assert(false && "unsupported type");
             break;
         default:
@@ -502,12 +501,12 @@ const Constant& TypeManager::AddConstant(std::unique_ptr<Instruction> new_inst, 
     const Constant* new_constant = id_to_constant_[inst->ResultId()].get();
 
     if (inst->Opcode() == spv::OpConstant) {
-        if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
+        if (type.spv_type_ == SpvType::kInt && type.meta_.scalar.bit_width == 32) {
             int_32bit_constants_.emplace_back(new_constant);
-        } else if (type.inst_.Opcode() == spv::OpTypeFloat) {
-            if (type.inst_.Word(2) == 16) {
+        } else if (type.spv_type_ == SpvType::kFloat) {
+            if (type.meta_.scalar.bit_width == 16) {
                 float_16bit_constants_.emplace_back(new_constant);
-            } else if (type.inst_.Word(2) == 32) {
+            } else if (type.meta_.scalar.bit_width == 32) {
                 float_32bit_constants_.emplace_back(new_constant);
             }
         }
@@ -740,9 +739,38 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
 
 const Variable* TypeManager::FindPushConstantVariable() const { return push_constant_variable_; }
 
+Type::Meta Type::SetMeta(SpvType spv_type, const Instruction& inst, const TypeManager& type_manager) {
+    Meta m{};  // Zero-initialize (unions don't zero-init automatically)
+    if (spv_type == SpvType::kVector) {
+        m.vector.component_count = inst.Word(3);
+    } else if (spv_type == SpvType::kVectorIdEXT) {
+        const Constant* count = type_manager.FindConstantById(inst.Word(3));
+        assert(count && !count->is_spec_constant_);
+        m.vector.component_count = count->GetValueUint32();
+    } else if (spv_type == SpvType::kMatrix) {
+        m.matrix.component_count = inst.Word(3);
+    } else if (spv_type == SpvType::kArray) {
+        const Constant* count = type_manager.FindConstantById(inst.Word(3));
+        assert(count && !count->is_spec_constant_);
+        m.array.length = count->GetValueUint32();
+    } else if (spv_type == SpvType::kFloat) {
+        m.scalar.bit_width = inst.Word(2);
+    } else if (spv_type == SpvType::kInt) {
+        m.scalar.bit_width = inst.Word(2);
+        m.scalar.is_signed = inst.Word(3) == 1;
+    } else if (spv_type == SpvType::kBool) {
+        // "Boolean values considered as 32-bit integer values for the purpose of this calculation"
+        m.scalar.bit_width = 32;
+    }
+    return m;
+}
+
+Type::Type(SpvType spv_type, const Instruction& inst, const TypeManager& type_manager)
+    : spv_type_(spv_type), inst_(inst), meta_(SetMeta(spv_type, inst, type_manager)) {}
+
 bool Type::IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
 
-bool Type::IsSignedInt() const { return spv_type_ == SpvType::kInt && inst_.Word(3) == 1; }
+bool Type::IsSignedInt() const { return spv_type_ == SpvType::kInt && meta_.scalar.is_signed; }
 
 bool Type::IsIVec3(const TypeManager& type_manager) const {
     if (spv_type_ == SpvType::kVector) {
@@ -755,15 +783,12 @@ bool Type::IsIVec3(const TypeManager& type_manager) const {
 }
 
 uint32_t Type::VectorSize() const {
-    if (spv_type_ == SpvType::kVector) {
-        return inst_.Word(3);
-    }
-    return 0;
+    return (spv_type_ == SpvType::kVector || spv_type_ == SpvType::kVectorIdEXT) ? meta_.vector.component_count : 0;
 }
 
 bool Type::Is64Bit() const {
     if (spv_type_ == SpvType::kFloat || spv_type_ == SpvType::kInt) {
-        return inst_.Word(2) == 64;
+        return meta_.scalar.bit_width == 64;
     }
     return false;
 }
@@ -772,18 +797,15 @@ uint32_t TypeManager::GetNumScalarElements(const Type& type) const {
     switch (type.spv_type_) {
         case SpvType::kStruct:
             return GetNumScalarElementsBeforeCompositeMember(type, type.inst_.Length() - 2);
-        case SpvType::kVectorIdEXT:
         case SpvType::kArray: {
-            const Constant* count = FindConstantById(type.inst_.Word(3));
-            assert(count && !count->is_spec_constant_);
-            const uint32_t array_length = count->GetValueUint32();
             const Type* element_type = FindTypeById(type.inst_.Word(2));
-            return array_length * GetNumScalarElements(*element_type);
+            return type.meta_.array.length * GetNumScalarElements(*element_type);
         }
+        case SpvType::kVectorIdEXT:
         case SpvType::kVector:
-            return type.inst_.Word(3);
+            return type.meta_.vector.component_count;
         case SpvType::kMatrix:
-            return type.inst_.Word(3) * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
+            return type.meta_.matrix.component_count * GetNumScalarElements(*FindTypeById(type.inst_.Word(2)));
         case SpvType::kInt:
         case SpvType::kFloat:
         case SpvType::kBool:
@@ -800,7 +822,7 @@ uint32_t Constant::GetValueUint32() const {
 }
 
 uint64_t Constant::GetValueUint64(bool is_signed) const {
-    const uint32_t bit_width = type_.inst_.Word(2);
+    const uint32_t bit_width = type_.meta_.scalar.bit_width;
 
     uint64_t value = inst_.Word(3);
     if (bit_width == 64) {

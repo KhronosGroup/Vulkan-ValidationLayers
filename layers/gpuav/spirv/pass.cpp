@@ -259,20 +259,20 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
                 module_.InternalError("FindTypeByteSize", "missing matrix stride");
             }
             if (col_major) {
-                return type.inst_.Word(3) * matrix_stride;
+                return type.meta_.matrix.component_count * matrix_stride;
             } else {
                 const Type* vector_type = type_manager_.FindTypeById(type.inst_.Word(2));
-                return vector_type->inst_.Word(3) * matrix_stride;
+                return vector_type->meta_.vector.component_count * matrix_stride;
             }
         }
         case SpvType::kVector: {
-            uint32_t size = type.inst_.Word(3);
+            uint32_t size = type.meta_.vector.component_count;
             const Type* component_type = type_manager_.FindTypeById(type.inst_.Word(2));
             // if vector in row major matrix, the vector is strided so return the number of bytes spanned by the vector
             if (in_matrix && !col_major && matrix_stride > 0) {
                 return (size - 1) * matrix_stride + FindTypeByteSize(component_type->Id());
             } else if (component_type->spv_type_ == SpvType::kFloat || component_type->spv_type_ == SpvType::kInt) {
-                const uint32_t width = component_type->inst_.Word(2);
+                const uint32_t width = component_type->meta_.scalar.bit_width;
                 size *= width;
             } else {
                 module_.InternalError("FindTypeByteSize", "unexpected vector type");
@@ -281,15 +281,11 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
         }
         case SpvType::kFloat:
         case SpvType::kInt: {
-            const uint32_t width = type.inst_.Word(2);
-            return width / 8;
+            return type.meta_.scalar.bit_width / 8u;
         }
         case SpvType::kArray: {
             const uint32_t array_stride = GetDecoration(type_id, spv::DecorationArrayStride)->Word(3);
-            const Constant* count = type_manager_.FindConstantById(type.inst_.Operand(1));
-            assert(count && !count->is_spec_constant_);
-            const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 1;
-            return array_length * array_stride;
+            return type.meta_.array.length * array_stride;
         }
         case SpvType::kStruct: {
             const uint32_t struct_length = type.inst_.Length() - 2;
@@ -889,15 +885,16 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
             module_.AddCapability(spv::CapabilityInt64);
         } else {
-            if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) && phi_type.inst_.Word(2) < 32) {
+            if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) &&
+                phi_type.meta_.scalar.bit_width < 32) {
                 // You can't make a constant of a 8-int, 16-int, 16-float without having the capability
                 // The only way this situation occurs if they use something like
                 //     OpCapability StorageBuffer8BitAccess
                 // but there is not explicit Int8
                 // It should be more than safe to inject it for them
-                spv::Capability capability = (phi_type.spv_type_ == SpvType::kFloat) ? spv::CapabilityFloat16
-                                             : (phi_type.inst_.Word(2) == 16)        ? spv::CapabilityInt16
-                                                                                     : spv::CapabilityInt8;
+                spv::Capability capability = (phi_type.spv_type_ == SpvType::kFloat)   ? spv::CapabilityFloat16
+                                             : (phi_type.meta_.scalar.bit_width == 16) ? spv::CapabilityInt16
+                                                                                       : spv::CapabilityInt8;
                 module_.AddCapability(capability);
             }
 

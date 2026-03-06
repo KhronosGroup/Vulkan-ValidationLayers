@@ -58,7 +58,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
 
     switch (argument_type.spv_type_) {
         case SpvType::kVector: {
-            const uint32_t component_count = argument_type.inst_.Word(3);
+            const uint32_t component_count = argument_type.meta_.vector.component_count;
             const uint32_t component_type_id = argument_type.inst_.Word(2);
             const Type* component_type = type_manager_.FindTypeById(component_type_id);
             assert(component_type);
@@ -71,10 +71,10 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         case SpvType::kInt: {
-            const uint32_t width = argument_type.inst_.Word(2);
+            const uint32_t width = argument_type.meta_.scalar.bit_width;
 
             // first thing is to get any signed to unsigned via bitcast
-            const bool is_signed = argument_type.inst_.Word(3) != 0;
+            const bool is_signed = argument_type.meta_.scalar.is_signed;
             uint32_t incoming_id = argument_id;
             if (is_signed) {
                 const uint32_t bitcast_id = module_.TakeNextId();
@@ -131,7 +131,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         case SpvType::kFloat: {
-            const uint32_t width = argument_type.inst_.Word(2);
+            const uint32_t width = argument_type.meta_.scalar.bit_width;
             if (width == 16) {
                 const uint32_t float32_type_id = type_manager_.GetTypeFloat(32).Id();
                 const uint32_t fconvert_id = module_.TakeNextId();
