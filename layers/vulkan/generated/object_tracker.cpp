@@ -96,6 +96,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     FindLeakedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeShaderInstrumentationARM, leaked_list);
     if (!leaked_list.empty()) {
         skip |= ReportLeakedObjects(leaked_list, loc);
     }
@@ -160,6 +161,7 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeShaderInstrumentationARM, loc);
 }
 
 // vkEnumeratePhysicalDevices:
@@ -8608,6 +8610,82 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 // vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM:
 // Checked by chassis: physicalDevice:
 // "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM-physicalDevice-parameter"
+
+// vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM:
+// Checked by chassis: physicalDevice: "VUID-vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM-physicalDevice-parameter"
+
+// vkCreateShaderInstrumentationARM:
+// Checked by chassis: device: "VUID-vkCreateShaderInstrumentationARM-device-parameter"
+
+void Device::PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkShaderInstrumentationARM* pInstrumentation,
+                                                          const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pInstrumentation, kVulkanObjectTypeShaderInstrumentationARM, pAllocator, record_obj.location, device);
+}
+
+bool Device::PreCallValidateDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyShaderInstrumentationARM-device-parameter"
+    skip |= ValidateObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, true,
+                           "VUID-vkDestroyShaderInstrumentationARM-instrumentation-parameter",
+                           "VUID-vkDestroyShaderInstrumentationARM-instrumentation-parent",
+                           error_obj.location.dot(Field::instrumentation));
+    skip |= ValidateDestroyObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, pAllocator, kVUIDUndefined,
+                                  kVUIDUndefined, error_obj.location);
+
+    return skip;
+}
+
+void Device::PreCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                          const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    RecordDestroyObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, record_obj.location);
+}
+
+bool Device::PreCallValidateCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                             VkShaderInstrumentationARM instrumentation,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginShaderInstrumentationARM-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBeginShaderInstrumentationARM-commonparent"
+    skip |= ValidateObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, false,
+                           "VUID-vkCmdBeginShaderInstrumentationARM-instrumentation-parameter",
+                           "VUID-vkCmdBeginShaderInstrumentationARM-commonparent", error_obj.location.dot(Field::instrumentation));
+
+    return skip;
+}
+
+// vkCmdEndShaderInstrumentationARM:
+// Checked by chassis: commandBuffer: "VUID-vkCmdEndShaderInstrumentationARM-commandBuffer-parameter"
+
+bool Device::PreCallValidateGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                              uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                              VkShaderInstrumentationValuesFlagsARM flags,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetShaderInstrumentationValuesARM-device-parameter"
+    skip |= ValidateObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, false,
+                           "VUID-vkGetShaderInstrumentationValuesARM-instrumentation-parameter",
+                           "VUID-vkGetShaderInstrumentationValuesARM-instrumentation-parent",
+                           error_obj.location.dot(Field::instrumentation));
+
+    return skip;
+}
+
+bool Device::PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkClearShaderInstrumentationMetricsARM-device-parameter"
+    skip |= ValidateObject(instrumentation, kVulkanObjectTypeShaderInstrumentationARM, false,
+                           "VUID-vkClearShaderInstrumentationMetricsARM-instrumentation-parameter",
+                           "VUID-vkClearShaderInstrumentationMetricsARM-instrumentation-parent",
+                           error_obj.location.dot(Field::instrumentation));
+
+    return skip;
+}
 
 // vkCmdEndRendering2EXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdEndRendering2KHR-commandBuffer-parameter"

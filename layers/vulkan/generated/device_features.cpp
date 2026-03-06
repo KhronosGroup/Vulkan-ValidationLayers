@@ -1878,6 +1878,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->performanceCountersByRegion |= enabled->performanceCountersByRegion == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM: {
+                const VkPhysicalDeviceShaderInstrumentationFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM *>(pNext);
+                features->shaderInstrumentation |= enabled->shaderInstrumentation == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT: {
                 const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(pNext);
@@ -1896,14 +1902,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->fragmentDensityMapLayered |= enabled->fragmentDensityMapLayered == VK_TRUE;
                 break;
             }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {
                 const VkPhysicalDevicePresentMeteringFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(pNext);
                 features->presentMetering |= enabled->presentMetering == VK_TRUE;
                 break;
             }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT: {
                 const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *>(pNext);

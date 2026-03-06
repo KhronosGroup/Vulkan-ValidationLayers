@@ -1398,6 +1398,23 @@ bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndir
 bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
                                             void** pHandle, const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkShaderInstrumentationARM* pInstrumentation,
+                                                  const RecordObject& record_obj) override;
+bool PreCallValidateDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    const ErrorObject& error_obj) const override;
+void PreCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
+bool PreCallValidateCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation,
+                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                      uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                      VkShaderInstrumentationValuesFlagsARM flags,
+                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

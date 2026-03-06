@@ -58,6 +58,7 @@ const char* String(Func func) {
     {"vkBindVideoSessionMemoryKHR", 28},
     {"vkBuildAccelerationStructuresKHR", 33},
     {"vkBuildMicromapsEXT", 20},
+    {"vkClearShaderInstrumentationMetricsARM", 39},
     {"vkCmdBeginConditionalRenderingEXT", 34},
     {"vkCmdBeginCustomResolveEXT", 27},
     {"vkCmdBeginDebugUtilsLabelEXT", 29},
@@ -69,6 +70,7 @@ const char* String(Func func) {
     {"vkCmdBeginRenderPass2KHR", 25},
     {"vkCmdBeginRendering", 20},
     {"vkCmdBeginRenderingKHR", 23},
+    {"vkCmdBeginShaderInstrumentationARM", 35},
     {"vkCmdBeginTransformFeedbackEXT", 31},
     {"vkCmdBeginVideoCodingKHR", 25},
     {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", 46},
@@ -184,6 +186,7 @@ const char* String(Func func) {
     {"vkCmdEndRendering2EXT", 22},
     {"vkCmdEndRendering2KHR", 22},
     {"vkCmdEndRenderingKHR", 21},
+    {"vkCmdEndShaderInstrumentationARM", 33},
     {"vkCmdEndTransformFeedbackEXT", 29},
     {"vkCmdEndVideoCodingKHR", 23},
     {"vkCmdExecuteCommands", 21},
@@ -418,6 +421,7 @@ const char* String(Func func) {
     {"vkCreateSamplerYcbcrConversionKHR", 34},
     {"vkCreateScreenSurfaceQNX", 25},
     {"vkCreateSemaphore", 18},
+    {"vkCreateShaderInstrumentationARM", 33},
     {"vkCreateShaderModule", 21},
     {"vkCreateShadersEXT", 19},
     {"vkCreateSharedSwapchainsKHR", 28},
@@ -483,6 +487,7 @@ const char* String(Func func) {
     {"vkDestroySamplerYcbcrConversionKHR", 35},
     {"vkDestroySemaphore", 19},
     {"vkDestroyShaderEXT", 19},
+    {"vkDestroyShaderInstrumentationARM", 34},
     {"vkDestroyShaderModule", 22},
     {"vkDestroySurfaceKHR", 20},
     {"vkDestroySwapchainKHR", 22},
@@ -503,6 +508,7 @@ const char* String(Func func) {
     {"vkEnumeratePhysicalDeviceGroupsKHR", 35},
     {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM", 67},
     {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", 64},
+    {"vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM", 57},
     {"vkEnumeratePhysicalDevices", 27},
     {"vkExportMetalObjectsEXT", 24},
     {"vkFlushMappedMemoryRanges", 26},
@@ -723,6 +729,7 @@ const char* String(Func func) {
     {"vkGetSemaphoreZirconHandleFUCHSIA", 34},
     {"vkGetShaderBinaryDataEXT", 25},
     {"vkGetShaderInfoAMD", 19},
+    {"vkGetShaderInstrumentationValuesARM", 36},
     {"vkGetShaderModuleCreateInfoIdentifierEXT", 41},
     {"vkGetShaderModuleIdentifierEXT", 31},
     {"vkGetSwapchainCounterEXT", 25},
@@ -1691,6 +1698,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderFmaFeaturesKHR", 37},
     {"VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", 50},
     {"VkPhysicalDeviceShaderImageFootprintFeaturesNV", 47},
+    {"VkPhysicalDeviceShaderInstrumentationFeaturesARM", 49},
+    {"VkPhysicalDeviceShaderInstrumentationPropertiesARM", 51},
     {"VkPhysicalDeviceShaderIntegerDotProductFeatures", 48},
     {"VkPhysicalDeviceShaderIntegerDotProductProperties", 50},
     {"VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL", 53},
@@ -1956,6 +1965,9 @@ const char* String(Struct structure) {
     {"VkSetStateFlagsIndirectCommandNV", 33},
     {"VkShaderCreateInfoEXT", 22},
     {"VkShaderDescriptorSetAndBindingMappingInfoEXT", 46},
+    {"VkShaderInstrumentationCreateInfoARM", 37},
+    {"VkShaderInstrumentationMetricDataHeaderARM", 43},
+    {"VkShaderInstrumentationMetricDescriptionARM", 44},
     {"VkShaderModuleCreateInfo", 25},
     {"VkShaderModuleIdentifierEXT", 28},
     {"VkShaderModuleValidationCacheCreateInfoEXT", 43},
@@ -2286,6 +2298,7 @@ const char* String(Field field) {
     {"basePipelineHandle", 19},
     {"basePipelineIndex", 18},
     {"baseTriangle", 13},
+    {"basicBlockIndex", 16},
     {"biasInterpretation", 19},
     {"bidirectionalCompoundReferenceNameMask", 39},
     {"bidirectionalFlowSupported", 27},
@@ -3119,6 +3132,7 @@ const char* String(Field field) {
     {"instanceShaderBindingTableRecordOffset", 39},
     {"instances", 10},
     {"instantiationBoundingBoxLimit", 30},
+    {"instrumentation", 16},
     {"int32", 6},
     {"int64", 6},
     {"integerDotProduct16BitMixedSignednessAccelerated", 49},
@@ -3713,6 +3727,7 @@ const char* String(Field field) {
     {"numAvailableVgprs", 18},
     {"numColumns", 11},
     {"numFramesPerBatch", 18},
+    {"numMetrics", 11},
     {"numObjects", 11},
     {"numPhases", 10},
     {"numPhysicalSgprs", 17},
@@ -3892,6 +3907,8 @@ const char* String(Field field) {
     {"pDepthStencilResolveAttachment", 31},
     {"pDepthStencilState", 19},
     {"pDescription", 13},
+    {"pDescriptionCount", 18},
+    {"pDescriptions", 14},
     {"pDescriptor", 12},
     {"pDescriptorCopies", 18},
     {"pDescriptorCounts", 18},
@@ -4028,6 +4045,7 @@ const char* String(Field field) {
     {"pInputAttachmentIndexInfo", 26},
     {"pInputAttachments", 18},
     {"pInstance", 10},
+    {"pInstrumentation", 17},
     {"pInternalRepresentationCount", 29},
     {"pInternalRepresentations", 25},
     {"pKeysAndDataInfo", 17},
@@ -4072,6 +4090,8 @@ const char* String(Field field) {
     {"pMessenger", 11},
     {"pMetadata", 10},
     {"pMetalObjectsInfo", 18},
+    {"pMetricBlockCount", 18},
+    {"pMetricValues", 14},
     {"pMicromap", 10},
     {"pMicromaps", 11},
     {"pMissShaderBindingTable", 24},
@@ -4373,6 +4393,7 @@ const char* String(Field field) {
     {"pciDevice", 10},
     {"pciDomain", 10},
     {"pciFunction", 12},
+    {"perBasicBlockGranularity", 25},
     {"perStageDescriptorSet", 22},
     {"perViewAttributes", 18},
     {"perViewAttributesPositionXOnly", 31},
@@ -4709,6 +4730,8 @@ const char* String(Field field) {
     {"resourceMask", 13},
     {"resourceOffset", 15},
     {"resourceUsage", 14},
+    {"resultIndex", 12},
+    {"resultSubIndex", 15},
     {"resultType", 11},
     {"rgbModel", 9},
     {"rgbModels", 10},
@@ -4870,6 +4893,7 @@ const char* String(Field field) {
     {"shaderInputAttachmentArrayDynamicIndexing", 42},
     {"shaderInputAttachmentArrayNonUniformIndexing", 45},
     {"shaderInputAttachmentArrayNonUniformIndexingNative", 51},
+    {"shaderInstrumentation", 22},
     {"shaderInt16", 12},
     {"shaderInt64", 12},
     {"shaderInt8", 11},
@@ -5804,6 +5828,7 @@ const char* String(Extension extension) {
     {"VK_ARM_scheduling_controls", 27},
     {"VK_ARM_shader_core_builtins", 28},
     {"VK_ARM_shader_core_properties", 30},
+    {"VK_ARM_shader_instrumentation", 30},
     {"VK_ARM_tensors", 15},
     {"VK_EXT_4444_formats", 20},
     {"VK_EXT_acquire_drm_display", 27},
@@ -6363,6 +6388,8 @@ bool IsFieldPointer(Field field) {
     case Field::pDepthStencilResolveAttachment:
     case Field::pDepthStencilState:
     case Field::pDescription:
+    case Field::pDescriptionCount:
+    case Field::pDescriptions:
     case Field::pDescriptor:
     case Field::pDescriptorCopies:
     case Field::pDescriptorCounts:
@@ -6499,6 +6526,7 @@ bool IsFieldPointer(Field field) {
     case Field::pInputAttachmentIndexInfo:
     case Field::pInputAttachments:
     case Field::pInstance:
+    case Field::pInstrumentation:
     case Field::pInternalRepresentationCount:
     case Field::pInternalRepresentations:
     case Field::pKeysAndDataInfo:
@@ -6543,6 +6571,8 @@ bool IsFieldPointer(Field field) {
     case Field::pMessenger:
     case Field::pMetadata:
     case Field::pMetalObjectsInfo:
+    case Field::pMetricBlockCount:
+    case Field::pMetricValues:
     case Field::pMicromap:
     case Field::pMicromaps:
     case Field::pMissShaderBindingTable:
@@ -9087,6 +9117,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPerformanceCounterDescriptionARM;
     case VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM:
        return Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceShaderInstrumentationFeaturesARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_PROPERTIES_ARM:
+       return Struct::VkPhysicalDeviceShaderInstrumentationPropertiesARM;
+    case VK_STRUCTURE_TYPE_SHADER_INSTRUMENTATION_CREATE_INFO_ARM:
+       return Struct::VkShaderInstrumentationCreateInfoARM;
+    case VK_STRUCTURE_TYPE_SHADER_INSTRUMENTATION_METRIC_DESCRIPTION_ARM:
+       return Struct::VkShaderInstrumentationMetricDescriptionARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT:
        return Struct::VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM:

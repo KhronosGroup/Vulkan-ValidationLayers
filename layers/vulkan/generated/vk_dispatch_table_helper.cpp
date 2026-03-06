@@ -1502,6 +1502,24 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubEnumeratePhysicalDeviceQueueFamilyPerf
     VkPhysicalDevice, uint32_t, uint32_t*, VkPerformanceCounterARM*, VkPerformanceCounterDescriptionARM*) {
     return VK_SUCCESS;
 }
+static VKAPI_ATTR VkResult VKAPI_CALL StubEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice, uint32_t*, VkShaderInstrumentationMetricDescriptionARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateShaderInstrumentationARM(VkDevice, const VkShaderInstrumentationCreateInfoARM*,
+                                                                         const VkAllocationCallbacks*,
+                                                                         VkShaderInstrumentationARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyShaderInstrumentationARM(VkDevice, VkShaderInstrumentationARM,
+                                                                      const VkAllocationCallbacks*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdBeginShaderInstrumentationARM(VkCommandBuffer, VkShaderInstrumentationARM) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdEndShaderInstrumentationARM(VkCommandBuffer) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetShaderInstrumentationValuesARM(VkDevice, VkShaderInstrumentationARM, uint32_t*, void*,
+                                                                            VkShaderInstrumentationValuesFlagsARM) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubClearShaderInstrumentationMetricsARM(VkDevice, VkShaderInstrumentationARM) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndRendering2EXT(VkCommandBuffer, const VkRenderingEndInfoKHR*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdBeginCustomResolveEXT(VkCommandBuffer, const VkBeginCustomResolveInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetComputeOccupancyPriorityNV(VkCommandBuffer,
@@ -2147,6 +2165,12 @@ const auto& GetApiExtensionMap() {
         {"vkUpdateIndirectExecutionSetShaderEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
         {"vkGetMemoryMetalHandleEXT", {vvl::Extension::_VK_EXT_external_memory_metal}},
         {"vkGetMemoryMetalHandlePropertiesEXT", {vvl::Extension::_VK_EXT_external_memory_metal}},
+        {"vkCreateShaderInstrumentationARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
+        {"vkDestroyShaderInstrumentationARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
+        {"vkCmdBeginShaderInstrumentationARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
+        {"vkCmdEndShaderInstrumentationARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
+        {"vkGetShaderInstrumentationValuesARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
+        {"vkClearShaderInstrumentationMetricsARM", {vvl::Extension::_VK_ARM_shader_instrumentation}},
         {"vkCmdEndRendering2EXT", {vvl::Extension::_VK_EXT_fragment_density_map_offset}},
         {"vkCmdBeginCustomResolveEXT", {vvl::Extension::_VK_EXT_custom_resolve}},
         {"vkCmdSetComputeOccupancyPriorityNV", {vvl::Extension::_VK_NV_compute_occupancy_priority}},
@@ -4679,6 +4703,35 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->GetMemoryMetalHandlePropertiesEXT = (PFN_vkGetMemoryMetalHandlePropertiesEXT)StubGetMemoryMetalHandlePropertiesEXT;
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    table->CreateShaderInstrumentationARM = (PFN_vkCreateShaderInstrumentationARM)gpa(device, "vkCreateShaderInstrumentationARM");
+    if (table->CreateShaderInstrumentationARM == nullptr) {
+        table->CreateShaderInstrumentationARM = (PFN_vkCreateShaderInstrumentationARM)StubCreateShaderInstrumentationARM;
+    }
+    table->DestroyShaderInstrumentationARM =
+        (PFN_vkDestroyShaderInstrumentationARM)gpa(device, "vkDestroyShaderInstrumentationARM");
+    if (table->DestroyShaderInstrumentationARM == nullptr) {
+        table->DestroyShaderInstrumentationARM = (PFN_vkDestroyShaderInstrumentationARM)StubDestroyShaderInstrumentationARM;
+    }
+    table->CmdBeginShaderInstrumentationARM =
+        (PFN_vkCmdBeginShaderInstrumentationARM)gpa(device, "vkCmdBeginShaderInstrumentationARM");
+    if (table->CmdBeginShaderInstrumentationARM == nullptr) {
+        table->CmdBeginShaderInstrumentationARM = (PFN_vkCmdBeginShaderInstrumentationARM)StubCmdBeginShaderInstrumentationARM;
+    }
+    table->CmdEndShaderInstrumentationARM = (PFN_vkCmdEndShaderInstrumentationARM)gpa(device, "vkCmdEndShaderInstrumentationARM");
+    if (table->CmdEndShaderInstrumentationARM == nullptr) {
+        table->CmdEndShaderInstrumentationARM = (PFN_vkCmdEndShaderInstrumentationARM)StubCmdEndShaderInstrumentationARM;
+    }
+    table->GetShaderInstrumentationValuesARM =
+        (PFN_vkGetShaderInstrumentationValuesARM)gpa(device, "vkGetShaderInstrumentationValuesARM");
+    if (table->GetShaderInstrumentationValuesARM == nullptr) {
+        table->GetShaderInstrumentationValuesARM = (PFN_vkGetShaderInstrumentationValuesARM)StubGetShaderInstrumentationValuesARM;
+    }
+    table->ClearShaderInstrumentationMetricsARM =
+        (PFN_vkClearShaderInstrumentationMetricsARM)gpa(device, "vkClearShaderInstrumentationMetricsARM");
+    if (table->ClearShaderInstrumentationMetricsARM == nullptr) {
+        table->ClearShaderInstrumentationMetricsARM =
+            (PFN_vkClearShaderInstrumentationMetricsARM)StubClearShaderInstrumentationMetricsARM;
+    }
     table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)gpa(device, "vkCmdEndRendering2EXT");
     if (table->CmdEndRendering2EXT == nullptr) {
         table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)StubCmdEndRendering2EXT;
@@ -5410,6 +5463,14 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
         table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM =
             (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)
                 StubEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+    }
+    table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM =
+        (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)gpa(
+            instance, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+    if (table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM == nullptr) {
+        table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM =
+            (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)
+                StubEnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
     }
 #ifdef VK_USE_PLATFORM_UBM_SEC
     table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");

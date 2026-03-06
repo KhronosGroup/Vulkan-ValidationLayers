@@ -849,6 +849,16 @@ void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternal
                                                      const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkShaderInstrumentationARM* pInstrumentation,
+                                                  const RecordObject& record_obj) override;
+
+void PostCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                     uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                     VkShaderInstrumentationValuesFlagsARM flags,
+                                                     const RecordObject& record_obj) override;
+
 void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator,
                                                   VkAccelerationStructureKHR* pAccelerationStructure,

@@ -179,6 +179,27 @@ bool Instance::PreCallValidateEnumerateDeviceLayerProperties(VkPhysicalDevice ph
     return false;
 }
 
+bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                        const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkQueueSubmit is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
+                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkQueueSubmit is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    }
+    return false;
+}
+
 bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                            VkImageType type, VkSampleCountFlagBits samples,
                                                                            VkImageUsageFlags usage, VkImageTiling tiling,
@@ -202,6 +223,53 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
                    "VK_KHR_get_physical_device_properties2 extension which contains "
                    "vkGetPhysicalDeviceSparseImageFormatProperties2KHR that can be used instead.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                               VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                               uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                               uint32_t bufferMemoryBarrierCount,
+                                               const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                               const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                               const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdPipelineBarrier is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the "
+                   "new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdPipelineBarrier is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                              VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdWriteTimestamp is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the "
+                   "new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdWriteTimestamp is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -360,6 +428,73 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
                    "vkCmdBindDescriptorSets is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension "
                    "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                        const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdSetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
+                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdSetEvent is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                          const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdResetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
+                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdResetEvent is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                          const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_3) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdWaitEvents is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
+                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
+        reported = true;
+        LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
+                   "vkCmdWaitEvents is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
+                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }

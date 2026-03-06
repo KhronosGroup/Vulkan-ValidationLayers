@@ -9165,6 +9165,63 @@ VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegion
     return result;
 }
 
+VkResult Instance::EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+        physicalDevice, pDescriptionCount, pDescriptions);
+
+    return result;
+}
+
+VkResult Device::CreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator,
+                                                VkShaderInstrumentationARM* pInstrumentation) {
+    if (!wrap_handles)
+        return device_dispatch_table.CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
+
+    VkResult result = device_dispatch_table.CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
+    if (result == VK_SUCCESS) {
+        *pInstrumentation = WrapNew(*pInstrumentation);
+    }
+    return result;
+}
+
+void Device::DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                             const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
+    instrumentation = Erase(instrumentation);
+    device_dispatch_table.DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
+}
+
+void Device::CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation) {
+    if (!wrap_handles) return device_dispatch_table.CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
+    { instrumentation = Unwrap(instrumentation); }
+    device_dispatch_table.CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
+}
+
+void Device::CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
+    device_dispatch_table.CmdEndShaderInstrumentationARM(commandBuffer);
+}
+
+VkResult Device::GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                   uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                   VkShaderInstrumentationValuesFlagsARM flags) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues,
+                                                                       flags);
+    { instrumentation = Unwrap(instrumentation); }
+    VkResult result =
+        device_dispatch_table.GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags);
+
+    return result;
+}
+
+void Device::ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
+    if (!wrap_handles) return device_dispatch_table.ClearShaderInstrumentationMetricsARM(device, instrumentation);
+    { instrumentation = Unwrap(instrumentation); }
+    device_dispatch_table.ClearShaderInstrumentationMetricsARM(device, instrumentation);
+}
+
 void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }

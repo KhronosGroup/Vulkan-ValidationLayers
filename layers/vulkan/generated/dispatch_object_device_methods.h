@@ -1028,6 +1028,15 @@ VkResult GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleIn
 VkResult GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHandle,
                                            VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+VkResult CreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkShaderInstrumentationARM* pInstrumentation);
+void DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                     const VkAllocationCallbacks* pAllocator);
+void CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation);
+void CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer);
+VkResult GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation, uint32_t* pMetricBlockCount,
+                                           void* pMetricValues, VkShaderInstrumentationValuesFlagsARM flags);
+void ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation);
 void CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo);
 void CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo);
 void CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer, const VkComputeOccupancyPriorityParametersNV* pParameters);

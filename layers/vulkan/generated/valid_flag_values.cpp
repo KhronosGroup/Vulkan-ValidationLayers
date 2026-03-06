@@ -1253,6 +1253,14 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_EXT_descriptor_heap};
                 }
             }
+            if (value & (VK_SHADER_CREATE_INSTRUMENT_SHADER_BIT_ARM)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_khr_maintenance5) &&
+                     !IsExtSupported(extensions.vk_arm_shader_instrumentation)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_khr_maintenance5) &&
+                     !IsExtEnabled(extensions.vk_arm_shader_instrumentation))) {
+                    return {vvl::Extension::_VK_KHR_maintenance5, vvl::Extension::_VK_ARM_shader_instrumentation};
+                }
+            }
             if (value & (VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_device_generated_commands)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_ext_device_generated_commands))) {
@@ -1473,6 +1481,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
             if (value & (VK_PIPELINE_CREATE_2_DISALLOW_OPACITY_MICROMAP_BIT_ARM)) {
                 if (!IsExtEnabled(extensions.vk_arm_pipeline_opacity_micromap)) {
                     return {vvl::Extension::_VK_ARM_pipeline_opacity_micromap};
+                }
+            }
+            if (value & (VK_PIPELINE_CREATE_2_INSTRUMENT_SHADERS_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation)) {
+                    return {vvl::Extension::_VK_ARM_shader_instrumentation};
                 }
             }
             if (value & (VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {

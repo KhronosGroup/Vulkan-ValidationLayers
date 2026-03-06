@@ -34392,6 +34392,339 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCoun
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(physicalDevice, pDescriptionCount,
+                                                                                              pDescriptions, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(physicalDevice, pDescriptionCount,
+                                                                                    pDescriptions, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+        result = instance_dispatch->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(physicalDevice, pDescriptionCount,
+                                                                                           pDescriptions);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(physicalDevice, pDescriptionCount,
+                                                                                     pDescriptions, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(VkDevice device,
+                                                              const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkShaderInstrumentationARM* pInstrumentation) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateShaderInstrumentationARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateShaderInstrumentationARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateShaderInstrumentationARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCreateShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateShaderInstrumentationARM");
+        result = device_dispatch->CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                           const VkAllocationCallbacks* pAllocator) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyShaderInstrumentationARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkDestroyShaderInstrumentationARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateDestroyShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateDestroyShaderInstrumentationARM(device, instrumentation, pAllocator, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyShaderInstrumentationARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkDestroyShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordDestroyShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordDestroyShaderInstrumentationARM(device, instrumentation, pAllocator, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkDestroyShaderInstrumentationARM");
+        device_dispatch->DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkDestroyShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordDestroyShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordDestroyShaderInstrumentationARM(device, instrumentation, pAllocator, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                            VkShaderInstrumentationARM instrumentation) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBeginShaderInstrumentationARM,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBeginShaderInstrumentationARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBeginShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBeginShaderInstrumentationARM(commandBuffer, instrumentation, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBeginShaderInstrumentationARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBeginShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBeginShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBeginShaderInstrumentationARM(commandBuffer, instrumentation, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdBeginShaderInstrumentationARM");
+        device_dispatch->CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBeginShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBeginShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBeginShaderInstrumentationARM(commandBuffer, instrumentation, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdEndShaderInstrumentationARM,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdEndShaderInstrumentationARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdEndShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdEndShaderInstrumentationARM(commandBuffer, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdEndShaderInstrumentationARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdEndShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdEndShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdEndShaderInstrumentationARM(commandBuffer, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdEndShaderInstrumentationARM");
+        device_dispatch->CmdEndShaderInstrumentationARM(commandBuffer);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdEndShaderInstrumentationARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdEndShaderInstrumentationARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdEndShaderInstrumentationARM(commandBuffer, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                 uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                                 VkShaderInstrumentationValuesFlagsARM flags) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetShaderInstrumentationValuesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetShaderInstrumentationValuesARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetShaderInstrumentationValuesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues,
+                                                                         flags, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetShaderInstrumentationValuesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetShaderInstrumentationValuesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetShaderInstrumentationValuesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags,
+                                                               record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetShaderInstrumentationValuesARM");
+        result =
+            device_dispatch->GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetShaderInstrumentationValuesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetShaderInstrumentationValuesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags,
+                                                                record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkClearShaderInstrumentationMetricsARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkClearShaderInstrumentationMetricsARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateClearShaderInstrumentationMetricsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateClearShaderInstrumentationMetricsARM(device, instrumentation, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkClearShaderInstrumentationMetricsARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkClearShaderInstrumentationMetricsARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordClearShaderInstrumentationMetricsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordClearShaderInstrumentationMetricsARM(device, instrumentation, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkClearShaderInstrumentationMetricsARM");
+        device_dispatch->ClearShaderInstrumentationMetricsARM(device, instrumentation);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkClearShaderInstrumentationMetricsARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordClearShaderInstrumentationMetricsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordClearShaderInstrumentationMetricsARM(device, instrumentation, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     VVL_ZoneScoped;
 
@@ -36661,6 +36994,14 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
 #endif  // VK_USE_PLATFORM_METAL_EXT
         {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
          {kFuncTypePdev, (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM}},
+        {"vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM",
+         {kFuncTypePdev, (void*)EnumeratePhysicalDeviceShaderInstrumentationMetricsARM}},
+        {"vkCreateShaderInstrumentationARM", {kFuncTypeDev, (void*)CreateShaderInstrumentationARM}},
+        {"vkDestroyShaderInstrumentationARM", {kFuncTypeDev, (void*)DestroyShaderInstrumentationARM}},
+        {"vkCmdBeginShaderInstrumentationARM", {kFuncTypeDev, (void*)CmdBeginShaderInstrumentationARM}},
+        {"vkCmdEndShaderInstrumentationARM", {kFuncTypeDev, (void*)CmdEndShaderInstrumentationARM}},
+        {"vkGetShaderInstrumentationValuesARM", {kFuncTypeDev, (void*)GetShaderInstrumentationValuesARM}},
+        {"vkClearShaderInstrumentationMetricsARM", {kFuncTypeDev, (void*)ClearShaderInstrumentationMetricsARM}},
         {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
         {"vkCmdBeginCustomResolveEXT", {kFuncTypeDev, (void*)CmdBeginCustomResolveEXT}},
         {"vkCmdSetComputeOccupancyPriorityNV", {kFuncTypeDev, (void*)CmdSetComputeOccupancyPriorityNV}},

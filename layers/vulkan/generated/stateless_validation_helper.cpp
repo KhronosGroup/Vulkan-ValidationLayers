@@ -3277,6 +3277,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceShaderInstrumentationFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM: {  // Covers
+                                                                                       // VUID-VkPhysicalDeviceShaderInstrumentationFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderInstrumentationFeaturesARM);
+                VkPhysicalDeviceShaderInstrumentationFeaturesARM* structure =
+                    (VkPhysicalDeviceShaderInstrumentationFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderInstrumentation), structure->shaderInstrumentation);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT-sType-sType
@@ -3309,7 +3320,6 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::fragmentDensityMapLayered), structure->fragmentDensityMapLayered);
             }
         } break;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {  // Covers
@@ -3320,7 +3330,6 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::presentMetering), structure->presentMetering);
             }
         } break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT: {  // Covers
@@ -8381,24 +8390,24 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM);
                 VkRenderPassPerformanceCountersByRegionBeginInfoARM* structure =
                     (VkRenderPassPerformanceCountersByRegionBeginInfoARM*)header;
-                skip |=
-                    ValidateRequiredPointer(pNext_loc.dot(Field::pCounterAddresses), structure->pCounterAddresses,
-                                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-parameter");
+                skip |= ValidateArray(pNext_loc.dot(Field::counterAddressCount), pNext_loc.dot(Field::pCounterAddresses),
+                                      structure->counterAddressCount, &structure->pCounterAddresses, true, true,
+                                      "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-arraylength",
+                                      "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-parameter");
 
                 skip |= ValidateBool32(pNext_loc.dot(Field::serializeRegions), structure->serializeRegions);
 
-                skip |=
-                    ValidateRequiredPointer(pNext_loc.dot(Field::pCounterIndices), structure->pCounterIndices,
-                                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterIndices-parameter");
+                skip |= ValidateArray(pNext_loc.dot(Field::counterIndexCount), pNext_loc.dot(Field::pCounterIndices),
+                                      structure->counterIndexCount, &structure->pCounterIndices, true, true,
+                                      "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-arraylength",
+                                      "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterIndices-parameter");
             }
         } break;
 
         // No Validation code for VkPipelineFragmentDensityMapLayeredCreateInfoVALVE structure members  -- Covers
         // VUID-VkPipelineFragmentDensityMapLayeredCreateInfoVALVE-sType-sType
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkSetPresentConfigNV structure members  -- Covers VUID-VkSetPresentConfigNV-sType-sType
-#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkCustomResolveCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT: {  // Covers VUID-VkCustomResolveCreateInfoEXT-sType-sType
@@ -8573,7 +8582,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 260> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 261> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -8776,6 +8785,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT,
@@ -12011,7 +12021,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
                                        "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != nullptr) {
         [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
-        constexpr std::array<VkStructureType, 115> allowed_structs_VkPhysicalDeviceProperties2 = {
+        constexpr std::array<VkStructureType, 116> allowed_structs_VkPhysicalDeviceProperties2 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_PROPERTIES_NV,
@@ -12105,6 +12115,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT,
@@ -28071,6 +28082,126 @@ bool Instance::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceCount
                                                 kVUIDUndefined, false);
         }
     }
+    return skip;
+}
+
+bool Instance::PreCallValidateEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pDescriptionCount), loc.dot(Field::pDescriptions), pDescriptionCount, pDescriptions,
+        VK_STRUCTURE_TYPE_SHADER_INSTRUMENTATION_METRIC_DESCRIPTION_ARM, true, false, false,
+        "VUID-VkShaderInstrumentationMetricDescriptionARM-sType-sType", kVUIDUndefined,
+        "VUID-vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM-pDescriptionCount-parameter", kVUIDUndefined);
+    if (pDescriptions != nullptr) {
+        for (uint32_t pDescriptionIndex = 0; pDescriptionIndex < *pDescriptionCount; ++pDescriptionIndex) {
+            [[maybe_unused]] const Location pDescriptions_loc = loc.dot(Field::pDescriptions, pDescriptionIndex);
+            skip |= context.ValidateStructPnext(
+                pDescriptions_loc, pDescriptions[pDescriptionIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkShaderInstrumentationMetricDescriptionARM-pNext-pNext", kVUIDUndefined, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkShaderInstrumentationARM* pInstrumentation,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateShaderInstrumentationARM-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SHADER_INSTRUMENTATION_CREATE_INFO_ARM, true,
+        "VUID-vkCreateShaderInstrumentationARM-pCreateInfo-parameter", "VUID-VkShaderInstrumentationCreateInfoARM-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkShaderInstrumentationCreateInfoARM-pNext-pNext", kVUIDUndefined, true);
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pInstrumentation), pInstrumentation,
+                                            "VUID-vkCreateShaderInstrumentationARM-pInstrumentation-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                             VkShaderInstrumentationARM instrumentation,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::instrumentation), instrumentation);
+    return skip;
+}
+
+bool Device::PreCallValidateCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+    return skip;
+}
+
+bool Device::PreCallValidateGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                              uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                              VkShaderInstrumentationValuesFlagsARM flags,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::instrumentation), instrumentation);
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pMetricBlockCount), pMetricBlockCount,
+                                            "VUID-vkGetShaderInstrumentationValuesARM-pMetricBlockCount-parameter");
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pMetricValues), pMetricValues,
+                                            "VUID-vkGetShaderInstrumentationValuesARM-pMetricValues-parameter");
+    skip |=
+        context.ValidateReservedFlags(loc.dot(Field::flags), flags, "VUID-vkGetShaderInstrumentationValuesARM-flags-zerobitmask");
+    return skip;
+}
+
+bool Device::PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_shader_instrumentation))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_shader_instrumentation});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::instrumentation), instrumentation);
     return skip;
 }
 

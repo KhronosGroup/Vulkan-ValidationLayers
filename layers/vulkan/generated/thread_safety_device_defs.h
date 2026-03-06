@@ -76,6 +76,7 @@ Counter<VkShaderEXT> c_VkShaderEXT;
 Counter<VkDataGraphPipelineSessionARM> c_VkDataGraphPipelineSessionARM;
 Counter<VkIndirectExecutionSetEXT> c_VkIndirectExecutionSetEXT;
 Counter<VkIndirectCommandsLayoutEXT> c_VkIndirectCommandsLayoutEXT;
+Counter<VkShaderInstrumentationARM> c_VkShaderInstrumentationARM;
 #else
 Counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -136,6 +137,7 @@ WRAPPER(VkShaderEXT)
 WRAPPER(VkDataGraphPipelineSessionARM)
 WRAPPER(VkIndirectExecutionSetEXT)
 WRAPPER(VkIndirectCommandsLayoutEXT)
+WRAPPER(VkShaderInstrumentationARM)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkDisplayKHR)
 WRAPPER_PARENT_INSTANCE(VkDisplayModeKHR)
@@ -201,6 +203,7 @@ void InitCounters() {
     c_VkDataGraphPipelineSessionARM.Init(kVulkanObjectTypeDataGraphPipelineSessionARM, this);
     c_VkIndirectExecutionSetEXT.Init(kVulkanObjectTypeIndirectExecutionSetEXT, this);
     c_VkIndirectCommandsLayoutEXT.Init(kVulkanObjectTypeIndirectCommandsLayoutEXT, this);
+    c_VkShaderInstrumentationARM.Init(kVulkanObjectTypeShaderInstrumentationARM, this);
 #else
     c_uint64_t.Init(kVulkanObjectTypeUnknown, this);
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -4512,6 +4515,49 @@ void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternal
                                                      const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void PreCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkShaderInstrumentationARM* pInstrumentation,
+                                                 const RecordObject& record_obj) override;
+
+void PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkShaderInstrumentationARM* pInstrumentation,
+                                                  const RecordObject& record_obj) override;
+
+void PreCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
+
+void PostCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation,
+                                                   const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation,
+                                                    const RecordObject& record_obj) override;
+
+void PreCallRecordCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+
+void PostCallRecordCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+
+void PreCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                    uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                    VkShaderInstrumentationValuesFlagsARM flags,
+                                                    const RecordObject& record_obj) override;
+
+void PostCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                     uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                     VkShaderInstrumentationValuesFlagsARM flags,
+                                                     const RecordObject& record_obj) override;
+
+void PreCallRecordClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                       const RecordObject& record_obj) override;
+
+void PostCallRecordClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                        const RecordObject& record_obj) override;
+
 void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                       const RecordObject& record_obj) override;
 

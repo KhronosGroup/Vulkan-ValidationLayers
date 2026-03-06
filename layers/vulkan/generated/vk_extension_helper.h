@@ -541,6 +541,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotSupported};
     ExtEnabled vk_ext_external_memory_metal{kNotSupported};
     ExtEnabled vk_arm_performance_counters_by_region{kNotSupported};
+    ExtEnabled vk_arm_shader_instrumentation{kNotSupported};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotSupported};
     ExtEnabled vk_arm_format_pack{kNotSupported};
     ExtEnabled vk_valve_fragment_density_map_layered{kNotSupported};
@@ -1024,6 +1025,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_ARM_performance_counters_by_region:
+        case vvl::Extension::_VK_ARM_shader_instrumentation:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_ARM_format_pack:
         case vvl::Extension::_VK_VALVE_fragment_density_map_layered:

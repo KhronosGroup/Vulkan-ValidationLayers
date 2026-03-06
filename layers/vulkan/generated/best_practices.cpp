@@ -64,6 +64,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state, "glemulation, d3demulation"},
         {vvl::Extension::_VK_MESA_image_alignment_control, "d3demulation"},
         {vvl::Extension::_VK_ARM_performance_counters_by_region, "devtools"},
+        {vvl::Extension::_VK_ARM_shader_instrumentation, "devtools"},
     };
 
     auto it = special_use_extensions.find(extension_name);
@@ -1944,6 +1945,27 @@ void bp_state::Instance::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerform
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
     VkPerformanceCounterDescriptionARM* pCounterDescriptions, const RecordObject& record_obj) {
     bp_state::LogResult(*this, physicalDevice, record_obj);
+}
+
+void bp_state::Instance::PostCallRecordEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions,
+    const RecordObject& record_obj) {
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
+
+void BestPractices::PostCallRecordCreateShaderInstrumentationARM(VkDevice device,
+                                                                 const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 VkShaderInstrumentationARM* pInstrumentation,
+                                                                 const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                    uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                                    VkShaderInstrumentationValuesFlagsARM flags,
+                                                                    const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
 }
 
 #ifdef VK_USE_PLATFORM_UBM_SEC

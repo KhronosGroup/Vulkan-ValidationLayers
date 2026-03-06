@@ -1360,6 +1360,17 @@ virtual void PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersB
 virtual void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
     VkPerformanceCounterDescriptionARM* pCounterDescriptions, const RecordObject& record_obj) {}
+virtual bool PreCallValidateEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions,
+    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions,
+    const RecordObject& record_obj) {}
+virtual void PostCallRecordEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions,
+    const RecordObject& record_obj) {}
 #ifdef VK_USE_PLATFORM_UBM_SEC
 virtual bool PreCallValidateCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,

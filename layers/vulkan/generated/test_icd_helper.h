@@ -536,12 +536,11 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_EXTERNAL_MEMORY_METAL_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_METAL_SPEC_VERSION},
 #endif  // VK_USE_PLATFORM_METAL_EXT
     {VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME, VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_SPEC_VERSION},
+    {VK_ARM_SHADER_INSTRUMENTATION_EXTENSION_NAME, VK_ARM_SHADER_INSTRUMENTATION_SPEC_VERSION},
     {VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_EXTENSION_NAME, VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_SPEC_VERSION},
     {VK_ARM_FORMAT_PACK_EXTENSION_NAME, VK_ARM_FORMAT_PACK_SPEC_VERSION},
     {VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME, VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_SPEC_VERSION},
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {VK_NV_PRESENT_METERING_EXTENSION_NAME, VK_NV_PRESENT_METERING_SPEC_VERSION},
-#endif  // VK_ENABLE_BETA_EXTENSIONS
     {VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME, VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_SPEC_VERSION},
     {VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME, VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_SPEC_VERSION},
     {VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME, VK_EXT_SHADER_64BIT_INDEXING_SPEC_VERSION},
@@ -2222,6 +2221,21 @@ GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFla
 static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
     VkPerformanceCounterDescriptionARM* pCounterDescriptions);
+static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions);
+static VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(VkDevice device,
+                                                                     const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                                     const VkAllocationCallbacks* pAllocator,
+                                                                     VkShaderInstrumentationARM* pInstrumentation);
+static VKAPI_ATTR void VKAPI_CALL DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                  const VkAllocationCallbacks* pAllocator);
+static VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                                   VkShaderInstrumentationARM instrumentation);
+static VKAPI_ATTR void VKAPI_CALL CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer);
+static VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                        uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                                        VkShaderInstrumentationValuesFlagsARM flags);
+static VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation);
 static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
                                                       const VkRenderingEndInfoKHR* pRenderingEndInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
@@ -3131,6 +3145,13 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
 #endif  // VK_USE_PLATFORM_METAL_EXT
     {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
      (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM},
+    {"vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM", (void*)EnumeratePhysicalDeviceShaderInstrumentationMetricsARM},
+    {"vkCreateShaderInstrumentationARM", (void*)CreateShaderInstrumentationARM},
+    {"vkDestroyShaderInstrumentationARM", (void*)DestroyShaderInstrumentationARM},
+    {"vkCmdBeginShaderInstrumentationARM", (void*)CmdBeginShaderInstrumentationARM},
+    {"vkCmdEndShaderInstrumentationARM", (void*)CmdEndShaderInstrumentationARM},
+    {"vkGetShaderInstrumentationValuesARM", (void*)GetShaderInstrumentationValuesARM},
+    {"vkClearShaderInstrumentationMetricsARM", (void*)ClearShaderInstrumentationMetricsARM},
     {"vkCmdEndRendering2EXT", (void*)CmdEndRendering2EXT},
     {"vkCmdBeginCustomResolveEXT", (void*)CmdBeginCustomResolveEXT},
     {"vkCmdSetComputeOccupancyPriorityNV", (void*)CmdSetComputeOccupancyPriorityNV},
@@ -6099,6 +6120,37 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerforma
     VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
     return VK_SUCCESS;
 }
+
+static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(VkDevice device,
+                                                                     const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                                     const VkAllocationCallbacks* pAllocator,
+                                                                     VkShaderInstrumentationARM* pInstrumentation) {
+    unique_lock_t lock(global_lock);
+    *pInstrumentation = (VkShaderInstrumentationARM)global_unique_handle++;
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                  const VkAllocationCallbacks* pAllocator) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                                   VkShaderInstrumentationARM instrumentation) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                        uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                                        VkShaderInstrumentationValuesFlagsARM flags) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(VkDevice device,
+                                                                       VkShaderInstrumentationARM instrumentation) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
                                                       const VkRenderingEndInfoKHR* pRenderingEndInfo) {

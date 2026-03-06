@@ -3756,6 +3756,16 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkRenderPassPerformanceCountersByRegionBeginInfoARM *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_PROPERTIES_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationPropertiesARM *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3781,7 +3791,6 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPipelineFragmentDensityMapLayeredCreateInfoVALVE *>(header);
             break;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3792,7 +3801,6 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(header);
             break;
-#endif  // VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

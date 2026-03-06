@@ -2032,6 +2032,24 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryMetalHandlePropertiesEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryMetalHandlePropertiesEXT);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateShaderInstrumentationARM);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyShaderInstrumentationARM);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyShaderInstrumentationARM);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndShaderInstrumentationARM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderInstrumentationValuesARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderInstrumentationValuesARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderInstrumentationValuesARM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateClearShaderInstrumentationMetricsARM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordClearShaderInstrumentationMetricsARM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordClearShaderInstrumentationMetricsARM);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndRendering2EXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndRendering2EXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndRendering2EXT);

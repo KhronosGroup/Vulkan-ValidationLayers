@@ -4622,6 +4622,49 @@ static inline VkResult DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceCoun
         physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
 }
 
+static inline VkResult DispatchEnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(physicalDevice, pDescriptionCount, pDescriptions);
+}
+
+static inline VkResult DispatchCreateShaderInstrumentationARM(VkDevice device,
+                                                              const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkShaderInstrumentationARM* pInstrumentation) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
+}
+
+static inline void DispatchDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                           const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
+}
+
+static inline void DispatchCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                            VkShaderInstrumentationARM instrumentation) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
+}
+
+static inline void DispatchCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndShaderInstrumentationARM(commandBuffer);
+}
+
+static inline VkResult DispatchGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                 uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                                 VkShaderInstrumentationValuesFlagsARM flags) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags);
+}
+
+static inline void DispatchClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->ClearShaderInstrumentationMetricsARM(device, instrumentation);
+}
+
 static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
