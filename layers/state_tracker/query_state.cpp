@@ -107,7 +107,7 @@ QueryCount::QueryCount(vvl::CommandBuffer &cb_state) {
     inside_render_pass = cb_state.active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
-        const uint32_t bits = GetBitSetCount(cb_state.GetViewMask());
+        const uint32_t bits = CountSetBits(cb_state.GetViewMask());
         count = std::max(count, bits);
     }
 }

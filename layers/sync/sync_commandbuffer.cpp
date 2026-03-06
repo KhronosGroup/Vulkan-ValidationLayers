@@ -1065,7 +1065,7 @@ static VkImageAspectFlags GetAttachmentAspectsToClear(VkImageAspectFlags clear_a
     // Collect aspects that should be cleared.
     VkImageAspectFlags aspects_to_clear = VK_IMAGE_ASPECT_NONE;
     if (clear_color && (view_aspect_mask & kColorAspects) != 0) {
-        assert(GetBitSetCount(view_aspect_mask) == 1);
+        assert(CountSetBits(view_aspect_mask) == 1);
         aspects_to_clear |= view_aspect_mask;
     }
     if (clear_depth && vkuFormatHasDepth(attachment_view.create_info.format)) {
@@ -1167,7 +1167,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
     if (aspects_to_clear & kColorAspects) {
         // [core validation check]: if COLOR_ASPECT is included then PLANE aspects are not allowed,
         // and if PLANE aspect is included then only one is allowed.
-        assert(GetBitSetCount(aspects_to_clear) == 1);
+        assert(CountSetBits(aspects_to_clear) == 1);
 
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
         if (view_mask == 0) {

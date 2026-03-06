@@ -990,7 +990,7 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
     const VkImageSubresource &subresource = pInfo->pSubresource->imageSubresource;
     const VkImageAspectFlags aspect_mask = subresource.aspectMask;
 
-    if (GetBitSetCount(aspect_mask) != 1) {
+    if (CountSetBits(aspect_mask) != 1) {
         skip |= LogError("VUID-VkDeviceImageSubresourceInfo-aspectMask-00997", device, subresource_loc.dot(Field::aspectMask),
                          "(%s) must have exactly 1 bit set.", string_VkImageAspectFlags(aspect_mask).c_str());
     }

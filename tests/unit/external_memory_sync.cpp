@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -185,7 +185,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     auto exportable_types = FindSupportedExternalMemoryHandleTypes(Gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
-    if (GetBitSetCount(exportable_types) < 2) {
+    if (CountSetBits(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
@@ -442,7 +442,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     buffer_info.size = 4096;
 
     auto exportable_types = FindSupportedExternalMemoryHandleTypes(Gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
-    if (GetBitSetCount(exportable_types) < 2) {
+    if (CountSetBits(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);

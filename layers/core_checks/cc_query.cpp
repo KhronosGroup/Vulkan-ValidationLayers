@@ -217,7 +217,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
             // Pipeline statistics queries write one integer value for each bit that is enabled in the pipelineStatistics
             // when the pool is created
             {
-                query_items = GetBitSetCount(query_pool_state->create_info.pipelineStatistics);
+                query_items = CountSetBits(query_pool_state->create_info.pipelineStatistics);
                 query_size = query_size_in_bytes * (query_items + query_avail_data);
             }
             break;
@@ -243,7 +243,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
         case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR:
             // Video encode feedback queries write one integer value for each bit that is enabled in
             // VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::encodeFeedbackFlags when the pool is created
-            query_items = GetBitSetCount(query_pool_state->video_encode_feedback_flags);
+            query_items = CountSetBits(query_pool_state->video_encode_feedback_flags);
             query_size = query_size_in_bytes * (query_items + query_avail_data);
             break;
 
@@ -716,7 +716,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
         const auto *render_pass_info = cb_state.active_render_pass->create_info.ptr();
         const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
         if (subpass_desc) {
-            uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
+            uint32_t bits = CountSetBits(subpass_desc->viewMask);
             if (query_obj.slot + bits > query_pool_state->create_info.queryCount) {
                 const char *vuid = is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-query-00808" : "VUID-vkCmdBeginQuery-query-00808";
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
@@ -976,7 +976,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
 
             const auto *subpass_desc = &render_pass_info->pSubpasses[subpass];
             if (subpass_desc) {
-                const uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
+                const uint32_t bits = CountSetBits(subpass_desc->viewMask);
                 if (slot + bits > query_pool_state->create_info.queryCount) {
                     const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-query-02345" : "VUID-vkCmdEndQuery-query-00812";
                     const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
@@ -1219,7 +1219,7 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer &cb_state, V
                          query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
     const uint32_t view_mask = cb_state.GetViewMask();
-    const uint32_t view_mask_bits = GetBitSetCount(view_mask);
+    const uint32_t view_mask_bits = CountSetBits(view_mask);
     if (cb_state.active_render_pass && (slot + view_mask_bits) > query_pool_state->create_info.queryCount) {
         const char *vuid = is_2 ? "VUID-vkCmdWriteTimestamp2-query-03865" : "VUID-vkCmdWriteTimestamp-query-00831";
         const LogObjectList objlist(cb_state.Handle(), queryPool);

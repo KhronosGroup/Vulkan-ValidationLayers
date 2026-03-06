@@ -1080,7 +1080,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
         }
     }
 
-    if (GetBitSetCount(sub_desc.viewMask) > 1 && ((dependency_flags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
+    if (CountSetBits(sub_desc.viewMask) > 1 && ((dependency_flags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
         const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
         skip |= LogError("VUID-vkCmdPipelineBarrier-None-07893", objlist, outer_loc.dot(Field::dependencyFlags),
                          "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
@@ -1148,7 +1148,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
         }
     }
 
-    if (GetBitSetCount(sub_desc.viewMask) > 1 && ((dep_info.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
+    if (CountSetBits(sub_desc.viewMask) > 1 && ((dep_info.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
         const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
         skip |= LogError("VUID-vkCmdPipelineBarrier2-None-07893", objlist, outer_loc.dot(Field::dependencyFlags),
                          "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",

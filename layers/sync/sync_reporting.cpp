@@ -299,7 +299,7 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
         result.emplace_back(stages, accesses);
     }
     if (stages_with_all_supported_accesses) {
-        if (IsSingleBitSet(stages_with_all_supported_accesses) && GetBitSetCount(all_accesses) <= 2) {
+        if (IsSingleBitSet(stages_with_all_supported_accesses) && CountSetBits(all_accesses) <= 2) {
             // For simple configurations (1 stage and at most 2 accesses) don't use ALL accesses shortcut
             result.emplace_back(stages_with_all_supported_accesses, all_accesses);
         } else {

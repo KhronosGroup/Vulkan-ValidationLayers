@@ -195,7 +195,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        if (GetBitSetCount(pres_scale_ci->scalingBehavior) > 1) {
+        if (CountSetBits(pres_scale_ci->scalingBehavior) > 1) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
                          "(%s) must not have more than one bit set.",
@@ -204,7 +204,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        if (GetBitSetCount(pres_scale_ci->presentGravityX) > 1) {
+        if (CountSetBits(pres_scale_ci->presentGravityX) > 1) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07768", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
                          "(%s) must not have more than one bit set.",
@@ -213,7 +213,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        if (GetBitSetCount(pres_scale_ci->presentGravityY) > 1) {
+        if (CountSetBits(pres_scale_ci->presentGravityY) > 1) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07769", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
                          "(%s) must not have more than one bit set.",
@@ -1143,7 +1143,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                         string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
                 }
 
-                if (GetBitSetCount(timing_info.targetTimeDomainPresentStage) != 1) {
+                if (CountSetBits(timing_info.targetTimeDomainPresentStage) != 1) {
                     if (swapchain_time_domain != swapchain_state->time_domains.end() &&
                         swapchain_time_domain->second == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
                         skip |= LogError("VUID-VkPresentTimingInfoEXT-timeDomainId-12238", pPresentInfo->pSwapchains[i],
