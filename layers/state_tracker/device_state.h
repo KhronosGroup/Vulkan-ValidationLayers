@@ -47,6 +47,8 @@ class PhysicalDevice : public StateObject {
   public:
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
+    const std::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> queue_family_data_graph_properties;
+
     const VkQueueFlags supported_queues;
     uint32_t display_plane_property_count = 0;
     uint32_t surface_formats_count = 0;
@@ -77,6 +79,8 @@ class PhysicalDevice : public StateObject {
     vvl::unordered_map<Func, CallState> call_state_;
 
     const std::vector<VkQueueFamilyProperties> GetQueueFamilyProps(VkPhysicalDevice phys_dev);
+    const std::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> GetQueueFamilyDataGraphProps(VkPhysicalDevice phys_dev);
+
     VkQueueFlags GetSupportedQueues();
 };
 

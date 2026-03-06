@@ -54,6 +54,24 @@ const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(V
     return result;
 }
 
+const std::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> PhysicalDevice::GetQueueFamilyDataGraphProps(VkPhysicalDevice phys_dev) {
+    uint32_t n_families = static_cast<uint32_t>(queue_family_properties.size());
+    if (n_families == 0) {
+        // queue_family_properties not yet initialized. We should've done it before now, this is just in case
+        DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &n_families, nullptr);
+    }
+
+    std::unordered_map<uint32_t, std::vector<VkQueueFamilyDataGraphPropertiesARM>> all_properties;
+    for (uint32_t i = 0; i < n_families; i++) {
+        uint32_t n_properties = 0;
+        assert(VK_SUCCESS == DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(phys_dev, i, &n_properties, nullptr));
+        std::vector<VkQueueFamilyDataGraphPropertiesARM> family_properties(n_properties, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+        assert(VK_SUCCESS == DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(phys_dev, i, &n_properties, family_properties.data()));
+        all_properties.try_emplace(i, std::move(family_properties));
+    }
+    return all_properties;
+}
+
 VkQueueFlags PhysicalDevice::GetSupportedQueues() {
     VkQueueFlags flags = 0;
     for (const auto& prop : queue_family_properties) {
@@ -65,6 +83,7 @@ VkQueueFlags PhysicalDevice::GetSupportedQueues() {
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle)
     : StateObject(handle, kVulkanObjectTypePhysicalDevice),
       queue_family_properties(GetQueueFamilyProps(handle)),
+      queue_family_data_graph_properties(GetQueueFamilyDataGraphProps(handle)),
       supported_queues(GetSupportedQueues()) {}
 
 }  // namespace vvl
