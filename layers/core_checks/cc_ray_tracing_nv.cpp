@@ -90,7 +90,7 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
             if (as_state->memory_requirements.size > (mem_info->allocate_info.allocationSize - info.memoryOffset)) {
                 skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-size-03624", info.accelerationStructure,
                                  bind_info_loc.dot(Field::memory),
-                                 "'s size (%" PRIu64 ") minus %s (%" PRIu64 ") is %" PRIu64
+                                 "required size (%" PRIu64 ") minus %s (%" PRIu64 ") is %" PRIu64
                                  ", but the size member of the VkMemoryRequirements structure returned from a call to "
                                  "vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure %s and type of "
                                  "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV is %" PRIu64 ".",
@@ -134,7 +134,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     }
 
     if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props_nv.maxGeometryCount) {
-        skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", commandBuffer, error_obj.location,
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", commandBuffer, error_obj.location.dot(Field::pInfo).dot(Field::geometryCount),
                          "geometryCount [%" PRIu32
                          "] must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.",
@@ -578,19 +578,20 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         const auto dst_buffer_states = GetBuffersByAddress(pBuildInfo->dstAccelerationStructureData);
         for (const auto& src_buffer_state : src_buffer_states) {
             const vvl::range<VkDeviceAddress> src_address_range = src_buffer_state->DeviceAddressRange();
-            if (!src_address_range.empty()) {
-                for (const auto& dst_buffer_state : dst_buffer_states) {
-                    const vvl::range<VkDeviceAddress> dst_address_range = dst_buffer_state->DeviceAddressRange();
-                    if (src_address_range.intersects(dst_address_range)) {
-                        const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle());
-                        skip |=
-                            LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
-                                     error_obj.location.dot(Field::pBuildInfo),
-                                     "srcAccelerationStructureData %s address range %s intersects "
-                                     "dstAccelerationStructureData %s address range %s",
-                                     FormatHandle(src_buffer_state->Handle()).c_str(), string_range_hex(src_address_range).c_str(),
-                                     FormatHandle(dst_buffer_state->Handle()).c_str(), string_range_hex(dst_address_range).c_str());
-                    }
+            if (src_address_range.empty()) {
+                continue;
+            }
+            for (const auto& dst_buffer_state : dst_buffer_states) {
+                const vvl::range<VkDeviceAddress> dst_address_range = dst_buffer_state->DeviceAddressRange();
+                if (src_address_range.intersects(dst_address_range)) {
+                    const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle());
+                    skip |=
+                        LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
+                                    error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
+                                    "(%s) address range %s intersects "
+                                    "dstAccelerationStructureData (%s) address range %s",
+                                    FormatHandle(src_buffer_state->Handle()).c_str(), string_range_hex(src_address_range).c_str(),
+                                    FormatHandle(dst_buffer_state->Handle()).c_str(), string_range_hex(dst_address_range).c_str());
                 }
             }
         }
@@ -611,7 +612,7 @@ bool CoreChecks::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV
         phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount) {
         skip |= LogError("VUID-VkPartitionedAccelerationStructureInstancesInputNV-partitionCount-10535", device,
                          error_obj.location.dot(Field::pInfo).dot(Field::partitionCount),
-                         "(%" PRIu32 ")  and maxInstanceInGlobalPartitionCount (%" PRIu32
+                         "(%" PRIu32 ") and maxInstanceInGlobalPartitionCount (%" PRIu32
                          ") sum must be less than or equal to "
                          "maxPartitionCount (%" PRIu32 ") ",
                          pInfo->partitionCount, pInfo->maxInstanceInGlobalPartitionCount,
@@ -799,7 +800,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
         if (scratch_range.intersects(dst_implicit_range)) {
             skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstImplicitData-12303", objlist,
                              command_infos_loc.dot(Field::dstImplicitData),
-                             "dstImplicitData address range %s intersects with scratchData address range %s",
+                             "address range %s intersects with scratchData address range %s",
                              string_range_hex(dst_implicit_range).c_str(), string_range_hex(scratch_range).c_str());
         }
     }
@@ -814,7 +815,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
         if (scratch_range.intersects(dst_addresses_range)) {
             skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstAddressesArray-12302", objlist,
                              command_infos_loc.dot(Field::dstAddressesArray),
-                             "dstAddressesArray address range %s intersects with scratchData address range %s",
+                             "address range %s intersects with scratchData address range %s",
                              string_range_hex(dst_addresses_range).c_str(), string_range_hex(scratch_range).c_str());
         }
     }
@@ -853,7 +854,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureTriangleClusterInputNV(
         skip |=
             LogError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-10439", device,
                      input_loc.dot(Field::vertexFormat),
-                     "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+                     "(%s) doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
                      "(supported bufferFeatures: %s)",
                      string_VkFormat(input.vertexFormat), string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
     }
