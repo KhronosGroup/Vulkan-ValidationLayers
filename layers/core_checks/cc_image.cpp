@@ -2452,7 +2452,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image &image_state
     const VkImageAspectFlags aspect_mask = subresource.aspectMask;
 
     // The aspectMask member of pSubresource must only have a single bit set
-    if (GetBitSetCount(aspect_mask) != 1) {
+    if (CountSetBits(aspect_mask) != 1) {
         const char *vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2-aspectMask-00997" : "VUID-vkGetImageSubresourceLayout-aspectMask-00997";
         skip |= LogError(vuid, image_state.Handle(), subresource_loc.dot(Field::aspectMask), "(%s) must have exactly 1 bit set.",

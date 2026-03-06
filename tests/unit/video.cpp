@@ -1946,7 +1946,7 @@ TEST_F(NegativeVideo, GetQueryPoolResultsVideoQueryDataSize) {
     }
 
     auto feedback_flags = config.EncodeCaps()->supportedEncodeFeedbackFlags;
-    auto feedback_flag_count = GetBitSetCount(feedback_flags);
+    auto feedback_flag_count = CountSetBits(feedback_flags);
     uint32_t total_query_count = 4;
 
     VideoContext context(m_device, config);

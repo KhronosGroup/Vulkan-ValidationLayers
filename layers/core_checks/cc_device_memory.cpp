@@ -1302,7 +1302,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
             }
         } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             // TODO - Need to also check if lower then drmFormatModifierPlaneCount
-            if (GetBitSetCount(aspect) > 1 ||
+            if (CountSetBits(aspect) > 1 ||
                 !IsValueIn(VkImageAspectFlagBits(aspect),
                            {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
                             VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT})) {
@@ -2332,7 +2332,7 @@ bool CoreChecks::ValidateBindImagePlaneMemoryInfo(const VkBindImageMemoryInfo& b
         }
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         // TODO - Need to also check if lower then drmFormatModifierPlaneCount
-        if (GetBitSetCount(aspect) > 1 ||
+        if (CountSetBits(aspect) > 1 ||
             !IsValueIn(VkImageAspectFlagBits(aspect),
                        {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
                         VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT})) {

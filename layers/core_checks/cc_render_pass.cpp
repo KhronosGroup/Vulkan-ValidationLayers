@@ -2260,7 +2260,7 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 &create_inf
                     LogError(vuid, device, dependencies_loc,
                              "specifies a self-dependency but has a non-zero view offset of %" PRIu32 "", dependency.viewOffset);
             } else if ((dependency.dependencyFlags | VK_DEPENDENCY_VIEW_LOCAL_BIT) != dependency.dependencyFlags &&
-                       GetBitSetCount(create_info.pSubpasses[dependency.srcSubpass].viewMask) > 1) {
+                       CountSetBits(create_info.pSubpasses[dependency.srcSubpass].viewMask) > 1) {
                 vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03060" : "VUID-VkSubpassDependency-srcSubpass-00872";
                 skip |= LogError(vuid, device, dependencies_loc,
                                  "specifies a self-dependency for subpass %" PRIu32 " with a viewMask 0x%" PRIx32

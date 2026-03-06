@@ -701,7 +701,7 @@ bool CoreChecks::ValidateHeterogeneousCopyImageless(const RegionType &region, co
     }
 
     const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
-    if (GetBitSetCount(region_aspect_mask) != 1) {
+    if (CountSetBits(region_aspect_mask) != 1) {
         skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::AspectMaskSingleBit_09103), objlist,
                          region_loc.dot(Field::imageSubresource).dot(Field::aspectMask), "is %s (only one bit allowed).",
                          string_VkImageAspectFlags(region_aspect_mask).c_str());
