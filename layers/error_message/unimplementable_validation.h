@@ -760,6 +760,15 @@ const char* not_going_to_do[] = {
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4621
     // There is no real known use for this as it will break many things prior
     "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrRange-02748",
+
+    // We would require to add obj-c files and a dependency to Metal
+    "VUID-VkMemoryAllocateInfo-pNext-10396",
+
+    // VK_KHR_portability_subset  is dead and no one is supporting it
+    "VUID-VkVertexInputAttributeDescription2EXT-vertexAttributeAccessBeyondStride-04806"
+
+    // Not going to add full ASTC software decoding
+    "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02232"
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
