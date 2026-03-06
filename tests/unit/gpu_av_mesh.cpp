@@ -99,7 +99,7 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissing) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -135,7 +135,7 @@ TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTask) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -175,7 +175,7 @@ TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTaskStruct) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -231,7 +231,7 @@ TEST_F(NegativeGpuAVMesh, TaskPayloadSharedMissingNoTaskSlang) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -271,7 +271,7 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedDifferent) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -312,7 +312,7 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissingShaderObject) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_command_buffer.BindMeshShaders(task_shader, mesh_shader, frag_shader);
     SetDefaultDynamicStatesExclude();
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-12380");
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
