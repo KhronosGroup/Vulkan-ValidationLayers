@@ -201,10 +201,10 @@ void GpuShaderInstrumentor::SetupDescriptorHeap(const Location &loc) {
     const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
     VkDeviceSize bytes_to_reserve =
         Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings, descriptor_heap_props.bufferDescriptorAlignment);
-    bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
 
     resource_heap_reserved_bytes_ = bytes_to_reserve;
     buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
+    buffer_descriptor_alignment_ = descriptor_heap_props.bufferDescriptorAlignment;
     push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 
@@ -1158,7 +1158,7 @@ void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure *create
         reinterpret_cast<const vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *>(
             vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(create_info->pNext));
 
-    uint32_t mapping_count = 1;
+    uint32_t mapping_count = glsl::kTotalBindings;
     uint32_t app_mapping_count = 0;
     if (mapping_info) {
         app_mapping_count = mapping_info->mappingCount;
@@ -1172,18 +1172,17 @@ void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure *create
         }
     }
 
-    vku::safe_VkDescriptorSetAndBindingMappingEXT debug_printf_mapping = {};
-    debug_printf_mapping.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
-    debug_printf_mapping.pNext = nullptr;
-    debug_printf_mapping.descriptorSet = instrumentation_desc_set_bind_index_;
-    debug_printf_mapping.firstBinding = 0;
-    debug_printf_mapping.bindingCount = 1;
-    debug_printf_mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
-    debug_printf_mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
-    debug_printf_mapping.sourceData.indirectAddress.addressOffset = 0;
-    debug_printf_mapping.sourceData.indirectAddress.pushOffset = push_data_offset_;
-
-    new_mappings[mapping_count - 1] = debug_printf_mapping;
+    for (uint32_t i = 0; i < glsl::kTotalBindings; i++) {
+        vku::safe_VkDescriptorSetAndBindingMappingEXT &mapping = new_mappings[app_mapping_count + i];
+        mapping = vku::safe_VkDescriptorSetAndBindingMappingEXT();
+        mapping.descriptorSet = instrumentation_desc_set_bind_index_;
+        mapping.firstBinding = i;
+        mapping.bindingCount = 1;
+        mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
+        mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
+        mapping.sourceData.indirectAddress.addressOffset = sizeof(VkDeviceAddress) * i;
+        mapping.sourceData.indirectAddress.pushOffset = push_data_offset_;
+    }
 
     if (mapping_info) {
         vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *modified_mapping_info =

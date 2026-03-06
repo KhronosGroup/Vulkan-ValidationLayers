@@ -239,6 +239,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // Size to reserve in front of reserved range in resource heap
     VkDeviceSize resource_heap_reserved_bytes_ = 0;
     VkDeviceSize buffer_descriptor_size_ = 0;
+    VkDeviceSize buffer_descriptor_alignment_ = 0;
     uint32_t push_data_offset_ = 0;
 
     // These are the same as enabled_features, but may have been altered at setup time. This should be use for any feature GPU-AV
