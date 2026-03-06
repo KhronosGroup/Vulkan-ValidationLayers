@@ -88,8 +88,9 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeExternalComputeQueueNV = 55,
     kVulkanObjectTypeIndirectExecutionSetEXT = 56,
     kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
-    kVulkanObjectTypeInternalDeviceRange = 58,
-    kVulkanObjectTypeMax = 59,
+    kVulkanObjectTypeShaderInstrumentationARM = 58,
+    kVulkanObjectTypeInternalDeviceRange = 59,
+    kVulkanObjectTypeMax = 60,
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -213,6 +214,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT;
         case kVulkanObjectTypeIndirectCommandsLayoutEXT:
             return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT;
+        case kVulkanObjectTypeShaderInstrumentationARM:
+            return VK_OBJECT_TYPE_SHADER_INSTRUMENTATION_ARM;
         default:
             return VK_OBJECT_TYPE_UNKNOWN;
     }
@@ -335,6 +338,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeIndirectExecutionSetEXT;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
             return kVulkanObjectTypeIndirectCommandsLayoutEXT;
+        case VK_OBJECT_TYPE_SHADER_INSTRUMENTATION_ARM:
+            return kVulkanObjectTypeShaderInstrumentationARM;
         default:
             return kVulkanObjectTypeUnknown;
     }
@@ -1264,6 +1269,18 @@ struct VkHandleInfo<VkIndirectCommandsLayoutEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutEXT> {
     typedef VkIndirectCommandsLayoutEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkShaderInstrumentationARM> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeShaderInstrumentationARM;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_SHADER_INSTRUMENTATION_ARM;
+    static const char* Typename() { return "VkShaderInstrumentationARM"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeShaderInstrumentationARM> {
+    typedef VkShaderInstrumentationARM Type;
 };
 #endif  // TYPESAFE_NONDISPATCHABLE_HANDLES
 

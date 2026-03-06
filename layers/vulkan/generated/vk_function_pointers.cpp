@@ -890,6 +890,13 @@ PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
 PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+PFN_vkCreateShaderInstrumentationARM CreateShaderInstrumentationARM;
+PFN_vkDestroyShaderInstrumentationARM DestroyShaderInstrumentationARM;
+PFN_vkCmdBeginShaderInstrumentationARM CmdBeginShaderInstrumentationARM;
+PFN_vkCmdEndShaderInstrumentationARM CmdEndShaderInstrumentationARM;
+PFN_vkGetShaderInstrumentationValuesARM GetShaderInstrumentationValuesARM;
+PFN_vkClearShaderInstrumentationMetricsARM ClearShaderInstrumentationMetricsARM;
 PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
 PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
@@ -2776,6 +2783,17 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_ARM_shader_instrumentation", [](VkInstance instance, VkDevice device) {
+                CreateShaderInstrumentationARM = reinterpret_cast<PFN_vkCreateShaderInstrumentationARM>(GetDeviceProcAddr(device, "vkCreateShaderInstrumentationARM"));
+                DestroyShaderInstrumentationARM = reinterpret_cast<PFN_vkDestroyShaderInstrumentationARM>(GetDeviceProcAddr(device, "vkDestroyShaderInstrumentationARM"));
+                CmdBeginShaderInstrumentationARM = reinterpret_cast<PFN_vkCmdBeginShaderInstrumentationARM>(GetDeviceProcAddr(device, "vkCmdBeginShaderInstrumentationARM"));
+                CmdEndShaderInstrumentationARM = reinterpret_cast<PFN_vkCmdEndShaderInstrumentationARM>(GetDeviceProcAddr(device, "vkCmdEndShaderInstrumentationARM"));
+                GetShaderInstrumentationValuesARM = reinterpret_cast<PFN_vkGetShaderInstrumentationValuesARM>(GetDeviceProcAddr(device, "vkGetShaderInstrumentationValuesARM"));
+                ClearShaderInstrumentationMetricsARM = reinterpret_cast<PFN_vkClearShaderInstrumentationMetricsARM>(GetDeviceProcAddr(device, "vkClearShaderInstrumentationMetricsARM"));
+                EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM>(GetInstanceProcAddr(instance, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM"));
+            }
+        },
+        {
             "VK_EXT_fragment_density_map_offset", [](VkInstance , VkDevice device) {
                 CmdEndRendering2EXT = reinterpret_cast<PFN_vkCmdEndRendering2EXT>(GetDeviceProcAddr(device, "vkCmdEndRendering2EXT"));
             }
@@ -3415,6 +3433,13 @@ void ResetAllExtensions() {
     GetMemoryMetalHandlePropertiesEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT
     EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = nullptr;
+    EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = nullptr;
+    CreateShaderInstrumentationARM = nullptr;
+    DestroyShaderInstrumentationARM = nullptr;
+    CmdBeginShaderInstrumentationARM = nullptr;
+    CmdEndShaderInstrumentationARM = nullptr;
+    GetShaderInstrumentationValuesARM = nullptr;
+    ClearShaderInstrumentationMetricsARM = nullptr;
     CmdEndRendering2EXT = nullptr;
     CmdBeginCustomResolveEXT = nullptr;
     CmdSetComputeOccupancyPriorityNV = nullptr;

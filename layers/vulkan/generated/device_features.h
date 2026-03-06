@@ -896,6 +896,8 @@ struct DeviceFeatures {
     bool sparseImageInt64Atomics;
     // VkPhysicalDeviceShaderImageFootprintFeaturesNV
     bool imageFootprint;
+    // VkPhysicalDeviceShaderInstrumentationFeaturesARM
+    bool shaderInstrumentation;
     // VkPhysicalDeviceShaderIntegerDotProductFeatures, VkPhysicalDeviceVulkan13Features
     bool shaderIntegerDotProduct;
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL

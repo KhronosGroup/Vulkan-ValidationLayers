@@ -8845,6 +8845,95 @@ void Device::PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, Vk
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void Device::PreCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkShaderInstrumentationARM* pInstrumentation,
+                                                         const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkShaderInstrumentationARM* pInstrumentation,
+                                                          const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pInstrumentation);
+    }
+}
+
+void Device::PreCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                          const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(instrumentation, record_obj.location);
+    // Host access to instrumentation must be externally synchronized
+}
+
+void Device::PostCallRecordDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(instrumentation, record_obj.location);
+    DestroyObject(instrumentation);
+    // Host access to instrumentation must be externally synchronized
+}
+
+void Device::PreCallRecordCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                           VkShaderInstrumentationARM instrumentation,
+                                                           const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartWriteObject(instrumentation, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+    // Host access to instrumentation must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer,
+                                                            VkShaderInstrumentationARM instrumentation,
+                                                            const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishWriteObject(instrumentation, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+    // Host access to instrumentation must be externally synchronized
+}
+
+void Device::PreCallRecordCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                            uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                            VkShaderInstrumentationValuesFlagsARM flags,
+                                                            const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(instrumentation, record_obj.location);
+}
+
+void Device::PostCallRecordGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                             uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                             VkShaderInstrumentationValuesFlagsARM flags,
+                                                             const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(instrumentation, record_obj.location);
+}
+
+void Device::PreCallRecordClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                               const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(instrumentation, record_obj.location);
+}
+
+void Device::PostCallRecordClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                                const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(instrumentation, record_obj.location);
+}
+
 void Device::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                               const RecordObject& record_obj) {
     PreCallRecordCmdEndRendering2KHR(commandBuffer, pRenderingEndInfo, record_obj);

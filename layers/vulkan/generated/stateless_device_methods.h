@@ -1628,6 +1628,22 @@ bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExterna
                                                       VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
                                                       const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+bool PreCallValidateCreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   VkShaderInstrumentationARM* pInstrumentation,
+                                                   const ErrorObject& error_obj) const override;
+bool PreCallValidateDestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation,
+                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                      uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                      VkShaderInstrumentationValuesFlagsARM flags,
+                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,

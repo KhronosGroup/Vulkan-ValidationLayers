@@ -124,6 +124,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const {
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
             return IsExtEnabled(extensions.vk_ext_device_generated_commands) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_SHADER_INSTRUMENTATION_ARM:
+            return IsExtEnabled(extensions.vk_arm_shader_instrumentation) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2470,6 +2472,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkObjectType value) const 
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
             return {vvl::Extension::_VK_EXT_device_generated_commands};
+        case VK_OBJECT_TYPE_SHADER_INSTRUMENTATION_ARM:
+            return {vvl::Extension::_VK_ARM_shader_instrumentation};
         default:
             return {};
     };

@@ -886,6 +886,8 @@ enum class Feature {
     sparseImageInt64Atomics,
     // VkPhysicalDeviceShaderImageFootprintFeaturesNV
     imageFootprint,
+    // VkPhysicalDeviceShaderInstrumentationFeaturesARM
+    shaderInstrumentation,
     // VkPhysicalDeviceShaderIntegerDotProductFeatures, VkPhysicalDeviceVulkan13Features
     shaderIntegerDotProduct,
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL

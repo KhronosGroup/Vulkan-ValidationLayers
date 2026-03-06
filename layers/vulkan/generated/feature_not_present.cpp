@@ -2302,7 +2302,6 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
-#ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {
                 VkPhysicalDevicePresentMeteringFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -2314,7 +2313,6 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
-#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_KHR: {
                 VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -3018,6 +3016,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                     reinterpret_cast<const VkPhysicalDeviceShaderImageFootprintFeaturesNV *>(current);
                 if (enabling->imageFootprint && !supported.imageFootprint) {
                     ss << "VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INSTRUMENTATION_FEATURES_ARM: {
+                VkPhysicalDeviceShaderInstrumentationFeaturesARM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderInstrumentationFeaturesARM *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderInstrumentationFeaturesARM *>(current);
+                if (enabling->shaderInstrumentation && !supported.shaderInstrumentation) {
+                    ss << "VkPhysicalDeviceShaderInstrumentationFeaturesARM::shaderInstrumentation is not supported\n";
                 }
                 break;
             }
