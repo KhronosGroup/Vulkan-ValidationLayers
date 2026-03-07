@@ -85,6 +85,7 @@ TEST_F(PositiveDeviceQueue, QueueFamilyIndexDifferentCreateFlags) {
 
     VkDevice test_device = VK_NULL_HANDLE;
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.pNext = requested_features_.GetEnabledFeatures2();
     device_ci.queueCreateInfoCount = 2u;
     device_ci.pQueueCreateInfos = device_queue_ci;
     device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
