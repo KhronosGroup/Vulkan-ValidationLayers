@@ -6376,3 +6376,66 @@ TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeap, ImageDescriptorLayout) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.flags = 0u;
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_ci.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &image_view_ci;
+    image_info.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT resource_desc_info = vku::InitStructHelper();
+    resource_desc_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    resource_desc_info.data.pImage = &image_info;
+
+    std::vector<uint8_t> data(static_cast<size_t>(heap_props.imageDescriptorSize));
+    VkHostAddressRangeEXT descriptors;
+    descriptors.address = data.data();
+    descriptors.size = heap_props.imageDescriptorSize;
+    m_errorMonitor->SetDesiredError("VUID-VkImageDescriptorInfoEXT-layout-11219");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    VkFormat depth_format = FindSupportedDepthStencilFormat(gpu_);
+    vkt::Image image(*m_device, 32u, 32u, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.flags = 0u;
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = depth_format;
+    image_view_ci.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+
+    VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+    image_info.pView = &image_view_ci;
+    image_info.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkResourceDescriptorInfoEXT resource_desc_info = vku::InitStructHelper();
+    resource_desc_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    resource_desc_info.data.pImage = &image_info;
+
+    std::vector<uint8_t> data(static_cast<size_t>(heap_props.imageDescriptorSize));
+    VkHostAddressRangeEXT descriptors;
+    descriptors.address = data.data();
+    descriptors.size = heap_props.imageDescriptorSize;
+    m_errorMonitor->SetDesiredError("VUID-VkImageDescriptorInfoEXT-layout-11221");
+    vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+    m_errorMonitor->VerifyFound();
+}
