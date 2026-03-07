@@ -6289,6 +6289,46 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDescriptorHeap, PushDescriptorSet) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const VkDeviceSize heap_size = heap_props.samplerDescriptorSize + heap_props.minSamplerHeapReservedRange;
+    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const auto ds_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    OneOffDescriptorSet ds(m_device, {{0, ds_type, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
+                           VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_info{buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = ds_type;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
+    VkBindHeapInfoEXT samplerHeapBindInfo = vku::InitStructHelper();
+    inh_desc_heap_info.pSamplerHeapBindInfo = &samplerHeapBindInfo;
+
+    VkCommandBufferInheritanceInfo inh = vku::InitStructHelper(&inh_desc_heap_info);
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.pInheritanceInfo = &inh;
+
+    secondary.Begin(&cbbi);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-11295");
+    vk::CmdPushDescriptorSetKHR(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    secondary.End();
+}
+
 TEST_F(NegativeDescriptorHeap, DescriptorBufferInvalidatingHeap) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
