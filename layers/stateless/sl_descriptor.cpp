@@ -1622,21 +1622,48 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
         const Location data_loc = resource_loc.dot(Field::data);
 
         if (IsDescriptorHeapImage(resource.type)) {
-            if (!resource.data.pImage && !enabled_features.nullDescriptor &&
-                (resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)) {
-                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-None-11211", device, data_loc.dot(Field::pImage),
-                                 "is NULL, but nullDescriptor feature is not enabled. (type is %s)",
-                                 string_VkDescriptorType(resource.type));
-            }
-            if (resource.data.pImage && resource.data.pImage->pView) {
-                skip |= ValidateImageViewCreateInfo(*resource.data.pImage->pView, data_loc.dot(Field::pImage).dot(Field::pView));
-            }
+            if (!resource.data.pImage) {
+                if (!enabled_features.nullDescriptor &&
+                    (resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)) {
+                    skip |= LogError("VUID-VkResourceDescriptorInfoEXT-None-11211", device, data_loc.dot(Field::pImage),
+                                     "is NULL, but nullDescriptor feature is not enabled. (type is %s)",
+                                     string_VkDescriptorType(resource.type));
+                }
+                if (IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM,
+                                              VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
+                    skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11469", device, data_loc.dot(Field::pImage),
+                                     "must not be NULL for descriptor type %s.", string_VkDescriptorType(resource.type));
+                }
+            } else {
+                if (!IsValueIn(resource.data.pImage->layout,
+                               {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR,
+                                VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, VK_IMAGE_LAYOUT_GENERAL})) {
+                    skip |= LogError("VUID-VkImageDescriptorInfoEXT-layout-11219", device,
+                                     data_loc.dot(Field::pImage).dot(Field::layout), "(%s) is not valid.",
+                                     string_VkImageLayout(resource.data.pImage->layout));
+                }
 
-            if (!resource.data.pImage &&
-                IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM,
-                                          VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
-                skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11469", device, data_loc.dot(Field::pImage),
-                                 "must not be NULL for descriptor type %s.", string_VkDescriptorType(resource.type));
+                if (resource.data.pImage->pView) {
+                    skip |=
+                        ValidateImageViewCreateInfo(*resource.data.pImage->pView, data_loc.dot(Field::pImage).dot(Field::pView));
+
+                    if ((resource.data.pImage->pView->subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                        IsValueIn(
+                            resource.data.pImage->layout,
+                            {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+                             VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                             VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL})) {
+                        skip |= LogError(
+                            "VUID-VkImageDescriptorInfoEXT-layout-11221", device, data_loc.dot(Field::pImage).dot(Field::layout),
+                            "is %s, but aspectMask (%s) includes VK_IMAGE_ASPECT_COLOR_BIT.",
+                            string_VkImageLayout(resource.data.pImage->layout),
+                            string_VkImageAspectFlags(resource.data.pImage->pView->subresourceRange.aspectMask).c_str());
+                    }
+                }
             }
         } else if (IsDescriptorHeapTexelBuffer(resource.type)) {
             if (resource.data.pTexelBuffer) {
