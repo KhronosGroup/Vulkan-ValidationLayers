@@ -178,8 +178,9 @@ bool core::Instance::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_stat
     return skip;
 }
 
-bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, uint32_t info_count,
-                                                    const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
+bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice& pd_state, uint32_t info_count,
+                                                    const VkDeviceQueueCreateInfo* infos, const void* pNext,
+                                                    const Location& loc) const {
     bool skip = false;
 
     vvl::unordered_map<uint32_t, std::pair<uint32_t, VkDeviceQueueCreateFlags>> queue_family_map;
@@ -238,6 +239,17 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                              "(%" PRIu32 ") does not have VK_QUEUE_PROTECTED_BIT supported, but pQueueCreateInfos[%" PRIu32
                              "].flags has VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
                              requested_queue_family, i);
+        }
+
+        if (flags & VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR) {
+            const auto* isq_features = vku::FindStructInPNextChain<VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR>(pNext);
+            if (!isq_features || !isq_features->internallySynchronizedQueues) {
+                skip |= LogError(
+                    "VUID-VkDeviceQueueCreateInfo-internallySynchronizedQueues-12348", pd_state.Handle(),
+                    info_loc.dot(Field::flags),
+                    "has VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR bit set, but "
+                    "VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR::internallySynchronizedQueues is not enabled.");
+            }
         }
 
         // Verify that requested queue count of queue family is known to be valid at this point in time
@@ -302,7 +314,7 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
     }
 
     skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
-                                           error_obj.location.dot(Field::pCreateInfo));
+                                           pCreateInfo->pNext, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
