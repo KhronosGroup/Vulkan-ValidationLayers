@@ -4022,6 +4022,8 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
         skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, dsl_error_source, loc);
     }
 
+    skip |= ValidateInheritanceDescriptorHeapInfo(cb_state, loc);
+
     return skip;
 }
 
@@ -5763,6 +5765,14 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
             case Func::vkCmdPushDescriptorSetWithTemplate2KHR:
                 vuid = "VUID-vkCmdPushDescriptorSetWithTemplate2-commandBuffer-11295";
                 break;
+            case Func::vkCmdPushDescriptorSet:
+            case Func::vkCmdPushDescriptorSetKHR:
+                vuid = "VUID-vkCmdPushDescriptorSet-commandBuffer-11295";
+                break;
+            case Func::vkCmdPushDescriptorSet2:
+            case Func::vkCmdPushDescriptorSet2KHR:
+                vuid = "VUID-vkCmdPushDescriptorSet2-commandBuffer-11295";
+                break;
             case Func::vkCmdPushConstants:
                 vuid = "VUID-vkCmdPushConstants-commandBuffer-11295";
                 break;
@@ -5810,6 +5820,14 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
             case Func::vkCmdPushDescriptorSetWithTemplate2:
             case Func::vkCmdPushDescriptorSetWithTemplate2KHR:
                 vuid = "VUID-vkCmdPushDescriptorSetWithTemplate2-commandBuffer-11296";
+                break;
+            case Func::vkCmdPushDescriptorSet:
+            case Func::vkCmdPushDescriptorSetKHR:
+                vuid = "VUID-vkCmdPushDescriptorSet-commandBuffer-11296";
+                break;
+            case Func::vkCmdPushDescriptorSet2:
+            case Func::vkCmdPushDescriptorSet2KHR:
+                vuid = "VUID-vkCmdPushDescriptorSet2-commandBuffer-11296";
                 break;
             case Func::vkCmdPushConstants:
                 vuid = "VUID-vkCmdPushConstants-commandBuffer-11296";
