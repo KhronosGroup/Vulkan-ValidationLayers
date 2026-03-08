@@ -465,6 +465,49 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         }
     }
 
+    if (indirect_commands_layout.has_execution_set_token) {
+        const auto* pipeline_layout_ci =
+            vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(indirect_commands_layout.create_info.pNext);
+        auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(generated_commands_info.indirectExecutionSet);
+        if (indirect_execution_set && indirect_execution_set->is_pipeline) {
+            if (indirect_commands_layout.create_info.pipelineLayout == VK_NULL_HANDLE && !pipeline_layout_ci) {
+                if ((indirect_execution_set->initial_pipeline->create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) == 0) {
+                    skip |= LogError(
+                        "VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11328", cb_state.Handle(),
+                        info_loc.dot(Field::indirectCommandsLayout),
+                        "contains an execution set token, but a VkPipelineLayout was not provided.\nHint: This is only allowed "
+                        "if the VkPipeline was created with VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT.");
+                }
+            } else {
+                if ((indirect_execution_set->initial_pipeline->create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
+                    skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11329", cb_state.Handle(),
+                                     info_loc.dot(Field::indirectCommandsLayout),
+                                     "contains an execution set token and a VkPipelineLayout was provided, but pipeline was "
+                                     "created with VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT.");
+                }
+            }
+        } else if (indirect_execution_set && indirect_execution_set->is_shader_objects) {
+            if (indirect_commands_layout.create_info.pipelineLayout == VK_NULL_HANDLE && !pipeline_layout_ci) {
+                if ((indirect_execution_set->initial_shader_object->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) ==
+                    0) {
+                    skip |= LogError(
+                        "VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11330", cb_state.Handle(),
+                        info_loc.dot(Field::indirectCommandsLayout),
+                        "contains an execution set token, but a VkPipelineLayout was not provided.\nHint: This is only allowed "
+                        "if the shader object was created with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.");
+                }
+            } else {
+                if ((indirect_execution_set->initial_shader_object->create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) !=
+                    0) {
+                    skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11331", cb_state.Handle(),
+                                     info_loc.dot(Field::indirectCommandsLayout),
+                                     "contains an execution set token and a VkPipelineLayout was provided, but shader object was "
+                                     "created with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.");
+                }
+            }
+        }
+    }
+
     bool valid_dispatch = true;
     auto* pipeline_info = vku::FindStructInPNextChain<VkGeneratedCommandsPipelineInfoEXT>(generated_commands_info.pNext);
     auto* shader_info = vku::FindStructInPNextChain<VkGeneratedCommandsShaderInfoEXT>(generated_commands_info.pNext);
