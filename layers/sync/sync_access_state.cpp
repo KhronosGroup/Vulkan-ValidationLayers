@@ -17,6 +17,7 @@
 #include "sync/sync_access_state.h"
 #include "sync/sync_stats.h"
 #include "utils/hash_util.h"
+#include <algorithm>
 
 static bool IsRead(SyncAccessIndex access) { return syncAccessReadMask[access]; }
 
