@@ -197,13 +197,20 @@ static const std::string& FindVUID(const Location& loc, const Table& table) {
     const Location core_loc(FindAlias(loc.function), loc.structure, loc.field, loc.index);
 
     static const std::string empty;
-    auto predicate = [&core_loc](const Entry& entry) { return entry.k == core_loc; };
 
-    // consistency check: there should never be more than 1 match in a table
-    assert(std::count_if(table.begin(), table.end(), predicate) <= 1);
+    const Entry* match = nullptr;
+    for (const auto& entry : table) {
+        if (entry.k == core_loc) {
+            if (match) {
+                // Consistency check: we already found one match, so this is the 2nd.
+                assert(false && "There should never be more than 1 match in a table");
+                break;
+            }
+            match = &entry;
+        }
+    }
 
-    const auto pos = std::find_if(table.begin(), table.end(), predicate);
-    return (pos != table.end()) ? pos->v : empty;
+    return match ? match->v : empty;
 }
 
 // 2-level look up where the outer container is a map where we need to find
