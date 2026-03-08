@@ -221,6 +221,8 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
 
     vkt::IndirectExecutionSet exe_set(*m_device, pipe, 1);
 
+    vkt::PipelineLayout layout = vkt::PipelineLayout(*m_device);
+
     VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
                                                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
     VkIndirectCommandsLayoutTokenEXT tokens[2];
@@ -235,7 +237,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.pipelineLayout = layout;
     command_layout_ci.tokenCount = 2;
     command_layout_ci.pTokens = tokens;
 
@@ -333,9 +335,11 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsCompute) {
     tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
     tokens[1].offset = 8;
 
+    vkt::PipelineLayout layout = vkt::PipelineLayout(*m_device);
+
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.pipelineLayout = layout;
     command_layout_ci.tokenCount = 2;
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
@@ -388,9 +392,11 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
     tokens[1].offset = 8;
 
+    vkt::PipelineLayout layout = vkt::PipelineLayout(*m_device);
+
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.pipelineLayout = layout;
     command_layout_ci.tokenCount = 2;
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
