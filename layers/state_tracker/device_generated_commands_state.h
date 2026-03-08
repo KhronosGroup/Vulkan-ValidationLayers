@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ class IndirectExecutionSet : public StateObject {
     // "The characteristics of initialPipeline will be used to validate all pipelines added to the set even if they are removed from
     // the set or destroyed"
     std::shared_ptr<Pipeline> initial_pipeline;
+    std::shared_ptr<ShaderObject> initial_shader_object;
     std::shared_ptr<ShaderObject> initial_fragment_shader_object;
 
     uint32_t max_pipeline_count = 0;

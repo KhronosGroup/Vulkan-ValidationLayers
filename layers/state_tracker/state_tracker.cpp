@@ -6393,10 +6393,10 @@ void DeviceState::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR s
 }
 
 void DeviceState::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
-                                                              const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkIndirectExecutionSetEXT *pIndirectExecutionSet,
-                                                              const RecordObject &record_obj) {
+                                                              const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                              const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -6405,7 +6405,7 @@ void DeviceState::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
         std::make_shared<IndirectExecutionSet>(*this, *pIndirectExecutionSet, pCreateInfo);
 
     if (indirect_execution_state->is_pipeline && pCreateInfo->info.pPipelineInfo) {
-        const VkIndirectExecutionSetPipelineInfoEXT &pipeline_info = *pCreateInfo->info.pPipelineInfo;
+        const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info = *pCreateInfo->info.pPipelineInfo;
         indirect_execution_state->initial_pipeline = Get<Pipeline>(pipeline_info.initialPipeline);
         indirect_execution_state->shader_stage_flags = indirect_execution_state->initial_pipeline->active_shaders;
     } else if (indirect_execution_state->is_shader_objects && pCreateInfo->info.pShaderInfo) {
@@ -6415,6 +6415,9 @@ void DeviceState::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
             const auto shader_object = Get<ShaderObject>(shader_handle);
             ASSERT_AND_CONTINUE(shader_object);
             indirect_execution_state->shader_stage_flags |= shader_object->create_info.stage;
+            if (i == 0) {
+                indirect_execution_state->initial_shader_object = shader_object;
+            }
             if (shader_object->create_info.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
                 indirect_execution_state->initial_fragment_shader_object = shader_object;
             }
@@ -6425,8 +6428,8 @@ void DeviceState::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
 }
 
 void DeviceState::PreCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              const RecordObject &record_obj) {
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              const RecordObject& record_obj) {
     Destroy<IndirectExecutionSet>(indirectExecutionSet);
 }
 
