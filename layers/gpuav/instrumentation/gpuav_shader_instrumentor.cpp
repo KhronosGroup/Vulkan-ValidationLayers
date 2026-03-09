@@ -461,10 +461,9 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
     chassis_state.modified_shader_handle = sub_state.original_handle;
 }
 
-bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT& modified_create_info,
-                                                                     const Location& create_info_loc,
-                                                                     chassis::ShaderObjectInstrumentationData& instrumentation_data,
-                                                                     ::spirv::Module* module_state) {
+bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
+    vku::safe_VkShaderCreateInfoEXT& modified_create_info, const Location& create_info_loc,
+    chassis::ShaderObjectInstrumentationData& instrumentation_data) {
     if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(modified_create_info.pNext)) {
         return false;
     }
@@ -478,7 +477,6 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_V
     interface.entry_point_stage = modified_create_info.stage;
     interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
     interface.has_task_shader = (modified_create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0;
-    interface.core_module = module_state;
     BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
 
     const bool is_shader_instrumented = InstrumentShader(
@@ -549,8 +547,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     continue;
                 }
                 AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure *>(&new_create_info));
-                chassis_state.is_modified |= PreCallRecordShaderObjectInstrumentation(
-                    new_create_info, create_info_loc, instrumentation_data, chassis_state.module_states[i].get());
+                chassis_state.is_modified |=
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
             } else {
                 // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
                 if (new_create_info.pSetLayouts) {
@@ -567,8 +565,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 }
                 new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
 
-                chassis_state.is_modified |= PreCallRecordShaderObjectInstrumentation(
-                    new_create_info, create_info_loc, instrumentation_data, chassis_state.module_states[i].get());
+                chassis_state.is_modified |=
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
             }
         }
     }
@@ -1260,7 +1258,6 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
         interface.has_task_shader = (pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
-        interface.core_module = stage_state.spirv_state.get();
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1459,7 +1456,6 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
             interface.has_task_shader = (linked_pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
-            interface.core_module = modified_stage_state.spirv_state.get();
             const bool is_shader_instrumented =
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 

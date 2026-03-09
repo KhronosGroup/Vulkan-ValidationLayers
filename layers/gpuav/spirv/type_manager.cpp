@@ -429,19 +429,20 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
     }
 }
 
-uint32_t TypeManager::TypeLength(const Type& type) {
+uint32_t TypeManager::GetTypeBytesSize(const Type& type) {
     switch (type.spv_type_) {
         case SpvType::kFloat:
         case SpvType::kInt:
+        case SpvType::kBool:
             return type.meta_.scalar.bit_width / 8u;
         case SpvType::kVector:
         case SpvType::kVectorIdEXT: {
             const Type* count_type = FindTypeById(type.inst_.Operand(0));
-            return type.meta_.vector.component_count * TypeLength(*count_type);
+            return type.meta_.vector.component_count * GetTypeBytesSize(*count_type);
         }
         case SpvType::kMatrix: {
             const Type* column_type = FindTypeById(type.inst_.Operand(0));
-            return type.meta_.matrix.component_count * TypeLength(*column_type);
+            return type.meta_.matrix.component_count * GetTypeBytesSize(*column_type);
         }
         case SpvType::kPointer:
             assert(type.inst_.Operand(0) == spv::StorageClassPhysicalStorageBuffer && "unexpected pointer type");
@@ -449,7 +450,7 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             return 8u;
         case SpvType::kArray: {
             const Type* element_type = FindTypeById(type.inst_.Operand(0));
-            return type.meta_.array.length * TypeLength(*element_type);
+            return type.meta_.array.length * GetTypeBytesSize(*element_type);
         }
         case SpvType::kStruct: {
             // Get the offset of the last member and then figure out it's size
@@ -479,7 +480,7 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             }
 
             const Type* last_element_type = FindTypeById(type.inst_.Operand(last_offset_index));
-            const uint32_t last_length = TypeLength(*last_element_type);
+            const uint32_t last_length = GetTypeBytesSize(*last_element_type);
             const uint32_t struct_size = last_offset + last_length;
             struct_size_map_[struct_id] = struct_size;
             return struct_size;

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "containers/container_utils.h"
 #include "containers/limits.h"
 #include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"

@@ -88,14 +88,6 @@ struct InstrumentationInterface {
     // Used for MeshPass to know if a task will be used as well
     bool has_task_shader = false;
 
-    // There are TWO spirv::Module !??
-    // Yes, it was a very conscious decision to have a "read-only" version in Core Validation be different than the
-    // "read-than-write" framework in GPU-AV as they require drastically different things.
-    //
-    // The GPU-AV version is much lighter, but sometimes there is a real need to make use of the utils found in the Core Validation
-    // version, so when needed, this can be used in instrumentation passes
-    const ::spirv::Module* core_module = nullptr;
-
     const Location& loc;
 
     explicit InstrumentationInterface(const Location& loc) : loc(loc) {}

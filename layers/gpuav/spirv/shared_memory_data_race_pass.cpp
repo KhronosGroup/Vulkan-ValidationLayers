@@ -20,7 +20,6 @@
 #include <iostream>
 
 #include "generated/gpuav_offline_spirv.h"
-#include "state_tracker/shader_module.h"
 #include "type_manager.h"
 
 namespace gpuav {
@@ -123,9 +122,9 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
 
                 // If the size of the scalar element type doesn't match the component size,
                 // scale the rows or cols up or down to touch the correct number of elements
-                uint32_t access_size = type_manager_.TypeLength(*scalar_elem_type);
+                uint32_t access_size = type_manager_.GetTypeBytesSize(*scalar_elem_type);
                 uint32_t coopmat_component_size =
-                    type_manager_.TypeLength(*type_manager_.FindTypeById(coopmat_type->inst_.Word(2)));
+                    type_manager_.GetTypeBytesSize(*type_manager_.FindTypeById(coopmat_type->inst_.Word(2)));
                 if (access_size != coopmat_component_size) {
                     uint32_t memory_layout = type_manager_.FindConstantById(memory_layout_id)->GetValueUint32();
                     uint32_t& rows_or_cols_id = memory_layout == spv::CooperativeMatrixLayoutRowMajorKHR ? cols_id : rows_id;
@@ -350,6 +349,9 @@ bool SharedMemoryDataRacePass::Instrument() {
 
     const std::vector<const Variable*>& shmem_vars = type_manager_.GetSharedMemoryVariables();
 
+    // Since we don't support WorkgroupMemoryExplicitLayoutKHR, we don't need to worry about Aliased blocks
+    uint32_t shared_memory_size = 0;
+
     // Compute how much shared memory is needed.
     for (const Variable* v : shmem_vars) {
         const uint32_t v_id = v->Id();
@@ -358,13 +360,14 @@ bool SharedMemoryDataRacePass::Instrument() {
         uint32_t num_scalar_elements = type_manager_.GetNumScalarElements(*pointee_type);
         assert(num_scalar_elements != 0);
         num_slots_ += num_scalar_elements;
+
+        shared_memory_size += type_manager_.GetTypeBytesSize(*pointee_type);
     }
 
     if (num_slots_ == 0) {
         return false;  // no shared memory being used
     }
 
-    const uint32_t shared_memory_size = module_.interface_.core_module->CalculateWorkgroupSharedMemory();
     // Bail if we would overflow the limit
     if (shared_memory_size + (num_slots_ * sizeof(uint32_t)) > module_.settings_.max_compute_shared_memory_size) {
         return false;

@@ -45,8 +45,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       enabled_features_(enabled_features),
       has_bindless_descriptors_(interface.instrumentation_dsl.has_bindless_descriptors),
       debug_report_(debug_report) {
-    assert(interface.core_module);
-
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
     header_.version = *it++;

@@ -170,7 +170,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // This might be an OpTypeStruct, even if some compilers are smart enough (know Mesa is) to detect only the first part of a
     // struct is loaded, we have to assume the entire struct is loaded and the entire memory is accessed (see
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089)
-    meta.access_size = type_manager_.TypeLength(*accessed_type);
+    meta.access_size = type_manager_.GetTypeBytesSize(*accessed_type);
     // Will mark this is a struct acess to inform the user
     meta.type_is_struct = accessed_type->spv_type_ == SpvType::kStruct;
 
