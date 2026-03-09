@@ -532,7 +532,7 @@ void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAcces
             const auto not_usage_stage = ~usage_stage;
             for (auto &read_access : GetReads()) {
                 if (read_access.stage == usage_stage) {
-                    read_access.Set(usage_stage, usage_info.access_index, tag_ex);
+                    read_access.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex);
                 } else if (read_access.barriers & usage_stage) {
                     // If the current access is barriered to this stage, mark it as "known to happen after"
                     read_access.sync_stages |= usage_stage;
@@ -550,7 +550,7 @@ void AccessState::Update(const SyncAccessInfo &usage_info, const AttachmentAcces
                 }
             }
             ReadState new_read_state;
-            new_read_state.Set(usage_stage, usage_info.access_index, tag_ex);
+            new_read_state.Set(usage_stage, usage_info.access_index, attachment_access, tag_ex);
             AddRead(new_read_state);
             last_read_stages |= usage_stage;
         }
@@ -1097,10 +1097,12 @@ void AccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, const Or
     }
 }
 
-void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex) {
+void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess &attachment_access,
+                    ResourceUsageTagEx tag_ex) {
     assert(access_index != SYNC_ACCESS_INDEX_NONE);
     this->stage = stage;
     this->access_index = access_index;
+    this->attachment_access = attachment_access;
     barriers = VK_PIPELINE_STAGE_2_NONE;
     sync_stages = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;

@@ -463,14 +463,20 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
             }
             ss << "(" << vvl::String(prior_command) << ") ";
             ss << "by the attachment loadOp";
-        } else if (prior_usage_info.sub_command_type == SubCommandType::kStoreOp) {
+        } else if (prior_usage_info.sub_command_type == SubCommandType::kStoreOp ||
+                   prior_usage_info.sub_command_type == SubCommandType::kResolveOp) {
             if (prior_usage_info.subpass != vvl::kNoIndex32) {
                 ss << "at the end of subpass " << prior_usage_info.subpass << " ";
             } else {
                 ss << "at the end of the render pass instance ";
             }
             ss << "(" << vvl::String(prior_command) << ") ";
-            ss << "by the attachment storeOp";
+            if (prior_usage_info.sub_command_type == SubCommandType::kStoreOp) {
+                ss << "by the attachment storeOp";
+            } else {
+                assert(prior_usage_info.sub_command_type == SubCommandType::kResolveOp);
+                ss << "during resolve operation";
+            }
         } else {
             ss << "by ";
             if (prior_usage_info.command == command) {

@@ -1315,15 +1315,15 @@ ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command
     const uint32_t previous_subpass = current_renderpass_context_->GetCurrentSubpass();
     const uint32_t this_subpass = previous_subpass + 1;
 
-    auto store_tag = NextCommandTag(command, SubCommandType::kStoreOp, previous_subpass);
-    AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
-
-    auto barrier_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition, this_subpass);
+    auto resolve_tag = NextCommandTag(command, SubCommandType::kResolveOp, previous_subpass);
+    AddCommandHandle(resolve_tag, current_renderpass_context_->GetRenderPassState()->Handle());
+    auto store_tag = NextSubCommandTag(command, SubCommandType::kStoreOp, previous_subpass);
+    auto transition_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition, this_subpass);
     auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, this_subpass);
 
-    current_renderpass_context_->RecordNextSubpass(store_tag, barrier_tag, load_tag);
+    current_renderpass_context_->RecordNextSubpass(resolve_tag, store_tag, transition_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
-    return barrier_tag;
+    return transition_tag;
 }
 
 ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func command) {

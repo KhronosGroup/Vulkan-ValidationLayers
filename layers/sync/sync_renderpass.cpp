@@ -898,12 +898,12 @@ void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barri
     RecordLoadOperations(load_tag);
 }
 
-void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag, const ResourceUsageTag barrier_tag,
-                                                const ResourceUsageTag load_tag) {
+void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, const ResourceUsageTag store_tag,
+                                                const ResourceUsageTag transition_tag, const ResourceUsageTag load_tag) {
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
-    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
+    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, resolve_tag,
                                   CurrentContext());
     UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                 CurrentContext());
@@ -915,14 +915,14 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag
     // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
     AccessContext &current_context = CurrentContext();
-    current_context.SetStartTag(barrier_tag);
+    current_context.SetStartTag(transition_tag);
 
-    RecordLayoutTransitions(barrier_tag);
+    RecordLayoutTransitions(transition_tag);
     RecordLoadOperations(load_tag);
 }
 
 void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_context, const ResourceUsageTag store_tag,
-                                                  const ResourceUsageTag barrier_tag) {
+                                                  const ResourceUsageTag transition_tag) {
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     // Add the resolve and store accesses
@@ -958,7 +958,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
                                                     pending_barriers);
             external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
         }
-        pending_barriers.Apply(barrier_tag);
+        pending_barriers.Apply(transition_tag);
     }
 }
 

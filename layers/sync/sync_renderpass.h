@@ -128,8 +128,9 @@ class RenderPassAccessContext {
     void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag);
     void RecordBeginRenderPass(ResourceUsageTag tag, ResourceUsageTag load_tag);
-    void RecordNextSubpass(ResourceUsageTag store_tag, ResourceUsageTag barrier_tag, ResourceUsageTag load_tag);
-    void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag store_tag, ResourceUsageTag barrier_tag);
+    void RecordNextSubpass(ResourceUsageTag resolve_tag, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
+                           ResourceUsageTag load_tag);
+    void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag);
 
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
     AccessContext &CurrentContext();
