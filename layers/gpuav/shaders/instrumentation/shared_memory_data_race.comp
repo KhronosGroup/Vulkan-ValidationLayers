@@ -58,7 +58,7 @@ const uint SENTINEL = 0x1FFFFFFF;
 // This array has a placeholder size and the whole array is replaced in LinkFunctions
 shared uint shadow[99999];
 
-void init_shadow(const in uint length, const in uint wg_size) {
+void inst_init_shadow(const in uint length, const in uint wg_size) {
     barrier();
     for (uint i = gl_LocalInvocationIndex; i < length; i += wg_size) {
         shadow[i] = SENTINEL;
@@ -66,7 +66,7 @@ void init_shadow(const in uint length, const in uint wg_size) {
     barrier();
 }
 
-void do_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+void inst_do_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
     uint thread_id = gl_LocalInvocationIndex;
     uint ret = atomicExchange(shadow[start + idx], thread_id | STORE_BIT);
     if (ret != SENTINEL && ret != thread_id && ret != (thread_id | STORE_BIT)) {
@@ -90,7 +90,7 @@ void do_store(const in uint start, const in uint idx, const in uint inst_offset,
     }
 }
 
-void do_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+void inst_do_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
     uint thread_id = gl_LocalInvocationIndex;
 
     uint ret = atomicLoad(shadow[start + idx], gl_ScopeDevice, 0, 0);
@@ -141,7 +141,7 @@ void do_load(const in uint start, const in uint idx, const in uint inst_offset, 
     }
 }
 
-void do_atomic(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
+void inst_do_atomic(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx) {
     uint thread_id = gl_LocalInvocationIndex;
     uint ret = atomicExchange(shadow[start + idx], ATOMIC_BIT);
     if (ret != SENTINEL && ret != ATOMIC_BIT) {
@@ -155,7 +155,7 @@ void do_atomic(const in uint start, const in uint idx, const in uint inst_offset
     }
 }
 
-void do_coopmat_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
+void inst_do_coopmat_load(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
                      const in uint scope, const in uint rows, const in uint cols, const in uint memory_layout, const in uint stride, const in uint wg_size) {
     uint thread_id = gl_LocalInvocationIndex;
     uint inv_per_iter = scope == gl_ScopeSubgroup ? gl_SubgroupSize : wg_size;
@@ -178,7 +178,7 @@ void do_coopmat_load(const in uint start, const in uint idx, const in uint inst_
     }
 }
 
-void do_coopmat_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
+void inst_do_coopmat_store(const in uint start, const in uint idx, const in uint inst_offset, const in uint variable_idx,
                       const in uint scope, const in uint rows, const in uint cols, const in uint memory_layout, const in uint stride, const in uint wg_size) {
     uint thread_id = gl_LocalInvocationIndex;
     uint inv_per_iter = scope == gl_ScopeSubgroup ? gl_SubgroupSize : wg_size;
