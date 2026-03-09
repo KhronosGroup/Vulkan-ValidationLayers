@@ -205,15 +205,17 @@ using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
 // and applicable one for hazard detection
 struct ReadState {
-    VkPipelineStageFlagBits2 stage;     // The stage of this read
-    SyncAccessIndex access_index;       // TODO: Revisit whether this needs to support multiple reads per stage
+    VkPipelineStageFlagBits2 stage;  // The stage of this read
+    SyncAccessIndex access_index;    // TODO: Revisit whether this needs to support multiple reads per stage
+    AttachmentAccess attachment_access;
     VkPipelineStageFlags2 barriers;     // all applicable barriered stages
     VkPipelineStageFlags2 sync_stages;  // reads known to have happened after this
     ResourceUsageTag tag;
     uint32_t handle_index;
     QueueId queue;
 
-    void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
+    void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess &attachment_access,
+             ResourceUsageTagEx tag_ex);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
     bool operator==(const ReadState &rhs) const {
