@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <spirv/unified1/spirv.hpp>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -46,7 +47,7 @@ void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubSt
                     std::ostringstream strm;
                     strm << "A data race was detected on the shared memory variable \"";
                     if (instrumented_shader) {
-                        ::spirv::FindOpVariableName(strm, instrumented_shader->original_spirv, variable_id);
+                        ::spirv::FindGlobalName(strm, instrumented_shader->original_spirv, (uint32_t)spv::OpVariable, variable_id);
                     } else {
                         strm << "[error, original SPIR-V not found]";
                     }

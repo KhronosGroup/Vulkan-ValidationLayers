@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -651,7 +651,7 @@ void main(){
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderDebugInfo, DebugGloablVariableName) {
+TEST_F(NegativeShaderDebugInfo, DebugGlobalVariableName) {
     TEST_DESCRIPTION("Get the name of the OpVariable from OpString, not OpName");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);

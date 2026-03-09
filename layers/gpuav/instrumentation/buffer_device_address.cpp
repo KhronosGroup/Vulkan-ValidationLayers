@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "error_message/spirv_logging.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
@@ -39,7 +40,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                                                           const LastBound& last_bound) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [](Validator& gpuav, const Location&,
                                                                                  const uint32_t* error_record,
-                                                                                 const InstrumentedShader*,
+                                                                                 const InstrumentedShader* instrumented_shader,
                                                                                  std::string& out_error_msg,
                                                                                  std::string& out_vuid_msg) {
             using namespace glsl;
@@ -66,8 +67,11 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                          << std::hex << address << '.';
                     if (is_struct) {
                         // Added because glslang currently has no way to seperate out the struct (Slang does as of 2025.6.2)
-                        strm << " This " << (is_write ? "write" : "read")
-                             << " corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, "
+                        strm << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";
+                        const uint32_t instruction_position_offset =
+                            error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
+                        ::spirv::FindOpStructFromBDA(strm, instrumented_shader->original_spirv, instruction_position_offset);
+                        strm << ". While not all members of the struct might be accessed, "
                                 "it is up "
                                 "to the source language or tooling to detect that and reflect it in the SPIR-V.";
                     }
