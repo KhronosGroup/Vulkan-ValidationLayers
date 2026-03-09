@@ -133,17 +133,22 @@ static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
     return GetLoadOpUsageIndex(load_op, AttachmentType::kDepth);
 }
 
-static bool IsSubpassIncluded(uint32_t subpass, const vvl::RenderPass::SubpassPerView &subpass_per_view, uint32_t view_mask) {
+// Keeps only those bits in view_mask for which subpass is "enabled" based on subpass_per_view.
+static std::optional<uint32_t> FilterViewMask(uint32_t view_mask, uint32_t subpass,
+                                              const vvl::RenderPass::SubpassPerView &subpass_per_view) {
+    // Special case when multiview is disabled to unify caller code
     if (view_mask == 0) {
-        return subpass_per_view[0] == subpass;
+        return (subpass_per_view[0] == subpass) ? std::optional<uint32_t>(0) : std::nullopt;
     }
+
+    uint32_t filtered_view_mask = 0;
     const auto view_indices = GetSetBitIndices(view_mask);
     for (uint8_t view_index : view_indices) {
         if (subpass_per_view[view_index] == subpass) {
-            return true;
+            filtered_view_mask |= 1 << view_index;
         }
     }
-    return false;
+    return (filtered_view_mask != 0) ? std::optional<uint32_t>(filtered_view_mask) : std::nullopt;
 }
 
 // Caller must manage returned pointer
@@ -240,7 +245,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
     attachment_access.subpass = subpass;
 
     for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
-        if (IsSubpassIncluded(subpass, rp_state.attachment_first_subpass[i], view_mask)) {
+        if (auto filtered_view_mask = FilterViewMask(view_mask, subpass, rp_state.attachment_first_subpass[i])) {
             const auto &view_gen = attachment_views[i];
             const auto &ci = rp_state.create_info.pAttachments[i];
 
@@ -264,7 +269,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
             if (is_color && (load_index != SYNC_ACCESS_INDEX_NONE)) {
                 attachment_access.ordering = SyncOrdering::kColorAttachment;
                 hazard = access_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kRenderArea, load_index,
-                                                               attachment_access, view_mask);
+                                                               attachment_access, *filtered_view_mask);
                 aspect = "color";
             } else {
                 if (has_depth && (load_index != SYNC_ACCESS_INDEX_NONE)) {
@@ -321,7 +326,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
-        if (IsSubpassIncluded(current_subpass_, rp_state_->attachment_last_subpass[i], view_mask)) {
+        if (auto filtered_view_mask = FilterViewMask(view_mask, current_subpass_, rp_state_->attachment_last_subpass[i])) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
             const auto &ci = rp_state_->create_info.pAttachments[i];
 
@@ -340,7 +345,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
             if (is_color) {
                 hazard = CurrentContext().DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                                  SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                                 attachment_access, view_mask);
+                                                                 attachment_access, *filtered_view_mask);
                 aspect = "color";
             } else {
                 const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE;
@@ -519,7 +524,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
     attachment_access.subpass = subpass;
 
     for (uint32_t i = 0; i < rp_state.create_info.attachmentCount; i++) {
-        if (IsSubpassIncluded(subpass, rp_state.attachment_last_subpass[i], view_mask)) {
+        if (auto filtered_view_mask = FilterViewMask(view_mask, subpass, rp_state.attachment_last_subpass[i])) {
             const auto &view_gen = attachment_views[i];
 
             const auto &ci = rp_state.create_info.pAttachments[i];
@@ -531,7 +536,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
             if (is_color && store_op_stores) {
                 access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                            SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
-                                                           ResourceUsageTagEx{tag}, view_mask);
+                                                           ResourceUsageTagEx{tag}, *filtered_view_mask);
             } else {
                 if (has_depth && store_op_stores) {
                     access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
@@ -829,7 +834,7 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
-        if (IsSubpassIncluded(current_subpass_, rp_state_->attachment_first_subpass[i], view_mask)) {
+        if (auto filtered_view_mask = FilterViewMask(view_mask, current_subpass_, rp_state_->attachment_first_subpass[i])) {
             const AttachmentViewGen &view_gen = attachment_views_[i];
 
             const VkAttachmentDescription2 &ci = *attachment_ci[i].ptr();
@@ -845,7 +850,7 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
                     const AttachmentAccess attachment_access =
                         GetAttachmentAccess(SyncOrdering::kColorAttachment, AttachmentAccessType::LoadOp);
                     subpass_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea, load_op_access,
-                                                                attachment_access, ResourceUsageTagEx{tag}, view_mask);
+                                                                attachment_access, ResourceUsageTagEx{tag}, *filtered_view_mask);
                 }
             } else {
                 // TODO: Update depth/stencil aspects separately only if separateDepthStencilAttachmentAccess is defined,
