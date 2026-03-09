@@ -20,6 +20,52 @@
 
 struct PositiveSyncValRenderPass : public VkSyncValTest {};
 
+TEST_F(PositiveSyncValRenderPass, SyncStoreOpWriteWithPreviousRead) {
+    TEST_DESCRIPTION("Synchronize StoreOp writes with previous copy reads");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                         VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_STORE);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 64, 64);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+
+    // Prevent WAR
+    m_command_buffer.Barrier(barrier);
+
+    // There is no loadOp access (LOAD_OP_NONE)
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 64, 64);
+
+    m_command_buffer.EndRenderPass();
+}
+
 TEST_F(PositiveSyncValRenderPass, SyncInputAttachmentReadWithResolveWrite) {
     TEST_DESCRIPTION("Synchronize input attachment reads with previous multisample resolve writes");
     RETURN_IF_SKIP(InitSyncVal());
@@ -120,50 +166,89 @@ TEST_F(PositiveSyncValRenderPass, SyncInputAttachmentReadWithResolveWrite) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveSyncValRenderPass, SyncStoreOpWriteWithPreviousRead) {
-    TEST_DESCRIPTION("Synchronize StoreOp writes with previous copy reads");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::synchronization2);
+TEST_F(PositiveSyncValRenderPass, SyncAttachmentWriteWithResolveRead) {
+    TEST_DESCRIPTION("Synchronize attachment writes with resolve reads in the previous subpass");
     RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
-                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkImageCreateInfo resolve_image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image resolve_image(*m_device, resolve_image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
 
-    RenderPassSingleSubpass render_pass(*this);
-    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
-                                         VK_ATTACHMENT_LOAD_OP_NONE, VK_ATTACHMENT_STORE_OP_STORE);
-    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
-    render_pass.CreateRenderPass();
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 64, 64);
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkBufferImageCopy region{};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    VkAttachmentDescription resolve_attachment = {};
+    resolve_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    resolve_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    resolve_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    resolve_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    resolve_attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    barrier.image = image;
-    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference resolve_attachment_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &attachment_ref;
+    subpass0.pResolveAttachments = &resolve_attachment_ref;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &attachment_ref;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 1;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+    const VkAttachmentDescription attachments[2] = {attachment, resolve_attachment};
+    const VkImageView image_views[2] = {image_view, resolve_image_view};
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper();
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+    renderpass_ci.dependencyCount = 1;
+    renderpass_ci.pDependencies = &subpass_dependency;
+
+    const vkt::RenderPass render_pass(*m_device, renderpass_ci);
+    const vkt::Framebuffer framebuffer(*m_device, render_pass, 2, image_views, 32, 32);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
 
     m_command_buffer.Begin();
-    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
-
-    // Prevent WAR
-    m_command_buffer.Barrier(barrier);
-
-    // There is no loadOp access (LOAD_OP_NONE)
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 64, 64);
-
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    // Read multisample attachment during resolve
+    m_command_buffer.NextSubpass();
+    // Write to multisample attachment
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveSyncValRenderPass, SyncMultisampleReadWithPreviousWrite) {
@@ -694,7 +779,7 @@ TEST_F(PositiveSyncValRenderPass, MultiviewAsyncSubpasses3DImage) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.extent = {128,128, 2};
+    image_ci.extent = {128, 128, 2};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -856,6 +941,174 @@ TEST_F(PositiveSyncValRenderPass, MultiviewClearAttachments) {
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_command_buffer.NextSubpass();
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, MultiviewResolveRead) {
+    TEST_DESCRIPTION("Test that resolve reads itw own view");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkImageCreateInfo resolve_image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image resolve_image(*m_device, resolve_image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription resolve_attachment = {};
+    resolve_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    resolve_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    resolve_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    resolve_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    resolve_attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference resolve_attachment_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &attachment_ref;
+    subpass0.pResolveAttachments = &resolve_attachment_ref;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &attachment_ref;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+    const VkAttachmentDescription attachments[2] = {attachment, resolve_attachment};
+    const VkImageView image_views[2] = {image_view, resolve_image_view};
+
+    const uint32_t view_masks[2] = {1, 2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper(&multiview_ci);
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+
+    const vkt::RenderPass render_pass(*m_device, renderpass_ci);
+    const vkt::Framebuffer framebuffer(*m_device, render_pass, 2, image_views, 32, 32);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    // Resolve reads view 0
+    m_command_buffer.NextSubpass();
+    // Clear writes to view 1
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, MultiviewResolveRead2) {
+    TEST_DESCRIPTION("Test that resolve reads itw own view");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkImageCreateInfo resolve_image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image resolve_image(*m_device, resolve_image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription resolve_attachment = {};
+    resolve_attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    resolve_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    resolve_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    resolve_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    resolve_attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference resolve_attachment_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 1;
+    subpass0.pColorAttachments = &attachment_ref;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &attachment_ref;
+    subpass1.pResolveAttachments = &resolve_attachment_ref;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+    const VkAttachmentDescription attachments[2] = {attachment, resolve_attachment};
+    const VkImageView image_views[2] = {image_view, resolve_image_view};
+
+    const uint32_t view_masks[2] = {0x1, 0x2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper(&multiview_ci);
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+
+    const vkt::RenderPass render_pass(*m_device, renderpass_ci);
+    const vkt::Framebuffer framebuffer(*m_device, render_pass, 2, image_views, 32, 32);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_attachment.colorAttachment = 0;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect = {{0, 0}, {32, 32}};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    // Clear writes to view 0
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.NextSubpass();
+    // Resolve reads view 1
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

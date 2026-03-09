@@ -105,8 +105,8 @@ class RenderPassAccessContext {
     bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
 
     static void UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
-                                              uint32_t render_pass_instance_id, uint32_t subpass, const ResourceUsageTag tag,
-                                              AccessContext &access_context);
+                                              uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
+                                              const ResourceUsageTag tag, AccessContext &access_context);
 
     static void UpdateAttachmentStoreAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                                             uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
