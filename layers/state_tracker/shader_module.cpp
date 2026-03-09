@@ -2162,11 +2162,12 @@ static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_
         const uint32_t locations = module_state.GetLocationsConsumedByType(member_type);
 
         // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
-        uint32_t vector_components = 0;
+        uint32_t column_components = 0;
         if (member_type->Opcode() == spv::OpTypeMatrix) {
             const Instruction* column_type = module_state.FindDef(member_type->Word(2));
-            vector_components = module_state.GetComponentsConsumedByType(column_type);
+            column_components = module_state.GetComponentsConsumedByType(column_type);
         }
+        const uint32_t padding_components = (4 - column_components % 4) % 4;
 
         // Info needed to test type matching later
         const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
@@ -2174,12 +2175,13 @@ static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_
         const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
         for (uint32_t j = 0; j < locations; j++) {
-            uint32_t matrix_offset = 0;
             for (uint32_t k = 0; k < components; k++) {
-                if (vector_components != 0 && j != 0 && j % vector_components == 0) {
-                    matrix_offset += (4 - vector_components);  // skip to next Location
+                // Skip padding for matrix columns
+                uint32_t component_offset = 0;
+                if (padding_components != 0) {
+                    component_offset = padding_components * (k / column_components);
                 }
-                slots.emplace_back(starting_location + locations_added, k + matrix_offset, numerical_type_opcode,
+                slots.emplace_back(starting_location + locations_added, k + component_offset, numerical_type_opcode,
                                    numerical_type_width);
             }
             locations_added++;
@@ -2214,11 +2216,12 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                 const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
 
                 // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
-                uint32_t vector_components = 0;
+                uint32_t column_components = 0;
                 if (member_type->Opcode() == spv::OpTypeMatrix) {
                     const Instruction* column_type = module_state.FindDef(member_type->Word(2));
-                    vector_components = module_state.GetComponentsConsumedByType(column_type);
+                    column_components = module_state.GetComponentsConsumedByType(column_type);
                 }
+                const uint32_t padding_components = (4 - column_components % 4) % 4;
 
                 // Info needed to test type matching later
                 const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
@@ -2232,12 +2235,13 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                 }
                 const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
-                uint32_t matrix_offset = 0;
                 for (uint32_t j = 0; j < components; j++) {
-                    if (vector_components != 0 && j != 0 && j % vector_components == 0) {
-                        matrix_offset += (4 - vector_components);  // skip to next Location
+                    // Skip padding for matrix columns
+                    uint32_t component_offset = 0;
+                    if (padding_components != 0) {
+                        component_offset = padding_components * (j / column_components);
                     }
-                    slots.emplace_back(base_location, j + matrix_offset, numerical_type_opcode, numerical_type_width);
+                    slots.emplace_back(base_location, j + component_offset, numerical_type_opcode, numerical_type_width);
                 }
                 base_location++;  // If using, each members starts a new Location
             }
@@ -2262,23 +2266,25 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                     const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
 
                     // If we have a |mat4x3| it is 12 components, but spread over the first 3 components of each Location
-                    uint32_t vector_components = 0;
+                    uint32_t column_components = 0;
                     if (member_type->Opcode() == spv::OpTypeMatrix) {
                         const Instruction* column_type = module_state.FindDef(member_type->Word(2));
-                        vector_components = module_state.GetComponentsConsumedByType(column_type);
+                        column_components = module_state.GetComponentsConsumedByType(column_type);
                     }
+                    const uint32_t padding_components = (4 - column_components % 4) % 4;
 
                     // Info needed to test type matching later
                     const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_type);
                     const uint32_t numerical_type_opcode = numerical_type->Opcode();
                     const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
-                    uint32_t matrix_offset = 0;
                     for (uint32_t j = 0; j < components; j++) {
-                        if (vector_components != 0 && j != 0 && j % vector_components == 0) {
-                            matrix_offset += (4 - vector_components);  // skip to next Location
+                        // Skip padding for matrix columns
+                        uint32_t component_offset = 0;
+                        if (padding_components != 0) {
+                            component_offset = padding_components * (j / column_components);
                         }
-                        slots.emplace_back(location, starting_component + j + matrix_offset, numerical_type_opcode,
+                        slots.emplace_back(location, starting_component + j + component_offset, numerical_type_opcode,
                                            numerical_type_width);
                     }
                 }
