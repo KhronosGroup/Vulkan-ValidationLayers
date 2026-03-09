@@ -34,9 +34,13 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<uint32_t> &in
 void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only);
 
-// Will inject the name found from OpName (or DebugGlobalVariable in ShaderDebugInfo if no OpName is present)
-// (Assumes a global variable, not a function variable)
-void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t variable_id);
+// Will inject the name found from OpName (or OpString in ShaderDebugInfo if no OpName is present)
+// Will find anything prior to the Function block (OpVariable, OpTypeStruct, etc)
+// (For variables, assumes a global variable, not a function variable)
+void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t find_opcode, uint32_t find_id);
+
+// Will try to get the OpStruct from a BDA access
+void FindOpStructFromBDA(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset);
 
 // These are used where we can't use normal spirv::Instructions.
 // The main spot is post-processisng error message in GPU-AV, the time it takes to interchange back from a vector<uint32_t> to a

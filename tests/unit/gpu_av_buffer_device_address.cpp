@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1208,7 +1208,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
 
     // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError(
-        "This read corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, it is up to the "
+        "This read corresponds to a full OpTypeStruct load (struct \"RealCamera\"). While not all members of the struct might be "
+        "accessed, it is up to the "
         "source language or tooling to detect that and reflect it in the SPIR-V");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();

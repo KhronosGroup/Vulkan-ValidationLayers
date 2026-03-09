@@ -489,7 +489,7 @@ void FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instr
     }
 }
 
-void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t variable_id) {
+void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t find_opcode, uint32_t find_id) {
     uint32_t shader_debug_info_set_id = 0;
     uint32_t offset = kModuleStartingOffset;
     while (offset < instructions.size()) {
@@ -504,7 +504,7 @@ void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& ins
             break;
         }
 
-        if (opcode == spv::OpName && instructions[offset + 1] == variable_id) {
+        if (opcode == spv::OpName && instructions[offset + 1] == find_id) {
             const char* str = reinterpret_cast<const char*>(&instructions[offset + 2]);
             ss << str;
             return;
@@ -517,9 +517,10 @@ void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& ins
             }
         }
 
+        // TODO - Currently to find OpTypeStruct (or things like it, we need to actually fully parse the ShaderDebugInfo)
         if (opcode == spv::OpExtInst && instructions[offset + 3] == shader_debug_info_set_id &&
-            instructions[offset + 4] == NonSemanticShaderDebugInfo100DebugGlobalVariable &&
-            instructions[offset + 12] == variable_id) {
+            instructions[offset + 4] == NonSemanticShaderDebugInfo100DebugGlobalVariable && instructions[offset + 12] == find_id &&
+            find_opcode == spv::OpVariable) {
             ss << spirv::GetOpString(instructions, instructions[offset + 5]);
             return;
         }
@@ -527,7 +528,74 @@ void FindOpVariableName(std::ostringstream& ss, const std::vector<uint32_t>& ins
         offset += length;
     }
 
-    ss << "[No OpName found, ID " << variable_id << "]";
+    ss << "[No OpName found, ID " << find_id << "]";
+}
+
+// Tries to the same logic as BufferDeviceAddressPass::RequiresInstrumentation
+// This is heavily favored for GLSL where this problem occurs
+void FindOpStructFromBDA(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset) {
+    uint32_t last_seen_function_offset = 0;
+
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        if (opcode == spv::OpFunction) {
+            last_seen_function_offset = offset + length;
+        }
+
+        offset += length;
+
+        if (offset >= instruction_position_offset) {
+            break;
+        }
+    }
+    Instruction access_inst(instructions.data() + offset);
+
+    const uint32_t access_chain_id = access_inst.Operand(0);
+    uint32_t pointer_id = 0;
+    offset = last_seen_function_offset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        if (opcode == spv::OpFunction) {
+            break;
+        } else if (opcode == spv::OpAccessChain && instructions[offset + 2] == access_chain_id) {
+            pointer_id = instructions[offset + 1];
+            break;
+        }
+        offset += length;
+    }
+    if (pointer_id == 0) {
+        return;
+    }
+
+    // Find the OpTypePointer
+    uint32_t struct_id = 0;
+    offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        if (opcode == spv::OpFunction) {
+            break;
+        } else if (opcode == spv::OpTypePointer && instructions[offset + 1] == pointer_id) {
+            struct_id = instructions[offset + 3];
+            break;
+        }
+        offset += length;
+    }
+
+    if (struct_id != 0) {
+        ss << " (struct \"";
+        FindGlobalName(ss, instructions, (uint32_t)spv::OpTypeStruct, struct_id);
+        ss << "\")";
+    }
 }
 
 }  // namespace spirv
