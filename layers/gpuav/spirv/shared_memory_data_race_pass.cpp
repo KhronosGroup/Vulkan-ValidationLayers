@@ -30,12 +30,12 @@ const static OfflineModule kOfflineModule = {instrumentation_shared_memory_data_
                                              UseErrorPayloadVariable | SharedMemoryDataRace};
 
 const static OfflineFunction kOfflineFunction[] = {
-    {"init_shadow", instrumentation_shared_memory_data_race_comp_function_0_offset},
-    {"do_store", instrumentation_shared_memory_data_race_comp_function_1_offset},
-    {"do_load", instrumentation_shared_memory_data_race_comp_function_2_offset},
-    {"do_atomic", instrumentation_shared_memory_data_race_comp_function_3_offset},
-    {"do_coopmat_load", instrumentation_shared_memory_data_race_comp_function_4_offset},
-    {"do_coopmat_store", instrumentation_shared_memory_data_race_comp_function_5_offset},
+    {"inst_init_shadow", instrumentation_shared_memory_data_race_comp_function_0_offset},
+    {"inst_do_store", instrumentation_shared_memory_data_race_comp_function_1_offset},
+    {"inst_do_load", instrumentation_shared_memory_data_race_comp_function_2_offset},
+    {"inst_do_atomic", instrumentation_shared_memory_data_race_comp_function_3_offset},
+    {"inst_do_coopmat_load", instrumentation_shared_memory_data_race_comp_function_4_offset},
+    {"inst_do_coopmat_store", instrumentation_shared_memory_data_race_comp_function_5_offset},
 };
 
 SharedMemoryDataRacePass::SharedMemoryDataRacePass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
