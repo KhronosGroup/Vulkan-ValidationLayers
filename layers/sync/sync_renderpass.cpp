@@ -28,10 +28,11 @@ namespace syncval {
 
 class ValidateResolveAction {
   public:
-    ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, const AccessContext &context,
+    ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, uint32_t view_mask, const AccessContext &context,
                           const CommandBufferAccessContext &cb_context, vvl::Func command)
         : render_pass_(render_pass),
           subpass_(subpass),
+          view_mask_(view_mask),
           context_(context),
           cb_context_(cb_context),
           command_(command),
@@ -40,8 +41,8 @@ class ValidateResolveAction {
     void operator()(const char *aspect_name, const char *resolve_action_name, uint32_t src_at, uint32_t dst_at,
                     const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                     const AttachmentAccess &attachment_access) {
-        ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(gen_type);
-        const HazardResult hazard = context_.DetectAttachmentHazard(attachment_range_gen, current_usage, attachment_access);
+        const HazardResult hazard =
+            context_.DetectAttachmentHazard(view_gen, gen_type, current_usage, attachment_access, view_mask_);
         if (hazard.IsHazard()) {
             const Location loc(command_);
 
@@ -63,6 +64,7 @@ class ValidateResolveAction {
   private:
     VkRenderPass render_pass_;
     const uint32_t subpass_;
+    const uint32_t view_mask_;
     const AccessContext &context_;
     const CommandBufferAccessContext &cb_context_;
     vvl::Func command_;
@@ -71,14 +73,17 @@ class ValidateResolveAction {
 
 class UpdateStateResolveAction {
   public:
-    UpdateStateResolveAction(AccessContext &context, ResourceUsageTag tag) : context_(context), tag_(tag) {}
+    UpdateStateResolveAction(AccessContext &context, uint32_t view_mask, ResourceUsageTag tag)
+        : context_(context), view_mask_(view_mask), tag_(tag) {}
     void operator()(const char *, const char *, uint32_t, uint32_t, const AttachmentViewGen &view_gen,
                     AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage, const AttachmentAccess &attachment_access) {
-        context_.UpdateAttachmentAccessState(view_gen, gen_type, current_usage, attachment_access, ResourceUsageTagEx{tag_});
+        context_.UpdateAttachmentAccessState(view_gen, gen_type, current_usage, attachment_access, ResourceUsageTagEx{tag_},
+                                             view_mask_);
     }
 
   private:
     AccessContext &context_;
+    const uint32_t view_mask_;
     const ResourceUsageTag tag_;
 };
 
@@ -147,7 +152,7 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
                                                      const AttachmentViewGenVector &attachment_views) {
     auto *proxy = new AccessContext(*context.validator);
     proxy->InitFrom(context);
-    RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, render_pass_instance_id, subpass,
+    RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, render_pass_instance_id, subpass, view_mask,
                                                            kInvalidTag, *proxy);
     RenderPassAccessContext::UpdateAttachmentStoreAccess(rp_state, attachment_views, render_pass_instance_id, subpass, view_mask,
                                                          kInvalidTag, *proxy);
@@ -488,16 +493,18 @@ void ResolveOperation(Action &action, const vvl::RenderPass &rp_state, const Att
 }
 
 bool RenderPassAccessContext::ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
-    ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, CurrentContext(), cb_context, command);
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
+    ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, view_mask, CurrentContext(), cb_context,
+                                          command);
     ResolveOperation(validate_action, *rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_);
     return validate_action.GetSkip();
 }
 
 void RenderPassAccessContext::UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state,
                                                             const AttachmentViewGenVector &attachment_views,
-                                                            uint32_t render_pass_instance_id, uint32_t subpass,
+                                                            uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
                                                             const ResourceUsageTag tag, AccessContext &access_context) {
-    UpdateStateResolveAction update(access_context, tag);
+    UpdateStateResolveAction update(access_context, view_mask, tag);
     ResolveOperation(update, rp_state, attachment_views, render_pass_instance_id, subpass);
 }
 
@@ -903,7 +910,7 @@ void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, co
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
-    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, resolve_tag,
+    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, resolve_tag,
                                   CurrentContext());
     UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                 CurrentContext());
@@ -926,7 +933,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
 
     // Add the resolve and store accesses
-    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, store_tag,
+    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                   CurrentContext());
     UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
                                 CurrentContext());
