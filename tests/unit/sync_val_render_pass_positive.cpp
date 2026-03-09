@@ -1112,3 +1112,126 @@ TEST_F(PositiveSyncValRenderPass, MultiviewResolveRead2) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRenderPass, MultiviewLoadOpSubpassSelection) {
+    TEST_DESCRIPTION("More advanced selection of the first loadOp subpass");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 3, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 3);
+
+    vkt::Buffer buffer(*m_device, 128 * 128 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    // Image copy writes to view 0 and view 1. It is enough to define external dependency with
+    // subpass 0, because loadOp for view 0 and view 1 happens in subpass 0. View 1 is also used
+    // in subpass 1 but it does loadOp only for view 2.
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+    const uint32_t view_masks[2] = {0x3 /* view 0 + view 1*/, 0x6 /* view 1 + view 2*/};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    render_pass_ci.dependencyCount = 1;
+    render_pass_ci.pDependencies = &subpass_dependency;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};  // copy to layer 0 and 1
+    region.imageExtent = {128, 128, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRenderPass, MultiviewStoreOpSubpassSelection) {
+    TEST_DESCRIPTION("More advanced selection of the last storeOp subpass");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 3, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 3);
+
+    vkt::Buffer buffer(*m_device, 128 * 128 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    const uint32_t view_masks[2] = {0x3 /* view 0 + view 1*/, 0x6 /* view 1 + view 2*/};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    // Even though view 1 is used by both subpasses, there is only single storeOp for
+    // view 1 (in the last subpass that uses it which is subpass 1). That's why there
+    // is no hazard from using view 1 in both subpasses without subpass dependency
+    // (assuming that we don't have other accesses except storeOp which is true for this test).
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

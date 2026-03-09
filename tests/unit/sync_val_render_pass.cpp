@@ -779,8 +779,9 @@ TEST_F(NegativeSyncValRenderPass, MultiviewSharedView) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128, 1, &clear_value);
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     m_command_buffer.NextSubpass();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 }
 
