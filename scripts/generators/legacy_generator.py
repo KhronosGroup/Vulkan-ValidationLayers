@@ -27,7 +27,7 @@ class LegacyGenerator(BaseGenerator):
         self.all_instance_extensions = set()
 
         # Try and provide a mapping of the "new" function to replace
-        # (This should really be in the vk.xml)
+        # (This should really be in the vk.xml) - Update: it is, just need to add it
         self.replacement = {
             "vkGetPhysicalDeviceFeatures" : {
                 "version" : "vkGetPhysicalDeviceFeatures2",
@@ -72,6 +72,30 @@ class LegacyGenerator(BaseGenerator):
             "vkCmdEndRenderPass" : {
                 "version" : "vkCmdEndRenderPass2",
                 "extension" : "vkCmdEndRenderPass2KHR",
+            },
+            "vkCmdPipelineBarrier" : {
+                "version" : "vkCmdPipelineBarrier2",
+                "extension" : "vkCmdPipelineBarrier2KHR",
+            },
+            "vkQueueSubmit" : {
+                "version" : "vkQueueSubmit2",
+                "extension" : "vkQueueSubmit2KHR",
+            },
+            "vkCmdWriteTimestamp" : {
+                "version" : "vkCmdWriteTimestamp2",
+                "extension" : "vkCmdWriteTimestamp2KHR",
+            },
+            "vkCmdSetEvent" : {
+                "version" : "vkCmdSetEvent2",
+                "extension" : "vkCmdSetEvent2KHR",
+            },
+            "vkCmdResetEvent" : {
+                "version" : "vkCmdResetEvent2",
+                "extension" : "vkCmdResetEvent2KHR",
+            },
+            "vkCmdWaitEvents" : {
+                "version" : "vkCmdWaitEvents2",
+                "extension" : "vkCmdWaitEvents2KHR",
             },
         }
 

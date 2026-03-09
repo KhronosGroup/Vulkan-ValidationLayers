@@ -187,15 +187,15 @@ bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkQueueSubmit is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
-                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkQueueSubmit is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkQueueSubmit2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkQueueSubmit is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkQueueSubmit2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -240,15 +240,15 @@ bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, Vk
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkCmdPipelineBarrier is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the "
-                   "new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdPipelineBarrier is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkCmdPipelineBarrier2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkCmdPipelineBarrier is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkCmdPipelineBarrier2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -261,15 +261,15 @@ bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkP
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkCmdWriteTimestamp is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the "
-                   "new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdWriteTimestamp is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkCmdWriteTimestamp2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkCmdWriteTimestamp is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkCmdWriteTimestamp2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -440,15 +440,15 @@ bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent e
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkCmdSetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
-                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdSetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkCmdSetEvent2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkCmdSetEvent is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkCmdSetEvent2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -461,15 +461,15 @@ bool Device::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkCmdResetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
-                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdResetEvent is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkCmdResetEvent2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkCmdResetEvent is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkCmdResetEvent2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
@@ -486,15 +486,15 @@ bool Device::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_
     if (api_version >= VK_API_VERSION_1_3) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
-                   "vkCmdWaitEvents is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains the new "
-                   "feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdWaitEvents is a legacy command and this VkDevice was created with VK_VERSION_1_3 which contains "
+                   "vkCmdWaitEvents2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     } else if (IsExtEnabled(extensions.vk_khr_synchronization2)) {
         reported = true;
         LogWarning("WARNING-deprecation-sync2", device, error_obj.location,
                    "vkCmdWaitEvents is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
-                   "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+                   "contains vkCmdWaitEvents2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
     }
     return false;
 }
