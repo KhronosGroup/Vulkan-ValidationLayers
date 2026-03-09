@@ -708,7 +708,7 @@ CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst
     // Currently we don't save/cache the size of each type because we still need to extract the rows/column info. This the tradeoff
     // of having a simplified single Type class
     const Type* component_type = type_manager_.FindTypeById(info.type->inst_.Word(2));
-    info.component_size = type_manager_.TypeLength(*component_type);
+    info.component_size = type_manager_.GetTypeBytesSize(*component_type);
 
     const Constant* rows_const = type_manager_.FindConstantById(info.type->inst_.Word(4));
     const Constant* columns_const = type_manager_.FindConstantById(info.type->inst_.Word(5));
