@@ -45,30 +45,29 @@ void main() {
 
     // First work on as many uvec4 as possible
     if (gid < pc.uvec4_count) {
-        //debugPrintfEXT("[%u] In uvec4\n", gid);
-        ArrayUVec4 updated_indices_uvec4 = ArrayUVec4(pc.updated_indices);
-        ArrayUVec4 original_indices_uvec4 = ArrayUVec4(pc.original_indices);
-        const uvec4 updated_indices = updated_indices_uvec4.array[gid];
-        const uvec4 original_indices = original_indices_uvec4.array[gid];
-        if (updated_indices != original_indices) {
-            uint updated_indices_diff = 0;
-            uint original_indices_diff = 0;
+        ArrayUVec4 update_time_indices_uvec4_addr = ArrayUVec4(pc.update_time_indices_addr);
+        ArrayUVec4 build_time_indices_uvec4_addr = ArrayUVec4(pc.build_time_indices_addr);
+        const uvec4 update_time_indices_uvec4 = update_time_indices_uvec4_addr.array[gid];
+        const uvec4 build_time_indices_uvec4 = build_time_indices_uvec4_addr.array[gid];
+        if (update_time_indices_uvec4 != build_time_indices_uvec4) {
+            uint update_time_indices_diff = 0;
+            uint build_time_indices_diff = 0;
             uint uint_diff_i = 0;
             for (uint i = 0; i < 4; ++i) {
-                if (updated_indices[i] != original_indices[i]) {
-                    updated_indices_diff = updated_indices[i];
-                    original_indices_diff = original_indices[i];
+                if (update_time_indices_uvec4[i] != build_time_indices_uvec4[i]) {
+                    update_time_indices_diff = update_time_indices_uvec4[i];
+                    build_time_indices_diff = build_time_indices_uvec4[i];
                     uint_diff_i = i;
                 }
             }
-            //debugPrintfEXT("[%u] Diff in uvec4: gid * sizeof_uvec4 + uint_diff_i * sizeof_u32 = %u\n", gid, gid * sizeof_uvec4 + uint_diff_i * sizeof_u32);
+
             GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
                            kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
                            pc.error_info_i,
                            gid * sizeof_uvec4 + uint_diff_i * sizeof_u32,
                            kMemcmp_uvec4_diff,
-                           updated_indices_diff,
-                           original_indices_diff);
+                           update_time_indices_diff,
+                           build_time_indices_diff);
         }
         return;
     }
@@ -77,42 +76,39 @@ void main() {
     if (gid < (pc.u32_count + pc.uvec4_count)) {
         const uint u32_i = gid - pc.uvec4_count;
         const uint u32_start_byte_offset = pc.uvec4_count * sizeof_uvec4;
-        ArrayU32 updated_indices_uint = ArrayU32(pc.updated_indices + u32_start_byte_offset);
-        ArrayU32 original_indices_uint = ArrayU32(pc.original_indices + u32_start_byte_offset);
-        const uint updated_indices = updated_indices_uint.array[u32_i];
-        const uint original_indices = original_indices_uint.array[u32_i];
-        //debugPrintfEXT("[%u] In u32, u32_i = %u, u32_start_byte_offset = %u, updated_indices = %u, original_indices = %u\n", gid, u32_i, u32_start_byte_offset, updated_indices, original_indices);
-        if (updated_indices != original_indices) {
-            //debugPrintfEXT("[%u] Diff in u32: u32_start_byte_offset = %u u32_i = %u\n", gid, u32_start_byte_offset, u32_i);
+        ArrayU32 update_time_indices_uint_addr = ArrayU32(pc.update_time_indices_addr + u32_start_byte_offset);
+        ArrayU32 build_time_indices_uint_addr = ArrayU32(pc.build_time_indices_addr + u32_start_byte_offset);
+        const uint update_time_indices_u32 = update_time_indices_uint_addr.array[u32_i];
+        const uint build_time_indices_u32 = build_time_indices_uint_addr.array[u32_i];
+
+        if (update_time_indices_u32 != build_time_indices_u32) {
             GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
                            kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
                            pc.error_info_i,
                            u32_start_byte_offset + u32_i * sizeof_u32,
                            kMemcmp_u32_diff,
-                           updated_indices,
-                           original_indices);
+                           update_time_indices_u32,
+                           build_time_indices_u32);
         }
         return;
     }
 
     // Then look at trailing u16
     if (gid < (pc.u32_count + pc.uvec4_count + pc.u16_count)) {
-        //debugPrintfEXT("[%u] In u16\n", gid);
         const uint u16_i = gid - pc.uvec4_count - pc.u32_count;
         const uint u16_start_byte_offset = pc.uvec4_count * sizeof_uvec4 + pc.u32_count * sizeof_u32;
-        //debugPrintfEXT("[%u] In u16, u16_i = %u, u16_start_byte_offset = %u\n", gid, u16_i, u16_start_byte_offset);
-        ArrayU16 updated_indices_u16 = ArrayU16(pc.updated_indices + u16_start_byte_offset);
-        ArrayU16 original_indices_u16 = ArrayU16(pc.original_indices + u16_start_byte_offset);
-        const uint16_t updated_indices = updated_indices_u16.array[u16_i];
-        const uint16_t original_indices = original_indices_u16.array[u16_i];
-        if (updated_indices != original_indices) {
+        ArrayU16 update_time_indices_u16_addr = ArrayU16(pc.update_time_indices_addr + u16_start_byte_offset);
+        ArrayU16 build_time_indices_u16_addr = ArrayU16(pc.build_time_indices_addr + u16_start_byte_offset);
+        const uint16_t update_time_indices_u16 = update_time_indices_u16_addr.array[u16_i];
+        const uint16_t build_time_indices_u16 = build_time_indices_u16_addr.array[u16_i];
+        if (update_time_indices_u16 != build_time_indices_u16) {
             GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures,
                            kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated,
                            pc.error_info_i,
                            u16_start_byte_offset + u16_i * sizeof_u16,
                            kMemcmp_u16_diff,
-                           uint(updated_indices),
-                           uint(original_indices));
+                           uint(update_time_indices_u16),
+                           uint(build_time_indices_u16));
         }
         return;
     }

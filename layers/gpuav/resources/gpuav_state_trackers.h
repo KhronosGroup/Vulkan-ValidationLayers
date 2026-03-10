@@ -323,11 +323,11 @@ class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSub
     std::optional<DescriptorIdTracker> id_tracker;
     // sized by geometryCount supplied during build
     std::vector<vko::BufferRange> index_buffer_copies{};
-    struct VertexBufferRange {
+    struct GeometryBufferRange {
         vko::BufferRange range{};
-        VkDeviceSize vertex_stride{};
+        VkDeviceSize stride{};
     };
-    std::vector<VertexBufferRange> vertex_buffer_copies{};
+    std::vector<GeometryBufferRange> geometry_buffer_copies{};
 };
 static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStructureKHR &obj) {
     return *static_cast<AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));

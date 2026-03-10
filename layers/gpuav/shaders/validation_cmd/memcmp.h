@@ -44,8 +44,8 @@ const uint kMemcmp_u32_diff = 1;
 const uint kMemcmp_u16_diff = 2;
 
 struct MemShaderPushData {
-    uint64_t updated_indices;
-    uint64_t original_indices;
+    uint64_t update_time_indices_addr;
+    uint64_t build_time_indices_addr;
     uint uvec4_count;
     uint u32_count;
     uint u16_count;

@@ -163,6 +163,7 @@ vvl_sources = [
   "layers/drawdispatch/drawdispatch_vuids.h",
   "layers/error_message/error_location.cpp",
   "layers/error_message/error_location.h",
+  "layers/error_message/error_strings.cpp",
   "layers/error_message/error_strings.h",
   "layers/error_message/logging.cpp",
   "layers/error_message/logging.h",
