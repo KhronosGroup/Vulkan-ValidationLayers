@@ -624,7 +624,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
         if ((image_insn.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids->depth_compare_sample_06479, objlist, loc.Get(),
+            skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DEPTH_COMPARE_SAMPLE_06479), objlist, loc.Get(),
                              "the %s has %s with format of %s which doesn't support "
                              "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT.\n"
                              "(supported features: %s).%s",
