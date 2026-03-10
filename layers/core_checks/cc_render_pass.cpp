@@ -3277,9 +3277,9 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                                                           const Location &rendering_info_loc) const {
     bool skip = false;
 
-    const auto *fragment_density_map_attachment_info =
+    const auto* fdm_attachment_info =
         vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
-    if (!fragment_density_map_attachment_info) {
+    if (!fdm_attachment_info) {
         return false;
     }
 
@@ -3320,58 +3320,58 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
         }
     }
 
-    if (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+    if (fdm_attachment_info->imageView != VK_NULL_HANDLE) {
         const Location view_loc =
             rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView);
-        auto fragment_density_map_view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
-        ASSERT_AND_RETURN_SKIP(fragment_density_map_view_state);
-        if ((fragment_density_map_view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) == 0) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
-                                        fragment_density_map_view_state->image_state->Handle());
+        auto fdm_image_view = Get<vvl::ImageView>(fdm_attachment_info->imageView);
+        ASSERT_AND_RETURN_SKIP(fdm_image_view);
+        vvl::Image* fdm_image_state = fdm_image_view->image_state.get();
+        ASSERT_AND_RETURN_SKIP(fdm_image_state);
+
+        if ((fdm_image_view->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) == 0) {
+            const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView, fdm_image_state->Handle());
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158", objlist, view_loc,
-                             "references an image which was not created with VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.\n%s",
-                             fragment_density_map_view_state->DescribeImageUsage(*this).c_str());
+                             "references %s which was not created with VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.\n%s",
+                             FormatHandle(fdm_image_state->Handle()).c_str(), fdm_image_view->DescribeImageUsage(*this).c_str());
         }
-        if ((fragment_density_map_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
-                                        fragment_density_map_view_state->image_state->Handle());
+        if ((fdm_image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
+            const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView, fdm_image_state->Handle());
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06159", objlist, view_loc,
-                             "references an image which was not created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT (flags are %s).",
-                             string_VkImageCreateFlags(fragment_density_map_view_state->image_state->create_info.flags).c_str());
+                             "references %s which was created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT "
+                             "(VkRenderingFragmentDensityMapAttachmentInfoEXT is for non-subsampled images).",
+                             FormatHandle(fdm_image_state->Handle()).c_str());
         }
-        int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
+        int32_t layer_count = static_cast<int32_t>(fdm_image_view->normalized_subresource_range.layerCount);
         if (layer_count != 1 && !enabled_features.multiview) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
+            const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908", objlist, view_loc,
-                             "must have a layer count (%" PRId32 ") equal to 1.", layer_count);
+                             "must have a layerCount (%" PRId32 ") equal to 1.", layer_count);
         }
         if ((rendering_info.viewMask == 0) && (layer_count != 1)) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
+            const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingInfo-imageView-06109", objlist, view_loc,
-                             "must have a layer count (%" PRId32 ") equal to 1 when viewMask is equal to 0", layer_count);
+                             "must have a layerCount (%" PRId32 ") equal to 1 when viewMask is equal to 0", layer_count);
         }
 
         if ((rendering_info.viewMask != 0) && (layer_count < MostSignificantBit(rendering_info.viewMask))) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
+            const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingInfo-imageView-06108", objlist, view_loc,
-                             "must have a layer count (%" PRId32
-                             ") greater than or equal to the most significant bit in viewMask (0x%" PRIx32 ")",
-                             layer_count, rendering_info.viewMask);
+                             "must have a layerCount (%" PRId32
+                             ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
+                             layer_count, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
         }
 
-        const VkComponentMapping components = fragment_density_map_view_state->create_info.components;
+        const VkComponentMapping components = fdm_image_view->create_info.components;
         if (!IsIdentitySwizzle(components)) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_view_state->Handle());
+            const LogObjectList objlist(commandBuffer, fdm_image_view->Handle());
             skip |= LogError("VUID-VkRenderingInfo-imageView-09486", objlist, view_loc,
                              "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
                              string_VkComponentMapping(components).c_str());
         }
-    }
 
-    const auto *device_group_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
-    const bool non_zero_device_render_area = device_group_begin_info && device_group_begin_info->deviceRenderAreaCount != 0;
-    if (!non_zero_device_render_area) {
-        if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
+        const auto* device_group_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
+        const bool non_zero_device_render_area = device_group_begin_info && device_group_begin_info->deviceRenderAreaCount != 0;
+        if (!non_zero_device_render_area) {
             // Upcasting to handle overflow
             const VkRect2D &render_area = rendering_info.renderArea;
             const int64_t x_adjusted_extent =
@@ -3379,40 +3379,37 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             const int64_t y_adjusted_extent =
                 static_cast<int64_t>(render_area.offset.y) + static_cast<int64_t>(render_area.extent.height);
 
-            auto view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
-            ASSERT_AND_RETURN_SKIP(view_state);
-            vvl::Image *image_state = view_state->image_state.get();
-            ASSERT_AND_RETURN_SKIP(image_state);
-            if (image_state->create_info.extent.width <
+            if (fdm_image_state->create_info.extent.width <
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
-                const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView, image_state->Handle());
+                const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView, fdm_image_state->Handle());
                 skip |= LogError(
                     "VUID-VkRenderingInfo-pNext-06112", objlist,
                     rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                     "width  (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
-                    image_state->create_info.extent.width, render_area.offset.x, render_area.extent.width,
+                    fdm_image_state->create_info.extent.width, render_area.offset.x, render_area.extent.width,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
-            if (image_state->create_info.extent.height <
+            if (fdm_image_state->create_info.extent.height <
                 vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
-                const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView, image_state->Handle());
+                const LogObjectList objlist(commandBuffer, fdm_attachment_info->imageView, fdm_image_state->Handle());
                 skip |= LogError(
                     "VUID-VkRenderingInfo-pNext-06114", objlist,
                     rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                     "height (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRId32
                     ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
-                    image_state->create_info.extent.height, render_area.offset.y, render_area.extent.height,
+                    fdm_image_state->create_info.extent.height, render_area.offset.y, render_area.extent.height,
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
             }
         }
     }
+
     return skip;
 }
 
