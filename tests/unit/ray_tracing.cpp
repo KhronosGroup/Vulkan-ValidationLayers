@@ -575,7 +575,6 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
@@ -583,7 +582,6 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     copy_info.src = valid_blas->handle();
     copy_info.dst = blas_no_mem->handle();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
@@ -695,7 +693,6 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -706,7 +703,6 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -750,7 +746,6 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     copy_info.dst = blas->handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureKHR-buffer-03727");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -758,7 +753,6 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     copy_info.dst = blas_no_host_mem->handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureKHR-buffer-03728");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-04963");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 }
@@ -841,7 +835,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, BuildAccelerationStructureModeUpdate) {
+// github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11839
+TEST_F(NegativeRayTracing, DISABLED_BuildAccelerationStructureModeUpdate) {
     TEST_DESCRIPTION("In an acceleration structure update, source acceleration structure was not built");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2192,7 +2187,6 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-04959");
     vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -2238,7 +2232,6 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureToMemoryKHR-buffer-03731");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-04959");
     vk::CopyAccelerationStructureToMemoryKHR(*m_device, VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -2500,7 +2493,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesAccelStructDestr
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDeviceBlasNotBuilt) {
+// github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11839
+TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesDeviceBlasNotBuilt) {
     TEST_DESCRIPTION("vkCmdWriteAccelerationStructuresPropertiesKHR with unbuilt blas");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2691,12 +2685,6 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
     constexpr size_t stride = 1;
     constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
     uint8_t data[data_size];
-
-    m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964");
-    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
-                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
-                                                 sizeof(VkDeviceSize));
-    m_errorMonitor->VerifyFound();
 
     blas.BuildHost();
 

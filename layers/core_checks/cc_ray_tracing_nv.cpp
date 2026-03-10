@@ -291,10 +291,6 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
         skip |= VerifyBoundMemoryIsDeviceVisible(src_as_state->MemoryState(), objlist, src_as_state->Handle(),
                                                  error_obj.location.dot(Field::src),
                                                  "VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
-        if (!src_as_state->built) {
-            skip |= LogError("VUID-vkCmdCopyAccelerationStructureNV-src-04963", commandBuffer, error_obj.location,
-                             "The source acceleration structure src has not yet been built.");
-        }
     }
 
     if (mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV) {

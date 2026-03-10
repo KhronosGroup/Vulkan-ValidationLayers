@@ -137,7 +137,6 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
 
     void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
                const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) {
-        is_built = true;
         if (!build_info_khr.has_value()) {
             build_info_khr = vku::safe_VkAccelerationStructureBuildGeometryInfoKHR();
         }
@@ -164,9 +163,6 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     VkDeviceAddress acceleration_structure_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
-    // You can't have is_built == false and a build_info_khr, but you can have is_built == true and no build_info_khr,
-    // if the acceleration structure was filled by a call to vkCmdCopyMemoryToAccelerationStructure
-    bool is_built = false;
 
   private:
     const VkAccelerationStructureCreateFlagsKHR create_flags = 0;

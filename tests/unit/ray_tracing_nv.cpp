@@ -1779,10 +1779,6 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-src-04963");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
-    m_errorMonitor->VerifyFound();
-
     vk::CmdBuildAccelerationStructureNV(m_command_buffer, &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE, src_as,
                                         VK_NULL_HANDLE, bot_level_as_scratch, 0);
     m_command_buffer.End();
