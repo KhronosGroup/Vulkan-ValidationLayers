@@ -344,7 +344,7 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         }
 
         const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
-        ImageRangeGen range_gen = attachment.view_gen;
+        ImageRangeGen range_gen = attachment.GetRangeGen(info.info.viewMask);
         const HazardResult hazard = GetCurrentAccessContext()->DetectAttachmentHazard(range_gen, load_index, attachment_access);
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
@@ -378,7 +378,7 @@ void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cm
             if (load_index == SYNC_ACCESS_INDEX_NONE) {
                 continue;
             }
-            ImageRangeGen range_gen = attachment.view_gen;
+            ImageRangeGen range_gen = attachment.GetRangeGen(info.info.viewMask);
             const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
             GetCurrentAccessContext()->UpdateAttachmentAccessState(range_gen, load_index, attachment_access,
                                                                    ResourceUsageTagEx{tag});
@@ -410,7 +410,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
             const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
 
             const AttachmentAccess resolve_read_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveRead);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(dynamic_rendering_info_->info.viewMask);
             HazardResult hazard = current_context_->DetectAttachmentHazard(view_gen, kResolveRead, resolve_read_access);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
@@ -451,7 +451,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
         const SyncAccessIndex store_access = attachment.GetStoreUsage();
         if (store_access != SYNC_ACCESS_INDEX_NONE) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(kStoreOrder, AttachmentAccessType::StoreOp);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(dynamic_rendering_info_->info.viewMask);
 
             HazardResult hazard = current_context_->DetectAttachmentHazard(view_gen, store_access, attachment_access);
             if (hazard.IsHazard()) {
@@ -492,7 +492,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
             const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
 
             const AttachmentAccess resolve_read_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveRead);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(dynamic_rendering_info_->info.viewMask);
             access_context.UpdateAttachmentAccessState(view_gen, kResolveRead, resolve_read_access, ResourceUsageTagEx{store_tag});
 
             const AttachmentAccess resolve_write_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveWrite);
@@ -504,7 +504,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
         const SyncAccessIndex store_index = attachment.GetStoreUsage();
         if (store_index != SYNC_ACCESS_INDEX_NONE) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(kStoreOrder, AttachmentAccessType::StoreOp);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(dynamic_rendering_info_->info.viewMask);
             access_context.UpdateAttachmentAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag});
         }
     }
@@ -954,7 +954,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             continue;
         }
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
-        ImageRangeGen view_gen = attachment.view_gen;
+        ImageRangeGen view_gen = attachment.GetRangeGen(info.info.viewMask);
         HazardResult hazard =
             access_context.DetectAttachmentHazard(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access);
 
@@ -977,7 +977,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
 
         if (writeable) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(info.info.viewMask);
             HazardResult hazard = access_context.DetectAttachmentHazard(
                 view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
 
@@ -1021,7 +1021,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
             continue;
         }
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
-        ImageRangeGen view_gen = attachment.view_gen;
+        ImageRangeGen view_gen = attachment.GetRangeGen(info.info.viewMask);
         access_context.UpdateAttachmentAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
                                                    ResourceUsageTagEx{tag});
     }
@@ -1038,7 +1038,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
 
         if (writeable) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-            ImageRangeGen view_gen = attachment.view_gen;
+            ImageRangeGen view_gen = attachment.GetRangeGen(info.info.viewMask);
             access_context.UpdateAttachmentAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                        attachment_access, ResourceUsageTagEx{tag});
         }

@@ -364,7 +364,7 @@ class AccessContext {
                                         const AttachmentAccess &attachment_access) const;
     HazardResult DetectAttachmentHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                         SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
-                                        uint32_t view_mask = 0) const;
+                                        uint32_t view_mask) const;
     HazardResult DetectAttachmentHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                         bool is_depth_sliced, SyncAccessIndex current_usage,
                                         const AttachmentAccess &attachment_access) const;

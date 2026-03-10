@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@
 #include "state_tracker/image_state.h"
 #include "generated/dispatch_functions.h"
 #include "utils/image_utils.h"
+#include "utils/math_utils.h"
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)
@@ -537,6 +538,17 @@ void ImageRangeGenerator::SetInitialPosSomeLayers(uint32_t layer, uint32_t aspec
     incr_state_.Set(1, 1, base, span, span, z_step);
 }
 
+void ImageRangeGenerator::SetInitialPosMultiviewLayers(uint32_t layer, uint32_t aspect_index) {
+    assert(!encoder_->Is3D() && (offset_.x == 0) && (offset_.y == 0) && (offset_.z == 0));
+    const auto& subres_layout = subres_info_->layout;
+    const IndexType base = base_address_ + subres_layout.offset + (subres_range_.baseArrayLayer + layer) * subres_layout.arrayPitch;
+    const IndexType span = subres_layout.arrayPitch * 1;
+    const IndexType z_step = subres_layout.arrayPitch * 1;
+    incr_state_.Set(1, subres_range_.layerCount, base, span, span, z_step);
+    incr_state_.layer_z_index = layer;
+    incr_state_.view_mask_ = view_mask_;
+}
+
 void ImageRangeGenerator::SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index) {
     assert(!encoder_->Is3D() && (offset_.x == 0) && (offset_.y == 0) && (offset_.z == 0) && (layer == 0));
     const auto& subres_layout = subres_info_->layout;
@@ -618,6 +630,37 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
 }
 
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
+                                         VkDeviceSize base_address, bool is_depth_sliced, uint32_t view_mask)
+    : encoder_(&encoder),
+      subres_range_(GetRemaining(encoder.FullRange(), subres_range)),
+      offset_(),
+      extent_(),
+      base_address_(base_address),
+      view_mask_(view_mask),
+      is_depth_sliced_(is_depth_sliced) {
+    assert(IsValid(*encoder_, subres_range_));
+    if (SubresourceRangeIsEmpty(subres_range)) {
+        // Not robust to empty ranges, so for to "at end" condition.
+        pos_ = {0, 0};
+        return;
+    }
+    SetUpSubresInfo();
+    extent_ = subres_info_->extent;
+    const bool converted = Convert2DCompatibleTo3D();
+    SetUpIncrementerDefaults();
+    if (converted && (extent_.depth != subres_info_->extent.depth)) {
+        SetUpIncrementer(true, true, false);
+    } else {
+        SetUpSubresIncrementer();
+    }
+
+    // baseArrayLayer is taken into account inside SetInitialPosMultiviewLayers
+    uint32_t relative_base_layer = view_mask ? (uint32_t)LeastSignificantBit(view_mask) : 0;
+    SetInitialPos(relative_base_layer, aspect_index_);
+    pos_ = incr_state_.y_base;
+}
+
+ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          const VkOffset3D& offset, const VkExtent3D& extent, VkDeviceSize base_address,
                                          bool is_depth_sliced)
     : encoder_(&encoder),
@@ -687,6 +730,9 @@ void ImageRangeGenerator::SetUpSubresIncrementer() {
         } else {
             set_initial_pos_fn_ = &ImageRangeGenerator::SetInitialPosFullHeight;
         }
+    } else if (!is_3d && view_mask_ != 0) {
+        // TODO: handle 3d case too
+        set_initial_pos_fn_ = &ImageRangeGenerator::SetInitialPosMultiviewLayers;
     } else if (is_3d || CoversAllLayers(full_range, subres_range_)) {
         if (!linear_image) {
             // Linear images are defined by the implementation and so we can't assume the ordering we use here
@@ -735,9 +781,11 @@ ImageRangeGenerator& ImageRangeGenerator::operator++() {
         incr_state_.y_base += incr_state_.incr_y;
         pos_ = incr_state_.y_base;
     } else {
-        incr_state_.layer_z_index += incr_state_.layer_z_step;
+        uint32_t old_z_index = incr_state_.layer_z_index;
+        incr_state_.layer_z_index = incr_state_.GetNextLayerZIndex();
         if (incr_state_.layer_z_index < incr_state_.layer_z_count) {
-            incr_state_.layer_z_base += incr_state_.incr_layer_z;
+            uint32_t z_count = incr_state_.layer_z_index - old_z_index;
+            incr_state_.layer_z_base += z_count * incr_state_.incr_layer_z;
             incr_state_.y_base = incr_state_.layer_z_base;
             pos_ = incr_state_.y_base;
         } else {
@@ -905,6 +953,21 @@ void ImageRangeGenerator::IncrementerState::Set(uint32_t y_count_, uint32_t laye
     layer_z_base = y_base;
     incr_y = y_step;
     incr_layer_z = z_step;
+}
+
+uint32_t ImageRangeGenerator::IncrementerState::GetNextLayerZIndex() const {
+    if (view_mask_ == 0) {
+        return layer_z_index + layer_z_step;
+    } else {
+        uint32_t next_z = layer_z_index + 1;
+        while (next_z < layer_z_count) {
+            if ((1 << next_z) & view_mask_) {
+                break;
+            }
+            next_z++;
+        }
+        return next_z;
+    }
 }
 
 }  // namespace subresource_adapter

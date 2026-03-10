@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ class ImageSubState : public vvl::ImageSubState {
 
     VkDeviceSize GetResourceBaseAddress() const;
     ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
+                                    uint32_t view_mask) const;
     ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                     const VkExtent3D &extent, bool is_depth_sliced) const;
 
@@ -53,6 +55,8 @@ static inline const ImageSubState &SubState(const vvl::Image &img) {
 }
 
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view);
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, uint32_t view_mask,
+                                VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
 
