@@ -134,8 +134,8 @@ struct BLASValidationShaderPushData {
     uint64_t address;  // Cast it appropriately according to index_type
     uint64_t address_2;
     uint64_t address_3;
-    uint64_t updated_stride;
-    uint64_t original_stride;
+    uint64_t update_time_stride;
+    uint64_t build_time_stride;
     uint validation_mode;
     uint index_type;
     uint vertex_format;

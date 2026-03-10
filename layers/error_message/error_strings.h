@@ -21,6 +21,10 @@
 #include <sstream>
 #include <string>
 
+namespace vvl {
+class DeviceProxy;
+}
+
 [[maybe_unused]] static std::string string_Attachment(uint32_t attachment) {
     if (attachment == VK_ATTACHMENT_UNUSED) {
         return "VK_ATTACHMENT_UNUSED";
@@ -438,3 +442,11 @@
     }
     return ss.str();
 }
+
+std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger &logger,
+                                                               const VkAccelerationStructureBuildGeometryInfoKHR &info);
+std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
+    const vvl::DeviceProxy &validator, const VkAccelerationStructureGeometryTrianglesDataKHR &triangles);
+std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceProxy &validator,
+                                                               const VkAccelerationStructureGeometryAabbsDataKHR aabb);
+std::string string_VkAccelerationStructureBuildRangeInfoKHR(const VkAccelerationStructureBuildRangeInfoKHR &bri);

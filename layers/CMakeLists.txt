@@ -37,6 +37,7 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_location.cpp
     error_message/error_location.h
     error_message/error_strings.h
+    error_message/error_strings.cpp
     error_message/record_object.h
     error_message/log_message_type.h
     external/xxhash.h
@@ -137,6 +138,8 @@ if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
       target_link_libraries(VkLayer_utils PUBLIC mimalloc-static)
    endif()
 endif()
+
+target_compile_options(VkLayer_utils PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(VkLayer_utils PRIVATE

@@ -1621,3 +1621,76 @@ TEST_F(PositiveGpuAVRayTracing, VertexBufferUpdateStridedVertices) {
         m_default_queue->SubmitAndWait(m_command_buffer);
     }
 }
+
+TEST_F(PositiveGpuAVRayTracing, AabbStatus) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    // Build Bottom Level Acceleration Structure
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
+    VkAabbPositionsKHR active_aabb;
+    active_aabb.minX = -1.0f;
+    active_aabb.maxX = 1.0f;
+    active_aabb.minY = -1.0f;
+    active_aabb.maxY = 1.0f;
+    active_aabb.minZ = -1.0f;
+    active_aabb.maxZ = 1.0f;
+    VkAabbPositionsKHR inactive_aabb = active_aabb;
+    inactive_aabb.minX = NAN;
+    std::array<VkAabbPositionsKHR, 6> aabbs = {
+        {active_aabb, inactive_aabb, active_aabb, inactive_aabb, active_aabb, inactive_aabb}};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer aabbs_buffer(*m_device, sizeof(aabbs[0]) * aabbs.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    auto aabbs_buffer_ptr = static_cast<VkAabbPositionsKHR*>(aabbs_buffer.Memory().Map());
+    std::copy(aabbs.begin(), aabbs.end(), aabbs_buffer_ptr);
+
+    geometry.SetAABBsDeviceBuffer(std::move(aabbs_buffer));
+    geometry.SetPrimitiveCount(4);
+    // Offset AABB buffer to read data starting at the 3rd AABB
+    geometry.SetAABBsDeviceAddress(geometry.GetAABBs().device_buffer.Address() + 2 * sizeof(VkAabbPositionsKHR));
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+
+    blas.SetSrcAS(blas.GetDstAS());
+    blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    // Use base AABB buffer address in BLAS geometry, but offset using primitiveOffset to read same data
+    // as previously
+    blas.GetGeometries()[0].SetAABBsDeviceAddress(blas.GetGeometries()[0].GetAABBs().device_buffer.Address());
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
+    build_range_infos[0].primitiveOffset = 2 * sizeof(VkAabbPositionsKHR);
+    blas.SetBuildRanges(build_range_infos);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}
