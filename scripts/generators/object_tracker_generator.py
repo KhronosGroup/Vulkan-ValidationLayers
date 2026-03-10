@@ -253,6 +253,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkMergePipelineCaches',
             'vkCreateGraphicsPipelines',
             'vkCreateComputePipelines',
+            'vkCreateDataGraphPipelinesARM',
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
             'vkAcquireNextImageKHR',
@@ -575,12 +576,6 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         params = self.vk.commands[commandName].params
         only_dispatchable_parameter = len([x for x in params if x.type in self.vk.handles and (not x.pointer or x.const)]) == 1
         if only_dispatchable_parameter:
-            return False
-
-        # Special case: vkReleaseFullScreenExclusiveModeEXT.
-        # The specification does not define a parent VUID for the swapchain parameter.
-        # It mentions in a free form that device should be associated with a swapchain.
-        if commandName == 'vkReleaseFullScreenExclusiveModeEXT' or commandName == 'vkCreateDataGraphPipelinesARM':
             return False
 
         # Not a vulkan handle. Parent VUIDs are only for vulkan handles
