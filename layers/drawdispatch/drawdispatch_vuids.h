@@ -43,13 +43,7 @@ struct DrawDispatchVuid {
     const char* indirect_buffer_bit_02290 = kVUIDUndefined;
     const char* indirect_count_buffer_bit_02715 = kVUIDUndefined;
     const char* indirect_count_offset_04129 = kVUIDUndefined;
-    const char* viewport_count_03417 = kVUIDUndefined;
-    const char* scissor_count_03418 = kVUIDUndefined;
-    const char* viewport_scissor_count_03419 = kVUIDUndefined;
-    const char* primitive_topology_class_07500 = kVUIDUndefined;
     const char* primitive_topology_patch_list_10286 = kVUIDUndefined;
-    const char* primitive_topology_patch_list_10747 = kVUIDUndefined;
-    const char* primitive_topology_point_size_10748 = kVUIDUndefined;
     const char* vertex_binding_attribute_02721 = kVUIDUndefined;
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
@@ -59,110 +53,6 @@ struct DrawDispatchVuid {
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
     const char* max_multiview_instance_index_02688 = kVUIDUndefined;
     const char* viewport_count_primitive_shading_rate_04552 = kVUIDUndefined;
-    const char* patch_control_points_04875 = kVUIDUndefined;
-    const char* rasterizer_discard_enable_04876 = kVUIDUndefined;
-    const char* depth_bias_enable_04877 = kVUIDUndefined;
-    const char* logic_op_04878 = kVUIDUndefined;
-    const char* primitive_restart_enable_04879 = kVUIDUndefined;
-    const char* primitive_restart_list_09637 = kVUIDUndefined;
-    const char* primitive_restart_patch_10909 = kVUIDUndefined;
-    const char* vertex_input_binding_stride_04913 = kVUIDUndefined;
-    const char* vertex_input_04914 = kVUIDUndefined;
-    const char* vertex_input_08734 = kVUIDUndefined;
-    const char* blend_enable_04727 = kVUIDUndefined;
-    const char* blend_dual_source_09239 = kVUIDUndefined;
-    const char* dynamic_discard_rectangle_07751 = kVUIDUndefined;
-    const char* dynamic_discard_rectangle_enable_07880 = kVUIDUndefined;
-    const char* dynamic_discard_rectangle_mode_07881 = kVUIDUndefined;
-    const char* dynamic_exclusive_scissor_enable_07878 = kVUIDUndefined;
-    const char* dynamic_exclusive_scissor_07879 = kVUIDUndefined;
-    const char* dynamic_color_write_enable_07749 = kVUIDUndefined;
-    const char* dynamic_color_write_enable_count_07750 = kVUIDUndefined;
-    const char* dynamic_attachment_feedback_loop_08877 = kVUIDUndefined;
-    const char* dynamic_rendering_view_mask_06178 = kVUIDUndefined;
-    const char* dynamic_rendering_color_count_06179 = kVUIDUndefined;
-    const char* dynamic_rendering_color_formats_08910 = kVUIDUndefined;
-    const char* dynamic_rendering_unused_attachments_08911 = kVUIDUndefined;
-    const char* dynamic_rendering_undefined_color_formats_08912 = kVUIDUndefined;
-    const char* dynamic_rendering_undefined_depth_format_08916 = kVUIDUndefined;
-    const char* dynamic_rendering_undefined_stencil_format_08916 = kVUIDUndefined;
-    const char* dynamic_rendering_depth_format_08914 = kVUIDUndefined;
-    const char* dynamic_rendering_unused_attachments_08915 = kVUIDUndefined;
-    const char* dynamic_rendering_stencil_format_08917 = kVUIDUndefined;
-    const char* dynamic_rendering_unused_attachments_08918 = kVUIDUndefined;
-    const char* dynamic_rendering_fsr_06183 = kVUIDUndefined;
-    const char* dynamic_rendering_fdm_06184 = kVUIDUndefined;
-    const char* dynamic_rendering_color_sample_06185 = kVUIDUndefined;
-    const char* dynamic_rendering_depth_sample_06186 = kVUIDUndefined;
-    const char* dynamic_rendering_stencil_sample_06187 = kVUIDUndefined;
-    const char* dynamic_rendering_06198 = kVUIDUndefined;
-    const char* dynamic_rendering_07285 = kVUIDUndefined;
-    const char* dynamic_rendering_07286 = kVUIDUndefined;
-    const char* dynamic_rendering_07287 = kVUIDUndefined;
-    const char* dynamic_rendering_local_location_09548 = kVUIDUndefined;
-    const char* dynamic_rendering_local_index_09549 = kVUIDUndefined;
-    const char* dynamic_rendering_local_index_10927 = kVUIDUndefined;
-    const char* dynamic_rendering_local_index_10928 = kVUIDUndefined;
-    const char* dynamic_rendering_dithering_09642 = kVUIDUndefined;
-    const char* dynamic_rendering_dithering_09643 = kVUIDUndefined;
-    const char* dynamic_rendering_local_read_11797 = kVUIDUndefined;
-    const char* depth_compare_sample_06479 = kVUIDUndefined;
-    const char* depth_read_only_06886 = kVUIDUndefined;
-    const char* stencil_read_only_06887 = kVUIDUndefined;
-    const char* dynamic_sample_locations_06666 = kVUIDUndefined;
-    const char* dynamic_tessellation_domain_origin_07619 = kVUIDUndefined;
-    const char* dynamic_depth_clamp_enable_07620 = kVUIDUndefined;
-    const char* dynamic_polygon_mode_07621 = kVUIDUndefined;
-    const char* dynamic_rasterization_samples_07622 = kVUIDUndefined;
-    const char* dynamic_sample_mask_07623 = kVUIDUndefined;
-    const char* dynamic_alpha_to_coverage_enable_07624 = kVUIDUndefined;
-    const char* dynamic_alpha_to_coverage_component_08919 = kVUIDUndefined;
-    const char* dynamic_alpha_to_one_enable_07625 = kVUIDUndefined;
-    const char* dynamic_logic_op_enable_07626 = kVUIDUndefined;
-    const char* dynamic_color_blend_enable_07476 = kVUIDUndefined;
-    const char* dynamic_color_write_mask_07478 = kVUIDUndefined;
-    const char* dynamic_color_blend_equation_10862 = kVUIDUndefined;
-    const char* dynamic_color_blend_equation_10863 = kVUIDUndefined;
-    const char* dynamic_color_blend_equation_10864 = kVUIDUndefined;
-    const char* dynamic_rasterization_stream_07630 = kVUIDUndefined;
-    const char* dynamic_conservative_rasterization_mode_07631 = kVUIDUndefined;
-    const char* dynamic_extra_primitive_overestimation_size_07632 = kVUIDUndefined;
-    const char* dynamic_depth_clip_enable_07633 = kVUIDUndefined;
-    const char* dynamic_sample_locations_enable_07634 = kVUIDUndefined;
-    const char* dynamic_provoking_vertex_mode_07636 = kVUIDUndefined;
-    const char* dynamic_depth_clip_negative_one_to_one_07639 = kVUIDUndefined;
-    const char* dynamic_viewport_w_scaling_enable_07640 = kVUIDUndefined;
-    const char* dynamic_viewport_swizzle_07641 = kVUIDUndefined;
-    const char* dynamic_coverage_to_color_enable_07642 = kVUIDUndefined;
-    const char* dynamic_coverage_to_color_location_07643 = kVUIDUndefined;
-    const char* dynamic_coverage_modulation_mode_07644 = kVUIDUndefined;
-    const char* dynamic_coverage_modulation_table_enable_07645 = kVUIDUndefined;
-    const char* dynamic_coverage_modulation_table_07646 = kVUIDUndefined;
-    const char* dynamic_shading_rate_image_enable_07647 = kVUIDUndefined;
-    const char* dynamic_representative_fragment_test_enable_07648 = kVUIDUndefined;
-    const char* dynamic_coverage_reduction_mode_07649 = kVUIDUndefined;
-    const char* dynamic_depth_clamp_control_09650 = kVUIDUndefined;
-    const char* dynamic_viewport_07831 = kVUIDUndefined;
-    const char* dynamic_scissor_07832 = kVUIDUndefined;
-    const char* dynamic_depth_bias_07834 = kVUIDUndefined;
-    const char* dynamic_line_stipple_ext_07849 = kVUIDUndefined;
-    const char* dynamic_blend_constants_07835 = kVUIDUndefined;
-    const char* dynamic_depth_bounds_07836 = kVUIDUndefined;
-    const char* dynamic_depth_enable_08715 = kVUIDUndefined;
-    const char* dynamic_stencil_compare_mask_07837 = kVUIDUndefined;
-    const char* dynamic_stencil_write_mask_07838 = kVUIDUndefined;
-    const char* dynamic_stencil_write_mask_08716 = kVUIDUndefined;
-    const char* dynamic_stencil_reference_07839 = kVUIDUndefined;
-    const char* dynamic_state_inherited_07850 = kVUIDUndefined;
-    const char* dynamic_cull_mode_07840 = kVUIDUndefined;
-    const char* dynamic_front_face_07841 = kVUIDUndefined;
-    const char* dynamic_primitive_topology_07842 = kVUIDUndefined;
-    const char* dynamic_depth_test_enable_07843 = kVUIDUndefined;
-    const char* dynamic_depth_write_enable_07844 = kVUIDUndefined;
-    const char* dynamic_depth_compare_op_07845 = kVUIDUndefined;
-    const char* dynamic_depth_bound_test_enable_07846 = kVUIDUndefined;
-    const char* dynamic_stencil_test_enable_07847 = kVUIDUndefined;
-    const char* dynamic_stencil_op_07848 = kVUIDUndefined;
     const char* primitives_generated_06708 = kVUIDUndefined;
     const char* primitives_generated_streams_06709 = kVUIDUndefined;
     const char* mesh_shader_stages_06480 = kVUIDUndefined;
@@ -171,15 +61,7 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_bit_set_08114 = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set_08115 = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
-    const char* viewport_and_scissor_with_count_03419 = kVUIDUndefined;
-    const char* viewport_w_scaling_08636 = kVUIDUndefined;
-    const char* shading_rate_palette_08637 = kVUIDUndefined;
     const char* shader_object_multiview_10772 = kVUIDUndefined;
-    const char* viewport_multiview_12262 = kVUIDUndefined;
-    const char* scissor_multiview_12263 = kVUIDUndefined;
-    const char* set_rasterization_samples_08644 = kVUIDUndefined;
-    const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
-    const char* set_line_stipple_enable_08669 = kVUIDUndefined;
     const char* next_stage_10745 = kVUIDUndefined;
     const char* vertex_shader_08684 = kVUIDUndefined;
     const char* tessellation_control_shader_08685 = kVUIDUndefined;
@@ -202,50 +84,19 @@ struct DrawDispatchVuid {
     const char* tessellation_triangles_12240 = kVUIDUndefined;
     const char* tessellation_segment_12241 = kVUIDUndefined;
     const char* tessellation_patch_size_12242 = kVUIDUndefined;
-    const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;
-    const char* alpha_component_word_08920 = kVUIDUndefined;
-    const char* color_write_mask_09116 = kVUIDUndefined;
-    const char* vertex_input_format_08936 = kVUIDUndefined;
-    const char* vertex_input_format_08937 = kVUIDUndefined;
-    const char* vertex_input_format_09203 = kVUIDUndefined;
-    const char* vertex_input_format_07939 = kVUIDUndefined;
-    const char* set_clip_space_w_scaling_04138 = kVUIDUndefined;
-    const char* set_discard_rectangle_09236 = kVUIDUndefined;
-    const char* set_viewport_coarse_sample_order_09233 = kVUIDUndefined;
-    const char* set_viewport_shading_rate_palette_09234 = kVUIDUndefined;
-    const char* set_fragment_shading_rate_09238 = kVUIDUndefined;
     const char* rasterization_samples_07935 = kVUIDUndefined;
     const char* mesh_shader_queries_07073 = kVUIDUndefined;
     const char* fdm_layered_10831 = kVUIDUndefined;
-    const char* blend_advanced_07480 = kVUIDUndefined;
     const char* color_attachment_08963 = kVUIDUndefined;
     const char* depth_attachment_08964 = kVUIDUndefined;
     const char* stencil_attachment_08965 = kVUIDUndefined;
-    const char* sample_locations_07482 = kVUIDUndefined;
-    const char* sample_locations_07483 = kVUIDUndefined;
-    const char* sample_locations_07471 = kVUIDUndefined;
-    const char* sample_locations_enable_07936 = kVUIDUndefined;
-    const char* sample_locations_enable_07937 = kVUIDUndefined;
-    const char* sample_locations_enable_07938 = kVUIDUndefined;
-    const char* set_coverage_to_color_location_09420 = kVUIDUndefined;
-    const char* set_coverage_to_color_location_07490 = kVUIDUndefined;
-    const char* set_viewport_swizzle_09421 = kVUIDUndefined;
-    const char* set_viewport_swizzle_07493 = kVUIDUndefined;
-    const char* convervative_rasterization_07499 = kVUIDUndefined;
-    const char* sample_mask_07472 = kVUIDUndefined;
-    const char* sample_mask_07473 = kVUIDUndefined;
     const char* xfb_queries_07074 = kVUIDUndefined;
     const char* pg_queries_07075 = kVUIDUndefined;
-    const char* dynamic_rendering_undefined_depth_format_08913 = kVUIDUndefined;
-    const char* primitives_generated_query_07481 = kVUIDUndefined;
     const char* vertex_input_09461 = kVUIDUndefined;
     const char* vertex_input_09462 = kVUIDUndefined;
-    const char* color_blend_enable_07627 = kVUIDUndefined;
-    const char* color_write_mask_07629 = kVUIDUndefined;
     const char* image_layout_09600 = kVUIDUndefined;
     const char* rendering_contents_10582 = kVUIDUndefined;
-    const char* line_rasterization_10608 = kVUIDUndefined;
     const char* tile_memory_heap_10746 = kVUIDUndefined;
     // TensorARM
     const char* tensorARM_pDescription_09900 = kVUIDUndefined;
@@ -256,6 +107,7 @@ struct DrawDispatchVuid {
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);
 
 enum class ActionVUID {
+    UNKNOWN,
     VERTEX_BINDING_04007,
     VERTEX_BINDING_04008,
     SUBPASS_INDEX_02685,
@@ -333,7 +185,158 @@ enum class ActionVUID {
     FILTER_CUBIC_02695,
     IMAGE_LAYOUT_00344,
     PUSH_CONSTANT_08602,
+
     DYNAMIC_STATE_ALL_SET_08608,
+    DYNAMIC_DEPTH_COMPARE_OP_07845,
+    DYNAMIC_DEPTH_BIAS_07834,
+    DYNAMIC_DEPTH_BOUNDS_07836,
+    DYNAMIC_CULL_MODE_07840,
+    DYNAMIC_DEPTH_TEST_ENABLE_07843,
+    DYNAMIC_DEPTH_WRITE_ENABLE_07844,
+    DYNAMIC_STENCIL_TEST_ENABLE_07847,
+    DYNAMIC_DEPTH_BIAS_ENABLE_04877,
+    DYNAMIC_DEPTH_BOUND_TEST_ENABLE_07846,
+    DYNAMIC_STENCIL_COMPARE_MASK_07837,
+    DYNAMIC_STENCIL_WRITE_MASK_07838,
+    DYNAMIC_STENCIL_REFERENCE_07839,
+    DYNAMIC_STENCIL_OP_07848,
+    DYNAMIC_PRIMITIVE_TOPOLOGY_07842,
+    DYNAMIC_PRIMITIVE_RESTART_ENABLE_04879,
+    DYNAMIC_VERTEX_INPUT_04914,
+    DYNAMIC_SET_FRAGMENT_SHADING_RATE_09238,
+    DYNAMIC_LOGIC_OP_04878,
+    DYNAMIC_POLYGON_MODE_07621,
+    DYNAMIC_RASTERIZATION_SAMPLES_07622,
+    DYNAMIC_SAMPLE_MASK_07623,
+    DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_07624,
+    DYNAMIC_ALPHA_TO_ONE_ENABLE_07625,
+    DYNAMIC_LOGIC_OP_ENABLE_07626,
+    DYNAMIC_RASTERIZER_DISCARD_ENABLE_04876,
+    DYNAMIC_SAMPLE_LOCATIONS_ENABLE_07634,
+    DYNAMIC_SAMPLE_LOCATIONS_06666,
+    DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_08877,
+    DYNAMIC_COLOR_WRITE_ENABLE_07749,
+    DYNAMIC_COLOR_BLEND_ENABLE_07627,
+    DYNAMIC_COLOR_WRITE_MASK_07629,
+    DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_07639,
+    DYNAMIC_DEPTH_CLAMP_CONTROL_09650,
+    DYNAMIC_DEPTH_CLIP_ENABLE_07633,
+    DYNAMIC_DEPTH_CLAMP_ENABLE_07620,
+    DYNAMIC_EXCLUSIVE_SCISSOR_ENABLE_07878,
+    DYNAMIC_EXCLUSIVE_SCISSOR_07879,
+    DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_07619,
+    DYNAMIC_RASTERIZATION_STREAM_07630,
+    DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_07631,
+    DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_07632,
+    DYNAMIC_PROVOKING_VERTEX_MODE_07636,
+    DYNAMIC_VIEWPORT_W_SCALING_ENABLE_07640,
+    DYNAMIC_VIEWPORT_SWIZZLE_07641,
+    DYNAMIC_COVERAGE_TO_COLOR_ENABLE_07642,
+    DYNAMIC_COVERAGE_TO_COLOR_LOCATION_07643,
+    DYNAMIC_COVERAGE_MODULATION_MODE_07644,
+    DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_07645,
+    DYNAMIC_COVERAGE_MODULATION_TABLE_07646,
+    DYNAMIC_SHADING_RATE_IMAGE_ENABLE_07647,
+    DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_07648,
+    DYNAMIC_COVERAGE_REDUCTION_MODE_07649,
+    DYNAMIC_FRONT_FACE_07841,
+    DYNAMIC_VIEWPORT_COUNT_03417,
+    DYNAMIC_SCISSOR_COUNT_03418,
+    DYNAMIC_SET_VIEWPORT_COARSE_SAMPLE_ORDER_09233,
+    DYNAMIC_SET_VIEWPORT_SHADING_RATE_PALETTE_09234,
+    DYNAMIC_SET_CLIP_SPACE_W_SCALING_04138,
+    DYNAMIC_PATCH_CONTROL_POINTS_04875,
+    DYNAMIC_DISCARD_RECTANGLE_ENABLE_07880,
+    DYNAMIC_DISCARD_RECTANGLE_MODE_07881,
+    DYNAMIC_LINE_STIPPLE_EXT_07849,
+    DYNAMIC_SET_LINE_WIDTH_08617,
+    DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_04913,
+    DYNAMIC_SET_LINE_RASTERIZATION_MODE_08666,
+    DYNAMIC_SET_LINE_STIPPLE_ENABLE_08669,
+
+    DISCARD_RECTANGLE_07751,
+    DISCARD_RECTANGLE_09236,
+    COVERAGE_TO_COLOR_09420,
+    COVERAGE_TO_COLOR_07490,
+    SET_RASTERIZATION_SAMPLES_08644,
+    COLOR_WRITE_ENABLE_COUNT_07750,
+    DEPTH_COMPARE_SAMPLE_06479,
+    DEPTH_READ_ONLY_06886,
+    STENCIL_READ_ONLY_06887,
+    ALPHA_TO_COVERAGE_COMPONENT_08919,
+    COLOR_BLEND_ENABLE_07476,
+    COLOR_WRITE_MASK_07478,
+    COLOR_BLEND_EQUATION_10862,
+    COLOR_BLEND_EQUATION_10863,
+    COLOR_BLEND_EQUATION_10864,
+    VIEWPORT_07831,
+    SCISSOR_07832,
+    BLEND_CONSTANTS_07835,
+    DEPTH_ENABLE_08715,
+    STENCIL_WRITE_MASK_08716,
+    STATE_INHERITED_07850,
+    COLOR_WRITE_MASK_09116,
+    LINE_RASTERIZATION_10608,
+    VIEWPORT_AND_SCISSOR_WITH_COUNT_03419,
+    VIEWPORT_W_SCALING_08636,
+    SHADING_RATE_PALETTE_08637,
+    SET_VIEWPORT_SWIZZLE_09421,
+    SET_VIEWPORT_SWIZZLE_07493,
+    ALPHA_COMPONENT_WORD_08920,
+    VIEWPORT_MULTIVIEW_12262,
+    SCISSOR_MULTIVIEW_12263,
+    CONVERVATIVE_RASTERIZATION_07499,
+    BLEND_ENABLE_04727,
+    BLEND_DUAL_SOURCE_09239,
+    BLEND_ADVANCED_07480,
+    PRIMITIVES_GENERATED_QUERY_07481,
+    PRIMITIVE_TOPOLOGY_CLASS_07500,
+    SAMPLE_LOCATIONS_07482,
+    SAMPLE_LOCATIONS_07483,
+    SAMPLE_LOCATIONS_07471,
+    SAMPLE_LOCATIONS_ENABLE_07936,
+    SAMPLE_LOCATIONS_ENABLE_07937,
+    SAMPLE_LOCATIONS_ENABLE_07938,
+    SAMPLE_MASK_07472,
+    SAMPLE_MASK_07473,
+    PRIMITIVE_TOPOLOGY_10286,
+    PRIMITIVE_TOPOLOGY_10747,
+    PRIMITIVE_TOPOLOGY_10748,
+    PRIMITIVE_RESTART_09637,
+    PRIMITIVE_RESTART_10909,
+    VERTEX_INPUT_08734,
+    VERTEX_INPUT_FORMAT_08936,
+    VERTEX_INPUT_FORMAT_08937,
+    VERTEX_INPUT_FORMAT_09203,
+    VERTEX_INPUT_FORMAT_07939,
+
+    DYNAMIC_RENDERING_VIEW_MASK_06178,
+    DYNAMIC_RENDERING_COLOR_COUNT_06179,
+    DYNAMIC_RENDERING_COLOR_FORMATS_08910,
+    DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_08911,
+    DYNAMIC_RENDERING_UNDEFINED_COLOR_FORMATS_08912,
+    DYNAMIC_RENDERING_UNDEFINED_DEPTH_FORMAT_08913,
+    DYNAMIC_RENDERING_UNDEFINED_STENCIL_FORMAT_08916,
+    DYNAMIC_RENDERING_DEPTH_FORMAT_08914,
+    DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_08915,
+    DYNAMIC_RENDERING_STENCIL_FORMAT_08917,
+    DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_08918,
+    DYNAMIC_RENDERING_FSR_06183,
+    DYNAMIC_RENDERING_FDM_06184,
+    DYNAMIC_RENDERING_COLOR_SAMPLE_06185,
+    DYNAMIC_RENDERING_DEPTH_SAMPLE_06186,
+    DYNAMIC_RENDERING_STENCIL_SAMPLE_06187,
+    DYNAMIC_RENDERING_06198,
+    DYNAMIC_RENDERING_07285,
+    DYNAMIC_RENDERING_07286,
+    DYNAMIC_RENDERING_07287,
+    DYNAMIC_RENDERING_LOCAL_LOCATION_09548,
+    DYNAMIC_RENDERING_LOCAL_INDEX_09549,
+    DYNAMIC_RENDERING_LOCAL_INDEX_10927,
+    DYNAMIC_RENDERING_LOCAL_INDEX_10928,
+    DYNAMIC_RENDERING_DITHERING_09642,
+    DYNAMIC_RENDERING_DITHERING_09643,
+    DYNAMIC_RENDERING_LOCAL_READ_11797,
 
     RTX_STACK_SIZE_09458,
     RAY_QUERY_PROTECT_03635,

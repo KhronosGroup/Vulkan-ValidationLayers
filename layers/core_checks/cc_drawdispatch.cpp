@@ -1361,12 +1361,12 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
     }
 
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        skip |= ValidateDrawDynamicState(last_bound_state, vuid);
+        skip |= ValidateDrawDynamicState(last_bound_state, loc);
         skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid);
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
-        skip |= ValidateDrawAttachmentColorBlend(last_bound_state, vuid);
-        skip |= ValidateDrawAttachmentSampleLocation(last_bound_state, vuid);
-        skip |= ValidateDrawDepthStencilAttachments(last_bound_state, vuid);
+        skip |= ValidateDrawAttachmentColorBlend(last_bound_state, loc);
+        skip |= ValidateDrawAttachmentSampleLocation(last_bound_state, loc);
+        skip |= ValidateDrawDepthStencilAttachments(last_bound_state, loc);
         skip |= ValidateDrawTessellation(last_bound_state, vuid);
         skip |= ValidateDrawVertexBinding(last_bound_state, vuid);
 
@@ -2112,7 +2112,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
     return skip;
 }
 
-bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
@@ -2136,7 +2136,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             if (dynamic_attachment_count < blend_attachment_count) {
                 LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 skip |=
-                    LogError(vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_WRITE_ENABLE_COUNT_07750), objlist, loc,
                              "There are currently (%" PRIu32
                              ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only set the color "
                              "write enables for attachmentCount of %" PRIu32
@@ -2168,7 +2168,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             !cb_state.dynamic_state_value.color_write_mask_attachments[color_index]) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
-            skip |= LogError(vuid.dynamic_color_write_mask_07478, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_WRITE_MASK_07478), objlist, loc,
                              "vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.%s\n%s",
                              color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT).c_str(),
@@ -2179,7 +2179,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             !cb_state.dynamic_state_value.color_blend_enable_attachments[color_index]) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
-            skip |= LogError(vuid.dynamic_color_blend_enable_07476, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_ENABLE_07476), objlist, loc,
                              "vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32
                              " for this command buffer.%s\n%s",
                              color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT).c_str(),
@@ -2195,7 +2195,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
         if (!has_blend_bit) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
-            skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_ENABLE_04727), objlist, loc,
                              "%s was created with %s which doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but %s\n"
                              "(supported features: %s)",
                              attachment_info.Describe(cb_state, i).c_str(), string_VkFormat(attachment->create_info.format),
@@ -2211,7 +2211,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                 !cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
                 LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 objlist.add(attachment->Handle());
-                skip |= LogError(vuid.dynamic_color_blend_equation_10864, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10864), objlist, loc,
                                  "%s needs to be set for color attachmet index %" PRIu32 " (%s)\n%s\n%s",
                                  IsExtEnabled(extensions.vk_ext_blend_operation_advanced)
                                      ? "Either vkCmdSetColorBlendEquationEXT or vkCmdSetColorBlendAdvancedEXT"
@@ -2225,7 +2225,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             if (!cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
                 skip |= LogError(
-                    vuid.dynamic_color_blend_equation_10862, objlist, vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10862), objlist, loc,
                     "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, but "
                     "vkCmdSetColorBlendEquationEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
                     color_index, attachment_info.Describe(cb_state, i).c_str(),
@@ -2237,7 +2237,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             if (!cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
                 skip |= LogError(
-                    vuid.dynamic_color_blend_equation_10863, objlist, vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_BLEND_EQUATION_10863), objlist, loc,
                     "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, but "
                     "vkCmdSetColorBlendAdvancedEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s\n%s",
                     color_index, attachment_info.Describe(cb_state, i).c_str(),
@@ -2252,7 +2252,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                 LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 objlist.add(attachment->Handle());
                 skip |= LogError(
-                    vuid.blend_advanced_07480, objlist, vuid.loc(),
+                    CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_ADVANCED_07480), objlist, loc,
                     "vkCmdSetColorBlendAdvancedEXT has set color attachment index %" PRIu32
                     " (%s) to advanced blending, but the total active color attachment count (%zu) is greater than "
                     "advancedBlendMaxColorAttachments (%" PRIu32 ").%s\n%s\n%s",
@@ -2267,7 +2267,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             last_bound_state.IsBlendConstantsEnabled(color_index)) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
-            skip |= LogError(vuid.dynamic_blend_constants_07835, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_CONSTANTS_07835), objlist, loc,
                              "%svkCmdSetBlendConstants was never called, but color attachment index %" PRIu32
                              " (%s) has blending enabled (%s), and the blend factor is constant.\n%s\n%s\n%s",
                              has_pipeline ? "VK_DYNAMIC_STATE_BLEND_CONSTANT state is dynamic, " : "", color_index,
@@ -2308,8 +2308,8 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                 }
                 ss << last_bound_state.DescribeColorBlendEnabled(color_index) << "\n"
                    << last_bound_state.DescribeBlendFactorEquation(color_index);
-                skip |= LogError(vuid.blend_dual_source_09239, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                                 "%s", ss.str().c_str());
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BLEND_DUAL_SOURCE_09239),
+                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc, "%s", ss.str().c_str());
                 break;
             }
         }
@@ -2318,7 +2318,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
     return skip;
 }
 
-bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
     if (!last_bound_state.IsStageBound(VK_SHADER_STAGE_FRAGMENT_BIT)) {
         return skip;
@@ -2334,10 +2334,10 @@ bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_boun
             }
             if ((attachment->image_state->create_info.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-                const vvl::ActionVUID action_id = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
-                                                      ? vvl::ActionVUID::SAMPLE_LOCATION_07484
-                                                      : vvl::ActionVUID::SAMPLE_LOCATION_02689;
-                skip |= LogError(CreateActionVuid(vuid, action_id), objlist, vuid.loc(),
+                const vvl::ActionVUID vuid = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
+                                                 ? vvl::ActionVUID::SAMPLE_LOCATION_07484
+                                                 : vvl::ActionVUID::SAMPLE_LOCATION_02689;
+                skip |= LogError(CreateActionVuid(loc.function, vuid), objlist, loc,
                                  "sampleLocationsEnable is true, but %s (%s created with %s) was not created with "
                                  "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
                                  attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
@@ -2349,7 +2349,7 @@ bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDepthStencilAttachments(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawDepthStencilAttachments(const LastBound& last_bound_state, const Location& loc) const {
     bool skip = false;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
@@ -2364,7 +2364,7 @@ bool CoreChecks::ValidateDrawDepthStencilAttachments(const LastBound &last_bound
             IsImageLayoutDepthReadOnly(attachment_info.layout)) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
-            skip |= LogError(vuid.depth_read_only_06886, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_READ_ONLY_06886), objlist, loc,
                              "depthWriteEnable is VK_TRUE, but %s (%s created with %s) has a layout %s which is READ_ONLY.",
                              attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
                              FormatHandle(attachment->image_state->Handle()).c_str(), string_VkImageLayout(attachment_info.layout));
@@ -2391,7 +2391,7 @@ bool CoreChecks::ValidateDrawDepthStencilAttachments(const LastBound &last_bound
                     LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                     objlist.add(attachment->Handle());
                     skip |= LogError(
-                        vuid.stencil_read_only_06887, objlist, vuid.loc(),
+                        CreateActionVuid(loc.function, vvl::ActionVUID::STENCIL_READ_ONLY_06887), objlist, loc,
                         "%s (%s created with %s) has a layout of %s which is READ_ONLY, but stencilTestEnable is VK_TRUE, "
                         "writeMask is non-zero, and all stencil ops are not VK_STENCIL_OP_KEEP.\n"
                         "front:\n%sback:\n%s",
