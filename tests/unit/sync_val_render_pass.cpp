@@ -990,3 +990,51 @@ TEST_F(NegativeSyncValRenderPass, MultiviewClearAttachments) {
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncValRenderPass, MultiviewClearAttachmentsDepth) {
+    TEST_DESCRIPTION("The same as MultiviewClearAttachments but for depth image");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 2, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    vkt::Buffer buffer(*m_device, 128 * 128 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    const uint32_t view_mask = 2;
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 1;
+    multiview_ci.pViewMasks = &view_mask;
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(depth_format, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, VK_ATTACHMENT_LOAD_OP_NONE,
+                                         VK_ATTACHMENT_STORE_OP_STORE);
+    render_pass.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass(&multiview_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    VkClearAttachment clear_attachment{};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+    VkClearRect clear_rect{};
+    clear_rect.rect.extent = {128, 128};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 1};  // copy to layer 1
+    region.imageExtent = {128, 128, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}

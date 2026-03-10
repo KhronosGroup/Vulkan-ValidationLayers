@@ -273,15 +273,15 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                 aspect = "color";
             } else {
                 if (has_depth && (load_index != SYNC_ACCESS_INDEX_NONE)) {
-                    ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kDepthOnlyRenderArea);
                     attachment_access.ordering = SyncOrdering::kDepthStencilAttachment;
-                    hazard = access_context.DetectAttachmentHazard(attachment_range_gen, load_index, attachment_access);
+                    hazard = access_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
+                                                                   load_index, attachment_access, *filtered_view_mask);
                     aspect = "depth";
                 }
                 if (!hazard.IsHazard() && has_stencil && (stencil_load_index != SYNC_ACCESS_INDEX_NONE)) {
-                    ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kStencilOnlyRenderArea);
                     attachment_access.ordering = SyncOrdering::kDepthStencilAttachment;
-                    hazard = access_context.DetectAttachmentHazard(attachment_range_gen, stencil_load_index, attachment_access);
+                    hazard = access_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
+                                                                   stencil_load_index, attachment_access, *filtered_view_mask);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
@@ -350,15 +350,15 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
             } else {
                 const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE;
                 if (has_depth && store_op_stores) {
-                    ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kDepthOnlyRenderArea);
-                    hazard = CurrentContext().DetectAttachmentHazard(
-                        attachment_range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+                    hazard = CurrentContext().DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
+                                                                     SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                                     attachment_access, *filtered_view_mask);
                     aspect = "depth";
                 }
                 if (!hazard.IsHazard() && has_stencil && stencil_op_stores) {
-                    ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kStencilOnlyRenderArea);
-                    hazard = CurrentContext().DetectAttachmentHazard(
-                        attachment_range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+                    hazard = CurrentContext().DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
+                                                                     SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                                     attachment_access, *filtered_view_mask);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
@@ -541,13 +541,13 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
                 if (has_depth && store_op_stores) {
                     access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                                               attachment_access, ResourceUsageTagEx{tag});
+                                                               attachment_access, ResourceUsageTagEx{tag}, *filtered_view_mask);
                 }
                 const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE;
                 if (has_stencil && stencil_op_stores) {
                     access_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                                               attachment_access, ResourceUsageTagEx{tag});
+                                                               attachment_access, ResourceUsageTagEx{tag}, *filtered_view_mask);
                 }
             }
         }
@@ -863,14 +863,16 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
                     const SyncAccessIndex load_op = DepthStencilLoadUsage(ci.loadOp);
                     if (load_op != SYNC_ACCESS_INDEX_NONE) {
                         subpass_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea, load_op,
-                                                                    attachment_access, ResourceUsageTagEx{tag});
+                                                                    attachment_access, ResourceUsageTagEx{tag},
+                                                                    *filtered_view_mask);
                     }
                 }
                 if (has_stencil) {
                     const SyncAccessIndex load_op = DepthStencilLoadUsage(ci.stencilLoadOp);
                     if (load_op != SYNC_ACCESS_INDEX_NONE) {
                         subpass_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
-                                                                    load_op, attachment_access, ResourceUsageTagEx{tag});
+                                                                    load_op, attachment_access, ResourceUsageTagEx{tag},
+                                                                    *filtered_view_mask);
                     }
                 }
             }
