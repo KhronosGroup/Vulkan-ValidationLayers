@@ -6214,8 +6214,8 @@ bool Device::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, V
     bool skip = false;
     // Checked by chassis: device: "VUID-vkReleaseFullScreenExclusiveModeEXT-device-parameter"
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false,
-                           "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-parameter", kVUIDUndefined,
-                           error_obj.location.dot(Field::swapchain));
+                           "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-parameter",
+                           "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-parent", error_obj.location.dot(Field::swapchain));
 
     return skip;
 }
@@ -8038,11 +8038,12 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateDataGraphPipelinesARM-device-parameter"
     skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true,
-                           "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parameter", kVUIDUndefined,
+                           "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parameter",
+                           "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parent",
                            error_obj.location.dot(Field::deferredOperation));
     skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true,
-                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parameter", kVUIDUndefined,
-                           error_obj.location.dot(Field::pipelineCache));
+                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parameter",
+                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parent", error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
