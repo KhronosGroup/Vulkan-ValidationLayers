@@ -282,19 +282,19 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const Location& loc) const;
     bool ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                 const Location& loc) const;
-    bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawFragmentShadingRate(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawFragmentShadingRate(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawAttachmentColorBlend(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawAttachmentSampleLocation(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawDepthStencilAttachments(const LastBound& last_bound_state, const Location& loc) const;
-    bool ValidateDrawTessellation(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawTessellation(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                    const core::CommandBufferSubState& cb_sub_state, const Location& loc) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
     bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
-                                                const vvl::DrawDispatchVuid& vuid) const;
+                                                const Location& loc) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -466,7 +466,7 @@ class CoreChecks : public vvl::DeviceProxy {
                              const Location& loc) const;
 
     bool ValidateCmdDrawInstance(const LastBound& last_bound_state, uint32_t instanceCount, uint32_t firstInstance,
-                                 const vvl::DrawDispatchVuid& vuid) const;
+                                 const Location& loc) const;
     bool ValidateGraphicsIndexedCmd(const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const vvl::DeviceMemory& mem_info,
@@ -660,7 +660,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                          const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipelineFragmentDensityMapLayered(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
-                                                       const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
+                                                       const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineRasterizationState(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                 const Location& loc) const;
     bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer, const vvl::ImageView& image_view_state,
@@ -706,12 +706,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
     bool ValidateDrawPipelineRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                        const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
+                                        const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                               const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
+                                               const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                           const vvl::RenderPass& rp_state,
-                                                           const vvl::DrawDispatchVuid& vuid) const;
+                                                           const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                           const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassLegacyDithering(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
@@ -725,21 +724,21 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                            const vvl::RenderPass& rp_state,
                                                            const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
-                                                           const vvl::DrawDispatchVuid& vuid) const;
+                                                           const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                              const vvl::RenderPass& rp_state,
                                                              const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
-                                                             const vvl::DrawDispatchVuid& vuid) const;
+                                                             const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderingAttachmentFlags(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                              const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                               const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObjectBoundShader(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObject(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObjectLinking(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateDrawShaderObjectMesh(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObjectBoundShader(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObject(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObjectLinking(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateDrawShaderObjectMesh(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateActionState(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateActionStateDescriptorsPipeline(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                                 const vvl::Pipeline& pipeline, const vvl::DrawDispatchVuid& vuid) const;
@@ -754,7 +753,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateActionStatePushConstantDescriptorHeap(const vvl::CommandBuffer& cb_state, const spirv::EntryPoint* entry_point,
                                                        const VkPipelineBindPoint bind_point, const Location& loc) const;
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
-                                            const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid) const;
+                                            const vvl::Pipeline* pipeline, const Location& loc) const;
     static bool ValidateWaitEventsAtSubmit(const vvl::CommandBuffer& cb_state, size_t eventCount, size_t firstEventIndex,
                                            VkPipelineStageFlags2 sourceStageMask, vku::safe_VkDependencyInfo dependency_info,
                                            const EventMap& local_event_signal_info, VkQueue waiting_queue, const Location& loc);
@@ -1912,8 +1911,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                              const ErrorObject& error_obj) const override;
-    bool ValidateVTGShaderStages(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateMeshShaderStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateVTGShaderStages(const LastBound& last_bound_state, const Location& loc) const;
+    bool ValidateMeshShaderStage(const LastBound& last_bound_state, const Location& loc) const;
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
@@ -2886,7 +2885,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
     bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
-                                 const vvl::DrawDispatchVuid& vuid) const override;
+                                 const Location& loc) const override;
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;

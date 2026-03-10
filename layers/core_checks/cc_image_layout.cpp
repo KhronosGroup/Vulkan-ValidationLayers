@@ -295,10 +295,10 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
-                        const vvl::DrawDispatchVuid &draw_dispatch_vuids = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
-                        const char *vuid = cb_layout_state.submit_time_layout_mismatch_vuid
+                        // TODO - this should detect the command, not just always use vkCmdDraw
+                        const char* vuid = cb_layout_state.submit_time_layout_mismatch_vuid
                                                ? cb_layout_state.submit_time_layout_mismatch_vuid
-                                               : draw_dispatch_vuids.image_layout_09600;
+                                               : "VUID-vkCmdDraw-None-09600";
                         skip |= LogError(
                             vuid, objlist, loc,
                             "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",

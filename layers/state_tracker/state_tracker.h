@@ -81,7 +81,6 @@ class TensorView;
 struct DedicatedBinding;
 struct ShaderModule;
 struct ShaderObject;
-struct DrawDispatchVuid;
 class VideoSession;
 class VideoSessionParameters;
 class DataGraphPipelineSession;
@@ -2337,7 +2336,7 @@ class DeviceProxy : public vvl::base::Device {
         return false;
     }
     virtual bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,
-                                         const vvl::DrawDispatchVuid& vuid) const {
+                                         const Location& loc) const {
         return false;
     }
 

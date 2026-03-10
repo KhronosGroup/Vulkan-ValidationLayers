@@ -317,7 +317,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              FormatHandle(binding->Handle()).c_str(), DescribeInstruction().c_str());
         }
         if (dev_proxy.enabled_features.tileMemoryHeap && resource_variable.IsAccessed()) {
-            skip |= dev_proxy.ValidateBoundTileMemory(*descriptor.GetBufferState(), cb_state, *vuids);
+            skip |= dev_proxy.ValidateBoundTileMemory(*descriptor.GetBufferState(), cb_state, loc.Get());
         }
     }
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE) {
@@ -722,7 +722,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     if (dev_proxy.enabled_features.tileMemoryHeap) {
-        skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, *vuids);
+        skip |= dev_proxy.ValidateBoundTileMemory(*image_view_state->image_state, cb_state, loc.Get());
     }
 
     // If the Image View is invalid, the combined sampler mayb have the same issue
@@ -914,22 +914,22 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (subresource_range.levelCount != 1) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
-                skip |= LogError(vuids->unnormalized_coordinates_09635, objlist, loc.Get(),
-                                 "the %s (%s) was created with levelCount of %s, but %s was created with "
-                                 "unnormalizedCoordinates.%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                 FormatHandle(image_view).c_str(),
-                                 string_LevelCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
-                                 FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
+                skip |= LogError(
+                    CreateActionVuid(loc.Get().function, vvl::ActionVUID::UNNORMALIZED_COORDINATES_09635), objlist, loc.Get(),
+                    "the %s (%s) was created with levelCount of %s, but %s was created with "
+                    "unnormalizedCoordinates.%s",
+                    DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
+                    string_LevelCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (subresource_range.layerCount != 1) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
-                skip |= LogError(vuids->unnormalized_coordinates_09635, objlist, loc.Get(),
-                                 "the %s (%s) was created with layerCount of %s, but %s was created with "
-                                 "unnormalizedCoordinates.%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                 FormatHandle(image_view).c_str(),
-                                 string_LayerCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
-                                 FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
+                skip |= LogError(
+                    CreateActionVuid(loc.Get().function, vvl::ActionVUID::UNNORMALIZED_COORDINATES_09635), objlist, loc.Get(),
+                    "the %s (%s) was created with layerCount of %s, but %s was created with "
+                    "unnormalizedCoordinates.%s",
+                    DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
+                    string_LayerCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (image_insn.is_sampler_implicitLod_dref_proj) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions with ImplicitLod, Dref or Proj in their name
@@ -1162,7 +1162,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     if (dev_proxy.enabled_features.tileMemoryHeap) {
-        skip |= dev_proxy.ValidateBoundTileMemory(*buffer_view_state->buffer_state, cb_state, *vuids);
+        skip |= dev_proxy.ValidateBoundTileMemory(*buffer_view_state->buffer_state, cb_state, loc.Get());
     }
 
     return skip;
@@ -1299,14 +1299,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
         if (resource_variable.info.vk_format != tensor_view_state->create_info.format) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view_state->Handle());
-            skip |= LogError(
-                vuids->spirv_OpTypeTensorARM_09906, objlist, loc.Get(),
-                "the %s is using tensor %s that was created with %s but doesn't match the OpTypeTensorARM of type %s and width %" PRIu32
-                " (equivalent to %s).%s",
-                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                FormatHandle(tensor_view_state->Handle()).c_str(), string_VkFormat(tensor_view_state->create_info.format),
-                spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
-                string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
+            skip |=
+                LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SPIRV_OPTYPETENSORARM_09906), objlist, loc.Get(),
+                         "the %s is using tensor %s that was created with %s but doesn't match the OpTypeTensorARM of type %s and "
+                         "width %" PRIu32 " (equivalent to %s).%s",
+                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                         FormatHandle(tensor_view_state->Handle()).c_str(), string_VkFormat(tensor_view_state->create_info.format),
+                         spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
+                         string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
         }
     }
 

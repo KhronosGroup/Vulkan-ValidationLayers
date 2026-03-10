@@ -34,9 +34,6 @@ struct DrawDispatchVuid {
     const char* pipeline_bound_08606 = kVUIDUndefined;
     const char* index_binding_07312 = kVUIDUndefined;
     const char* compatible_pipeline_08600 = kVUIDUndefined;
-    const char* render_pass_compatible_02684 = kVUIDUndefined;
-    const char* render_pass_began_08876 = kVUIDUndefined;
-    const char* unnormalized_coordinates_09635 = kVUIDUndefined;
     const char* indirect_protected_cb_02711 = kVUIDUndefined;
     const char* indirect_contiguous_memory_02708 = kVUIDUndefined;
     const char* indirect_count_contiguous_memory_02714 = kVUIDUndefined;
@@ -47,67 +44,19 @@ struct DrawDispatchVuid {
     const char* vertex_binding_attribute_02721 = kVUIDUndefined;
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
-    const char* compute_not_bound_10743 = kVUIDUndefined;
-    const char* compute_inside_rp_10672 = kVUIDUndefined;
-    const char* ray_query_04617 = kVUIDUndefined;
-    // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
-    const char* max_multiview_instance_index_02688 = kVUIDUndefined;
-    const char* viewport_count_primitive_shading_rate_04552 = kVUIDUndefined;
-    const char* primitives_generated_06708 = kVUIDUndefined;
-    const char* primitives_generated_streams_06709 = kVUIDUndefined;
-    const char* mesh_shader_stages_06480 = kVUIDUndefined;
-    const char* invalid_mesh_shader_stages_06481 = kVUIDUndefined;
-    const char* missing_mesh_shader_stages_07091 = kVUIDUndefined;
     const char* descriptor_buffer_bit_set_08114 = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set_08115 = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing_08117 = kVUIDUndefined;
-    const char* shader_object_multiview_10772 = kVUIDUndefined;
-    const char* next_stage_10745 = kVUIDUndefined;
-    const char* vertex_shader_08684 = kVUIDUndefined;
-    const char* tessellation_control_shader_08685 = kVUIDUndefined;
-    const char* tessellation_evaluation_shader_08686 = kVUIDUndefined;
-    const char* geometry_shader_08687 = kVUIDUndefined;
-    const char* fragment_shader_08688 = kVUIDUndefined;
-    const char* task_shader_08689 = kVUIDUndefined;
-    const char* mesh_shader_08690 = kVUIDUndefined;
-    const char* vert_mesh_shader_08693 = kVUIDUndefined;
-    const char* task_mesh_shader_08694 = kVUIDUndefined;
-    const char* task_mesh_shader_08695 = kVUIDUndefined;
-    const char* vert_task_mesh_shader_08696 = kVUIDUndefined;
-    const char* bound_non_mesh_10680 = kVUIDUndefined;
-    const char* linked_shaders_08698 = kVUIDUndefined;
-    const char* linked_shaders_08699 = kVUIDUndefined;
-    const char* shaders_push_constants_08878 = kVUIDUndefined;
-    const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
-    const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
-    const char* tessellation_subdivision_12239 = kVUIDUndefined;
-    const char* tessellation_triangles_12240 = kVUIDUndefined;
-    const char* tessellation_segment_12241 = kVUIDUndefined;
-    const char* tessellation_patch_size_12242 = kVUIDUndefined;
-    const char* set_viewport_with_count_08642 = kVUIDUndefined;
-    const char* rasterization_samples_07935 = kVUIDUndefined;
-    const char* mesh_shader_queries_07073 = kVUIDUndefined;
-    const char* fdm_layered_10831 = kVUIDUndefined;
-    const char* color_attachment_08963 = kVUIDUndefined;
-    const char* depth_attachment_08964 = kVUIDUndefined;
-    const char* stencil_attachment_08965 = kVUIDUndefined;
-    const char* xfb_queries_07074 = kVUIDUndefined;
-    const char* pg_queries_07075 = kVUIDUndefined;
-    const char* vertex_input_09461 = kVUIDUndefined;
-    const char* vertex_input_09462 = kVUIDUndefined;
-    const char* image_layout_09600 = kVUIDUndefined;
-    const char* rendering_contents_10582 = kVUIDUndefined;
-    const char* tile_memory_heap_10746 = kVUIDUndefined;
-    // TensorARM
     const char* tensorARM_pDescription_09900 = kVUIDUndefined;
     const char* tensorARM_dimensionCount_09905 = kVUIDUndefined;
-    const char* spirv_OpTypeTensorARM_09906 = kVUIDUndefined;
 };
 
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);
 
 enum class ActionVUID {
     UNKNOWN,
+    IMAGE_LAYOUT_09600,
+
     VERTEX_BINDING_04007,
     VERTEX_BINDING_04008,
     SUBPASS_INDEX_02685,
@@ -309,6 +258,47 @@ enum class ActionVUID {
     VERTEX_INPUT_FORMAT_08937,
     VERTEX_INPUT_FORMAT_09203,
     VERTEX_INPUT_FORMAT_07939,
+    RAY_QUERY_04617,
+    MAX_MULTIVIEW_INSTANCE_INDEX_02688,
+    VIEWPORT_COUNT_PRIMITIVE_SHADING_RATE_04552,
+    PRIMITIVES_GENERATED_06708,
+    PRIMITIVES_GENERATED_STREAMS_06709,
+    INVALID_MESH_SHADER_STAGES_06481,
+    SHADER_OBJECT_MULTIVIEW_10772,
+    NEXT_STAGE_10745,
+    VERTEX_SHADER_08684,
+    TESSELLATION_CONTROL_SHADER_08685,
+    TESSELLATION_EVALUATION_SHADER_08686,
+    GEOMETRY_SHADER_08687,
+    FRAGMENT_SHADER_08688,
+    TASK_SHADER_08689,
+    MESH_SHADER_08690,
+    VERT_MESH_SHADER_08693,
+    VERT_TASK_MESH_SHADER_08696,
+    LINKED_SHADERS_08698,
+    LINKED_SHADERS_08699,
+    SHADERS_PUSH_CONSTANTS_08878,
+    SHADERS_DESCRIPTOR_LAYOUTS_08879,
+    DRAW_SHADERS_NO_TASK_MESH_08885,
+    TESSELLATION_SUBDIVISION_12239,
+    TESSELLATION_TRIANGLES_12240,
+    TESSELLATION_SEGMENT_12241,
+    TESSELLATION_PATCH_SIZE_12242,
+    SET_VIEWPORT_WITH_COUNT_08642,
+    RASTERIZATION_SAMPLES_07935,
+    MESH_SHADER_QUERIES_07073,
+    FDM_LAYERED_10831,
+    COLOR_ATTACHMENT_08963,
+    DEPTH_ATTACHMENT_08964,
+    STENCIL_ATTACHMENT_08965,
+    VERTEX_INPUT_09461,
+    VERTEX_INPUT_09462,
+    RENDERING_CONTENTS_10582,
+    RENDER_PASS_BEGAN_08876,
+    RENDER_PASS_COMPATIBLE_02684,
+    UNNORMALIZED_COORDINATES_09635,
+    SPIRV_OPTYPETENSORARM_09906,
+    TILE_MEMORY_HEAP_10746,
 
     DYNAMIC_RENDERING_VIEW_MASK_06178,
     DYNAMIC_RENDERING_COLOR_COUNT_06179,
@@ -338,6 +328,19 @@ enum class ActionVUID {
     DYNAMIC_RENDERING_DITHERING_09643,
     DYNAMIC_RENDERING_LOCAL_READ_11797,
 
+    // Dispatch only
+    COMPUTE_NOT_BOUND_10743,
+    COMPUTE_INSIDE_RP_10672,
+
+    // Mesh only
+    MESH_SHADER_STAGES_06480,
+    TASK_MESH_SHADER_08694,
+    TASK_MESH_SHADER_08695,
+    BOUND_NON_MESH_10680,
+    XFB_QUERIES_07074,
+    PG_QUERIES_07075,
+
+    // RTX only
     RTX_STACK_SIZE_09458,
     RAY_QUERY_PROTECT_03635,
 };
