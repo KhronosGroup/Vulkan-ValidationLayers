@@ -799,8 +799,8 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
     return skip;
 }
 
-bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bound_state, const vvl::CommandBuffer &cb_state,
-                                                        const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
+                                                        const Location& loc) const {
     bool skip = false;
 
     if (last_bound_state.IsRasterizationDisabled()) {
@@ -812,8 +812,7 @@ bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound &last_bo
         const auto image_view_state = attachment_info.image_view;
         // Resolve is banned with a separate VU and checked elsewhere
         if (image_view_state && !attachment_info.IsResolve()) {
-            skip |= ValidateBoundTileMemory(*image_view_state->image_state, cb_state, vuid);
-
+            skip |= ValidateBoundTileMemory(*image_view_state->image_state, cb_state, loc);
         }
     }
 

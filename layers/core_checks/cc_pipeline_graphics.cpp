@@ -27,6 +27,7 @@
 #include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include "core_checks/cc_state_tracker.h"
+#include "error_message/error_location.h"
 #include "error_message/logging.h"
 #include "state_tracker/last_bound_state.h"
 #include "utils/assert_utils.h"
@@ -3496,13 +3497,13 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
     if (!rp_state) return skip;
 
     if (rp_state->UsesDynamicRendering()) {
-        skip |= ValidateDrawPipelineDynamicRenderpass(last_bound_state, pipeline, *rp_state, vuid);
+        skip |= ValidateDrawPipelineDynamicRenderpass(last_bound_state, pipeline, *rp_state, vuid.loc());
     } else {
-        skip |= ValidateDrawPipelineRenderpass(last_bound_state, pipeline, *rp_state, vuid);
+        skip |= ValidateDrawPipelineRenderpass(last_bound_state, pipeline, *rp_state, vuid.loc());
     }
 
     skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
-    skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid);
+    skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid.loc());
     skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid.loc());
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state->UsesDynamicRendering()) {
@@ -3511,7 +3512,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
             msrtss_info->rasterizationSamples != pipeline.MultisampleState()->rasterizationSamples) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.rasterization_samples_07935, objlist, vuid.loc(),
+            skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::RASTERIZATION_SAMPLES_07935), objlist, vuid.loc(),
                              "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, but "
                              "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
                              ") of the the currently bound pipeline.",
@@ -3525,7 +3526,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
             const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), query.pool);
-                skip |= LogError(vuid.mesh_shader_queries_07073, objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::MESH_SHADER_QUERIES_07073), objlist, vuid.loc(),
                                  "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
                                  query.slot);
             }
@@ -3536,8 +3537,8 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 }
 
 // Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
-bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
-                                                const vvl::RenderPass &rp_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                const vvl::RenderPass& rp_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -3546,13 +3547,14 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
     if (rp_state.VkHandle() != pipeline_rp_state->VkHandle()) {
         // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
-        skip |= ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, pipeline.Handle(), *pipeline_rp_state.get(),
-                                                vuid.loc(), vuid.render_pass_compatible_02684);
+        skip |=
+            ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, pipeline.Handle(), *pipeline_rp_state.get(), loc,
+                                            CreateActionVuid(loc.function, vvl::ActionVUID::RENDER_PASS_COMPATIBLE_02684).c_str());
     }
     const uint32_t subpass = pipeline.Subpass();
     if (subpass != cb_state.GetActiveSubpass()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle());
-        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::SUBPASS_INDEX_02685), objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SUBPASS_INDEX_02685), objlist, loc,
                          "Pipeline was built for subpass %" PRIu32 " but used in subpass %" PRIu32 ".", subpass,
                          cb_state.GetActiveSubpass());
     }
@@ -3560,8 +3562,8 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
-                                                       const vvl::RenderPass &rp_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                       const vvl::RenderPass& rp_state, const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -3570,7 +3572,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     ASSERT_AND_RETURN_SKIP(pipeline_rp_state);
     if (pipeline_rp_state->VkHandle() != VK_NULL_HANDLE) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), pipeline_rp_state->Handle());
-        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::DYNAMIC_RENDERING_06198), objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_06198), objlist, loc,
                          "The last bound pipeline (%s) must have been created with a "
                          "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
                          FormatHandle(pipeline).c_str());
@@ -3583,29 +3585,29 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     // validated with inherited render passes
     if (rp_state.use_dynamic_rendering && pipeline_rendering_ci.viewMask != rendering_view_mask) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178), objlist, vuid.loc(),
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178), objlist, loc,
                          "The last bound pipeline (%s) viewMask (0x%" PRIx32
                          ") must be equal to VkRenderingInfo::viewMask (0x%" PRIx32 ")",
                          FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
     }
 
-    skip |= ValidateDrawPipelineDynamicRenderpassNonInherited(last_bound_state, pipeline, rp_state, vuid);
-    skip |= ValidateDrawPipelineDynamicRenderpassFragmentFormat(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, vuid);
-    skip |= ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, vuid);
-    skip |= ValidateDrawPipelineDynamicRenderpassUnusedAttachments(last_bound_state, pipeline, rp_state, pipeline_rendering_ci,
-                                                                   vuid.loc());
-    skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, vuid.loc());
-    skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, vuid.loc());
-    skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, vuid.loc());
+    skip |= ValidateDrawPipelineDynamicRenderpassNonInherited(last_bound_state, pipeline, rp_state, loc);
+    skip |= ValidateDrawPipelineDynamicRenderpassFragmentFormat(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
+    skip |= ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
+    skip |=
+        ValidateDrawPipelineDynamicRenderpassUnusedAttachments(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
+    skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, loc);
+    skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, loc);
+    skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, loc);
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11644
     // skip |= ValidateDrawPipelineDynamicRenderingAttachmentFlags(last_bound_state, pipeline, rp_state, loc);
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
-                                                                   const vvl::RenderPass &rp_state,
-                                                                   const VkPipelineRenderingCreateInfo &pipeline_rendering_ci,
-                                                                   const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                                   const vvl::RenderPass& rp_state,
+                                                                   const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
+                                                                   const Location& loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     auto &cb_sub_state = core::SubState(cb_state);
@@ -3620,7 +3622,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                         rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment->resolveImageView;
                     if (depth_attachment != VK_NULL_HANDLE) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), depth_attachment);
-                        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11540), objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11540), objlist, loc,
                                          "VkRenderingInfo::pDepthAttachment->resolveImageView is %s, but currently bound graphics "
                                          "pipeline %s was created "
                                          "with VkCustomResolveCreateInfoEXT::depthAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3634,7 +3636,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                 if (depth_attachment != VK_NULL_HANDLE) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), depth_attachment);
                     skip |= LogError(
-                        vuid.depth_attachment_08964, objlist, vuid.loc(),
+                        CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_ATTACHMENT_08964), objlist, loc,
                         "VkRenderingInfo::pDepthAttachment->imageView is %s, but currently bound graphics pipeline %s was created "
                         "with VkPipelineRenderingCreateInfo::depthAttachmentFormat equal to VK_FORMAT_UNDEFINED",
                         FormatHandle(depth_attachment).c_str(), FormatHandle(pipeline).c_str());
@@ -3643,7 +3645,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                 const VkFormat depth_format = rp_state.inheritance_rendering_info.depthAttachmentFormat;
                 if (depth_format != VK_FORMAT_UNDEFINED) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                    skip |= LogError(vuid.depth_attachment_08964, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_ATTACHMENT_08964), objlist, loc,
                                      "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat is %s, but currently bound "
                                      "graphics pipeline %s was created "
                                      "with VkPipelineRenderingCreateInfo::depthAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3663,7 +3665,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                         rp_state.dynamic_rendering_begin_rendering_info.pStencilAttachment->resolveImageView;
                     if (stencil_attachment != VK_NULL_HANDLE) {
                         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), stencil_attachment);
-                        skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11860), objlist, vuid.loc(),
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11860), objlist, loc,
                                          "VkRenderingInfo::pStencilAttachment->resolveImageView is %s, but currently bound "
                                          "graphics pipeline %s was created "
                                          "with VkCustomResolveCreateInfoEXT::stencilAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3677,7 +3679,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                     rp_state.dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView;
                 if (stencil_attachment != VK_NULL_HANDLE) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), stencil_attachment);
-                    skip |= LogError(vuid.stencil_attachment_08965, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STENCIL_ATTACHMENT_08965), objlist, loc,
                                      "VkRenderingInfo::pStencilAttachment->imageView is %s, but currently bound graphics pipeline "
                                      "%s was created with "
                                      "VkPipelineRenderingCreateInfo::stencilAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3687,7 +3689,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                 const VkFormat stencil_format = rp_state.inheritance_rendering_info.stencilAttachmentFormat;
                 if (stencil_format != VK_FORMAT_UNDEFINED) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                    skip |= LogError(vuid.stencil_attachment_08965, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STENCIL_ATTACHMENT_08965), objlist, loc,
                                      "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat is %s, but currently bound "
                                      "graphics pipeline %s was created "
                                      "with VkPipelineRenderingCreateInfo::stencilAttachmentFormat equal to VK_FORMAT_UNDEFINED",
@@ -3700,9 +3702,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
-                                                                   const vvl::RenderPass &rp_state,
-                                                                   const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                                   const vvl::RenderPass& rp_state, const Location& loc) const {
     bool skip = false;
     // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
     // There are some drawtime VUs that say:
@@ -3716,18 +3717,19 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBou
     const VkRenderingFlags render_flags = rp_state.GetRenderingFlags();
     if ((render_flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
         (render_flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
-        skip |= LogError(vuid.rendering_contents_10582, last_bound_state.cb_state.Handle(), vuid.loc(),
-                         "the render pass is begun with VkRenderingInfo::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
-                         string_VkRenderingFlags(render_flags).c_str());
+        skip |=
+            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RENDERING_CONTENTS_10582), last_bound_state.cb_state.Handle(),
+                     loc, "the render pass is begun with VkRenderingInfo::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
+                     string_VkRenderingFlags(render_flags).c_str());
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastBound &last_bound_state,
-                                                                     const vvl::Pipeline &pipeline, const vvl::RenderPass &rp_state,
-                                                                     const VkPipelineRenderingCreateInfo &pipeline_rendering_ci,
-                                                                     const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastBound& last_bound_state,
+                                                                     const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                                     const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
+                                                                     const Location& loc) const {
     bool skip = false;
     if ((pipeline.active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) == 0) {
         return skip;
@@ -3761,7 +3763,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
                 rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].resolveImageView;
             if (resolve_attachment != VK_NULL_HANDLE) {
                 const LogObjectList objlist(last_bound_state.cb_state.Handle(), pipeline.Handle(), resolve_attachment);
-                skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::CUSTOM_RESOLVE_11539), objlist, vuid.loc(),
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11539), objlist, loc,
                                  "VkRenderingInfo::pColorAttachments[%" PRIu32
                                  "].resolveImageView is %s, but currently bound graphics pipeline %s was created with "
                                  "VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32 "] equal to VK_FORMAT_UNDEFINED",
@@ -3778,7 +3780,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
                 if (color_attachment != VK_NULL_HANDLE) {
                     const LogObjectList objlist(last_bound_state.cb_state.Handle(), pipeline.Handle(), color_attachment);
                     skip |=
-                        LogError(vuid.color_attachment_08963, objlist, vuid.loc(),
+                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_ATTACHMENT_08963), objlist, loc,
                                  "VkRenderingInfo::pColorAttachments[%" PRIu32
                                  "].imageView is %s, but currently bound graphics pipeline %s was created with "
                                  "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] equal to VK_FORMAT_UNDEFINED",
@@ -3790,7 +3792,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
                 if (color_format != VK_FORMAT_UNDEFINED) {
                     const LogObjectList objlist(last_bound_state.cb_state.Handle(), pipeline.Handle());
                     skip |=
-                        LogError(vuid.color_attachment_08963, objlist, vuid.loc(),
+                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_ATTACHMENT_08963), objlist, loc,
                                  "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
                                  "] is %s, but currently bound graphics pipeline %s was created with "
                                  "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] equal to VK_FORMAT_UNDEFINED",
@@ -4425,9 +4427,8 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                                               const vvl::RenderPass &rp_state,
-                                                               const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
+                                                               const vvl::RenderPass& rp_state, const Location& loc) const {
     bool skip = false;
     if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)) {
         return skip;
@@ -4440,7 +4441,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                 if (rp_state.dynamic_rendering_begin_rendering_info.layerCount >
                     fragment_density_map_layered->maxFragmentDensityMapLayers) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                    skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
+                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::FDM_LAYERED_10831), objlist, loc,
                                      "the vkCmdBeginRendering set layerCount to %" PRIu32
                                      " which is greater than the last bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
                                      rp_state.dynamic_rendering_begin_rendering_info.layerCount,
@@ -4453,7 +4454,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle(),
                                                 cb_state.active_framebuffer->Handle());
                     skip |= LogError(
-                        vuid.fdm_layered_10831, objlist, vuid.loc(),
+                        CreateActionVuid(loc.function, vvl::ActionVUID::FDM_LAYERED_10831), objlist, loc,
                         "the bound VkFramebuffer was created with %" PRIu32
                         " layers which is greater than the last bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
                         cb_state.active_framebuffer->create_info.layers, fragment_density_map_layered->maxFragmentDensityMapLayers);
