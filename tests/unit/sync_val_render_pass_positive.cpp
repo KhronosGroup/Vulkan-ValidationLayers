@@ -642,6 +642,60 @@ TEST_F(PositiveSyncValRenderPass, MultiviewAsyncSubpasses3) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRenderPass, MultiviewAsyncSubpassesDepth) {
+    TEST_DESCRIPTION("Two async subpasses with each subpass uses a single view");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    const VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 2 /*layers*/, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2 /*layers*/, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = depth_stencil_format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    const VkAttachmentReference depth_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].pDepthStencilAttachment = &depth_ref;
+
+    subpasses[1] = subpasses[0];
+
+    // Assign different view masks to subpasses.
+    // Each subpass renders to its own layer, so subpasses can work in parallel (no need to specify subpass dependency)
+    const uint32_t view_masks[2] = {0x1, 0x2};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+
+    // Test only loadOp and storeOp accesses
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncValRenderPass, MultiviewMultipleStoreOps) {
     TEST_DESCRIPTION("Multiview broadcasts storeOp to different subpasses that write to different views");
     SetTargetApiVersion(VK_API_VERSION_1_4);
