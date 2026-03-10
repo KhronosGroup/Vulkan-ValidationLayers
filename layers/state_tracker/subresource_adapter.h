@@ -387,9 +387,6 @@ class ImageRangeEncoder : public RangeEncoder {
     bool is_compressed_;
 };
 
-// TODO: add support for view mask. If specified, the ragne generator iterates only over
-// the view layers. Currently we have to organize an external loop to go over view layers
-// and we create range generator for each view.
 class ImageRangeGenerator {
   public:
     using RangeType = IndexRange;
@@ -397,19 +394,13 @@ class ImageRangeGenerator {
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
                         const VkExtent3D& extent, VkDeviceSize base_address, bool is_depth_sliced);
-    void SetInitialPosFullOffset(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullWidth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullHeight(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosSomeDepth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullDepth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosOneAspect(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosAllSubres(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosSomeLayers(uint32_t layer, uint32_t aspect_index);
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address,
                         bool is_depth_sliced);
-    inline const IndexRange& operator*() const { return pos_; }
-    inline const IndexRange* operator->() const { return &pos_; }
+    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address,
+                        bool is_depth_sliced, uint32_t view_mask);
+
+    const IndexRange& operator*() const { return pos_; }
+    const IndexRange* operator->() const { return &pos_; }
     ImageRangeGenerator& operator++();
     ImageRangeGenerator& operator=(const ImageRangeGenerator&) = default;
 
@@ -419,17 +410,31 @@ class ImageRangeGenerator {
     void SetUpIncrementerDefaults();
     void SetUpSubresIncrementer();
     void SetUpIncrementer(bool all_width, bool all_height, bool all_depth);
-    typedef void (ImageRangeGenerator::*SetInitialPosFn)(uint32_t, uint32_t);
-    inline void SetInitialPos(uint32_t layer, uint32_t aspect_index) { (this->*(set_initial_pos_fn_))(layer, aspect_index); }
+
+    using SetInitialPosFn = void (ImageRangeGenerator::*)(uint32_t, uint32_t);
+    void SetInitialPos(uint32_t layer, uint32_t aspect_index) { (this->*(set_initial_pos_fn_))(layer, aspect_index); }
+
+    void SetInitialPosFullOffset(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullWidth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullHeight(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosSomeDepth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosFullDepth(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosOneAspect(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosAllSubres(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosSomeLayers(uint32_t layer, uint32_t aspect_index);
+    void SetInitialPosMultiviewLayers(uint32_t layer, uint32_t aspect_index);
 
     VkOffset3D GetOffset(uint32_t aspect_index) const;
     VkExtent3D GetExtent(uint32_t aspect_index) const;
 
+  private:
     const ImageRangeEncoder* encoder_;
     VkImageSubresourceRange subres_range_;
     VkOffset3D offset_;
     VkExtent3D extent_;
     VkDeviceSize base_address_;
+    uint32_t view_mask_ = 0;
 
     uint32_t mip_index_ = 0U;
     uint32_t incr_mip_ = 0U;
@@ -438,6 +443,7 @@ class ImageRangeGenerator {
     const ImageRangeEncoder::SubresInfo* subres_info_ = nullptr;
 
     SetInitialPosFn set_initial_pos_fn_ = nullptr;
+
     IndexRange pos_;
 
     struct IncrementerState {
@@ -454,7 +460,17 @@ class ImageRangeGenerator {
         IndexRange layer_z_base = {0U, 0U};
         IndexType incr_y = 0U;
         IndexType incr_layer_z = 0U;
+
+        uint32_t view_mask_ = 0;
+
         void Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span, IndexType y_step, IndexType z_step);
+
+        // When multiview is disabled returns:
+        //      layer_z_index + incr_state_.layer_z_step
+        // When multiview is enabled returns:
+        //      the next value after layer_z_index that corresponds to the next set bit in view mask.
+        //      When all view bits are iterated or layer_z_count is reach then returns layer_z_count.
+        uint32_t GetNextLayerZIndex() const;
     };
     IncrementerState incr_state_;
     bool single_full_size_range_ = true;

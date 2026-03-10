@@ -637,9 +637,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
 
         if (depth_write) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-            ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kDepthOnlyRenderArea);
-            HazardResult hazard = current_context.DetectAttachmentHazard(
-                attachment_range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+            HazardResult hazard = current_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
+                                                                         SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                                         attachment_access, subpass.viewMask);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
                 ss << "depth aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
@@ -649,9 +649,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
         }
         if (stencil_write) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-            ImageRangeGen attachment_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kStencilOnlyRenderArea);
-            HazardResult hazard = current_context.DetectAttachmentHazard(
-                attachment_range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access);
+            HazardResult hazard = current_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
+                                                                         SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                                         attachment_access, subpass.viewMask);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
                 ss << "stencil aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
@@ -702,7 +702,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
             const auto ds_gentype = view_gen.GetDepthStencilRenderAreaGenType(depth_write, stencil_write);
             current_context.UpdateAttachmentAccessState(view_gen, ds_gentype,
                                                         SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
-                                                        ResourceUsageTagEx{tag});
+                                                        ResourceUsageTagEx{tag}, subpass.viewMask);
         }
     }
 }
@@ -1071,6 +1071,20 @@ DynamicRenderingInfo::Attachment::Attachment(const SyncValidator &state, const v
                     resolve_gen.emplace(MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
                 }
             }
+        }
+    }
+}
+
+ImageRangeGen DynamicRenderingInfo::Attachment::GetRangeGen(uint32_t view_mask) const {
+    if (view_mask == 0) {
+        return view_gen;  // precomputed range gen when multivie is disabled
+    } else {
+        if (type == AttachmentType::kColor) {
+            return MakeImageRangeGen(*view, view_mask);
+        } else if (type == AttachmentType::kDepth) {
+            return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_DEPTH_BIT);
+        } else {
+            return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
         }
     }
 }

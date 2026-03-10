@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,16 @@ ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &su
     return range_gen;
 }
 
+ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
+                                               uint32_t view_mask) const {
+    if (!IsSimplyBound()) {
+        return {};
+    }
+    const VkDeviceSize base_address = GetResourceBaseAddress();
+    ImageRangeGen range_gen(fragment_encoder, subresource_range, base_address, is_depth_sliced, view_mask);
+    return range_gen;
+}
+
 ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
                                                               const VkOffset3D &offset, const VkExtent3D &extent,
                                                               bool is_depth_sliced) const {
@@ -91,12 +101,22 @@ ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view) {
     return sub_state.MakeImageRangeGen(view.normalized_subresource_range, view.is_depth_sliced);
 }
 
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, uint32_t view_mask,
+                                VkImageAspectFlags override_depth_stencil_aspect_mask) {
+    VkImageSubresourceRange subresource_range = view.normalized_subresource_range;
+    if (override_depth_stencil_aspect_mask != 0) {
+        assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
+        subresource_range.aspectMask = override_depth_stencil_aspect_mask;
+    }
+    const auto &sub_state = SubState(*view.image_state);
+    return sub_state.MakeImageRangeGen(subresource_range, view.is_depth_sliced, view_mask);
+}
+
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask) {
     if (view.Invalid()) ImageRangeGen();
 
     VkImageSubresourceRange subresource_range = view.normalized_subresource_range;
-
     if (override_depth_stencil_aspect_mask != 0) {
         assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
         subresource_range.aspectMask = override_depth_stencil_aspect_mask;
