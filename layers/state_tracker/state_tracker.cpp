@@ -5558,8 +5558,6 @@ void DeviceState::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, Vk
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
-        dst_as_state->is_built = true;
-
         dst_as_state->build_info_khr = src_as_state->build_info_khr;
     }
 }
@@ -5573,7 +5571,6 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
-        dst_as_state->is_built = true;
         dst_as_state->build_info_khr = src_as_state->build_info_khr;
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(dst_as_state);
@@ -5607,7 +5604,6 @@ void DeviceState::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComman
         auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
         ASSERT_AND_RETURN(dst_as_state);
         cb_state->AddChild(dst_as_state);
-        dst_as_state->is_built = true;
 
         // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
         // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a

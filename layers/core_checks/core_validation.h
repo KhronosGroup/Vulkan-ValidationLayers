@@ -2455,8 +2455,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                      const ErrorObject& error_obj) const override;
-    bool ValidateVkCopyAccelerationStructureToMemoryInfoKHR(const vvl::AccelerationStructureKHR& src_accel_struct,
-                                                            LogObjectList objlist, const Location& loc) const;
     bool PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                              const ErrorObject& error_obj) const override;
