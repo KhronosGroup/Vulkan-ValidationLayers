@@ -183,6 +183,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-parameter",
     "VUID-VkMicromapCreateInfoEXT-deviceAddress-parameter",
     "VUID-VkStridedDeviceAddressRegionKHR-deviceAddress-parameter",
+    "VUID-VkDeviceAddressRangeEXT-address-parameter",
 
     // These were added as a fix for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4544
     // But really the "real" fix is banning it earlier https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858
@@ -252,6 +253,17 @@ const char* unimplementable_validation[] = {
     "VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-parameter",
     // VkExternalMemoryProperties
     "VUID-VkExternalTensorPropertiesARM-externalMemoryProperties-parameter",
+    // VkIndexType
+    "VUID-VkBindIndexBufferIndirectCommandEXT-indexType-parameter",
+    // VkHostAddressRangeConstEXT
+    "VUID-VkOpaqueCaptureDataCreateInfoEXT-pData-parameter",
+    "VUID-VkPushDataInfoEXT-data-parameter",
+    // Descriptor heap union structs
+    "VUID-VkDescriptorSetAndBindingMappingEXT-constantOffset-parameter",
+    "VUID-VkDescriptorSetAndBindingMappingEXT-indirectIndex-parameter",
+    "VUID-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-parameter",
+    "VUID-VkDescriptorSetAndBindingMappingEXT-pushIndex-parameter",
+    "VUID-VkDescriptorSetAndBindingMappingEXT-shaderRecordIndex-parameter",
     // Video
     "VUID-VkVideoEncodeAV1RateControlLayerInfoKHR-maxFrameSize-parameter",
     "VUID-VkVideoEncodeAV1RateControlLayerInfoKHR-maxQIndex-parameter",
@@ -387,6 +399,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pSpecializationInfo-parameter",
     "VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-pBindPointRequirements-parameter",
     "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM-pQueueFamilyDataGraphProperties-parameter",
+    "VUID-VkResourceDescriptorInfoEXT-pImage-parameter",
+    "VUID-VkResourceDescriptorInfoEXT-pAddressRange-parameter",
+    "VUID-VkResourceDescriptorInfoEXT-pTensorARM-parameter",
+    "VUID-VkResourceDescriptorInfoEXT-pTexelBuffer-parameter",
     "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04058",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
@@ -662,6 +678,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceTileShadingPropertiesQCOM-sType-sType",
     "VUID-VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceShaderLongVectorPropertiesEXT-sType-sType",
+    "VUID-VkPhysicalDeviceDescriptorHeapPropertiesEXT-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
     "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"
