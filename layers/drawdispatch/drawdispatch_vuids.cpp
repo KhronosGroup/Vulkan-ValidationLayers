@@ -957,8 +957,6 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         case ActionVUID::RENDERING_CONTENTS_10582: suffix = "flags-10582"; break;
         // ### VUID-vkCmdDraw-None-08876
         case ActionVUID::RENDER_PASS_BEGAN_08876: suffix = "None-08876"; break;
-        // ### VUID-vkCmdDraw-renderPass-02684
-        case ActionVUID::RENDER_PASS_COMPATIBLE_02684: suffix = "renderPass-02684"; break;
         // ### VUID-vkCmdDraw-unnormalizedCoordinates-09635
         case ActionVUID::UNNORMALIZED_COORDINATES_09635: suffix = "unnormalizedCoordinates-09635"; break;
         // ### VUID-vkCmdDraw-OpTypeTensorARM-09906
@@ -1023,8 +1021,6 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
 
         // ### VUID-vkCmdDispatch-None-10743
         case ActionVUID::COMPUTE_NOT_BOUND_10743: suffix = "None-10743"; break;
-        // ### VUID-vkCmdDispatch-None-10672
-        case ActionVUID::COMPUTE_INSIDE_RP_10672: suffix = "None-10672"; break;
 
         // ### VUID-vkCmdDrawMeshTasksEXT-stage-06480
         case ActionVUID::MESH_SHADER_STAGES_06480: suffix = "stage-06480"; break;

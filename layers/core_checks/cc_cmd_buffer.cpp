@@ -274,8 +274,7 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
                     if (framebuffer->create_info.renderPass != info.renderPass) {
                         // renderPass that framebuffer was created with must be compatible with local renderPass
                         skip |= ValidateRenderPassCompatibility(framebuffer->Handle(), *framebuffer->rp_state.get(),
-                                                                cb_state.Handle(), *render_pass.get(), inheritance_loc,
-                                                                "VUID-VkCommandBufferBeginInfo-flags-00055");
+                                                                cb_state.Handle(), *render_pass.get(), inheritance_loc);
                     }
                 }
             }
@@ -477,7 +476,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
     }
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     if (cb_state.IsPrimary() || !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-        skip |= InsideRenderPass(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00060");
+        skip |= InsideRenderPass(cb_state, error_obj.location);
     }
 
     if (cb_state.state == CbState::InvalidIncomplete) {
@@ -1528,8 +1527,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
             auto inherit_rp_state = Get<vvl::RenderPass>(inheritance_info.renderPass);
             if (inherit_rp_state && (rp_state.VkHandle() != inherit_rp_state->VkHandle())) {
                 skip |= ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, inherit_rp_state->Handle(),
-                                                        *inherit_rp_state.get(), secondary_cb_loc,
-                                                        "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+                                                        *inherit_rp_state.get(), secondary_cb_loc);
             }
             //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
             skip |= ValidateInheritanceInfoFramebuffer(cb_state, secondary_cb_state, inheritance_info, secondary_cb_loc);
