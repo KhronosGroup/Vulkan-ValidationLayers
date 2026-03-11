@@ -1171,7 +1171,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     const uint32_t push_data_offset = 8u;
     const uint32_t push_offset = 4u;
     const uint32_t heap_offset = 3u;
-    const VkDeviceSize offset = heap_props.bufferDescriptorAlignment * (push_offset + heap_offset);
+    const VkDeviceSize offset = heap_props.bufferDescriptorSize * (push_offset + heap_offset);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(offset + resource_stride);
 
@@ -1188,9 +1188,9 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
     mapping.sourceData.pushIndex = {};
-    mapping.sourceData.pushIndex.heapOffset = heap_offset * static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
+    mapping.sourceData.pushIndex.heapOffset = heap_offset * static_cast<uint32_t>(heap_props.bufferDescriptorSize);
     mapping.sourceData.pushIndex.pushOffset = push_data_offset;
-    mapping.sourceData.pushIndex.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
+    mapping.sourceData.pushIndex.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorSize);
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
@@ -1256,13 +1256,13 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    const VkDeviceSize offset = heap_props.bufferDescriptorAlignment * 7u;
+    const VkDeviceSize offset = heap_props.bufferDescriptorSize * 7u;
     const uint32_t push_offset = 8u;
     const uint32_t address_offset = 16u;
     vkt::Buffer heap_index(*m_device, sizeof(uint32_t) + address_offset, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR,
                            vkt::device_address);
     uint32_t* heap_index_data = static_cast<uint32_t*>(heap_index.Memory().Map());
-    heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorAlignment);
+    heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
@@ -1285,8 +1285,8 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     mapping.sourceData.indirectIndex.heapOffset = 0u;
     mapping.sourceData.indirectIndex.pushOffset = push_offset;
     mapping.sourceData.indirectIndex.addressOffset = address_offset;
-    mapping.sourceData.indirectIndex.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
-    mapping.sourceData.indirectIndex.heapArrayStride = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
+    mapping.sourceData.indirectIndex.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorSize);
+    mapping.sourceData.indirectIndex.heapArrayStride = static_cast<uint32_t>(heap_props.bufferDescriptorSize);
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
@@ -1354,13 +1354,13 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    const VkDeviceSize offset = heap_props.bufferDescriptorAlignment * 7u;
+    const VkDeviceSize offset = heap_props.bufferDescriptorSize * 7u;
     const uint32_t push_offset = 8u;
     const uint32_t address_offset = 16u;
     vkt::Buffer heap_index(*m_device, sizeof(uint32_t) + address_offset, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR,
                            vkt::device_address);
     uint32_t* heap_index_data = static_cast<uint32_t*>(heap_index.Memory().Map());
-    heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorAlignment);
+    heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
@@ -1383,7 +1383,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     mapping.sourceData.indirectIndexArray.heapOffset = 0u;
     mapping.sourceData.indirectIndexArray.pushOffset = push_offset;
     mapping.sourceData.indirectIndexArray.addressOffset = address_offset;
-    mapping.sourceData.indirectIndexArray.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorAlignment);
+    mapping.sourceData.indirectIndexArray.heapIndexStride = static_cast<uint32_t>(heap_props.bufferDescriptorSize);
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
@@ -1458,7 +1458,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     const uint32_t read_push_data_offset = 48u;
     const uint32_t read_offset = read_heap_offset + read_push_offset;
     const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorAlignment * 7u, heap_props.bufferDescriptorAlignment);
+        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
     CreateResourceHeap(write_offset + resource_stride);
@@ -1562,7 +1562,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
 
     const uint32_t read_offset = 48u;
     const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorAlignment * 7u, heap_props.bufferDescriptorAlignment);
+        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
     CreateResourceHeap(write_offset + resource_stride);
@@ -1670,7 +1670,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
 
     const uint32_t read_offset = 48u;
     const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorAlignment * 7u, heap_props.bufferDescriptorAlignment);
+        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(write_offset + resource_stride);
 
@@ -1780,7 +1780,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
     *indirect_data_address = read_buffer.Address();
 
     const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorAlignment * 7u, heap_props.bufferDescriptorAlignment);
+        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(write_offset + resource_stride);
 
@@ -2793,7 +2793,7 @@ TEST_F(PositiveDescriptorHeap, UntypedImageAndSampler) {
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize image_size = heap_props.imageDescriptorSize;
-    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorAlignment * buffer_index;
+    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorSize * buffer_index;
     const VkDeviceSize buffer_size = heap_props.bufferDescriptorSize;
     const VkDeviceSize resource_heap_app_size = buffer_offset + buffer_size;
 
@@ -3067,7 +3067,7 @@ TEST_F(PositiveDescriptorHeap, UntypedStorageImage) {
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize image_size = heap_props.imageDescriptorSize;
-    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorAlignment * buffer_index;
+    const VkDeviceSize buffer_offset = heap_props.bufferDescriptorSize * buffer_index;
     const VkDeviceSize buffer_size = heap_props.bufferDescriptorSize;
     const VkDeviceSize resource_heap_app_size = buffer_offset + buffer_size;
 
