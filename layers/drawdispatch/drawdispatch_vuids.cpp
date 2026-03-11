@@ -358,6 +358,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid(Func::vkCmdDispatchBase) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchBase-None-08606";
+        compatible_pipeline_08600                = "VUID-vkCmdDispatchBase-None-08600";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDispatchBase-commandBuffer-02712";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchBase-None-08114";

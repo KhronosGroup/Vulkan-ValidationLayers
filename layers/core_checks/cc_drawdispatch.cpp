@@ -1299,6 +1299,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
                          "or equal to the size of buffer (%" PRIu64 ").",
                          (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), indirect_buffer_state->create_info.size);
         }
+
+        if (!IsIntegerMultipleOf(offset, 4)) {
+            skip |=
+                LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
+        }
     }
 
     // TODO: vkMapMemory() and check the contents of buffer at offset
@@ -1328,6 +1334,20 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
 
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateMeshShaderStage(last_bound_state, error_obj.location);
+
+    if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBufferOffset-02716",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
+                         "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
+    }
+
+    if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
+        ((api_version >= VK_API_VERSION_1_2) && (enabled_features.drawIndirectCount == VK_FALSE))) {
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-04445",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
+                         "Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
+                         "call this command.");
+    }
 
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);

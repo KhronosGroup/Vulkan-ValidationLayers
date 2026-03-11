@@ -693,6 +693,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 
 TEST_F(NegativeMesh, DrawCmds) {
     AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
@@ -829,6 +830,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader indirect draw command.");
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
