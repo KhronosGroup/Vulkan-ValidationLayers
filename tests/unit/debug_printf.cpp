@@ -5508,6 +5508,7 @@ TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
     AddRequiredFeature(vkt::Feature::shaderDrawParameters);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
