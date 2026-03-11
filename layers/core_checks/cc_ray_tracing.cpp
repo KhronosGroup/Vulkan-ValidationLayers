@@ -1378,14 +1378,6 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, info_loc);
-    if (auto src_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_accel_state->buffer_state, info_loc.dot(Field::src),
-                                              "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03737");
-    }
-    if (auto dst_accel_state = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_accel_state->buffer_state, info_loc.dot(Field::dst),
-                                              "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
-    }
     return skip;
 }
 
