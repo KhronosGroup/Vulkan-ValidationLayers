@@ -18,7 +18,7 @@
 #include "sync_stats.h"
 
 #if VVL_ENABLE_SYNCVAL_STATS != 0
-#include "sync_commandbuffer.h"
+#include "sync_command_buffer.h"
 #include "sync_validation.h"
 #include "state_tracker/state_tracker.h"
 

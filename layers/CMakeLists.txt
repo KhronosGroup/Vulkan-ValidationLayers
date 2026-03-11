@@ -459,8 +459,8 @@ target_sources(vvl PRIVATE
     sync/sync_access_state.h
     sync/sync_barrier.cpp
     sync/sync_barrier.h
-    sync/sync_commandbuffer.cpp
-    sync/sync_commandbuffer.h
+    sync/sync_command_buffer.cpp
+    sync/sync_command_buffer.h
     sync/sync_common.cpp
     sync/sync_common.h
     sync/sync_error_messages.cpp
@@ -470,8 +470,8 @@ target_sources(vvl PRIVATE
     sync/sync_image.h
     sync/sync_op.cpp
     sync/sync_op.h
-    sync/sync_renderpass.cpp
-    sync/sync_renderpass.h
+    sync/sync_render_pass.cpp
+    sync/sync_render_pass.h
     sync/sync_reporting.cpp
     sync/sync_reporting.h
     sync/sync_settings.h

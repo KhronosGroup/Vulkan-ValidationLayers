@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include "sync/sync_renderpass.h"
+#include "sync/sync_render_pass.h"
 #include "sync/sync_reporting.h"
 #include "state_tracker/cmd_buffer_state.h"
 

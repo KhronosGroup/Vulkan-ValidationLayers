@@ -23,7 +23,7 @@
 #include "state_tracker/state_tracker.h"
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
-#include "sync/sync_commandbuffer.h"
+#include "sync/sync_command_buffer.h"
 #include "sync/sync_error_messages.h"
 #include "sync/sync_stats.h"
 #include "sync/sync_submit.h"

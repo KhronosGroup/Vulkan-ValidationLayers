@@ -16,7 +16,7 @@
  */
 
 #include <vulkan/utility/vk_format_utils.h>
-#include "sync/sync_renderpass.h"
+#include "sync/sync_render_pass.h"
 #include "sync/sync_validation.h"
 #include "sync/sync_op.h"
 #include "sync/sync_image.h"
