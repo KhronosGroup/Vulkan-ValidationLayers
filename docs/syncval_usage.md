@@ -129,7 +129,6 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Host set event not supported
 - No dedicated support for sparse resources. Need to investigate which kind of support is needed
 - Host memory accesses are not tracked. Corresponding race conditions are not reported
-- Does not include implementation of multi-view renderpass support
 - Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK
 - Does not include component granularity access tracking, or correctly support swizzling
 
