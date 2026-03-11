@@ -16,7 +16,7 @@
  */
 
 #include "sync/sync_error_messages.h"
-#include "sync/sync_commandbuffer.h"
+#include "sync/sync_command_buffer.h"
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/descriptor_sets.h"

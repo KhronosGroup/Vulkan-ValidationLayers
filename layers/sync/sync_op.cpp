@@ -16,9 +16,9 @@
  */
 
 #include "sync/sync_op.h"
-#include "sync/sync_renderpass.h"
+#include "sync/sync_render_pass.h"
 #include "sync/sync_access_context.h"
-#include "sync/sync_commandbuffer.h"
+#include "sync/sync_command_buffer.h"
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 

@@ -16,7 +16,7 @@
  */
 
 #include <vulkan/utility/vk_format_utils.h>
-#include "sync/sync_commandbuffer.h"
+#include "sync/sync_command_buffer.h"
 #include "error_message/error_location.h"
 #include "sync/sync_image.h"
 #include "sync/sync_op.h"
