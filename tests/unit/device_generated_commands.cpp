@@ -16,6 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
+#include "shader_templates.h"
 
 class NegativeDeviceGeneratedCommands : public DeviceGeneratedCommandsTest {};
 
@@ -3214,4 +3215,47 @@ TEST_F(NegativeDeviceGeneratedCommands, LayoutAndShaderObjectHeapFlag) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsShaderInfo) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    const auto v_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0);
+    const auto f_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0);
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoFlag(v_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+    const vkt::Shader v_shader(*m_device, create_info);
+    const vkt::Shader v_shader2(*m_device, create_info);
+    create_info = ShaderCreateInfoFlag(f_spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+    const vkt::Shader f_shader(*m_device, create_info);
+    const VkShaderEXT shaders[] = {v_shader, f_shader, v_shader2};
+
+    VkGeneratedCommandsShaderInfoEXT shader_info = vku::InitStructHelper();
+    shader_info.shaderCount = 3;
+    shader_info.pShaders = shaders;
+
+    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    token.offset = 0;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &token;
+
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    VkGeneratedCommandsMemoryRequirementsInfoEXT req_info = vku::InitStructHelper(&shader_info);
+    req_info.maxSequenceCount = 1;
+    req_info.indirectExecutionSet = VK_NULL_HANDLE;
+    req_info.indirectCommandsLayout = command_layout;
+
+    VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsShaderInfoEXT-pShaders-11127");
+    vk::GetGeneratedCommandsMemoryRequirementsEXT(device(), &req_info, &mem_req2);
+    m_errorMonitor->VerifyFound();
 }

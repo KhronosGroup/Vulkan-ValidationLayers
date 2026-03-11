@@ -2782,6 +2782,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             uint32_t executionSetWriteCount,
                                                             const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                             const ErrorObject& error_obj) const override;
+    bool ValidateGeneratedCommandsShaderInfo(const LogObjectList objlist,
+                                             const VkGeneratedCommandsShaderInfoEXT& command_shader_info,
+                                             const Location& loc) const;
     bool ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_state,
                                        const vvl::IndirectCommandsLayout& indirect_commands_layout,
                                        const VkGeneratedCommandsInfoEXT& generated_commands_info, bool preprocessed,
