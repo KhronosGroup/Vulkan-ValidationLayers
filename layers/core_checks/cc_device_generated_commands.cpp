@@ -21,6 +21,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <sstream>
 #include <string>
+#include "containers/custom_containers.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "error_message/error_strings.h"
@@ -324,7 +325,9 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
         return skip;
     }
     for (uint32_t i = 0; i < pipeline_layout->set_layouts.list.size(); i++) {
-        if (pipeline_layout->set_layouts.list[i] == nullptr) continue;
+        if (pipeline_layout->set_layouts.list[i] == nullptr) {
+            continue;
+        }
         const auto& bindings = pipeline_layout->set_layouts.list[i]->GetBindings();
         for (uint32_t j = 0; j < bindings.size(); j++) {
             if (bindings[j].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
@@ -392,6 +395,30 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
                              string_VkShaderCreateFlagsEXT(descriptor_flag).c_str());
             descriptor_flag_same = false;
         }
+
+        if (shader_info.pSetLayoutInfos) {
+            const VkIndirectExecutionSetShaderLayoutInfoEXT& ies_shader_layout_info = shader_info.pSetLayoutInfos[i];
+            for (uint32_t layout_i = 0; layout_i < ies_shader_layout_info.setLayoutCount; layout_i++) {
+                const auto ies_dsl = Get<vvl::DescriptorSetLayout>(ies_shader_layout_info.pSetLayouts[layout_i]);
+                if (!ies_dsl) {
+                    assert(shader_object->descriptor_heap_mode);
+                    continue;
+                }
+                const auto& bindings = ies_dsl->GetBindings();
+                for (uint32_t k = 0; k < bindings.size(); k++) {
+                    if (bindings[k].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+                        bindings[k].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
+                        const LogObjectList objlist(shader_handle, ies_dsl->Handle());
+                        skip |=
+                            LogError("VUID-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-11024", objlist,
+                                     shader_info_loc.dot(Field::pSetLayoutInfos).dot(Field::pSetLayouts, layout_i),
+                                     "was created with binding %" PRIu32
+                                     " having a VkDescriptorType of %s in VkDescriptorSetLayoutCreateInfo::pBindings[%" PRIu32 "].",
+                                     bindings[k].binding, string_VkDescriptorType(bindings[k].descriptorType), k);
+                    }
+                }
+            }
+        }
     }
 
     if (descriptor_flag_same && descriptor_flag != 0 && shader_info.pSetLayoutInfos) {
@@ -431,6 +458,35 @@ bool CoreChecks::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, 
     if (auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(indirectExecutionSet)) {
         skip |= ValidateObjectNotInUse(indirect_execution_set.get(), error_obj.location,
                                        "VUID-vkDestroyIndirectExecutionSetEXT-indirectExecutionSet-11025");
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateGeneratedCommandsShaderInfo(const LogObjectList objlist,
+                                                     const VkGeneratedCommandsShaderInfoEXT& command_shader_info,
+                                                     const Location& loc) const {
+    bool skip = false;
+    if (command_shader_info.shaderCount < 2) {
+        return skip;
+    }
+
+    // < stage, index into pShaders[] >
+    vvl::unordered_map<VkShaderStageFlagBits, uint32_t> seen_stages;
+    for (uint32_t i = 0; i < command_shader_info.shaderCount; i++) {
+        const auto shader_object = Get<vvl::ShaderObject>(command_shader_info.pShaders[i]);
+        ASSERT_AND_CONTINUE(shader_object);
+        const VkShaderStageFlagBits current_stage = shader_object->create_info.stage;
+        const auto it = seen_stages.find(current_stage);
+        if (it != seen_stages.end()) {
+            const auto previous_shader_object = Get<vvl::ShaderObject>(command_shader_info.pShaders[it->second]);
+            skip |= LogError("VUID-VkGeneratedCommandsShaderInfoEXT-pShaders-11127", objlist,
+                             loc.pNext(Struct::VkGeneratedCommandsShaderInfoEXT, Field::pShaders, i),
+                             "(%s) was created with stage %s which is the same as pShaders[%" PRIu32 "] (%s)",
+                             FormatHandle(shader_object->Handle()).c_str(), string_VkShaderStageFlagBits(current_stage), it->second,
+                             FormatHandle(previous_shader_object->Handle()).c_str());
+            break;
+        }
+        seen_stages.emplace(current_stage, i);
     }
     return skip;
 }
@@ -547,6 +603,10 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
                 valid_dispatch = false;
             }
         }
+    }
+
+    if (shader_info) {
+        skip |= ValidateGeneratedCommandsShaderInfo(cb_state.Handle(), *shader_info, info_loc);
     }
 
     // Only dispatch if we know this is valid
@@ -858,6 +918,10 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
                 info_loc.dot(Field::indirectExecutionSet),
                 "is VK_NULL_HANDLE but the pNext chain does not contain an instance of VkGeneratedCommandsPipelineInfoEXT or "
                 "VkGeneratedCommandsShaderInfoEXT.");
+        }
+
+        if (shader_info) {
+            skip |= ValidateGeneratedCommandsShaderInfo(device, *shader_info, info_loc);
         }
     } else {
         if (!indirect_commands_layout->has_execution_set_token) {
