@@ -152,7 +152,7 @@ bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, cons
 
     if (pipeline_state) {
         if (!(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            // TODO - fix in spec to have them share
+            // The real VU says to check the Execution Model, but the NV vs EXT is checked elsewhere
             const char* vuid =
                 loc.function == vvl::Func::vkCmdDrawMeshTasksEXT           ? "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087"
                 : loc.function == vvl::Func::vkCmdDrawMeshTasksIndirectEXT ? "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091"
@@ -164,9 +164,9 @@ bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, cons
                     ? "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082"
                     : kVUIDUndefined;
             skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a shader stage using the "
-                             "MeshEXT Execution Model. Active shader stages on the bound pipeline are %s.",
-                             string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+                             "The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a MeshEXT shader stage to "
+                             "call %s\nThe current active shader stages on the bound pipeline are %s.",
+                             String(loc.function), string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
         }
         if (pipeline_state->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                                               VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) {
