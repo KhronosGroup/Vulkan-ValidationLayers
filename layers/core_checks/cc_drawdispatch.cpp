@@ -1403,13 +1403,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         }
 
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-        // TODO - fix this by moving VUID lookup into InsideRenderPass
-        if (loc.function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
-            skip |= InsideRenderPass(cb_state, loc, "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12202");
-        } else {
-            skip |=
-                InsideRenderPass(cb_state, loc, CreateActionVuid(loc.function, vvl::ActionVUID::COMPUTE_INSIDE_RP_10672).c_str());
-        }
+        skip |= InsideRenderPass(cb_state, loc);
 
         if (!pipeline && !last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::COMPUTE)) {
             const bool is_null_bound = last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::COMPUTE);

@@ -28,8 +28,12 @@
 #include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include "core_checks/cc_state_tracker.h"
+#include "core_checks/cc_vuid_maps.h"
 #include "core_validation.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 #include "error_message/error_location.h"
+#include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/buffer_state.h"
@@ -47,11 +51,10 @@ T GetQuotientCeil(T numerator, T denominator) {
 }
 }  // namespace vvl
 
-bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
-                                                 const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
+bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                                 const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
                                                  uint32_t primary_attachment, uint32_t secondary_attachment,
-                                                 const Location &caller_loc, const Location &attachment_loc,
-                                                 const char *vuid) const {
+                                                 const Location& caller_loc, const Location& attachment_loc) const {
     bool skip = false;
     const auto &primary_pass_ci = rp1_state.create_info;
     const auto &secondary_pass_ci = rp2_state.create_info;
@@ -66,7 +69,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     }
     if (primary_attachment == VK_ATTACHMENT_UNUSED) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, caller_loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc), objlist, caller_loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the first is VK_ATTACHMENT_UNUSED while the second is %s.",
                          attachment_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -76,7 +79,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     }
     if (secondary_attachment == VK_ATTACHMENT_UNUSED) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, caller_loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc), objlist, caller_loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the first is %s while the second is VK_ATTACHMENT_UNUSED.",
                          attachment_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -86,7 +89,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     }
     if (primary_pass_ci.pAttachments[primary_attachment].format != secondary_pass_ci.pAttachments[secondary_attachment].format) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, caller_loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc), objlist, caller_loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "pAttachments[%" PRIu32 "].format (%s) != pAttachments[%" PRIu32 "].format (%s).",
                          attachment_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -97,7 +100,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_pass_ci.pAttachments[primary_attachment].samples != secondary_pass_ci.pAttachments[secondary_attachment].samples) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, caller_loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc), objlist, caller_loc,
                      "%s is incompatible between %s (from %s) and %s (from %s), "
                      "pAttachments[%" PRIu32 "].samples (%s) != pAttachments[%" PRIu32 "].samples (%s).",
                      attachment_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -107,7 +110,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     }
     if (primary_pass_ci.pAttachments[primary_attachment].flags != secondary_pass_ci.pAttachments[secondary_attachment].flags) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, caller_loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc), objlist, caller_loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "pAttachments[%" PRIu32 "].flags (%s) != pAttachments[%" PRIu32 "].flags (%s).",
                          attachment_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -120,9 +123,9 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_ob
     return skip;
 }
 
-bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
-                                              const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
-                                              const int subpass, const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                              const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                              const int subpass, const Location& loc) const {
     bool skip = false;
     const auto &primary_desc = rp1_state.create_info.pSubpasses[subpass];
     const auto &secondary_desc = rp2_state.create_info.pSubpasses[subpass];
@@ -139,7 +142,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
         }
         skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_input_attach,
                                                 secondary_input_attach, loc,
-                                                subpass_loc.dot(Field::pInputAttachments, i).dot(Field::attachment), vuid);
+                                                subpass_loc.dot(Field::pInputAttachments, i).dot(Field::attachment));
     }
     uint32_t max_color_attachment_count = std::max(primary_desc.colorAttachmentCount, secondary_desc.colorAttachmentCount);
     for (uint32_t i = 0; i < max_color_attachment_count; ++i) {
@@ -152,7 +155,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
         }
         skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_color_attach,
                                                 secondary_color_attach, loc,
-                                                subpass_loc.dot(Field::pColorAttachments, i).dot(Field::attachment), vuid);
+                                                subpass_loc.dot(Field::pColorAttachments, i).dot(Field::attachment));
         if (rp1_state.create_info.subpassCount > 1) {
             uint32_t primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
             if (i < primary_desc.colorAttachmentCount && primary_desc.pResolveAttachments) {
@@ -163,7 +166,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
             }
             skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_resolve_attach,
                                                     secondary_resolve_attach, loc,
-                                                    subpass_loc.dot(Field::pResolveAttachments, i).dot(Field::attachment), vuid);
+                                                    subpass_loc.dot(Field::pResolveAttachments, i).dot(Field::attachment));
         }
     }
     uint32_t primary_depthstencil_attach = VK_ATTACHMENT_UNUSED, secondary_depthstencil_attach = VK_ATTACHMENT_UNUSED;
@@ -175,11 +178,11 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
     }
     skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_depthstencil_attach,
                                             secondary_depthstencil_attach, loc,
-                                            subpass_loc.dot(Field::pDepthStencilAttachment).dot(Field::attachment), vuid);
+                                            subpass_loc.dot(Field::pDepthStencilAttachment).dot(Field::attachment));
 
     if (primary_desc.flags != secondary_desc.flags) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "%s != %s",
                          subpass_loc.dot(Field::flags).Fields().c_str(), FormatHandle(rp1_state).c_str(),
@@ -192,7 +195,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
     if (primary_desc.viewMask && secondary_desc.viewMask) {
         if (primary_desc.viewMask != secondary_desc.viewMask) {
             const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-            skip |= LogError(vuid, objlist, loc,
+            skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                              "%s is incompatible between %s (from %s) and %s (from %s), "
                              "0x%" PRIx32 " != 0x%" PRIx32 "",
                              subpass_loc.dot(Field::viewMask).Fields().c_str(), FormatHandle(rp1_state).c_str(),
@@ -201,14 +204,14 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
         }
     } else if (primary_desc.viewMask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the first uses Multiview (has non-zero viewMasks) while the second one does not.",
                          subpass_loc.dot(Field::viewMask).Fields().c_str(), FormatHandle(rp1_state).c_str(),
                          FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str());
     } else if (secondary_desc.viewMask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the second uses Multiview (has non-zero viewMasks) while the first one does not.",
                          subpass_loc.dot(Field::viewMask).Fields().c_str(), FormatHandle(rp1_state).c_str(),
@@ -225,7 +228,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
             (fsr1->shadingRateAttachmentTexelSize.height != fsr2->shadingRateAttachmentTexelSize.height)) {
             const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
             skip |=
-                LogError(vuid, objlist, loc,
+                LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "(%s) != (%s).",
                          subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
@@ -237,14 +240,14 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
         }
     } else if (fsr1) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the first uses a VkFragmentShadingRateAttachmentInfoKHR pNext while the second one does not.",
                          subpass_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
                          FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str());
     } else if (fsr2) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
                          "the second uses a VkFragmentShadingRateAttachmentInfoKHR pNext while the first one does not.",
                          subpass_loc.Fields().c_str(), FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
@@ -254,9 +257,9 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
     return skip;
 }
 
-bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
-                                                 const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
-                                                 const uint32_t dependency, const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                                 const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                                 const uint32_t dependency, const Location& loc) const {
     bool skip = false;
 
     const auto &primary_dep = rp1_state.create_info.pDependencies[dependency];
@@ -288,7 +291,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dep.srcSubpass != secondary_dep.srcSubpass) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].srcSubpass is incompatible between %s (from %s) and %s (from %s), "
                      "%" PRIu32 " != %" PRIu32 ".",
@@ -298,7 +301,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dep.dstSubpass != secondary_dep.dstSubpass) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].dstSubpass is incompatible between %s (from %s) and %s (from %s), "
                      "%" PRIu32 " != %" PRIu32 ".",
@@ -308,7 +311,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_src_stage_mask != secondary_src_stage_mask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].srcStageMask is incompatible between %s (from %s) and %s (from %s), "
                      "%s != %s.",
@@ -319,7 +322,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dst_stage_mask != secondary_dst_stage_mask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].dstStageMask is incompatible between %s (from %s) and %s (from %s), "
                      "%s != %s.",
@@ -330,7 +333,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_src_access_mask != secondary_src_access_mask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].srcAccessMask is incompatible between %s (from %s) and %s (from %s), "
                      "%s != %s.",
@@ -341,7 +344,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dst_access_mask != secondary_dst_access_mask) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].dstAccessMask is incompatible between %s (from %s) and %s (from %s), "
                      "%s != %s.",
@@ -352,7 +355,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dep.dependencyFlags != secondary_dep.dependencyFlags) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].dependencyFlags is incompatible between %s (from %s) and %s (from %s), "
                      "%s != %s.",
@@ -363,7 +366,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     if (primary_dep.viewOffset != secondary_dep.viewOffset) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |=
-            LogError(vuid, objlist, loc,
+            LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                      "pDependencies[%" PRIu32
                      "].viewOffset is incompatible between %s (from %s) and %s (from %s), "
                      "%" PRIu32 " != %" PRIu32 ".",
@@ -377,15 +380,15 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
 //  This function deals directly with the CreateInfo, there are overloaded versions below that can take the renderPass handle and
 //  will then feed into this function
-bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
-                                                 const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
-                                                 const Location &loc, const char *vuid) const {
+bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
+                                                 const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                                 const Location& loc) const {
     bool skip = false;
 
     // createInfo flags must be identical for the renderpasses to be compatible.
     if (rp1_state.create_info.flags != rp2_state.create_info.flags) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "VkRenderPassCreateFlags is incompatible between %s (from %s) and %s (from %s)\n"
                          "%s != %s\n"
                          "Hint: RenderPass Compatibility is to allow you to use a different VkRenderPass in your VkPipeline and "
@@ -397,7 +400,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
 
     if (rp1_state.create_info.subpassCount != rp2_state.create_info.subpassCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "subpassCount is incompatible between %s (from %s) and %s (from %s)\n"
                          "%" PRIu32 " != %" PRIu32
                          "\n"
@@ -407,13 +410,13 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.subpassCount, rp2_state.create_info.subpassCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.create_info.subpassCount; ++i) {
-            skip |= ValidateSubpassCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc, vuid);
+            skip |= ValidateSubpassCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc);
         }
     }
 
     if (rp1_state.create_info.dependencyCount != rp2_state.create_info.dependencyCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "dependencyCount is incompatible between %s (from %s) and %s (from %s)\n"
                          "%" PRIu32 " != %" PRIu32
                          "\n"
@@ -424,12 +427,12 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                          rp2_state.create_info.dependencyCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.create_info.dependencyCount; ++i) {
-            skip |= ValidateDependencyCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc, vuid);
+            skip |= ValidateDependencyCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc);
         }
     }
     if (rp1_state.create_info.correlatedViewMaskCount != rp2_state.create_info.correlatedViewMaskCount) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "correlatedViewMaskCount is incompatible between %s (from %s) and %s (from %s)\n"
                          "%" PRIu32 " != %" PRIu32
                          "\n"
@@ -442,7 +445,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
         for (uint32_t i = 0; i < rp1_state.create_info.correlatedViewMaskCount; ++i) {
             if (rp1_state.create_info.pCorrelatedViewMasks[i] != rp2_state.create_info.pCorrelatedViewMasks[i]) {
                 const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-                skip |= LogError(vuid, objlist, loc,
+                skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                                  "pCorrelatedViewMasks[%" PRIu32
                                  "] is incompatible between %s (from %s) and %s (from %s)\n"
                                  "0x%" PRIx32 " != 0x%" PRIx32
@@ -466,17 +469,17 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
         uint32_t secondary_input_attach = fdm2->fragmentDensityMapAttachment.attachment;
         Location fdm_loc(Func::Empty, Struct::VkRenderPassFragmentDensityMapCreateInfoEXT);
         skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_input_attach,
-                                                secondary_input_attach, loc, fdm_loc.dot(Field::attachment), vuid);
+                                                secondary_input_attach, loc, fdm_loc.dot(Field::attachment));
     } else if (fdm1) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "RenderPassCreateInfo pNext is incompatible between %s (from %s) and %s (from %s), "
                          "the first uses a VkRenderPassFragmentDensityMapCreateInfoEXT pNext while the second one does not",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str());
     } else if (fdm2) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
-        skip |= LogError(vuid, objlist, loc,
+        skip |= LogError(vvl::GetRenderPassCompatibilityVUID(loc), objlist, loc,
                          "RenderPassCreateInfo pNext is incompatible between %s (from %s) and %s (from %s), "
                          "the second uses a VkRenderPassFragmentDensityMapCreateInfoEXT pNext while the first one does not",
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
@@ -587,7 +590,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
     skip |= ValidateFramebufferAndRenderPassLayouts(cb_state, *pRenderPassBegin, *rp_state, *fb_state, rp_begin_loc);
     if (fb_state->rp_state->VkHandle() != rp_state->VkHandle()) {
         skip |= ValidateRenderPassCompatibility(rp_state->Handle(), *rp_state, fb_state->Handle(), *fb_state->rp_state,
-                                                error_obj.location, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+                                                error_obj.location);
     }
 
     auto device_group_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -4509,21 +4512,42 @@ bool CoreChecks::ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer
 // render pass.
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool skip = false;
-    if (cb_state.active_render_pass) {
-        if (cb_state.active_render_pass->use_dynamic_rendering) {
-            skip |=
-                LogError(vuid, cb_state.Handle(), loc,
+    if (!cb_state.active_render_pass) {
+        return skip;
+    }
+
+    // because we generate a VUID list from CoreChecks::ValidateCmd, we need to pass in |vuid| as a string, but for the cases its
+    // from another command, which we have a few strange cases of, we get the VUID here
+    const char* final_vuid = vuid;
+    if (!final_vuid) {
+        if (loc.function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
+            final_vuid = "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12202";
+        } else if (loc.function == vvl::Func::vkEndCommandBuffer) {
+            final_vuid = "VUID-vkEndCommandBuffer-commandBuffer-00060";
+        } else if (loc.function == vvl::Func::vkCmdDispatch) {
+            final_vuid = "VUID-vkCmdDispatch-None-10672";
+        } else if (loc.function == vvl::Func::vkCmdDispatchIndirect) {
+            final_vuid = "VUID-vkCmdDispatchIndirect-None-10672";
+        } else if (loc.function == vvl::Func::vkCmdDispatchBase) {
+            final_vuid = "VUID-vkCmdDispatchBase-None-10672";
+        } else if (loc.function == vvl::Func::vkCmdDispatchTileQCOM) {
+            final_vuid = "VUID-vkCmdDispatchTileQCOM-None-10672";
+        } else {
+            final_vuid = kVUIDUndefined;
+        }
+    }
+
+    if (cb_state.active_render_pass->use_dynamic_rendering) {
+        skip |= LogError(final_vuid, cb_state.Handle(), loc,
                          "It is invalid to issue this call inside an active render pass instance begun with vkCmdBeginRendering.");
-        } else if (cb_state.active_render_pass->use_dynamic_rendering_inherited) {
-            skip |=
-                LogError(vuid, cb_state.Handle(), loc,
+    } else if (cb_state.active_render_pass->use_dynamic_rendering_inherited) {
+        skip |= LogError(final_vuid, cb_state.Handle(), loc,
                          "It is invalid to issue this call inside this secondary command buffer as it was begun with "
                          "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT and viewed as being inside a render pass instance begun "
                          "with vkCmdBeginRendering.");
-        } else {
-            skip |= LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
-                            FormatHandle(cb_state.active_render_pass->Handle()).c_str());
-        }
+    } else {
+        skip |= LogError(final_vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
+                         FormatHandle(cb_state.active_render_pass->Handle()).c_str());
     }
     return skip;
 }

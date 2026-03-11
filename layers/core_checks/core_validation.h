@@ -305,16 +305,16 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                          const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
                                          uint32_t primary_attachment, uint32_t secondary_attachment, const Location& caller_loc,
-                                         const Location& attachment_loc, const char* vuid) const;
+                                         const Location& attachment_loc) const;
     bool ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                       const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const int subpass,
-                                      const Location& loc, const char* vuid) const;
+                                      const Location& loc) const;
     bool ValidateDependencyCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                          const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
-                                         const uint32_t dependency, const Location& loc, const char* vuid) const;
+                                         const uint32_t dependency, const Location& loc) const;
     bool ValidateRenderPassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
-                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state, const Location& loc,
-                                         const char* vuid) const;
+                                         const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
+                                         const Location& loc) const;
     bool ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const override;
@@ -533,7 +533,7 @@ class CoreChecks : public vvl::DeviceProxy {
     std::string DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
                                           VkQueueFlags required_flags) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT& sample_location_info, const Location& loc) const;
-    bool InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
+    bool InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid = nullptr) const;
     bool OutsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool InsideVideoCodingScope(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool OutsideVideoCodingScope(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;

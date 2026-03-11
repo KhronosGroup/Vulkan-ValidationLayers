@@ -3547,9 +3547,7 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound& last_bound_stat
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
     if (rp_state.VkHandle() != pipeline_rp_state->VkHandle()) {
         // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
-        skip |=
-            ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, pipeline.Handle(), *pipeline_rp_state.get(), loc,
-                                            CreateActionVuid(loc.function, vvl::ActionVUID::RENDER_PASS_COMPATIBLE_02684).c_str());
+        skip |= ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, pipeline.Handle(), *pipeline_rp_state.get(), loc);
     }
     const uint32_t subpass = pipeline.Subpass();
     if (subpass != cb_state.GetActiveSubpass()) {

@@ -598,6 +598,56 @@ const std::string &GetImageImageLayoutVUID(const Location &loc) {
     return result;
 }
 
+const char* GetRenderPassCompatibilityVUID(const Location& loc) {
+    if (loc.function == Func::vkCmdBeginRenderPass) {
+        return "VUID-VkRenderPassBeginInfo-renderPass-00904";
+    } else if (loc.function == Func::vkBeginCommandBuffer) {
+        return "VUID-VkCommandBufferBeginInfo-flags-00055";
+    } else if (loc.function == Func::vkCmdExecuteCommands) {
+        return "VUID-vkCmdExecuteCommands-pBeginInfo-06020";
+    } else if (loc.function == Func::vkCmdDraw) {
+        return "VUID-vkCmdDraw-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndexed) {
+        return "VUID-vkCmdDrawIndexed-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMultiEXT) {
+        return "VUID-vkCmdDrawMultiEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMultiIndexedEXT) {
+        return "VUID-vkCmdDrawMultiIndexedEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirect) {
+        return "VUID-vkCmdDrawIndirect-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirectCount) {
+        return "VUID-vkCmdDrawIndirectCount-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndexedIndirect) {
+        return "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndexedIndirectCount) {
+        return "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirectByteCountEXT) {
+        return "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksNV) {
+        return "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirectNV) {
+        return "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirectCountNV) {
+        return "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksEXT) {
+        return "VUID-vkCmdDrawMeshTasksEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirectEXT) {
+        return "VUID-vkCmdDrawMeshTasksIndirectEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirectCountEXT) {
+        return "VUID-vkCmdDrawMeshTasksIndirectCountEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawClusterHUAWEI) {
+        return "VUID-vkCmdDrawClusterHUAWEI-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawClusterIndirectHUAWEI) {
+        return "VUID-vkCmdDrawClusterIndirectHUAWEI-renderPass-02684";
+    } else if (loc.function == Func::vkCmdExecuteGeneratedCommandsNV) {
+        return "VUID-vkCmdExecuteGeneratedCommandsNV-renderPass-02684";
+    } else if (loc.function == Func::vkCmdExecuteGeneratedCommandsEXT) {
+        return "VUID-vkCmdExecuteGeneratedCommandsEXT-renderPass-02684";
+    }
+
+    return kVUIDUndefined;
+}
+
 const char* GetBuildASVUID(const Location& loc, BuildASError error) {
     // clang-format off
     switch (error) {
