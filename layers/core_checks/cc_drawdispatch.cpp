@@ -1335,6 +1335,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateMeshShaderStage(last_bound_state, error_obj.location);
 
+    if (!IsIntegerMultipleOf(offset, 4)) {
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-offset-02710",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::offset),
+                         "(%" PRIu64 ") must be a multiple of 4.", offset);
+    }
     if (!IsIntegerMultipleOf(countBufferOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBufferOffset-02716",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::countBufferOffset),
