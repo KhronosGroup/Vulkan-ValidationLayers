@@ -726,6 +726,16 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488",
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489",
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490",
+
+    // Currently ALL BuiltIn in SPIR-V are only for Vulkan
+    "VUID-StandaloneSpirv-BuiltIn-04668",
+
+    // We can't track the entire CPU memory range to decode things
+    // This could be more possible if things like VkDescriptorBufferInfo had an sType
+    "VUID-vkUpdateDescriptorSetWithTemplate-pData-01685",
+
+    // This is caught by VUID-VkPipelineShaderStageCreateInfo-stage-parameter
+    "VUID-VkPipelineShaderStageCreateInfo-stage-00706",
 };
 
 // These are things that "could be done" but require a crazy amount of work, for no real usecase
@@ -782,10 +792,14 @@ const char* not_going_to_do[] = {
     "VUID-VkMemoryAllocateInfo-pNext-10396",
 
     // VK_KHR_portability_subset  is dead and no one is supporting it
-    "VUID-VkVertexInputAttributeDescription2EXT-vertexAttributeAccessBeyondStride-04806"
+    "VUID-VkVertexInputAttributeDescription2EXT-vertexAttributeAccessBeyondStride-04806",
 
     // Not going to add full ASTC software decoding
-    "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02232"
+    "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02232",
+
+    // This is a crazy VU that is just not practical to track/test as it involves
+    // pipeline binaries from the user's system
+    "VUID-VkPipelineBinaryInfoKHR-binaryCount-09603",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working

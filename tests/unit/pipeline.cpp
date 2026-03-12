@@ -4219,3 +4219,16 @@ TEST_F(NegativePipeline, DepthBounds) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, AllGraphicsFlag) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    VkShaderObj vs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_[0].stage = VK_SHADER_STAGE_ALL_GRAPHICS;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-parameter");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
