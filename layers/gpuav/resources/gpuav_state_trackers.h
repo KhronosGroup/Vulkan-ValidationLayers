@@ -65,7 +65,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       VkDescriptorAddressInfoEXT &out_address_info, uint32_t &out_dst_binding),
                                  48>;
     using OnInstrumentationDescHeapUpdate =
-        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDeviceAddress &out_address), 48>;
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, const Location &loc,
+                                      VkDeviceAddress &out_address, uint32_t &out_dst_binding),
+                                 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =

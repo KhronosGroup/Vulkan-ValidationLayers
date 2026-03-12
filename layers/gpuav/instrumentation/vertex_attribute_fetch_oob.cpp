@@ -314,51 +314,60 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
         return inst_error_logger;
     });
 
+    auto get_vertex_attribute_fetch_limits_buffer_range = [error_info](CommandBufferSubState &cb) {
+        vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
+            cb.gpu_resources_manager.GetHostCoherentBufferRange(4 * sizeof(uint32_t));
+        if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
+            return vertex_attribute_fetch_limits_buffer_range;
+        }
+
+        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer_range.offset_mapped_ptr;
+
+        const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
+            GetVertexAttributeFetchLimits(cb.base);
+        if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
+            vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
+            vertex_attribute_fetch_limits_buffer_ptr[1] =
+                (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
+        } else {
+            vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
+        }
+
+        if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
+            vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
+            vertex_attribute_fetch_limits_buffer_ptr[3] =
+                (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
+        } else {
+            vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
+        }
+
+        error_info->vertex_attribute_fetch_limit_vertex_input_rate = vertex_attribute_fetch_limit_vertex_input_rate;
+        error_info->vertex_attribute_fetch_limit_instance_input_rate = vertex_attribute_fetch_limit_instance_input_rate;
+        error_info->index_buffer_binding = cb.base.index_buffer_binding;
+
+        return vertex_attribute_fetch_limits_buffer_range;
+    };
+
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [&gpuav, error_info](CommandBufferSubState &cb, VkPipelineBindPoint bind_point, const Location &loc,
-                             VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding) {
+        [&gpuav, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
+                                                                 const Location &loc, VkDescriptorBufferInfo &out_buffer_info,
+                                                                 uint32_t &out_dst_binding) {
             if (!vvl::IsCommandDrawVertex(loc.function)) {
                 return;
             }
 
             if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-                vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
-                    cb.gpu_resources_manager.GetHostCoherentBufferRange(4 * sizeof(uint32_t));
+                vko::BufferRange vertex_attribute_fetch_limits_buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
                 if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
                     return;
                 }
-
-                auto vertex_attribute_fetch_limits_buffer_ptr =
-                    (uint32_t *)vertex_attribute_fetch_limits_buffer_range.offset_mapped_ptr;
-
-                const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
-                    GetVertexAttributeFetchLimits(cb.base);
-                if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
-                    vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
-                    vertex_attribute_fetch_limits_buffer_ptr[1] =
-                        (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
-                } else {
-                    vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
-                }
-
-                if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
-                    vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
-                    vertex_attribute_fetch_limits_buffer_ptr[3] =
-                        (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
-                } else {
-                    vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
-                }
-
-                error_info->vertex_attribute_fetch_limit_vertex_input_rate = vertex_attribute_fetch_limit_vertex_input_rate;
-                error_info->vertex_attribute_fetch_limit_instance_input_rate = vertex_attribute_fetch_limit_instance_input_rate;
-                error_info->index_buffer_binding = cb.base.index_buffer_binding;
 
                 out_buffer_info.buffer = vertex_attribute_fetch_limits_buffer_range.buffer;
                 out_buffer_info.offset = vertex_attribute_fetch_limits_buffer_range.offset;
                 out_buffer_info.range = vertex_attribute_fetch_limits_buffer_range.size;
             } else {
                 // Point all non-indexed draws to our global buffer that will bypass the check in shader
-                VertexAttributeFetchOff &resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav);
+                VertexAttributeFetchOff &resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav, false);
                 if (!resource.valid) {
                     return;
                 }
@@ -367,6 +376,33 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
                 out_buffer_info.range = VK_WHOLE_SIZE;
             }
 
+            out_dst_binding = glsl::kBindingInstVertexAttributeFetchLimits;
+        });
+
+    cb.on_instrumentation_desc_heap_update_functions.emplace_back(
+        [&gpuav, error_info, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState &cb, VkPipelineBindPoint,
+                                                                             const Location &loc, VkDeviceAddress &out_address,
+                                                                             uint32_t &out_dst_binding) {
+            if (!vvl::IsCommandDrawVertex(loc.function)) {
+                return;
+            }
+
+            VkDeviceAddress vertex_attribute_fetch_limits_buffer_address;
+            if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
+                vko::BufferRange vertex_attribute_fetch_limits_buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
+                if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
+                    return;
+                }
+
+                vertex_attribute_fetch_limits_buffer_address = vertex_attribute_fetch_limits_buffer_range.offset_address;
+            } else {
+                // Point all non-indexed draws to our global buffer that will bypass the check in shader
+                VertexAttributeFetchOff &resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav, true);
+                if (!resource.valid) return;
+                vertex_attribute_fetch_limits_buffer_address = resource.buffer.Address();
+            }
+
+            out_address = vertex_attribute_fetch_limits_buffer_address;
             out_dst_binding = glsl::kBindingInstVertexAttributeFetchLimits;
         });
 }

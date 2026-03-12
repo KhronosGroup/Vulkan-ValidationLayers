@@ -108,6 +108,15 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
         out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
     });
 
+    cb.on_instrumentation_desc_heap_update_functions.emplace_back([](CommandBufferSubState& cb, VkPipelineBindPoint,
+                                                                     const Location&, VkDeviceAddress& out_address,
+                                                                     uint32_t& out_dst_binding) {
+        BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
+        out_address = bda_cb_state.bda_ranges_snapshot_ptr.offset_address;
+
+        out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
+    });
+
     cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                       VkCommandBuffer per_submission_cb) {
         BufferDeviceAddressCbState* bda_cb_state = cb.shared_resources_cache.TryGet<BufferDeviceAddressCbState>();
