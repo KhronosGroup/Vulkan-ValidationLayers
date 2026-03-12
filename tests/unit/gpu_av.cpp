@@ -23,7 +23,7 @@ class NegativeGpuAV : public GpuAVTest {};
 TEST_F(NegativeGpuAV, ValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
     // GPU Shader Instrumentation requires Vulkan 1.1 or later
-    SetTargetApiVersion(VK_API_VERSION_1_0);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFramework(&validation_features));
     m_errorMonitor->SetDesiredError("GPU-AV is being disabled");
@@ -565,7 +565,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
 TEST_F(NegativeGpuAV, RemoveGpuAvInPresenceOfSyncVal) {
     TEST_DESCRIPTION("Disabling GPU-AV when requirements are not met and sync val is on should not cause a crash");
 
-    SetTargetApiVersion(VK_API_VERSION_1_0);  // GPU-AV needs >1.1
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // GPU-AV needs >1.1
 
     const std::array validation_enables = {
         VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
@@ -693,7 +693,7 @@ TEST_F(NegativeGpuAV, LeakedResource) {
 
 TEST_F(NegativeGpuAV, ValidationAbortAndLeakedResource) {
     // GPU Shader Instrumentation requires Vulkan 1.1 or later
-    SetTargetApiVersion(VK_API_VERSION_1_0);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFramework(&validation_features));
     m_errorMonitor->SetDesiredError("GPU-AV is being disabled");
