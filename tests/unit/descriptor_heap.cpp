@@ -4416,6 +4416,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DView2DArray) {
                                                 : type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? VK_IMAGE_USAGE_STORAGE_BIT
                                                                                            : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT};
             VkImageCreateInfo image_ci = vku::InitStructHelper();
+            image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
             image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
             image_ci.usage = usage;
             image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
