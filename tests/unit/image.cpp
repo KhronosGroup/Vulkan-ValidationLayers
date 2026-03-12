@@ -4800,3 +4800,30 @@ TEST_F(NegativeImage, Ycbcr2plane444Formats) {
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, &format_properties2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImage, ArrayFrom3dImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_ci = vku::InitStructHelper();
+    image_create_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_create_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_ci.extent = {32u, 32u, 2u};
+    image_create_ci.mipLevels = 1u;
+    image_create_ci.arrayLayers = 1u;
+    image_create_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    vkt::Image image(*m_device, image_create_ci);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    image_view_ci.format = image_create_ci.format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, VK_REMAINING_ARRAY_LAYERS};
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-06723");
+    vkt::ImageView view(*m_device, image_view_ci);
+    m_errorMonitor->VerifyFound();
+}
