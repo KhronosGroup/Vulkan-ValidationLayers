@@ -2081,34 +2081,24 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
             if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
                 if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                     if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-                        if (IsExtEnabled(extensions.vk_ext_image_2d_view_of_3d)) {
-                            if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
-                                if (view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-                                    skip |= LogError(
-                                        "VUID-VkImageViewCreateInfo-image-06723", create_info.image,
-                                        create_info_loc.dot(Field::viewType),
-                                        "(%s) is not compatible with image type "
-                                        "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
-                                        string_VkImageViewType(view_type), string_VkImageType(image_type));
-                                } else if (view_type == VK_IMAGE_VIEW_TYPE_2D &&
-                                           !(image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
-                                    skip |= LogError("VUID-VkImageViewCreateInfo-image-06728", create_info.image,
-                                                     create_info_loc.dot(Field::viewType),
-                                                     "(%s) is not compatible with image type "
-                                                     "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT or "
-                                                     "VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT flag set.",
-                                                     string_VkImageViewType(view_type), string_VkImageType(image_type));
-                                }
-                            }
-                        } else if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
-                                   (view_type == VK_IMAGE_VIEW_TYPE_2D)) {
-                            // TODO - combine this logic
-                            skip |= LogError("VUID-VkImageViewCreateInfo-image-06728", create_info.image,
+                        if ((image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) == 0) {
+                            if (view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                                skip |=
+                                    LogError("VUID-VkImageViewCreateInfo-image-06723", create_info.image,
                                              create_info_loc.dot(Field::viewType),
-                                             "VK_IMAGE_VIEW_TYPE_2D is not compatible "
-                                             "with image type "
+                                             "(%s) is not compatible with image type "
                                              "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
-                                             string_VkImageType(image_type));
+                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
+                            }
+                            if (view_type == VK_IMAGE_VIEW_TYPE_2D &&
+                                (image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) == 0) {
+                                skip |= LogError("VUID-VkImageViewCreateInfo-image-06728", create_info.image,
+                                                 create_info_loc.dot(Field::viewType),
+                                                 "(%s) is not compatible with image type "
+                                                 "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT or "
+                                                 "VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT flag set.",
+                                                 string_VkImageViewType(view_type), string_VkImageType(image_type));
+                            }
                         }
                         if (normalized_subresource_range.levelCount != 1) {
                             skip |= LogError("VUID-VkImageViewCreateInfo-image-04970", create_info.image,
