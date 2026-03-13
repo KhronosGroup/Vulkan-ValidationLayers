@@ -59,7 +59,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         meta.target_instruction = &inst;
 
         const uint32_t vector_id = inst.Operand(0);
-        const Instruction* vector_inst = module_.FindInstructionGlobal(function, vector_id);
+        const Instruction* vector_inst = function.FindInstruction(vector_id);
         if (!vector_inst) return false;
 
         // OpVectorExtract/InsertDynamic operate on values, not pointers, so the vector operand
@@ -72,12 +72,12 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 
         // Walk access chains to find the base variable
         const Variable* variable = type_manager_.FindVariableById(ptr_id);
-        const Instruction* access_chain_inst = module_.FindInstructionGlobal(function, ptr_id);
+        const Instruction* access_chain_inst = function.FindInstruction(ptr_id);
         while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
             const uint32_t base_id = access_chain_inst->Operand(0);
             variable = type_manager_.FindVariableById(base_id);
             if (variable) break;
-            access_chain_inst = module_.FindInstructionGlobal(function, base_id);
+            access_chain_inst = function.FindInstruction(base_id);
         }
         if (!variable || variable->StorageClass() != spv::StorageClassWorkgroup) return false;
 
@@ -92,18 +92,8 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
             index_id = inst.Operand(2);
         }
 
-        // Convert index to uint32 if necessary
-        const Type& uint32_type = type_manager_.GetTypeInt(32, false);
-        auto idx_inst = module_.FindInstructionGlobal(function, index_id);
-        assert(idx_inst);
-        auto idx_type = type_manager_.FindTypeById(idx_inst->TypeId());
-        if (idx_type && idx_type->inst_.Opcode() == spv::OpTypeInt && idx_type->inst_.Word(2) != 32) {
-            uint32_t new_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpUConvert, {uint32_type.Id(), new_id, index_id}, &inst_it);
-            index_id = new_id;
-        }
-
         meta.variable_id = variable->Id();
+        index_id = CastToUint32(index_id, block, &inst_it);
         meta.checks.push_back({index_id, vector_type->meta_.vector.component_count});
         return !meta.checks.empty();
     }
@@ -114,12 +104,12 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     // Walk chained access chains to find the base OpVariable
     const uint32_t base_id = inst.Operand(0);
     const Variable* variable = type_manager_.FindVariableById(base_id);
-    const Instruction* chain_inst = module_.FindInstructionGlobal(function, base_id);
+    const Instruction* chain_inst = function.FindInstruction(base_id);
     while (chain_inst && chain_inst->IsNonPtrAccessChain()) {
         const uint32_t chain_base_id = chain_inst->Operand(0);
         variable = type_manager_.FindVariableById(chain_base_id);
         if (variable) break;
-        chain_inst = module_.FindInstructionGlobal(function, chain_base_id);
+        chain_inst = function.FindInstruction(chain_base_id);
     }
 
     if (!variable || variable->StorageClass() != spv::StorageClassWorkgroup) return false;
@@ -127,12 +117,14 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 
     // Start the type walk from the direct base operand's pointee type, not the root variable's type,
     // because Slang (and potentially other compilers) can chain access chains.
-    const Instruction* base_inst = module_.FindInstructionGlobal(function, base_id);
-    assert(base_inst);
-    const Type* base_ptr_type = type_manager_.FindTypeById(base_inst->TypeId());
+    const Instruction* base_inst = function.FindInstruction(base_id);
+    const Type* base_ptr_type = base_inst ? type_manager_.FindTypeById(base_inst->TypeId()) : nullptr;
+    if (!base_ptr_type) {
+        assert(variable->Id() == base_id);
+        base_ptr_type = type_manager_.FindTypeById(variable->inst_.TypeId());
+    }
     assert(base_ptr_type);
     const Type* pointee_type = type_manager_.FindChildType(*base_ptr_type, 0);
-    const Type& uint32_type = type_manager_.GetTypeInt(32, false);
 
     // Word(3) is the base pointer, Word(4..Length()-1) are indices
     for (uint32_t i = 4; i < inst.Length(); ++i) {
@@ -142,14 +134,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
             case SpvType::kArray:
             case SpvType::kVector:
             case SpvType::kVectorIdEXT: {
-                auto idx_inst = module_.FindInstructionGlobal(function, idx_id);
-                assert(idx_inst);
-                auto idx_type = type_manager_.FindTypeById(idx_inst->TypeId());
-                if (idx_type && idx_type->inst_.Opcode() == spv::OpTypeInt && idx_type->inst_.Word(2) != 32) {
-                    uint32_t new_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpUConvert, {uint32_type.Id(), new_id, idx_id}, &inst_it);
-                    idx_id = new_id;
-                }
+                idx_id = CastToUint32(idx_id, block, &inst_it);
                 const uint32_t bound = (pointee_type->spv_type_ == SpvType::kArray) ? pointee_type->meta_.array.length
                                                                                     : pointee_type->meta_.vector.component_count;
                 meta.checks.push_back({idx_id, bound});

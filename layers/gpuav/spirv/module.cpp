@@ -338,19 +338,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     }
 }
 
-const Instruction* Module::FindInstructionGlobal(const Function& function, uint32_t id) const {
-    if (auto ret = function.FindInstruction(id)) {
-        return ret;
-    }
-    if (auto ret = type_manager_.FindConstantById(id)) {
-        return &ret->inst_;
-    }
-    if (auto ret = type_manager_.FindVariableById(id)) {
-        return &ret->inst_;
-    }
-    return nullptr;
-}
-
 bool Module::HasCapability(spv::Capability capability) {
     for (const auto& inst : capabilities_) {
         if (inst->Word(1) == capability) {

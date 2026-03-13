@@ -53,6 +53,8 @@ class SharedMemoryDataRacePass : public Pass {
 
     uint32_t GetLinkFunctionId(const InstructionMeta& meta);
 
+    const Instruction* FindInstructionGlobal(const Function& function, uint32_t id) const;
+
     // Function IDs to link in
     enum FunctionNames {
         INIT_SHADOW = 0,
