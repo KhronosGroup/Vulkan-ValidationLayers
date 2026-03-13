@@ -42,6 +42,9 @@ void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instruc
 // Will try to get the OpStruct from a BDA access
 void FindOpStructFromBDA(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset);
 
+// Returns the SPIR-V opcode at the given word offset in the instruction stream
+uint32_t GetOpcodeAtOffset(const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset);
+
 // These are used where we can't use normal spirv::Instructions.
 // The main spot is post-processisng error message in GPU-AV, the time it takes to interchange back from a vector<uint32_t> to a
 // vector<Instructions> is too high to do mid-frame. Most things just need these simple helpers

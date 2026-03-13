@@ -259,4 +259,6 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     vvl::unordered_set<VkShaderModule> selected_instrumented_shaders;
 };
 
+std::string GetSpirvSpecLink(const uint32_t opcode);
+
 }  // namespace gpuav
