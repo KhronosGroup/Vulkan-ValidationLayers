@@ -99,6 +99,7 @@ const std::string &GetImageMipLevelVUID(const Location &loc);
 const std::string &GetImageArrayLayerRangeVUID(const Location &loc);
 const std::string &GetImageImageLayoutVUID(const Location &loc);
 
+const char* GetSurfaceSupportVUID(const Location& loc);
 const char* GetRenderPassCompatibilityVUID(const Location& loc);
 
 enum class BuildASError {

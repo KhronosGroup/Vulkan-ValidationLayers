@@ -107,8 +107,8 @@ class Instance : public vvl::InstanceProxy {
                                                                    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                    VkImageFormatProperties2* pImageFormatProperties,
                                                                    const ErrorObject& error_obj) const override;
-    bool ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char* vuid,
-                                              const Location& loc) const;
+    bool ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                              const Location& surface_loc) const;
     bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                            VkSurfaceKHR surface, VkBool32* pSupported,
                                                            const ErrorObject& error_obj) const override;

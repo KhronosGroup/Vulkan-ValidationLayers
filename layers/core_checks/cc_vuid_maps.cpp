@@ -598,6 +598,32 @@ const std::string &GetImageImageLayoutVUID(const Location &loc) {
     return result;
 }
 
+const char* GetSurfaceSupportVUID(const Location& loc) {
+    if (loc.function == Func::vkGetDeviceGroupSurfacePresentModes2EXT) {
+        return "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfacePresentModes2EXT) {
+        return "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06522";
+    } else if (loc.function == Func::vkGetDeviceGroupSurfacePresentModesKHR) {
+        return "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212";
+    } else if (loc.function == Func::vkGetPhysicalDevicePresentRectanglesKHR) {
+        return "VUID-vkGetPhysicalDevicePresentRectanglesKHR-surface-06211";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT) {
+        return "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-06211";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR) {
+        return "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-surface-06211";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR) {
+        return "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06522";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfaceFormats2KHR) {
+        return "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06522";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfaceFormatsKHR) {
+        return "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06525";
+    } else if (loc.function == Func::vkGetPhysicalDeviceSurfacePresentModesKHR) {
+        return "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06525";
+    }
+
+    return kVUIDUndefined;
+}
+
 const char* GetRenderPassCompatibilityVUID(const Location& loc) {
     if (loc.function == Func::vkCmdBeginRenderPass) {
         return "VUID-VkRenderPassBeginInfo-renderPass-00904";
