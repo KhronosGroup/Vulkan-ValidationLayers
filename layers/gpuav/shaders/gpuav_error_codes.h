@@ -43,6 +43,7 @@ const int kErrorGroup_GpuPreBuildAccelerationStructures = 12;
 const int kErrorGroup_InstMeshShading = 13;
 const int kErrorGroup_InstRayHitObject = 14;
 const int kErrorGroup_SharedMemoryDataRace = 15;
+const int kErrorGroup_SharedMemoryOob = 16;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModel_Vertex = 0;
@@ -125,6 +126,11 @@ const int kErrorSubCode_SharedMemoryDataRace_RaceOnStore = 1;
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnLoad = 2;
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic = 3;
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic = 4;
+
+// Shared Memory OOB
+const int kErrorSubCode_SharedMemoryOob_AccessChainOob = 1;
+const int kErrorSubCode_SharedMemoryOob_VectorExtractOob = 2;
+const int kErrorSubCode_SharedMemoryOob_VectorInsertOob = 3;
 
 // MeshShading
 //

@@ -70,6 +70,7 @@ struct GpuAVSettings {
         bool vertex_attribute_fetch_oob = true;
         bool sanitizer = true;
         bool shared_memory_data_race = true;
+        bool shared_memory_oob = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const;

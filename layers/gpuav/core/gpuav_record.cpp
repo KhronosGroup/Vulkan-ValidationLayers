@@ -170,6 +170,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     RegisterRayQueryValidation(*this, gpuav_cb_state);
     RegisterRayHitObjectValidation(*this, gpuav_cb_state);
     RegisterSharedMemoryDataRaceValidation(*this, gpuav_cb_state);
+    RegisterSharedMemoryOobValidation(*this, gpuav_cb_state);
     RegisterSanitizer(*this, gpuav_cb_state);
     debug_printf::RegisterDebugPrintf(*this, gpuav_cb_state);
 }

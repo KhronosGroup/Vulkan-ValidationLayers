@@ -79,6 +79,9 @@ class Module {
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
     vvl::unordered_set<uint32_t> added_interface_variables_;
 
+    // Finds an instruction by ID, searching the given function first, then global constants and variables
+    const Instruction* FindInstructionGlobal(const Function& function, uint32_t id) const;
+
     // Helpers
     bool HasCapability(spv::Capability capability);
     void AddCapability(spv::Capability capability);
