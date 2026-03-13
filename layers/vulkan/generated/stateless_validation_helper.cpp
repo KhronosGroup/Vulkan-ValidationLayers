@@ -1011,6 +1011,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR: {  // Covers
+                                                                                        // VUID-VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR);
+                VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR* structure =
+                    (VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::deviceAddressCommands), structure->deviceAddressCommands);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR-sType-sType
@@ -5200,6 +5211,55 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkVideoEncodeQualityLevelInfoKHR structure members  -- Covers
         // VUID-VkVideoEncodeQualityLevelInfoKHR-sType-sType
 
+        // Validation code for VkMemoryRangeBarriersInfoKHR structure members
+        case VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR: {  // Covers VUID-VkMemoryRangeBarriersInfoKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkMemoryRangeBarriersInfoKHR);
+                VkMemoryRangeBarriersInfoKHR* structure = (VkMemoryRangeBarriersInfoKHR*)header;
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::memoryRangeBarrierCount),
+                                                pNext_loc.dot(Field::pMemoryRangeBarriers), structure->memoryRangeBarrierCount,
+                                                structure->pMemoryRangeBarriers, VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIER_KHR, false,
+                                                true, "VUID-VkMemoryRangeBarrierKHR-sType-sType",
+                                                "VUID-VkMemoryRangeBarriersInfoKHR-pMemoryRangeBarriers-parameter", kVUIDUndefined);
+
+                if (structure->pMemoryRangeBarriers != nullptr) {
+                    for (uint32_t memoryRangeBarrierIndex = 0; memoryRangeBarrierIndex < structure->memoryRangeBarrierCount;
+                         ++memoryRangeBarrierIndex) {
+                        [[maybe_unused]] const Location pMemoryRangeBarriers_loc =
+                            pNext_loc.dot(Field::pMemoryRangeBarriers, memoryRangeBarrierIndex);
+                        skip |= ValidateStructPnext(
+                            pMemoryRangeBarriers_loc, structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].pNext, 0, nullptr,
+                            GeneratedVulkanHeaderVersion, "VUID-VkMemoryRangeBarrierKHR-pNext-pNext", kVUIDUndefined, true);
+
+                        skip |= ValidateFlags(pMemoryRangeBarriers_loc.dot(Field::srcStageMask),
+                                              vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
+                                              structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].srcStageMask, kOptionalFlags,
+                                              "VUID-VkMemoryRangeBarrierKHR-srcStageMask-parameter", nullptr, false);
+
+                        skip |= ValidateFlags(
+                            pMemoryRangeBarriers_loc.dot(Field::srcAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                            AllVkAccessFlagBits2, structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].srcAccessMask,
+                            kOptionalFlags, "VUID-VkMemoryRangeBarrierKHR-srcAccessMask-parameter", nullptr, false);
+
+                        skip |= ValidateFlags(pMemoryRangeBarriers_loc.dot(Field::dstStageMask),
+                                              vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
+                                              structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].dstStageMask, kOptionalFlags,
+                                              "VUID-VkMemoryRangeBarrierKHR-dstStageMask-parameter", nullptr, false);
+
+                        skip |= ValidateFlags(
+                            pMemoryRangeBarriers_loc.dot(Field::dstAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                            AllVkAccessFlagBits2, structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].dstAccessMask,
+                            kOptionalFlags, "VUID-VkMemoryRangeBarrierKHR-dstAccessMask-parameter", nullptr, false);
+
+                        skip |= ValidateFlags(pMemoryRangeBarriers_loc.dot(Field::addressFlags),
+                                              vvl::FlagBitmask::VkAddressCommandFlagBitsKHR, AllVkAddressCommandFlagBitsKHR,
+                                              structure->pMemoryRangeBarriers[memoryRangeBarrierIndex].addressFlags, kOptionalFlags,
+                                              "VUID-VkMemoryRangeBarrierKHR-addressFlags-parameter", nullptr, false);
+                    }
+                }
+            }
+        } break;
+
         // Validation code for VkSurfaceCapabilitiesPresentId2KHR structure members
         case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR: {  // Covers
                                                                          // VUID-VkSurfaceCapabilitiesPresentId2KHR-sType-sType
@@ -8582,7 +8642,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 261> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 262> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -8642,6 +8702,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV,
@@ -13399,8 +13460,9 @@ bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, c
                                        "VUID-vkCmdPipelineBarrier2-pDependencyInfo-parameter", "VUID-VkDependencyInfo-sType-sType");
     if (pDependencyInfo != nullptr) {
         [[maybe_unused]] const Location pDependencyInfo_loc = loc.dot(Field::pDependencyInfo);
-        constexpr std::array<VkStructureType, 2> allowed_structs_VkDependencyInfo = {VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
-                                                                                     VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+        constexpr std::array<VkStructureType, 3> allowed_structs_VkDependencyInfo = {
+            VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR, VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+            VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
 
         skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, allowed_structs_VkDependencyInfo.size(),
                                             allowed_structs_VkDependencyInfo.data(), GeneratedVulkanHeaderVersion,
@@ -14130,8 +14192,9 @@ bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent 
                                        "VUID-vkCmdSetEvent2-pDependencyInfo-parameter", "VUID-VkDependencyInfo-sType-sType");
     if (pDependencyInfo != nullptr) {
         [[maybe_unused]] const Location pDependencyInfo_loc = loc.dot(Field::pDependencyInfo);
-        constexpr std::array<VkStructureType, 2> allowed_structs_VkDependencyInfo = {VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
-                                                                                     VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+        constexpr std::array<VkStructureType, 3> allowed_structs_VkDependencyInfo = {
+            VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR, VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+            VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
 
         skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, allowed_structs_VkDependencyInfo.size(),
                                             allowed_structs_VkDependencyInfo.data(), GeneratedVulkanHeaderVersion,
@@ -14308,8 +14371,9 @@ bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32
     if (pDependencyInfos != nullptr) {
         for (uint32_t eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
             [[maybe_unused]] const Location pDependencyInfos_loc = loc.dot(Field::pDependencyInfos, eventIndex);
-            constexpr std::array<VkStructureType, 2> allowed_structs_VkDependencyInfo = {
-                VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM, VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+            constexpr std::array<VkStructureType, 3> allowed_structs_VkDependencyInfo = {
+                VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR, VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+                VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
 
             skip |= context.ValidateStructPnext(pDependencyInfos_loc, pDependencyInfos[eventIndex].pNext,
                                                 allowed_structs_VkDependencyInfo.size(), allowed_structs_VkDependencyInfo.data(),
@@ -18730,6 +18794,645 @@ bool Device::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount,
     if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR, true,
+                                   "VUID-vkCmdBindIndexBuffer3KHR-pInfo-parameter", "VUID-VkBindIndexBuffer3InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkBindIndexBuffer3InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkBindIndexBuffer3InfoKHR-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::indexType), vvl::Enum::VkIndexType, pInfo->indexType,
+                                           "VUID-VkBindIndexBuffer3InfoKHR-indexType-parameter");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                     const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::bindingCount), loc.dot(Field::pBindingInfos), bindingCount, pBindingInfos,
+        VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR, true, true, "VUID-VkBindVertexBuffer3InfoKHR-sType-sType",
+        "VUID-vkCmdBindVertexBuffers3KHR-pBindingInfos-parameter", "VUID-vkCmdBindVertexBuffers3KHR-bindingCount-arraylength");
+    if (pBindingInfos != nullptr) {
+        for (uint32_t bindingIndex = 0; bindingIndex < bindingCount; ++bindingIndex) {
+            [[maybe_unused]] const Location pBindingInfos_loc = loc.dot(Field::pBindingInfos, bindingIndex);
+            skip |= context.ValidateStructPnext(pBindingInfos_loc, pBindingInfos[bindingIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkBindVertexBuffer3InfoKHR-pNext-pNext",
+                                                kVUIDUndefined, true);
+
+            skip |= context.ValidateBool32(pBindingInfos_loc.dot(Field::setStride), pBindingInfos[bindingIndex].setStride);
+
+            skip |= context.ValidateFlags(pBindingInfos_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                          AllVkAddressCommandFlagBitsKHR, pBindingInfos[bindingIndex].addressFlags, kOptionalFlags,
+                                          "VUID-VkBindVertexBuffer3InfoKHR-addressFlags-parameter", nullptr, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR, true,
+                                       "VUID-vkCmdDrawIndirect2KHR-pInfo-parameter", "VUID-VkDrawIndirect2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirect2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR, true,
+                                   "VUID-vkCmdDrawIndexedIndirect2KHR-pInfo-parameter", "VUID-VkDrawIndirect2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirect2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR, true,
+                                   "VUID-vkCmdDispatchIndirect2KHR-pInfo-parameter", "VUID-VkDispatchIndirect2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDispatchIndirect2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDispatchIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCopyMemoryInfo), pCopyMemoryInfo, VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_INFO_KHR, false,
+        "VUID-vkCmdCopyMemoryKHR-pCopyMemoryInfo-parameter", "VUID-VkCopyDeviceMemoryInfoKHR-sType-sType");
+    if (pCopyMemoryInfo != nullptr) {
+        [[maybe_unused]] const Location pCopyMemoryInfo_loc = loc.dot(Field::pCopyMemoryInfo);
+        skip |= context.ValidateStructPnext(pCopyMemoryInfo_loc, pCopyMemoryInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkCopyDeviceMemoryInfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateStructTypeArray(
+            pCopyMemoryInfo_loc.dot(Field::regionCount), pCopyMemoryInfo_loc.dot(Field::pRegions), pCopyMemoryInfo->regionCount,
+            pCopyMemoryInfo->pRegions, VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR, true, true,
+            "VUID-VkDeviceMemoryCopyKHR-sType-sType", "VUID-VkCopyDeviceMemoryInfoKHR-pRegions-parameter",
+            "VUID-VkCopyDeviceMemoryInfoKHR-regionCount-arraylength");
+
+        if (pCopyMemoryInfo->pRegions != nullptr) {
+            for (uint32_t regionIndex = 0; regionIndex < pCopyMemoryInfo->regionCount; ++regionIndex) {
+                [[maybe_unused]] const Location pRegions_loc = pCopyMemoryInfo_loc.dot(Field::pRegions, regionIndex);
+                skip |= context.ValidateStructPnext(pRegions_loc, pCopyMemoryInfo->pRegions[regionIndex].pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkDeviceMemoryCopyKHR-pNext-pNext",
+                                                    kVUIDUndefined, true);
+
+                skip |= context.ValidateFlags(pRegions_loc.dot(Field::srcFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                              AllVkAddressCommandFlagBitsKHR, pCopyMemoryInfo->pRegions[regionIndex].srcFlags,
+                                              kOptionalFlags, "VUID-VkDeviceMemoryCopyKHR-srcFlags-parameter", nullptr, false);
+
+                skip |= context.ValidateFlags(pRegions_loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                              AllVkAddressCommandFlagBitsKHR, pCopyMemoryInfo->pRegions[regionIndex].dstFlags,
+                                              kOptionalFlags, "VUID-VkDeviceMemoryCopyKHR-dstFlags-parameter", nullptr, false);
+            }
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCopyMemoryInfo), pCopyMemoryInfo, VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR, false,
+        "VUID-vkCmdCopyMemoryToImageKHR-pCopyMemoryInfo-parameter", "VUID-VkCopyDeviceMemoryImageInfoKHR-sType-sType");
+    if (pCopyMemoryInfo != nullptr) {
+        [[maybe_unused]] const Location pCopyMemoryInfo_loc = loc.dot(Field::pCopyMemoryInfo);
+        skip |= context.ValidateStructPnext(pCopyMemoryInfo_loc, pCopyMemoryInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkCopyDeviceMemoryImageInfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pCopyMemoryInfo_loc.dot(Field::image), pCopyMemoryInfo->image);
+
+        skip |= context.ValidateStructTypeArray(
+            pCopyMemoryInfo_loc.dot(Field::regionCount), pCopyMemoryInfo_loc.dot(Field::pRegions), pCopyMemoryInfo->regionCount,
+            pCopyMemoryInfo->pRegions, VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR, true, true,
+            "VUID-VkDeviceMemoryImageCopyKHR-sType-sType", "VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-parameter",
+            "VUID-VkCopyDeviceMemoryImageInfoKHR-regionCount-arraylength");
+
+        if (pCopyMemoryInfo->pRegions != nullptr) {
+            for (uint32_t regionIndex = 0; regionIndex < pCopyMemoryInfo->regionCount; ++regionIndex) {
+                [[maybe_unused]] const Location pRegions_loc = pCopyMemoryInfo_loc.dot(Field::pRegions, regionIndex);
+                constexpr std::array<VkStructureType, 1> allowed_structs_VkDeviceMemoryImageCopyKHR = {
+                    VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM};
+
+                skip |= context.ValidateStructPnext(
+                    pRegions_loc, pCopyMemoryInfo->pRegions[regionIndex].pNext, allowed_structs_VkDeviceMemoryImageCopyKHR.size(),
+                    allowed_structs_VkDeviceMemoryImageCopyKHR.data(), GeneratedVulkanHeaderVersion,
+                    "VUID-VkDeviceMemoryImageCopyKHR-pNext-pNext", "VUID-VkDeviceMemoryImageCopyKHR-sType-unique", true);
+
+                skip |=
+                    context.ValidateFlags(pRegions_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                          AllVkAddressCommandFlagBitsKHR, pCopyMemoryInfo->pRegions[regionIndex].addressFlags,
+                                          kOptionalFlags, "VUID-VkDeviceMemoryImageCopyKHR-addressFlags-parameter", nullptr, false);
+
+                skip |= context.ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                              AllVkImageAspectFlagBits,
+                                              pCopyMemoryInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags,
+                                              "VUID-VkImageSubresourceLayers-aspectMask-parameter",
+                                              "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask", false);
+
+                skip |= context.ValidateRangedEnum(pRegions_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
+                                                   pCopyMemoryInfo->pRegions[regionIndex].imageLayout,
+                                                   "VUID-VkDeviceMemoryImageCopyKHR-imageLayout-parameter");
+            }
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCopyMemoryInfo), pCopyMemoryInfo, VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR, false,
+        "VUID-vkCmdCopyImageToMemoryKHR-pCopyMemoryInfo-parameter", "VUID-VkCopyDeviceMemoryImageInfoKHR-sType-sType");
+    if (pCopyMemoryInfo != nullptr) {
+        [[maybe_unused]] const Location pCopyMemoryInfo_loc = loc.dot(Field::pCopyMemoryInfo);
+        skip |= context.ValidateStructPnext(pCopyMemoryInfo_loc, pCopyMemoryInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkCopyDeviceMemoryImageInfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pCopyMemoryInfo_loc.dot(Field::image), pCopyMemoryInfo->image);
+
+        skip |= context.ValidateStructTypeArray(
+            pCopyMemoryInfo_loc.dot(Field::regionCount), pCopyMemoryInfo_loc.dot(Field::pRegions), pCopyMemoryInfo->regionCount,
+            pCopyMemoryInfo->pRegions, VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR, true, true,
+            "VUID-VkDeviceMemoryImageCopyKHR-sType-sType", "VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-parameter",
+            "VUID-VkCopyDeviceMemoryImageInfoKHR-regionCount-arraylength");
+
+        if (pCopyMemoryInfo->pRegions != nullptr) {
+            for (uint32_t regionIndex = 0; regionIndex < pCopyMemoryInfo->regionCount; ++regionIndex) {
+                [[maybe_unused]] const Location pRegions_loc = pCopyMemoryInfo_loc.dot(Field::pRegions, regionIndex);
+                constexpr std::array<VkStructureType, 1> allowed_structs_VkDeviceMemoryImageCopyKHR = {
+                    VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM};
+
+                skip |= context.ValidateStructPnext(
+                    pRegions_loc, pCopyMemoryInfo->pRegions[regionIndex].pNext, allowed_structs_VkDeviceMemoryImageCopyKHR.size(),
+                    allowed_structs_VkDeviceMemoryImageCopyKHR.data(), GeneratedVulkanHeaderVersion,
+                    "VUID-VkDeviceMemoryImageCopyKHR-pNext-pNext", "VUID-VkDeviceMemoryImageCopyKHR-sType-unique", true);
+
+                skip |=
+                    context.ValidateFlags(pRegions_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                          AllVkAddressCommandFlagBitsKHR, pCopyMemoryInfo->pRegions[regionIndex].addressFlags,
+                                          kOptionalFlags, "VUID-VkDeviceMemoryImageCopyKHR-addressFlags-parameter", nullptr, false);
+
+                skip |= context.ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                              AllVkImageAspectFlagBits,
+                                              pCopyMemoryInfo->pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags,
+                                              "VUID-VkImageSubresourceLayers-aspectMask-parameter",
+                                              "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask", false);
+
+                skip |= context.ValidateRangedEnum(pRegions_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
+                                                   pCopyMemoryInfo->pRegions[regionIndex].imageLayout,
+                                                   "VUID-VkDeviceMemoryImageCopyKHR-imageLayout-parameter");
+            }
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                               VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pDstRange), pDstRange, "VUID-vkCmdUpdateMemoryKHR-pDstRange-parameter");
+    skip |= context.ValidateFlags(loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                  AllVkAddressCommandFlagBitsKHR, dstFlags, kOptionalFlags,
+                                  "VUID-vkCmdUpdateMemoryKHR-dstFlags-parameter", nullptr, false);
+    skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
+                                  "VUID-vkCmdUpdateMemoryKHR-dataSize-arraylength", "VUID-vkCmdUpdateMemoryKHR-pData-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                             VkAddressCommandFlagsKHR dstFlags, uint32_t data, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pDstRange), pDstRange, "VUID-vkCmdFillMemoryKHR-pDstRange-parameter");
+    skip |= context.ValidateFlags(loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                  AllVkAddressCommandFlagBitsKHR, dstFlags, kOptionalFlags,
+                                  "VUID-vkCmdFillMemoryKHR-dstFlags-parameter", nullptr, false);
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                               uint32_t firstQuery, uint32_t queryCount,
+                                                               const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                               VkAddressCommandFlagsKHR dstFlags,
+                                                               VkQueryResultFlags queryResultFlags,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pDstRange), pDstRange,
+                                            "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-pDstRange-parameter");
+    skip |= context.ValidateFlags(loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                  AllVkAddressCommandFlagBitsKHR, dstFlags, kOptionalFlags,
+                                  "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-parameter", nullptr, false);
+    skip |= context.ValidateFlags(loc.dot(Field::queryResultFlags), vvl::FlagBitmask::VkQueryResultFlagBits,
+                                  AllVkQueryResultFlagBits, queryResultFlags, kOptionalFlags,
+                                  "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryResultFlags-parameter", nullptr, false);
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR, true,
+                                       "VUID-vkCmdDrawIndirectCount2KHR-pInfo-parameter",
+                                       "VUID-VkDrawIndirectCount2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirectCount2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::countAddressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR, true,
+                                       "VUID-vkCmdDrawIndexedIndirectCount2KHR-pInfo-parameter",
+                                       "VUID-VkDrawIndirectCount2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirectCount2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::countAddressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pConditionalRenderingBegin), pConditionalRenderingBegin,
+                                       VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_2_EXT, true,
+                                       "VUID-vkCmdBeginConditionalRendering2EXT-pConditionalRenderingBegin-parameter",
+                                       "VUID-VkConditionalRenderingBeginInfo2EXT-sType-sType");
+    if (pConditionalRenderingBegin != nullptr) {
+        [[maybe_unused]] const Location pConditionalRenderingBegin_loc = loc.dot(Field::pConditionalRenderingBegin);
+        skip |= context.ValidateStructPnext(pConditionalRenderingBegin_loc, pConditionalRenderingBegin->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkConditionalRenderingBeginInfo2EXT-pNext-pNext",
+                                            kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pConditionalRenderingBegin_loc.dot(Field::addressFlags),
+                                      vvl::FlagBitmask::VkAddressCommandFlagBitsKHR, AllVkAddressCommandFlagBitsKHR,
+                                      pConditionalRenderingBegin->addressFlags, kOptionalFlags,
+                                      "VUID-VkConditionalRenderingBeginInfo2EXT-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateFlags(pConditionalRenderingBegin_loc.dot(Field::flags),
+                                      vvl::FlagBitmask::VkConditionalRenderingFlagBitsEXT, AllVkConditionalRenderingFlagBitsEXT,
+                                      pConditionalRenderingBegin->flags, kOptionalFlags,
+                                      "VUID-VkConditionalRenderingBeginInfo2EXT-flags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                uint32_t bindingCount,
+                                                                const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::bindingCount), loc.dot(Field::pBindingInfos), bindingCount,
+                                            pBindingInfos, VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT, true, false,
+                                            "VUID-VkBindTransformFeedbackBuffer2InfoEXT-sType-sType", kVUIDUndefined,
+                                            "VUID-vkCmdBindTransformFeedbackBuffers2EXT-bindingCount-arraylength");
+    if (pBindingInfos != nullptr) {
+        for (uint32_t bindingIndex = 0; bindingIndex < bindingCount; ++bindingIndex) {
+            [[maybe_unused]] const Location pBindingInfos_loc = loc.dot(Field::pBindingInfos, bindingIndex);
+            skip |= context.ValidateStructPnext(pBindingInfos_loc, pBindingInfos[bindingIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion,
+                                                "VUID-VkBindTransformFeedbackBuffer2InfoEXT-pNext-pNext", kVUIDUndefined, true);
+
+            skip |= context.ValidateFlags(pBindingInfos_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                          AllVkAddressCommandFlagBitsKHR, pBindingInfos[bindingIndex].addressFlags, kOptionalFlags,
+                                          "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                          uint32_t counterRangeCount,
+                                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructTypeArray(loc.dot(Field::counterRangeCount), loc.dot(Field::pCounterInfos), counterRangeCount,
+                                        pCounterInfos, VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT, false, false,
+                                        "VUID-VkBindTransformFeedbackBuffer2InfoEXT-sType-sType", kVUIDUndefined, kVUIDUndefined);
+    if (pCounterInfos != nullptr) {
+        for (uint32_t counterRangeIndex = 0; counterRangeIndex < counterRangeCount; ++counterRangeIndex) {
+            [[maybe_unused]] const Location pCounterInfos_loc = loc.dot(Field::pCounterInfos, counterRangeIndex);
+            skip |= context.ValidateStructPnext(pCounterInfos_loc, pCounterInfos[counterRangeIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion,
+                                                "VUID-VkBindTransformFeedbackBuffer2InfoEXT-pNext-pNext", kVUIDUndefined, true);
+
+            skip |=
+                context.ValidateFlags(pCounterInfos_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pCounterInfos[counterRangeIndex].addressFlags, kOptionalFlags,
+                                      "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                        uint32_t counterRangeCount,
+                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructTypeArray(loc.dot(Field::counterRangeCount), loc.dot(Field::pCounterInfos), counterRangeCount,
+                                        pCounterInfos, VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT, false, false,
+                                        "VUID-VkBindTransformFeedbackBuffer2InfoEXT-sType-sType", kVUIDUndefined, kVUIDUndefined);
+    if (pCounterInfos != nullptr) {
+        for (uint32_t counterRangeIndex = 0; counterRangeIndex < counterRangeCount; ++counterRangeIndex) {
+            [[maybe_unused]] const Location pCounterInfos_loc = loc.dot(Field::pCounterInfos, counterRangeIndex);
+            skip |= context.ValidateStructPnext(pCounterInfos_loc, pCounterInfos[counterRangeIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion,
+                                                "VUID-VkBindTransformFeedbackBuffer2InfoEXT-pNext-pNext", kVUIDUndefined, true);
+
+            skip |=
+                context.ValidateFlags(pCounterInfos_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pCounterInfos[counterRangeIndex].addressFlags, kOptionalFlags,
+                                      "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                         uint32_t firstInstance,
+                                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                         uint32_t counterOffset, uint32_t vertexStride,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCounterInfo), pCounterInfo, VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT, true,
+        "VUID-vkCmdDrawIndirectByteCount2EXT-pCounterInfo-parameter", "VUID-VkBindTransformFeedbackBuffer2InfoEXT-sType-sType");
+    if (pCounterInfo != nullptr) {
+        [[maybe_unused]] const Location pCounterInfo_loc = loc.dot(Field::pCounterInfo);
+        skip |= context.ValidateStructPnext(pCounterInfo_loc, pCounterInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkBindTransformFeedbackBuffer2InfoEXT-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pCounterInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pCounterInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR, true,
+                                       "VUID-vkCmdDrawMeshTasksIndirect2EXT-pInfo-parameter",
+                                       "VUID-VkDrawIndirect2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirect2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                              const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR, true,
+                                       "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-pInfo-parameter",
+                                       "VUID-VkDrawIndirectCount2InfoKHR-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDrawIndirectCount2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::countAddressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
+                                      "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
+                                                      const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_MEMORY_MARKER_INFO_AMD, true,
+                                   "VUID-vkCmdWriteMarkerToMemoryAMD-pInfo-parameter", "VUID-VkMemoryMarkerInfoAMD-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkMemoryMarkerInfoAMD-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pInfo->dstFlags, kOptionalFlags,
+                                      "VUID-VkMemoryMarkerInfoAMD-dstFlags-parameter", nullptr, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
+                                                            const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkAccelerationStructureKHR* pAccelerationStructure,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_address_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_address_commands});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateAccelerationStructure2KHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_2_KHR, true,
+        "VUID-vkCreateAccelerationStructure2KHR-pCreateInfo-parameter", "VUID-VkAccelerationStructureCreateInfo2KHR-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        constexpr std::array<VkStructureType, 1> allowed_structs_VkAccelerationStructureCreateInfo2KHR = {
+            VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext,
+                                            allowed_structs_VkAccelerationStructureCreateInfo2KHR.size(),
+                                            allowed_structs_VkAccelerationStructureCreateInfo2KHR.data(),
+                                            GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCreateInfo2KHR-pNext-pNext",
+                                            "VUID-VkAccelerationStructureCreateInfo2KHR-sType-unique", true);
+
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::createFlags),
+                                      vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR,
+                                      AllVkAccelerationStructureCreateFlagBitsKHR, pCreateInfo->createFlags, kOptionalFlags,
+                                      "VUID-VkAccelerationStructureCreateInfo2KHR-createFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::addressFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
+                                      AllVkAddressCommandFlagBitsKHR, pCreateInfo->addressFlags, kOptionalFlags,
+                                      "VUID-VkAccelerationStructureCreateInfo2KHR-addressFlags-parameter", nullptr, false);
+
+        skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::type), vvl::Enum::VkAccelerationStructureTypeKHR,
+                                           pCreateInfo->type, "VUID-VkAccelerationStructureCreateInfo2KHR-type-parameter");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pAccelerationStructure), pAccelerationStructure,
+                                            "VUID-vkCreateAccelerationStructure2KHR-pAccelerationStructure-parameter");
     return skip;
 }
 

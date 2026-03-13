@@ -227,6 +227,36 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
     return false;
 }
 
+bool Device::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                            VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdUpdateBuffer is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                          VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdFillBuffer is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -270,6 +300,23 @@ bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkP
                    "vkCmdWriteTimestamp is a legacy command and this VkDevice enabled the VK_KHR_synchronization2 extension which "
                    "contains vkCmdWriteTimestamp2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#deprecation-sync2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                    uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                    VkDeviceSize stride, VkQueryResultFlags flags,
+                                                    const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdCopyQueryPoolResults is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -432,6 +479,21 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
     return false;
 }
 
+bool Device::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDispatchIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                         const ErrorObject& error_obj) const {
     static bool reported = false;
@@ -581,6 +643,36 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
     return false;
 }
 
+bool Device::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                                            uint32_t stride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawIndexedIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                VkSubpassContents contents, const ErrorObject& error_obj) const {
     static bool reported = false;
@@ -639,6 +731,38 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
                    "vkCmdEndRenderPass is a legacy command and this VkDevice enabled the VK_KHR_create_renderpass2 extension which "
                    "contains vkCmdEndRenderPass2KHR that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                 uint32_t stride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                        uint32_t stride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawIndexedIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -728,6 +852,53 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
     return false;
 }
 
+bool Device::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
+                                           const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdCopyBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                  const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
+                                                  const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdCopyBufferToImage2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                  const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
+                                                  const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdCopyImageToBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
 bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                                    const ErrorObject& error_obj) const {
@@ -755,6 +926,21 @@ bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, con
                    "vkCmdPushConstants2 is a legacy command and this VkDevice enabled the VK_EXT_descriptor_heap extension which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                VkDeviceSize size, VkIndexType indexType, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdBindIndexBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -788,6 +974,125 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
             "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT is a legacy command and this VkDevice enabled the "
             "VK_EXT_descriptor_heap extension which contains the new feature to replace it.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                               uint32_t bindingCount, const VkBuffer* pBuffers,
+                                                               const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
+                                                               const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdBindTransformFeedbackBuffersEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                         uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                         const VkDeviceSize* pCounterBufferOffsets,
+                                                         const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdBeginTransformFeedbackEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                       uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                       const VkDeviceSize* pCounterBufferOffsets,
+                                                       const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdEndTransformFeedbackEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                        uint32_t firstInstance, VkBuffer counterBuffer,
+                                                        VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                        uint32_t vertexStride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawIndirectByteCountEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
+                                                            const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
+                                                            const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdBeginConditionalRenderingEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                                     VkDeviceSize dstOffset, uint32_t marker, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdWriteBufferMarker2AMD is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                     const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
+                                                     const VkDeviceSize* pSizes, const VkDeviceSize* pStrides,
+                                                     const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdBindVertexBuffers2EXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -970,6 +1275,57 @@ bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataE
             "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT is a legacy command and this VkDevice enabled the "
             "VK_EXT_descriptor_heap extension which contains the new feature to replace it.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-descriptor-sets");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkAccelerationStructureKHR* pAccelerationStructure,
+                                                           const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCreateAccelerationStructureKHR is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
+                   "vkCmdDrawMeshTasksIndirectEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+    }
+    return false;
+}
+
+bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                             uint32_t maxDrawCount, uint32_t stride,
+                                                             const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
+        reported = true;
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawMeshTasksIndirectCountEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
+            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }

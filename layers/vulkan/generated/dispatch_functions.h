@@ -2198,6 +2198,141 @@ static inline VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
     return dispatch->QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
 }
 
+static inline void DispatchCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindIndexBuffer3KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                    const VkBindVertexBuffer3InfoKHR* pBindingInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindVertexBuffers3KHR(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+static inline void DispatchCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawIndirect2KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawIndexedIndirect2KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatchIndirect2KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyMemoryKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+static inline void DispatchCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyMemoryToImageKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+static inline void DispatchCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyImageToMemoryKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+static inline void DispatchCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                              VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdUpdateMemoryKHR(commandBuffer, pDstRange, dstFlags, dataSize, pData);
+}
+
+static inline void DispatchCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                            VkAddressCommandFlagsKHR dstFlags, uint32_t data) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdFillMemoryKHR(commandBuffer, pDstRange, dstFlags, data);
+}
+
+static inline void DispatchCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                              uint32_t firstQuery, uint32_t queryCount,
+                                                              const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                              VkAddressCommandFlagsKHR dstFlags,
+                                                              VkQueryResultFlags queryResultFlags) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount, pDstRange, dstFlags,
+                                                 queryResultFlags);
+}
+
+static inline void DispatchCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                           const VkDrawIndirectCount2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                            const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginConditionalRendering2EXT(commandBuffer, pConditionalRenderingBegin);
+}
+
+static inline void DispatchCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                               uint32_t bindingCount,
+                                                               const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindTransformFeedbackBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+static inline void DispatchCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                         uint32_t counterRangeCount,
+                                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+static inline void DispatchCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                       uint32_t counterRangeCount,
+                                                       const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+static inline void DispatchCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                        uint32_t firstInstance,
+                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                        uint32_t counterOffset, uint32_t vertexStride) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawIndirectByteCount2EXT(commandBuffer, instanceCount, firstInstance, pCounterInfo, counterOffset, vertexStride);
+}
+
+static inline void DispatchCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkDrawIndirectCount2InfoKHR* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo);
+}
+
+static inline void DispatchCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdWriteMarkerToMemoryAMD(commandBuffer, pInfo);
+}
+
+static inline VkResult DispatchCreateAccelerationStructure2KHR(VkDevice device,
+                                                               const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkAccelerationStructureKHR* pAccelerationStructure) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
+}
+
 static inline void DispatchCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);

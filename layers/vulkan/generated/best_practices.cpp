@@ -972,6 +972,14 @@ void BestPractices::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submit
     PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
+void BestPractices::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
+                                                                  const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                                  const VkAllocationCallbacks* pAllocator,
+                                                                  VkAccelerationStructureKHR* pAccelerationStructure,
+                                                                  const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkPresentWait2InfoKHR* pPresentWait2Info,
                                                      const RecordObject& record_obj) {

@@ -1195,6 +1195,20 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 }
             }
             return {};
+        case vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR:
+            if (value & (VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ext_descriptor_buffer)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ext_descriptor_buffer))) {
+                    return {vvl::Extension::_VK_EXT_descriptor_buffer};
+                }
+            }
+            if (value & (VK_ACCELERATION_STRUCTURE_CREATE_MOTION_BIT_NV)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_nv_ray_tracing_motion_blur)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_nv_ray_tracing_motion_blur))) {
+                    return {vvl::Extension::_VK_NV_ray_tracing_motion_blur};
+                }
+            }
+            return {};
         case vvl::FlagBitmask::VkDebugUtilsMessageTypeFlagBitsEXT:
             if (value & (VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_device_address_binding_report)) ||
@@ -1271,20 +1285,6 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_shader_64bit_indexing)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_ext_shader_64bit_indexing))) {
                     return {vvl::Extension::_VK_EXT_shader_64bit_indexing};
-                }
-            }
-            return {};
-        case vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR:
-            if (value & (VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-                if ((instance_function && !IsExtSupported(extensions.vk_ext_descriptor_buffer)) ||
-                    (!instance_function && !IsExtEnabled(extensions.vk_ext_descriptor_buffer))) {
-                    return {vvl::Extension::_VK_EXT_descriptor_buffer};
-                }
-            }
-            if (value & (VK_ACCELERATION_STRUCTURE_CREATE_MOTION_BIT_NV)) {
-                if ((instance_function && !IsExtSupported(extensions.vk_nv_ray_tracing_motion_blur)) ||
-                    (!instance_function && !IsExtEnabled(extensions.vk_nv_ray_tracing_motion_blur))) {
-                    return {vvl::Extension::_VK_NV_ray_tracing_motion_blur};
                 }
             }
             return {};
@@ -1678,6 +1678,12 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkVideoEncodeUsageFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeContentFlagBitsKHR:
             return string_VkVideoEncodeContentFlagsKHR(value);
+        case vvl::FlagBitmask::VkAddressCommandFlagBitsKHR:
+            return string_VkAddressCommandFlagsKHR(value);
+        case vvl::FlagBitmask::VkConditionalRenderingFlagBitsEXT:
+            return string_VkConditionalRenderingFlagsEXT(value);
+        case vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR:
+            return string_VkAccelerationStructureCreateFlagsKHR(value);
         case vvl::FlagBitmask::VkPresentScalingFlagBitsKHR:
             return string_VkPresentScalingFlagsKHR(value);
         case vvl::FlagBitmask::VkPresentGravityFlagBitsKHR:
@@ -1696,8 +1702,6 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkDebugReportFlagsEXT(value);
         case vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBitsNV:
             return string_VkExternalMemoryHandleTypeFlagsNV(value);
-        case vvl::FlagBitmask::VkConditionalRenderingFlagBitsEXT:
-            return string_VkConditionalRenderingFlagsEXT(value);
         case vvl::FlagBitmask::VkSurfaceCounterFlagBitsEXT:
             return string_VkSurfaceCounterFlagsEXT(value);
         case vvl::FlagBitmask::VkDebugUtilsMessageSeverityFlagBitsEXT:
@@ -1774,8 +1778,6 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkIndirectCommandsInputModeFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsEXT:
             return string_VkIndirectCommandsLayoutUsageFlagsEXT(value);
-        case vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR:
-            return string_VkAccelerationStructureCreateFlagsKHR(value);
 
         default:
             std::ostringstream ss;

@@ -985,6 +985,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR: {
+                VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *>(current);
+                if (enabling->deviceAddressCommands && !supported.deviceAddressCommands) {
+                    ss << "VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR::deviceAddressCommands is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV: {
                 VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

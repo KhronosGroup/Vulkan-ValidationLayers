@@ -59,6 +59,7 @@ const char* String(Func func) {
     {"vkBuildAccelerationStructuresKHR", 33},
     {"vkBuildMicromapsEXT", 20},
     {"vkClearShaderInstrumentationMetricsARM", 39},
+    {"vkCmdBeginConditionalRendering2EXT", 35},
     {"vkCmdBeginConditionalRenderingEXT", 34},
     {"vkCmdBeginCustomResolveEXT", 27},
     {"vkCmdBeginDebugUtilsLabelEXT", 29},
@@ -71,6 +72,7 @@ const char* String(Func func) {
     {"vkCmdBeginRendering", 20},
     {"vkCmdBeginRenderingKHR", 23},
     {"vkCmdBeginShaderInstrumentationARM", 35},
+    {"vkCmdBeginTransformFeedback2EXT", 32},
     {"vkCmdBeginTransformFeedbackEXT", 31},
     {"vkCmdBeginVideoCodingKHR", 25},
     {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", 46},
@@ -82,6 +84,7 @@ const char* String(Func func) {
     {"vkCmdBindIndexBuffer", 21},
     {"vkCmdBindIndexBuffer2", 22},
     {"vkCmdBindIndexBuffer2KHR", 25},
+    {"vkCmdBindIndexBuffer3KHR", 25},
     {"vkCmdBindInvocationMaskHUAWEI", 30},
     {"vkCmdBindPipeline", 18},
     {"vkCmdBindPipelineShaderGroupNV", 31},
@@ -90,10 +93,12 @@ const char* String(Func func) {
     {"vkCmdBindShadersEXT", 20},
     {"vkCmdBindShadingRateImageNV", 28},
     {"vkCmdBindTileMemoryQCOM", 24},
+    {"vkCmdBindTransformFeedbackBuffers2EXT", 38},
     {"vkCmdBindTransformFeedbackBuffersEXT", 37},
     {"vkCmdBindVertexBuffers", 23},
     {"vkCmdBindVertexBuffers2", 24},
     {"vkCmdBindVertexBuffers2EXT", 27},
+    {"vkCmdBindVertexBuffers3KHR", 27},
     {"vkCmdBlitImage", 15},
     {"vkCmdBlitImage2", 16},
     {"vkCmdBlitImage2KHR", 19},
@@ -123,15 +128,19 @@ const char* String(Func func) {
     {"vkCmdCopyImageToBuffer", 23},
     {"vkCmdCopyImageToBuffer2", 24},
     {"vkCmdCopyImageToBuffer2KHR", 27},
+    {"vkCmdCopyImageToMemoryKHR", 26},
     {"vkCmdCopyMemoryIndirectKHR", 27},
     {"vkCmdCopyMemoryIndirectNV", 26},
+    {"vkCmdCopyMemoryKHR", 19},
     {"vkCmdCopyMemoryToAccelerationStructureKHR", 42},
     {"vkCmdCopyMemoryToImageIndirectKHR", 34},
     {"vkCmdCopyMemoryToImageIndirectNV", 33},
+    {"vkCmdCopyMemoryToImageKHR", 26},
     {"vkCmdCopyMemoryToMicromapEXT", 29},
     {"vkCmdCopyMicromapEXT", 21},
     {"vkCmdCopyMicromapToMemoryEXT", 29},
     {"vkCmdCopyQueryPoolResults", 26},
+    {"vkCmdCopyQueryPoolResultsToMemoryKHR", 37},
     {"vkCmdCopyTensorARM", 19},
     {"vkCmdCuLaunchKernelNVX", 23},
     {"vkCmdCudaLaunchKernelNV", 24},
@@ -151,21 +160,29 @@ const char* String(Func func) {
     {"vkCmdDispatchGraphIndirectAMDX", 31},
     {"vkCmdDispatchGraphIndirectCountAMDX", 36},
     {"vkCmdDispatchIndirect", 22},
+    {"vkCmdDispatchIndirect2KHR", 26},
     {"vkCmdDispatchTileQCOM", 22},
     {"vkCmdDraw", 10},
     {"vkCmdDrawClusterHUAWEI", 23},
     {"vkCmdDrawClusterIndirectHUAWEI", 31},
     {"vkCmdDrawIndexed", 17},
     {"vkCmdDrawIndexedIndirect", 25},
+    {"vkCmdDrawIndexedIndirect2KHR", 29},
     {"vkCmdDrawIndexedIndirectCount", 30},
+    {"vkCmdDrawIndexedIndirectCount2KHR", 34},
     {"vkCmdDrawIndexedIndirectCountAMD", 33},
     {"vkCmdDrawIndexedIndirectCountKHR", 33},
     {"vkCmdDrawIndirect", 18},
+    {"vkCmdDrawIndirect2KHR", 22},
+    {"vkCmdDrawIndirectByteCount2EXT", 31},
     {"vkCmdDrawIndirectByteCountEXT", 30},
     {"vkCmdDrawIndirectCount", 23},
+    {"vkCmdDrawIndirectCount2KHR", 27},
     {"vkCmdDrawIndirectCountAMD", 26},
     {"vkCmdDrawIndirectCountKHR", 26},
     {"vkCmdDrawMeshTasksEXT", 22},
+    {"vkCmdDrawMeshTasksIndirect2EXT", 31},
+    {"vkCmdDrawMeshTasksIndirectCount2EXT", 36},
     {"vkCmdDrawMeshTasksIndirectCountEXT", 35},
     {"vkCmdDrawMeshTasksIndirectCountNV", 34},
     {"vkCmdDrawMeshTasksIndirectEXT", 30},
@@ -187,12 +204,14 @@ const char* String(Func func) {
     {"vkCmdEndRendering2KHR", 22},
     {"vkCmdEndRenderingKHR", 21},
     {"vkCmdEndShaderInstrumentationARM", 33},
+    {"vkCmdEndTransformFeedback2EXT", 30},
     {"vkCmdEndTransformFeedbackEXT", 29},
     {"vkCmdEndVideoCodingKHR", 23},
     {"vkCmdExecuteCommands", 21},
     {"vkCmdExecuteGeneratedCommandsEXT", 33},
     {"vkCmdExecuteGeneratedCommandsNV", 32},
     {"vkCmdFillBuffer", 16},
+    {"vkCmdFillMemoryKHR", 19},
     {"vkCmdInitializeGraphScratchMemoryAMDX", 38},
     {"vkCmdInsertDebugUtilsLabelEXT", 30},
     {"vkCmdNextSubpass", 17},
@@ -335,6 +354,7 @@ const char* String(Func func) {
     {"vkCmdTraceRaysKHR", 18},
     {"vkCmdTraceRaysNV", 17},
     {"vkCmdUpdateBuffer", 18},
+    {"vkCmdUpdateMemoryKHR", 21},
     {"vkCmdUpdatePipelineIndirectBufferNV", 36},
     {"vkCmdWaitEvents", 16},
     {"vkCmdWaitEvents2", 17},
@@ -343,6 +363,7 @@ const char* String(Func func) {
     {"vkCmdWriteAccelerationStructuresPropertiesNV", 45},
     {"vkCmdWriteBufferMarker2AMD", 27},
     {"vkCmdWriteBufferMarkerAMD", 26},
+    {"vkCmdWriteMarkerToMemoryAMD", 28},
     {"vkCmdWriteMicromapsPropertiesEXT", 33},
     {"vkCmdWriteTimestamp", 20},
     {"vkCmdWriteTimestamp2", 21},
@@ -361,6 +382,7 @@ const char* String(Func func) {
     {"vkCopyMemoryToMicromapEXT", 26},
     {"vkCopyMicromapEXT", 18},
     {"vkCopyMicromapToMemoryEXT", 26},
+    {"vkCreateAccelerationStructure2KHR", 34},
     {"vkCreateAccelerationStructureKHR", 33},
     {"vkCreateAccelerationStructureNV", 32},
     {"vkCreateAndroidSurfaceKHR", 26},
@@ -837,6 +859,7 @@ const char* String(Struct structure) {
     {"VkAccelerationStructureBuildRangeInfoKHR", 41},
     {"VkAccelerationStructureBuildSizesInfoKHR", 41},
     {"VkAccelerationStructureCaptureDescriptorDataInfoEXT", 52},
+    {"VkAccelerationStructureCreateInfo2KHR", 38},
     {"VkAccelerationStructureCreateInfoKHR", 37},
     {"VkAccelerationStructureCreateInfoNV", 36},
     {"VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX", 60},
@@ -896,6 +919,7 @@ const char* String(Struct structure) {
     {"VkBindImageMemoryInfo", 22},
     {"VkBindImageMemorySwapchainInfoKHR", 34},
     {"VkBindImagePlaneMemoryInfo", 27},
+    {"VkBindIndexBuffer3InfoKHR", 26},
     {"VkBindIndexBufferIndirectCommandEXT", 36},
     {"VkBindIndexBufferIndirectCommandNV", 35},
     {"VkBindMemoryStatus", 19},
@@ -903,6 +927,8 @@ const char* String(Struct structure) {
     {"VkBindShaderGroupIndirectCommandNV", 35},
     {"VkBindSparseInfo", 17},
     {"VkBindTensorMemoryInfoARM", 26},
+    {"VkBindTransformFeedbackBuffer2InfoEXT", 38},
+    {"VkBindVertexBuffer3InfoKHR", 27},
     {"VkBindVertexBufferIndirectCommandEXT", 37},
     {"VkBindVertexBufferIndirectCommandNV", 36},
     {"VkBindVideoSessionMemoryInfoKHR", 32},
@@ -969,6 +995,7 @@ const char* String(Struct structure) {
     {"VkComputeOccupancyPriorityParametersNV", 39},
     {"VkComputePipelineCreateInfo", 28},
     {"VkComputePipelineIndirectBufferInfoNV", 38},
+    {"VkConditionalRenderingBeginInfo2EXT", 36},
     {"VkConditionalRenderingBeginInfoEXT", 35},
     {"VkConformanceVersion", 21},
     {"VkConvertCooperativeVectorMatrixInfoNV", 39},
@@ -982,6 +1009,8 @@ const char* String(Struct structure) {
     {"VkCopyBufferToImageInfo2", 25},
     {"VkCopyCommandTransformInfoQCOM", 31},
     {"VkCopyDescriptorSet", 20},
+    {"VkCopyDeviceMemoryImageInfoKHR", 31},
+    {"VkCopyDeviceMemoryInfoKHR", 26},
     {"VkCopyImageInfo2", 17},
     {"VkCopyImageToBufferInfo2", 25},
     {"VkCopyImageToImageInfo", 23},
@@ -1072,7 +1101,7 @@ const char* String(Struct structure) {
     {"VkDescriptorUpdateTemplateCreateInfo", 37},
     {"VkDescriptorUpdateTemplateEntry", 32},
     {"VkDeviceAddressBindingCallbackDataEXT", 38},
-    {"VkDeviceAddressRangeEXT", 24},
+    {"VkDeviceAddressRangeKHR", 24},
     {"VkDeviceBufferMemoryRequirements", 33},
     {"VkDeviceCreateInfo", 19},
     {"VkDeviceDeviceMemoryReportCreateInfoEXT", 40},
@@ -1093,6 +1122,8 @@ const char* String(Struct structure) {
     {"VkDeviceGroupSwapchainCreateInfoKHR", 36},
     {"VkDeviceImageMemoryRequirements", 32},
     {"VkDeviceImageSubresourceInfo", 29},
+    {"VkDeviceMemoryCopyKHR", 22},
+    {"VkDeviceMemoryImageCopyKHR", 27},
     {"VkDeviceMemoryOpaqueCaptureAddressInfo", 39},
     {"VkDeviceMemoryOverallocationCreateInfoAMD", 42},
     {"VkDeviceMemoryReportCallbackDataEXT", 36},
@@ -1111,6 +1142,7 @@ const char* String(Struct structure) {
     {"VkDirectFBSurfaceCreateInfoEXT", 31},
     {"VkDispatchGraphCountInfoAMDX", 29},
     {"VkDispatchGraphInfoAMDX", 24},
+    {"VkDispatchIndirect2InfoKHR", 27},
     {"VkDispatchIndirectCommand", 26},
     {"VkDispatchTileInfoQCOM", 23},
     {"VkDisplayEventInfoEXT", 22},
@@ -1132,7 +1164,9 @@ const char* String(Struct structure) {
     {"VkDisplaySurfaceCreateInfoKHR", 30},
     {"VkDisplaySurfaceStereoCreateInfoNV", 35},
     {"VkDrawIndexedIndirectCommand", 29},
+    {"VkDrawIndirect2InfoKHR", 23},
     {"VkDrawIndirectCommand", 22},
+    {"VkDrawIndirectCount2InfoKHR", 28},
     {"VkDrawIndirectCountIndirectCommandEXT", 38},
     {"VkDrawMeshTasksIndirectCommandEXT", 34},
     {"VkDrawMeshTasksIndirectCommandNV", 33},
@@ -1327,9 +1361,12 @@ const char* String(Struct structure) {
     {"VkMemoryHostPointerPropertiesEXT", 33},
     {"VkMemoryMapInfo", 16},
     {"VkMemoryMapPlacedInfoEXT", 25},
+    {"VkMemoryMarkerInfoAMD", 22},
     {"VkMemoryMetalHandlePropertiesEXT", 33},
     {"VkMemoryOpaqueCaptureAddressAllocateInfo", 41},
     {"VkMemoryPriorityAllocateInfoEXT", 32},
+    {"VkMemoryRangeBarrierKHR", 24},
+    {"VkMemoryRangeBarriersInfoKHR", 29},
     {"VkMemoryRequirements", 21},
     {"VkMemoryRequirements2", 22},
     {"VkMemoryToImageCopy", 20},
@@ -1462,6 +1499,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDescriptorIndexingProperties", 45},
     {"VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV", 55},
     {"VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE", 54},
+    {"VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR", 49},
     {"VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV", 57},
     {"VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT", 51},
     {"VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV", 50},
@@ -2230,6 +2268,8 @@ const char* String(Field field) {
     {"activeComputeUnitCount", 23},
     {"actualPresentTime", 18},
     {"address", 8},
+    {"addressFlags", 13},
+    {"addressImageHeight", 19},
     {"addressInfoCount", 17},
     {"addressModeU", 13},
     {"addressModeV", 13},
@@ -2238,6 +2278,7 @@ const char* String(Field field) {
     {"addressPrecision", 17},
     {"addressRange", 13},
     {"addressResolutionFlags", 23},
+    {"addressRowLength", 17},
     {"addressType", 12},
     {"advancedBlendAllOperations", 27},
     {"advancedBlendCoherentOperations", 32},
@@ -2484,6 +2525,8 @@ const char* String(Field field) {
     {"costFormat", 11},
     {"costSupported", 14},
     {"count", 6},
+    {"countAddressFlags", 18},
+    {"countAddressRange", 18},
     {"countBuffer", 12},
     {"countBufferOffset", 18},
     {"countInfo", 10},
@@ -2496,6 +2539,7 @@ const char* String(Field field) {
     {"counterIndexCount", 18},
     {"counterOffset", 14},
     {"counterPassIndex", 17},
+    {"counterRangeCount", 18},
     {"coverageModulationMode", 23},
     {"coverageModulationTableCount", 29},
     {"coverageModulationTableEnable", 30},
@@ -2619,6 +2663,7 @@ const char* String(Field field) {
     {"desiredPresentTime", 19},
     {"device", 7},
     {"deviceAddress", 14},
+    {"deviceAddressCommands", 22},
     {"deviceCoherentMemory", 21},
     {"deviceEvent", 12},
     {"deviceFault", 12},
@@ -2712,6 +2757,7 @@ const char* String(Field field) {
     {"dstComponentType", 17},
     {"dstCopyFlags", 13},
     {"dstData", 8},
+    {"dstFlags", 9},
     {"dstImage", 9},
     {"dstImageLayout", 15},
     {"dstImplicitData", 16},
@@ -2722,6 +2768,7 @@ const char* String(Field field) {
     {"dstPictureResource", 19},
     {"dstPremultiplied", 17},
     {"dstQueueFamilyIndex", 20},
+    {"dstRange", 9},
     {"dstRect", 8},
     {"dstSet", 7},
     {"dstSizesArray", 14},
@@ -2853,6 +2900,7 @@ const char* String(Field field) {
     {"firstAttachment", 16},
     {"firstBinding", 13},
     {"firstCounterBuffer", 19},
+    {"firstCounterRange", 18},
     {"firstDiscardRectangle", 22},
     {"firstDrawTimestamp", 19},
     {"firstExclusiveScissor", 22},
@@ -3584,6 +3632,7 @@ const char* String(Field field) {
     {"memoryOffset", 13},
     {"memoryPriority", 15},
     {"memoryProperties", 17},
+    {"memoryRangeBarrierCount", 24},
     {"memoryRangeCount", 17},
     {"memoryRequirements", 19},
     {"memoryRowLength", 16},
@@ -3869,6 +3918,7 @@ const char* String(Field field) {
     {"pCopyImageToImageInfo", 22},
     {"pCopyImageToMemoryInfo", 23},
     {"pCopyMemoryIndirectInfo", 24},
+    {"pCopyMemoryInfo", 16},
     {"pCopyMemoryToImageIndirectInfo", 31},
     {"pCopyMemoryToImageInfo", 23},
     {"pCopySrcLayouts", 16},
@@ -3882,6 +3932,8 @@ const char* String(Field field) {
     {"pCounterCount", 14},
     {"pCounterDescriptions", 21},
     {"pCounterIndices", 16},
+    {"pCounterInfo", 13},
+    {"pCounterInfos", 14},
     {"pCounterValue", 14},
     {"pCounters", 10},
     {"pCoverageModulationTable", 25},
@@ -3942,6 +3994,7 @@ const char* String(Field field) {
     {"pDrmFormatModifierProperties", 29},
     {"pDrmFormatModifiers", 20},
     {"pDstOffset", 11},
+    {"pDstRange", 10},
     {"pDstSize", 9},
     {"pDynamicMetadata", 17},
     {"pDynamicOffsets", 16},
@@ -4079,6 +4132,7 @@ const char* String(Field field) {
     {"pMemoryMapInfo", 15},
     {"pMemoryMetalHandleProperties", 29},
     {"pMemoryProperties", 18},
+    {"pMemoryRangeBarriers", 21},
     {"pMemoryRanges", 14},
     {"pMemoryRequirements", 20},
     {"pMemoryRequirementsCount", 25},
@@ -4620,6 +4674,7 @@ const char* String(Field field) {
     {"queryCount", 11},
     {"queryFlags", 11},
     {"queryPool", 10},
+    {"queryResultFlags", 17},
     {"queryResultStatusSupport", 25},
     {"queryType", 10},
     {"queue", 6},
@@ -4831,6 +4886,7 @@ const char* String(Field field) {
     {"set", 4},
     {"setCount", 9},
     {"setLayoutCount", 15},
+    {"setStride", 10},
     {"settingCount", 13},
     {"sgprAllocationGranularity", 26},
     {"sgprsPerSimd", 13},
@@ -5057,6 +5113,7 @@ const char* String(Field field) {
     {"srcComponentType", 17},
     {"srcCopyFlags", 13},
     {"srcData", 8},
+    {"srcFlags", 9},
     {"srcImage", 9},
     {"srcImageLayout", 15},
     {"srcInfos", 9},
@@ -5068,6 +5125,7 @@ const char* String(Field field) {
     {"srcPictureResource", 19},
     {"srcPremultiplied", 17},
     {"srcQueueFamilyIndex", 20},
+    {"srcRange", 9},
     {"srcRect", 8},
     {"srcSet", 7},
     {"srcSize", 8},
@@ -5625,6 +5683,7 @@ const char* String(FlagBitmask value) {
     {"VkAccessFlagBits2", 18},
     {"VkAccessFlagBits3KHR", 21},
     {"VkAcquireProfilingLockFlagBitsKHR", 34},
+    {"VkAddressCommandFlagBitsKHR", 28},
     {"VkAddressCopyFlagBitsKHR", 25},
     {"VkAttachmentDescriptionFlagBits", 32},
     {"VkBufferCreateFlagBits", 23},
@@ -6013,6 +6072,7 @@ const char* String(Extension extension) {
     {"VK_KHR_depth_clamp_zero_one", 28},
     {"VK_KHR_depth_stencil_resolve", 29},
     {"VK_KHR_descriptor_update_template", 34},
+    {"VK_KHR_device_address_commands", 31},
     {"VK_KHR_device_group", 20},
     {"VK_KHR_device_group_creation", 29},
     {"VK_KHR_display", 15},
@@ -6350,6 +6410,7 @@ bool IsFieldPointer(Field field) {
     case Field::pCopyImageToImageInfo:
     case Field::pCopyImageToMemoryInfo:
     case Field::pCopyMemoryIndirectInfo:
+    case Field::pCopyMemoryInfo:
     case Field::pCopyMemoryToImageIndirectInfo:
     case Field::pCopyMemoryToImageInfo:
     case Field::pCopySrcLayouts:
@@ -6363,6 +6424,8 @@ bool IsFieldPointer(Field field) {
     case Field::pCounterCount:
     case Field::pCounterDescriptions:
     case Field::pCounterIndices:
+    case Field::pCounterInfo:
+    case Field::pCounterInfos:
     case Field::pCounterValue:
     case Field::pCounters:
     case Field::pCoverageModulationTable:
@@ -6423,6 +6486,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDrmFormatModifierProperties:
     case Field::pDrmFormatModifiers:
     case Field::pDstOffset:
+    case Field::pDstRange:
     case Field::pDstSize:
     case Field::pDynamicMetadata:
     case Field::pDynamicOffsets:
@@ -6560,6 +6624,7 @@ bool IsFieldPointer(Field field) {
     case Field::pMemoryMapInfo:
     case Field::pMemoryMetalHandleProperties:
     case Field::pMemoryProperties:
+    case Field::pMemoryRangeBarriers:
     case Field::pMemoryRanges:
     case Field::pMemoryRequirements:
     case Field::pMemoryRequirementsCount:
@@ -7697,6 +7762,38 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkVideoEncodeSessionParametersGetInfoKHR;
     case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_FEEDBACK_INFO_KHR:
        return Struct::VkVideoEncodeSessionParametersFeedbackInfoKHR;
+    case VK_STRUCTURE_TYPE_DEVICE_MEMORY_COPY_KHR:
+       return Struct::VkDeviceMemoryCopyKHR;
+    case VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_INFO_KHR:
+       return Struct::VkCopyDeviceMemoryInfoKHR;
+    case VK_STRUCTURE_TYPE_DEVICE_MEMORY_IMAGE_COPY_KHR:
+       return Struct::VkDeviceMemoryImageCopyKHR;
+    case VK_STRUCTURE_TYPE_COPY_DEVICE_MEMORY_IMAGE_INFO_KHR:
+       return Struct::VkCopyDeviceMemoryImageInfoKHR;
+    case VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIER_KHR:
+       return Struct::VkMemoryRangeBarrierKHR;
+    case VK_STRUCTURE_TYPE_MEMORY_RANGE_BARRIERS_INFO_KHR:
+       return Struct::VkMemoryRangeBarriersInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR;
+    case VK_STRUCTURE_TYPE_BIND_INDEX_BUFFER_3_INFO_KHR:
+       return Struct::VkBindIndexBuffer3InfoKHR;
+    case VK_STRUCTURE_TYPE_BIND_VERTEX_BUFFER_3_INFO_KHR:
+       return Struct::VkBindVertexBuffer3InfoKHR;
+    case VK_STRUCTURE_TYPE_DRAW_INDIRECT_2_INFO_KHR:
+       return Struct::VkDrawIndirect2InfoKHR;
+    case VK_STRUCTURE_TYPE_DRAW_INDIRECT_COUNT_2_INFO_KHR:
+       return Struct::VkDrawIndirectCount2InfoKHR;
+    case VK_STRUCTURE_TYPE_DISPATCH_INDIRECT_2_INFO_KHR:
+       return Struct::VkDispatchIndirect2InfoKHR;
+    case VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_2_EXT:
+       return Struct::VkConditionalRenderingBeginInfo2EXT;
+    case VK_STRUCTURE_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFER_2_INFO_EXT:
+       return Struct::VkBindTransformFeedbackBuffer2InfoEXT;
+    case VK_STRUCTURE_TYPE_MEMORY_MARKER_INFO_AMD:
+       return Struct::VkMemoryMarkerInfoAMD;
+    case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_2_KHR:
+       return Struct::VkAccelerationStructureCreateInfo2KHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR:
        return Struct::VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR:

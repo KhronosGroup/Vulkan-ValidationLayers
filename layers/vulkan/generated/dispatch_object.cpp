@@ -4843,6 +4843,147 @@ VkResult Device::QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
     return result;
 }
 
+void Device::CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
+    device_dispatch_table.CmdBindIndexBuffer3KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                      const VkBindVertexBuffer3InfoKHR* pBindingInfos) {
+    device_dispatch_table.CmdBindVertexBuffers3KHR(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+void Device::CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawIndirect2KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawIndexedIndirect2KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDispatchIndirect2KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo) {
+    device_dispatch_table.CmdCopyMemoryKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+void Device::CmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToImageKHR(commandBuffer, pCopyMemoryInfo);
+    vku::safe_VkCopyDeviceMemoryImageInfoKHR var_local_pCopyMemoryInfo;
+    vku::safe_VkCopyDeviceMemoryImageInfoKHR* local_pCopyMemoryInfo = nullptr;
+    {
+        if (pCopyMemoryInfo) {
+            local_pCopyMemoryInfo = &var_local_pCopyMemoryInfo;
+            local_pCopyMemoryInfo->initialize(pCopyMemoryInfo);
+
+            if (pCopyMemoryInfo->image) {
+                local_pCopyMemoryInfo->image = Unwrap(pCopyMemoryInfo->image);
+            }
+        }
+    }
+    device_dispatch_table.CmdCopyMemoryToImageKHR(commandBuffer, (const VkCopyDeviceMemoryImageInfoKHR*)local_pCopyMemoryInfo);
+}
+
+void Device::CmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyImageToMemoryKHR(commandBuffer, pCopyMemoryInfo);
+    vku::safe_VkCopyDeviceMemoryImageInfoKHR var_local_pCopyMemoryInfo;
+    vku::safe_VkCopyDeviceMemoryImageInfoKHR* local_pCopyMemoryInfo = nullptr;
+    {
+        if (pCopyMemoryInfo) {
+            local_pCopyMemoryInfo = &var_local_pCopyMemoryInfo;
+            local_pCopyMemoryInfo->initialize(pCopyMemoryInfo);
+
+            if (pCopyMemoryInfo->image) {
+                local_pCopyMemoryInfo->image = Unwrap(pCopyMemoryInfo->image);
+            }
+        }
+    }
+    device_dispatch_table.CmdCopyImageToMemoryKHR(commandBuffer, (const VkCopyDeviceMemoryImageInfoKHR*)local_pCopyMemoryInfo);
+}
+
+void Device::CmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData) {
+    device_dispatch_table.CmdUpdateMemoryKHR(commandBuffer, pDstRange, dstFlags, dataSize, pData);
+}
+
+void Device::CmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                              VkAddressCommandFlagsKHR dstFlags, uint32_t data) {
+    device_dispatch_table.CmdFillMemoryKHR(commandBuffer, pDstRange, dstFlags, data);
+}
+
+void Device::CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                uint32_t queryCount, const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                VkAddressCommandFlagsKHR dstFlags, VkQueryResultFlags queryResultFlags) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount, pDstRange,
+                                                                        dstFlags, queryResultFlags);
+    { queryPool = Unwrap(queryPool); }
+    device_dispatch_table.CmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount, pDstRange, dstFlags,
+                                                             queryResultFlags);
+}
+
+void Device::CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+void Device::CmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                              const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin) {
+    device_dispatch_table.CmdBeginConditionalRendering2EXT(commandBuffer, pConditionalRenderingBegin);
+}
+
+void Device::CmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                 const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
+    device_dispatch_table.CmdBindTransformFeedbackBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+void Device::CmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange, uint32_t counterRangeCount,
+                                           const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    device_dispatch_table.CmdBeginTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+void Device::CmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange, uint32_t counterRangeCount,
+                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    device_dispatch_table.CmdEndTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+void Device::CmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo, uint32_t counterOffset,
+                                          uint32_t vertexStride) {
+    device_dispatch_table.CmdDrawIndirectByteCount2EXT(commandBuffer, instanceCount, firstInstance, pCounterInfo, counterOffset,
+                                                       vertexStride);
+}
+
+void Device::CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo);
+}
+
+void Device::CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+    device_dispatch_table.CmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo);
+}
+
+void Device::CmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo) {
+    device_dispatch_table.CmdWriteMarkerToMemoryAMD(commandBuffer, pInfo);
+}
+
+VkResult Device::CreateAccelerationStructure2KHR(VkDevice device, const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkAccelerationStructureKHR* pAccelerationStructure) {
+    if (!wrap_handles)
+        return device_dispatch_table.CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
+
+    VkResult result =
+        device_dispatch_table.CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
+    if (result == VK_SUCCESS) {
+        *pAccelerationStructure = WrapNew(*pAccelerationStructure);
+    }
+    return result;
+}
+
 void Device::CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
     vku::safe_VkCopyBufferInfo2 var_local_pCopyBufferInfo;

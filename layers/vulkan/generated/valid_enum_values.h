@@ -114,6 +114,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateCombinerOpK
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
@@ -156,8 +158,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR v
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkGeometryTypeKHR value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMemoryRequirementsTypeNV value) const;
@@ -193,8 +193,6 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateNV value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const;
 template <>
