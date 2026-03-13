@@ -2182,6 +2182,24 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const ErrorObject& error_obj) const override;
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
                                           const RecordObject& record_obj) override;
+
+    bool ValidatePresentRegions(VkQueue queue, const VkPresentInfoKHR& present_info, const VkPresentRegionsKHR& present_regions,
+                                const Location& present_info_loc) const;
+    bool ValidatePresentId(VkQueue queue, const VkPresentInfoKHR& present_info, const VkPresentIdKHR& present_id_info,
+                           const Location& present_info_loc) const;
+    bool ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& present_info, const VkPresentId2KHR& present_id2_info,
+                            const Location& present_info_loc) const;
+    bool ValidateSwapchainPresentFenceInfo(VkQueue queue, const VkPresentInfoKHR& present_info,
+                                           const VkSwapchainPresentFenceInfoKHR& swapchain_present_fence_info,
+                                           const Location& present_info_loc) const;
+    bool ValidateSwapchainPresentModeInfo(VkQueue queue, const vvl::Swapchain& swapchain_state,
+                                          const VkSwapchainPresentModeInfoKHR& swapchain_present_mode_info, uint32_t index,
+                                          const Location& present_info_loc) const;
+    bool ValidatePresentTimingsInfo(VkQueue queue, const vvl::Swapchain& swapchain_state,
+                                    const VkPresentTimingsInfoEXT& present_timings_info, uint32_t index,
+                                    const Location& present_info_loc) const;
+    bool ValidateDisplayPresentInfo(VkQueue queue, VkSwapchainKHR swapchain, const vvl::SwapchainImage& swapchain_image,
+                                    const VkDisplayPresentInfoKHR& display_present_info, const Location& present_info_loc) const;
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                         const ErrorObject& error_obj) const override;
     bool ValidateImageAcquireWait(const vvl::SwapchainImage& swapchain_image, uint32_t image_index,
