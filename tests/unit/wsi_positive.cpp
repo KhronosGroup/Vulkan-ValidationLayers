@@ -31,6 +31,49 @@ std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup(
     return {};
 }
 
+void WsiTest::GetDisplayAndDisplayMode(VkDisplayKHR* display, VkDisplayModeKHR* display_mode) {
+    uint32_t display_count = 0;
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, nullptr);
+    if (display_count == 0) {
+        GTEST_SKIP() << "No physical displays reported by the driver.";
+    }
+    std::vector<VkDisplayPropertiesKHR> display_props(display_count);
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, display_props.data());
+
+    const VkDisplayKHR current_display = display_props[0].display;
+    if (current_display == VK_NULL_HANDLE) {
+        GTEST_SKIP() << "No VkDisplayKHR found";
+    }
+    *display = current_display;
+
+    uint32_t mode_prop_count = 0;
+    vk::GetDisplayModePropertiesKHR(Gpu(), current_display, &mode_prop_count, nullptr);
+    if (mode_prop_count == 0) {
+        GTEST_SKIP() << "test requires at least 1 supported display mode property";
+    }
+    std::vector<VkDisplayModePropertiesKHR> display_mode_props(mode_prop_count);
+    vk::GetDisplayModePropertiesKHR(Gpu(), current_display, &mode_prop_count, display_mode_props.data());
+
+    uint32_t plane_count;
+    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(Gpu(), 0, &plane_count, nullptr));
+    if (plane_count == 0) {
+        GTEST_SKIP() << "test requires at least 1 supported display plane";
+    }
+
+    std::vector<VkDisplayKHR> supported_displays(plane_count);
+    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(Gpu(), 0, &plane_count, supported_displays.data()));
+    if (supported_displays[0] != current_display) {
+        GTEST_SKIP() << "Current VkDisplayKHR used is not supported";
+    }
+
+    VkDisplayModeCreateInfoKHR display_mode_info = vku::InitStructHelper();
+    display_mode_info.parameters = display_mode_props[0].parameters;
+    VkResult result = vk::CreateDisplayModeKHR(Gpu(), current_display, &display_mode_info, nullptr, display_mode);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "test failed to create a display mode with vkCreateDisplayModeKHR";
+    }
+}
+
 class PositiveWsi : public WsiTest {};
 
 TEST_F(PositiveWsi, CreateWaylandSurface) {
@@ -3356,4 +3399,38 @@ TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse2) {
     [[maybe_unused]] const uint32_t frame2_image_index = swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
 
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, MultipleCreateDisplay) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayKHR current_display[3];
+    VkDisplayModeKHR display_mode[3];
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display[0], &display_mode[0]));
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display[1], &display_mode[1]));
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display[2], &display_mode[2]));
+
+    VkSurfaceKHR surface;
+    VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();
+    display_surface_info.flags = 0;
+    display_surface_info.planeIndex = 0;
+    display_surface_info.planeStackIndex = 0;
+    display_surface_info.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    display_surface_info.imageExtent = {8, 8};
+    display_surface_info.globalAlpha = 1.0f;
+    display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+
+    display_surface_info.displayMode = display_mode[2];
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::DestroySurfaceKHR(instance(), surface, nullptr);
+
+    display_surface_info.displayMode = display_mode[1];
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::DestroySurfaceKHR(instance(), surface, nullptr);
+
+    display_surface_info.displayMode = display_mode[0];
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::DestroySurfaceKHR(instance(), surface, nullptr);
 }

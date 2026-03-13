@@ -21,10 +21,14 @@
 
 #include <algorithm>
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include <sstream>
+#include <string>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/custom_containers.h"
 #include "containers/container_utils.h"
+#include "error_message/error_strings.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/shader_stage_state.h"
@@ -4204,10 +4208,31 @@ void InstanceState::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physical
                                                        const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
                                                        const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
+        std::ostringstream ss;
+        ss << "failed with " << string_VkResult(record_obj.result)
+           << ", likely because the pCreateInfo->parameters (visibleRegion: "
+           << string_VkExtent2D(pCreateInfo->parameters.visibleRegion) << ", refreshRate: " << pCreateInfo->parameters.refreshRate
+           << ") are not compatible.\nHere are the results from vkGetDisplayModePropertiesKHR:\n";
+        uint32_t mode_count = 0;
+        DispatchGetDisplayModePropertiesKHR(physicalDevice, display, &mode_count, nullptr);
+        if (mode_count == 0) {
+            ss << "No VkDisplayModePropertiesKHR found for " << FormatHandle(display);
+        } else {
+            std::vector<VkDisplayModePropertiesKHR> mode_props(mode_count);
+            DispatchGetDisplayModePropertiesKHR(physicalDevice, display, &mode_count, mode_props.data());
+            for (uint32_t i = 0; i < mode_count; i++) {
+                const VkDisplayModePropertiesKHR& mode_prop = mode_props[i];
+                ss << " - [" << i << "] " << FormatHandle(mode_prop.displayMode) << '\n';
+                ss << "    - visibleRegion: " << string_VkExtent2D(mode_prop.parameters.visibleRegion) << '\n';
+                ss << "    - refreshRate: " << mode_prop.parameters.refreshRate << " ( "
+                   << (float)mode_prop.parameters.refreshRate / 1000.0f << " Hz)\n";
+            }
+        }
+        LogWarning("WARNING-CreateDisplayModeKHR-Failed", display, record_obj.location, "%s", ss.str().c_str());
         return;
     }
     if (!pMode) return;
-    Add(std::make_shared<DisplayMode>(*pMode, physicalDevice));
+    Add(std::make_shared<DisplayMode>(*pMode, physicalDevice, display));
 }
 
 void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
@@ -5074,32 +5099,6 @@ void InstanceState::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice
                                                                 VkPhysicalDeviceFeatures2 *pFeatures,
                                                                 const RecordObject &record_obj) {
     PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
-}
-
-void InstanceState::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                       void *pProperties, const RecordObject &record_obj) {
-    auto pd_state = Get<PhysicalDevice>(physicalDevice);
-    pd_state->SetCallState(record_obj.location.function, pProperties != nullptr);
-
-    if (*pPropertyCount) {
-        pd_state->display_plane_property_count = *pPropertyCount;
-    }
-}
-
-void InstanceState::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t *pPropertyCount,
-                                                                             VkDisplayPlanePropertiesKHR *pProperties,
-                                                                             const RecordObject &record_obj) {
-    if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties, record_obj);
-}
-
-void InstanceState::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                              uint32_t *pPropertyCount,
-                                                                              VkDisplayPlaneProperties2KHR *pProperties,
-                                                                              const RecordObject &record_obj) {
-    if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties, record_obj);
 }
 
 void DeviceState::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,

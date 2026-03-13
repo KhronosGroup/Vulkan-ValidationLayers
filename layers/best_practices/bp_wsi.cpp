@@ -23,8 +23,8 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/wsi_state.h"
 
-bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
-                                                                                 const Location& loc) const {
+bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalDevice physicalDevice,
+                                                                         const Location& loc) const {
     bool skip = false;
     if (const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice)) {
         if (bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) &&
@@ -43,7 +43,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPh
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(physicalDevice, error_obj.location);
 
     return skip;
 }
@@ -54,7 +54,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysica
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(physicalDevice, error_obj.location);
 
     return skip;
 }
@@ -65,7 +65,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysic
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(physicalDevice, error_obj.location);
 
     return skip;
 }

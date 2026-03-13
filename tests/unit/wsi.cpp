@@ -17,6 +17,7 @@
 #include "containers/container_utils.h"
 #include "generated/vk_function_pointers.h"
 #include <algorithm>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"
@@ -1327,65 +1328,68 @@ TEST_F(NegativeWsi, DeviceMask) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeWsi, DisplayPlaneSurface) {
-    TEST_DESCRIPTION("Create and use VkDisplayKHR objects to test VkDisplaySurfaceCreateInfoKHR.");
-
+TEST_F(NegativeWsi, GetDisplayPlaneSupportedDisplays) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    RETURN_IF_SKIP(InitSurface());
 
     uint32_t plane_prop_count = 0;
     vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &plane_prop_count, nullptr);
     if (plane_prop_count == 0) {
         GTEST_SKIP() << "Test requires at least 1 supported display plane property";
     }
-    std::vector<VkDisplayPlanePropertiesKHR> display_plane_props(plane_prop_count);
-    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &plane_prop_count, display_plane_props.data());
-    // using plane 0 for rest of test
-    VkDisplayKHR current_display = display_plane_props[0].currentDisplay;
-    if (current_display == VK_NULL_HANDLE) {
-        GTEST_SKIP() << "VkDisplayPlanePropertiesKHR[0].currentDisplay is not attached to device";
-    }
-
-    uint32_t mode_prop_count = 0;
-    vk::GetDisplayModePropertiesKHR(Gpu(), current_display, &mode_prop_count, nullptr);
-    if (plane_prop_count == 0) {
-        GTEST_SKIP() << "test requires at least 1 supported display mode property";
-    }
-    std::vector<VkDisplayModePropertiesKHR> display_mode_props(mode_prop_count);
-    vk::GetDisplayModePropertiesKHR(Gpu(), current_display, &mode_prop_count, display_mode_props.data());
 
     uint32_t plane_count;
     m_errorMonitor->SetDesiredError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249");
     vk::GetDisplayPlaneSupportedDisplaysKHR(Gpu(), plane_prop_count, &plane_count, nullptr);
     m_errorMonitor->VerifyFound();
-    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(Gpu(), 0, &plane_count, nullptr));
-    if (plane_count == 0) {
-        GTEST_SKIP() << "test requires at least 1 supported display plane";
+}
+
+TEST_F(NegativeWsi, CreateDisplayMode) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t display_count = 0;
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, nullptr);
+    if (display_count == 0) {
+        GTEST_SKIP() << "No physical displays reported by the driver.";
     }
-    std::vector<VkDisplayKHR> supported_displays(plane_count);
-    plane_count = 1;
-    ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneSupportedDisplaysKHR(Gpu(), 0, &plane_count, supported_displays.data()));
-    if (supported_displays[0] != current_display) {
-        GTEST_SKIP() << "Current VkDisplayKHR used is not supported";
+    std::vector<VkDisplayPropertiesKHR> display_props(display_count);
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, display_props.data());
+
+    const VkDisplayKHR current_display = display_props[0].display;
+    if (current_display == VK_NULL_HANDLE) {
+        GTEST_SKIP() << "No VkDisplayKHR found";
     }
 
     VkDisplayModeKHR display_mode;
-    VkDisplayModeParametersKHR display_mode_parameters = {{0, 0}, 0};
-    VkDisplayModeCreateInfoKHR display_mode_info = {VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR, nullptr, 0,
-                                                    display_mode_parameters};
+    VkDisplayModeCreateInfoKHR display_mode_info = vku::InitStructHelper();
+    display_mode_info.parameters.visibleRegion = {0, 0};
+    display_mode_info.parameters.refreshRate = 0;
     m_errorMonitor->SetDesiredError("VUID-VkDisplayModeParametersKHR-width-01990");
     m_errorMonitor->SetDesiredError("VUID-VkDisplayModeParametersKHR-height-01991");
     m_errorMonitor->SetDesiredError("VUID-VkDisplayModeParametersKHR-refreshRate-01992");
     vk::CreateDisplayModeKHR(Gpu(), current_display, &display_mode_info, nullptr, &display_mode);
     m_errorMonitor->VerifyFound();
-    // Use the first good parameter queried
-    display_mode_info.parameters = display_mode_props[0].parameters;
-    VkResult result = vk::CreateDisplayModeKHR(Gpu(), current_display, &display_mode_info, nullptr, &display_mode);
-    if (result != VK_SUCCESS) {
-        GTEST_SKIP() << "test failed to create a display mode with vkCreateDisplayModeKHR";
+
+    if (!IsPlatformMockICD()) {
+        display_mode_info.parameters.visibleRegion = {44444, 444444};
+        display_mode_info.parameters.refreshRate = 999999;
+        m_errorMonitor->SetDesiredWarning("WARNING-CreateDisplayModeKHR-Failed");
+        vk::CreateDisplayModeKHR(Gpu(), current_display, &display_mode_info, nullptr, &display_mode);
+        m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeWsi, CreateDisplayPlaneSurfaceAlpha) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayKHR current_display;
+    VkDisplayModeKHR display_mode;
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display, &display_mode));
 
     VkDisplayPlaneCapabilitiesKHR plane_capabilities;
     ASSERT_EQ(VK_SUCCESS, vk::GetDisplayPlaneCapabilitiesKHR(Gpu(), display_mode, 0, &plane_capabilities));
@@ -1400,7 +1404,6 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     display_surface_info.imageExtent = {8, 8};
     display_surface_info.globalAlpha = 1.0f;
 
-    // Test if the device doesn't support the bits
     if ((plane_capabilities.supportedAlpha & VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_BIT_KHR) == 0) {
         display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_BIT_KHR;
         m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255");
@@ -1422,19 +1425,145 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01254");
     vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeWsi, CreateDisplayPlaneSurface) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayKHR current_display;
+    VkDisplayModeKHR display_mode;
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display, &display_mode));
+
+    VkSurfaceKHR surface;
+    VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();
+    display_surface_info.flags = 0;
+    display_surface_info.displayMode = display_mode;
+    display_surface_info.planeIndex = 0;
+    display_surface_info.planeStackIndex = 0;
+    display_surface_info.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    display_surface_info.imageExtent = {8, 8};
+    display_surface_info.globalAlpha = 1.0f;
     display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+
+    uint32_t plane_prop_count = 0;
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &plane_prop_count, nullptr);
     display_surface_info.planeIndex = plane_prop_count;
     m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252");
     vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
-    display_surface_info.planeIndex = 0;  // restore to good value
 
+    display_surface_info.planeIndex = 0;
     uint32_t bad_size = m_device->Physical().limits_.maxImageDimension2D + 1;
     display_surface_info.imageExtent = {bad_size, bad_size};
     // one for height and width
-    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-width-01256");
-    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-width-01256");
+    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-width-01256", 2);
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, CreateDisplayPlaneSurfaceNullDisplayMode) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayModeKHR display_mode = CastToHandle<VkDisplayModeKHR, uintptr_t>(0xbad00000);
+    VkSurfaceKHR surface;
+    VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();
+    display_surface_info.displayMode = display_mode;
+    display_surface_info.planeIndex = 0;
+    display_surface_info.planeStackIndex = 0;
+    display_surface_info.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    display_surface_info.imageExtent = {8, 8};
+    display_surface_info.globalAlpha = 1.0f;
+    display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-displayMode-parameter");
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, CreateDisplayPlaneSurfaceTransform) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayKHR current_display;
+    VkDisplayModeKHR display_mode;
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display, &display_mode));
+
+    {
+        uint32_t display_count = 0;
+        vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, nullptr);
+        std::vector<VkDisplayPropertiesKHR> display_props(display_count);
+        vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &display_count, display_props.data());
+        for (const auto& display_prop : display_props) {
+            if (display_prop.display == current_display) {
+                if (display_prop.supportedTransforms & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR) {
+                    GTEST_SKIP() << "Found VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR support";
+                }
+            }
+        }
+    }
+
+    VkSurfaceKHR surface;
+    VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();
+    display_surface_info.flags = 0;
+    display_surface_info.displayMode = display_mode;
+    display_surface_info.planeIndex = 0;
+    display_surface_info.planeStackIndex = 0;
+    display_surface_info.transform = VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR;
+    display_surface_info.imageExtent = {8, 8};
+    display_surface_info.globalAlpha = 1.0f;
+    display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-transform-06740");
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, CreateDisplayPlaneSurfacePlaneStackIndex) {
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDisplayKHR current_display;
+    VkDisplayModeKHR display_mode;
+    RETURN_IF_SKIP(GetDisplayAndDisplayMode(&current_display, &display_mode));
+
+    {
+        bool found = false;
+        uint32_t display_count = 0;
+        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &display_count, nullptr);
+        std::vector<VkDisplayPlanePropertiesKHR> display_props(display_count);
+        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &display_count, display_props.data());
+        for (const auto& display_prop : display_props) {
+            if (display_prop.currentDisplay == current_display) {
+                found = true;
+            }
+        }
+        // TODO - seems on Mesa, you need to submit work?
+        if (!found) {
+            GTEST_SKIP() << "Didn't find a display in vkGetPhysicalDeviceDisplayPropertiesKHR";
+        }
+    }
+
+    uint32_t plane_prop_count = 0;
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &plane_prop_count, nullptr);
+
+    VkSurfaceKHR surface;
+    VkDisplaySurfaceCreateInfoKHR display_surface_info = vku::InitStructHelper();
+    display_surface_info.flags = 0;
+    display_surface_info.displayMode = display_mode;
+    display_surface_info.planeIndex = 0;
+    display_surface_info.planeStackIndex = plane_prop_count + 42;
+    display_surface_info.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    display_surface_info.imageExtent = {8, 8};
+    display_surface_info.globalAlpha = 1.0f;
+    display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDisplaySurfaceCreateInfoKHR-planeReorderPossible-01253");
     vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
 }
