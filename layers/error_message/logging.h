@@ -140,12 +140,7 @@ struct LoggingLabel {
     };
 
     LoggingLabel() : name(), color({{0.f, 0.f, 0.f, 0.f}}) {}
-    LoggingLabel(const VkDebugUtilsLabelEXT *label_info) {
-        if (label_info && label_info->pLabelName) {
-            name = label_info->pLabelName;
-            std::copy_n(std::begin(label_info->color), 4, color.begin());
-        }
-    }
+    LoggingLabel(const VkDebugUtilsLabelEXT* label_info);
 
     LoggingLabel(const LoggingLabel &) = default;
     LoggingLabel &operator=(const LoggingLabel &) = default;
