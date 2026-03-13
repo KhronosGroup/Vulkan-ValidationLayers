@@ -21,6 +21,7 @@
 #include "generated/enum_flag_bits.h"
 #include "containers/range.h"
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace stateless {
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
@@ -156,7 +157,7 @@ bool Device::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer 
     }
 
     if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368", commandBuffer,
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-02368", commandBuffer,
                          error_obj.location.dot(Field::firstCounterBuffer),
                          "(%" PRIu32 ") is not less than maxTransformFeedbackBuffers (%" PRIu32 ").", firstCounterBuffer,
                          phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
@@ -164,10 +165,46 @@ bool Device::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer 
 
     if (firstCounterBuffer + counterBufferCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
         skip |= LogError(
-            "VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369", commandBuffer,
+            "VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-02369", commandBuffer,
             error_obj.location.dot(Field::firstCounterBuffer),
             "(%" PRIu32 ") plus counterBufferCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
             firstCounterBuffer, counterBufferCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                                 uint32_t counterRangeCount,
+                                                                 const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                                 const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedback2EXT-transformFeedback-02366", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    } else if (firstCounterRange >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedback2EXT-firstCounter-02368", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterRange),
+                         "(%" PRIu32 ") is not less than maxTransformFeedbackBuffers (%" PRIu32 ").", firstCounterRange,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+    if (firstCounterRange + counterRangeCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError(
+            "VUID-vkCmdBeginTransformFeedback2EXT-firstCounter-02369", commandBuffer,
+            error_obj.location.dot(Field::firstCounterBuffer),
+            "(%" PRIu32 ") plus counterRangeCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+            firstCounterRange, counterRangeCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+    for (uint32_t i = 0; i < counterRangeCount; i++) {
+        const Location info_loc = error_obj.location.dot(Field::pCounterInfos, i);
+        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pCounterInfos[i], info_loc);
+
+        const VkDeviceSize range_size = pCounterInfos[i].addressRange.size;
+        if (range_size > 0 && range_size < 4) {
+            skip |= LogError("VUID-vkCmdBeginTransformFeedback2EXT-pCounterInfos-13093", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size), "is %" PRIu64 ".", range_size);
+        }
     }
 
     return skip;
@@ -364,6 +401,20 @@ bool Device::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                                      uint32_t firstQuery, uint32_t queryCount,
+                                                                      const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                                      VkAddressCommandFlagsKHR dstFlags,
+                                                                      VkQueryResultFlags queryResultFlags,
+                                                                      const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
+
+    return skip;
+}
+
 bool Device::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
     const Context &context) const {
@@ -459,6 +510,275 @@ bool Device::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                      VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                                      const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                           const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                           const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; i++) {
+        const VkDeviceMemoryImageCopyKHR& region = pCopyMemoryInfo->pRegions[i];
+        skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::pRegions, i).dot(Field::addressFlags),
+                                                   region.addressFlags);
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                           const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                           const Context& context) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; i++) {
+        const VkDeviceMemoryImageCopyKHR& region = pCopyMemoryInfo->pRegions[i];
+        const Location loc = context.error_obj.location.dot(Field::pRegions, i);
+        skip |= context.ValidateDeviceAddressFlags(loc.dot(Field::addressFlags), region.addressFlags);
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                                    const Context& context) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; i++) {
+        const VkDeviceMemoryCopyKHR& region = pCopyMemoryInfo->pRegions[i];
+        const Location region_loc = context.error_obj.location.dot(Field::pRegions, i);
+        skip |= context.ValidateDeviceAddressFlags(region_loc.dot(Field::dstFlags), region.dstFlags);
+        skip |= context.ValidateDeviceAddressFlags(region_loc.dot(Field::srcFlags), region.srcFlags);
+
+        if (region.dstRange.size < region.srcRange.size) {
+            skip |=
+                LogError("VUID-VkDeviceMemoryCopyKHR-size-13016", commandBuffer, region_loc.dot(Field::dstRange).dot(Field::size),
+                         "(%" PRIu64 ") is less than srcRange.size (%" PRIu64 ").", region.dstRange.size, region.srcRange.size);
+        }
+
+        vvl::range<VkDeviceAddress> region_src_range = {region.srcRange.address, region.srcRange.address + region.srcRange.size};
+        for (uint32_t j = i; j < pCopyMemoryInfo->regionCount; ++j) {
+            const VkDeviceMemoryCopyKHR& other_region = pCopyMemoryInfo->pRegions[j];
+            vvl::range<VkDeviceAddress> next_src_range = {other_region.srcRange.address,
+                                                          other_region.srcRange.address + other_region.srcRange.size};
+            vvl::range<VkDeviceAddress> next_dst_range = {other_region.dstRange.address,
+                                                          other_region.dstRange.address + other_region.dstRange.size};
+
+            if (j > 1 && region_src_range.intersects(next_src_range)) {
+                skip |= LogError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015", commandBuffer, region_loc.dot(Field::srcRange),
+                                 "%s overlaps with pRegions[%" PRIu32 "].srcRange %s", string_range_hex(region_src_range).c_str(),
+                                 j, string_range_hex(next_src_range).c_str());
+            } else if (region_src_range.intersects(next_dst_range)) {
+                skip |= LogError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015", commandBuffer, region_loc.dot(Field::srcRange),
+                                 "%s overlaps with pRegions[%" PRIu32 "].dstRange %s", string_range_hex(region_src_range).c_str(),
+                                 j, string_range_hex(next_dst_range).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdBeginConditionalRendering2EXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+    const Context& context) const {
+    bool skip = false;
+
+    skip |= context.ValidateDeviceAddressFlags(
+        context.error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressFlags),
+        pConditionalRenderingBegin->addressFlags);
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                            uint32_t bindingCount, const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                            const Context& context) const {
+    bool skip = false;
+
+    skip |= context.ValidateDeviceAddressFlags(context.error_obj.location.dot(Field::pBindingInfos).dot(Field::addressFlags),
+                                               pBindingInfos->addressFlags);
+
+    if (firstBinding >= phys_dev_props.limits.maxVertexInputBindings) {
+        skip |= LogError("VUID-vkCmdBindVertexBuffers3KHR-firstBinding-13070", commandBuffer,
+                         context.error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32 ") is not less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
+                         phys_dev_props.limits.maxVertexInputBindings);
+    } else if (firstBinding + bindingCount > phys_dev_props.limits.maxVertexInputBindings) {
+        skip |= LogError("VUID-vkCmdBindVertexBuffers3KHR-firstBinding-13071", commandBuffer,
+                         context.error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32 ") + bindingCount (%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
+                         firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
+    }
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBindingInfos[i].setStride == VK_TRUE) {
+            if (pBindingInfos[i].addressRange.stride > phys_dev_props.limits.maxVertexInputBindingStride) {
+                skip |=
+                    LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13126", commandBuffer,
+                             context.error_obj.location.dot(Field::pBindingInfos, i).dot(Field::addressRange).dot(Field::stride),
+                             "(%" PRIu64 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
+                             pBindingInfos[i].addressRange.stride, phys_dev_props.limits.maxVertexInputBindingStride);
+            }
+        } else {
+            if (pBindingInfos[i].addressRange.stride != 0) {
+                skip |=
+                    LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13127", commandBuffer,
+                             context.error_obj.location.dot(Field::pBindingInfos, i).dot(Field::addressRange).dot(Field::stride),
+                             "is (%" PRIu64 "), but setStride is VK_FALSE.", pBindingInfos[i].addressRange.stride);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool Device::ValidateBindTransformFeedbackBuffer2InfoEXT(const Context& context, const VkBindTransformFeedbackBuffer2InfoEXT& info,
+                                                         const Location& info_loc) const {
+    bool skip = false;
+
+    skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), info.addressFlags);
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                       uint32_t bindingCount,
+                                                                       const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                       const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-transformFeedback-02355", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    } else if (firstBinding >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-firstBinding-02356", commandBuffer,
+                         error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32 ") is greater than or equal to maxTransformFeedbackBuffers (%" PRIu32 ").", firstBinding,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    } else if (firstBinding + bindingCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-firstBinding-02357", commandBuffer,
+                         error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32 ") plus bindingCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+                         firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; i++) {
+        const Location info_loc = error_obj.location.dot(Field::pBindingInfos, i);
+        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pBindingInfos[i], info_loc);
+        const VkDeviceSize range_size = pBindingInfos[i].addressRange.size;
+        if (range_size > 0 && range_size < 4) {
+            skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13090", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size), "is %" PRIu64 ".", range_size);
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                               uint32_t counterRangeCount,
+                                                               const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                               const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedback2EXT-transformFeedback-02374", commandBuffer, error_obj.location,
+                         "transformFeedback feature was not enabled.");
+    } else if (firstCounterRange >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError("VUID-vkCmdEndTransformFeedback2EXT-firstCounterBuffer-02376", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterRange),
+                         "(%" PRIu32 ") is not less than maxTransformFeedbackBuffers (%" PRIu32 ").", firstCounterRange,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    } else if (firstCounterRange + counterRangeCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError(
+            "VUID-vkCmdEndTransformFeedback2EXT-firstCounterBuffer-02377", commandBuffer,
+            error_obj.location.dot(Field::firstCounterRange),
+            "(%" PRIu32 ") plus counterRangeCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+            firstCounterRange, counterRangeCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    for (uint32_t i = 0; i < counterRangeCount; i++) {
+        const Location info_loc = error_obj.location.dot(Field::pCounterInfos, i);
+        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pCounterInfos[i], info_loc);
+
+        const VkDeviceSize range_size = pCounterInfos[i].addressRange.size;
+        if (range_size > 0 && range_size < 4) {
+            skip |= LogError("VUID-vkCmdEndTransformFeedback2EXT-pCounterInfos-13095", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size), "is %" PRIu64 ".", range_size);
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                                uint32_t firstInstance,
+                                                                const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                                uint32_t counterOffset, uint32_t vertexStride,
+                                                                const Context& context) const {
+    bool skip = false;
+
+    skip |=
+        ValidateBindTransformFeedbackBuffer2InfoEXT(context, *pCounterInfo, context.error_obj.location.dot(Field::pCounterInfo));
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                          const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), pInfo->addressFlags);
+
+    if (pInfo->indexType == VK_INDEX_TYPE_NONE_KHR) {
+        skip |= LogError("VUID-VkBindIndexBuffer3InfoKHR-indexType-13053", commandBuffer, info_loc.dot(Field::indexType),
+                         "is VK_INDEX_TYPE_NONE_KHR.");
+    } else if (pInfo->indexType == VK_INDEX_TYPE_UINT8) {
+        if (!enabled_features.indexTypeUint8) {
+            skip |= LogError("VUID-VkBindIndexBuffer3InfoKHR-indexType-13054", commandBuffer, info_loc.dot(Field::indexType),
+                             "is VK_INDEX_TYPE_UINT8, but the indexTypeUint8 feature is not enabled.");
+        }
+    }
+
+    if (pInfo->indexType != VK_INDEX_TYPE_NONE_KHR &&
+        !IsPointerAligned(pInfo->addressRange.address, IndexTypeByteSize(pInfo->indexType))) {
+        skip |= LogError("VUID-VkBindIndexBuffer3InfoKHR-addressRange-13052", commandBuffer,
+                         info_loc.dot(Field::addressRange).dot(Field::address),
+                         "(0x%" PRIx64 ") must be aligned to %" PRIu32 " bytes (the alignment for %s).",
+                         pInfo->addressRange.address, IndexTypeByteSize(pInfo->indexType), string_VkIndexType(pInfo->indexType));
+    }
+
+    if (pInfo->addressRange.size == 0) {
+        if (!enabled_features.nullDescriptor) {
+            skip |= LogError("VUID-VkBindIndexBuffer3InfoKHR-None-13055", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size),
+                             "is 0, but the nullDescriptor feature is not enabled.");
+        } else if (pInfo->addressRange.address != 0) {
+            skip |= LogError("VUID-VkBindIndexBuffer3InfoKHR-addressRange-13056", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size),
+                             "is 0, but addressRange.address is (0x%" PRIx64 ") (must be zero to nullDescriptor).",
+                             pInfo->addressRange.address);
+        }
+    }
+
+    return skip;
+}
+
 bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                  VkDeviceSize size, uint32_t data, const Context &context) const {
     bool skip = false;
@@ -481,6 +801,17 @@ bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
                              "(%" PRIu64 ") is not a multiple of 4.", size);
         }
     }
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                    VkAddressCommandFlagsKHR dstFlags, uint32_t data,
+                                                    const Context& context) const {
+    bool skip = false;
+
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
+
     return skip;
 }
 

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 
 #include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
+#include "sl_vuid_maps.h"
 
 namespace stateless {
 bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc,
@@ -469,4 +470,24 @@ bool Context::ValidateFlagsArray(const Location &count_loc, const Location &arra
 
     return skip;
 }
+
+bool Context::ValidateDeviceAddressFlags(const Location& flags_loc, const VkAddressCommandFlagsKHR flags) const {
+    bool skip = false;
+    if ((flags & VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR) != 0 &&
+        (flags & VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR) != 0) {
+        skip |= log.LogError(vvl::GetAddressFlagVUID(flags_loc, vvl::AddressFlagError::AliasesStorageBuffer_13100),
+                             error_obj.handle, flags_loc,
+                             "contains both VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR and "
+                             "VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR.");
+    }
+    if ((flags & VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR) != 0 &&
+        (flags & VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR) != 0) {
+        skip |= log.LogError(vvl::GetAddressFlagVUID(flags_loc, vvl::AddressFlagError::AliasesTransformFeedback_13101),
+                             error_obj.handle, flags_loc,
+                             "contains both VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR and "
+                             "VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR.");
+    }
+    return skip;
+}
+
 }  // namespace stateless

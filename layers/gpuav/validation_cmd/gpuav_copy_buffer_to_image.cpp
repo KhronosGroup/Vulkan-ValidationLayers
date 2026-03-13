@@ -229,7 +229,9 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                 const uint32_t texel_offset = error_record[kValCmd_ErrorPayloadDword_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
-                const char *vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
+                const char* vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyMemoryToImageKHR
+                                       ? "VUID-vkCmdCopyMemoryToImageKHR-None-13022"
+                                   : loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
                                        ? "VUID-vkCmdCopyBufferToImage-pRegions-07931"
                                        : "VUID-VkCopyBufferToImageInfo2-pRegions-07931";
                 skip |= gpuav.LogError(vuid, objlist_and_src_buffer, loc_with_debug_region,

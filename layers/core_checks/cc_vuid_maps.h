@@ -141,4 +141,15 @@ enum class SpirvInterfaceVariableError {
 };
 const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVariableError error);
 
+enum class DeviceAddressCommandError {
+    CompletelyBound_13097,
+    Protected_13098,
+    Protected_13099,
+    Storage_13122,
+    Storage_13123,
+    Xfb_13124,
+    Xfb_13125,
+};
+const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddressCommandError error);
+
 }  // namespace vvl

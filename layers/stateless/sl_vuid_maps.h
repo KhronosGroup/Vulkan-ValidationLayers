@@ -41,4 +41,10 @@ enum class PipelineCreateFlagError {
 };
 const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagError error);
 
+enum class AddressFlagError {
+    AliasesStorageBuffer_13100,
+    AliasesTransformFeedback_13101,
+};
+const char* GetAddressFlagVUID(const Location& loc, AddressFlagError error);
+
 }  // namespace vvl

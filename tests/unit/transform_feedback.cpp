@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,7 +108,7 @@ TEST_F(NegativeTransformFeedback, NoBoundPipeline) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-09630");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-06233");
     vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
     m_errorMonitor->VerifyFound();
@@ -276,8 +276,8 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         {
             auto const firstCounterBuffer = tf_properties.maxTransformFeedbackBuffers;
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368");
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-02368");
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-02369");
             vk::CmdBeginTransformFeedbackEXT(m_command_buffer, firstCounterBuffer, 1, nullptr, nullptr);
             m_errorMonitor->VerifyFound();
         }
@@ -286,7 +286,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         if (tf_properties.maxTransformFeedbackBuffers < vvl::kU32Max) {
             auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-02369");
             vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, counterBufferCount, nullptr, nullptr);
             m_errorMonitor->VerifyFound();
         }
@@ -453,14 +453,14 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-09630");
     vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-renderpass");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-09630");
     vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
     m_errorMonitor->VerifyFound();
 }

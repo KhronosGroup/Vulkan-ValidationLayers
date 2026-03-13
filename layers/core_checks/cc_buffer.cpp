@@ -24,11 +24,13 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
 #include "core_validation.h"
+#include "cc_buffer_address.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include "cc_vuid_maps.h"
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
@@ -435,6 +437,178 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
                              DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str());
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDeviceAddressCommands(const LogObjectList& objlist, VkDeviceAddress address, VkDeviceSize size,
+                                               VkAddressCommandFlagsKHR flags, const Location loc) const {
+    bool skip = false;
+
+    // TODO - tl;dr - This is a stupid mess
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5322#note_591585
+    //
+    // Most times we are checking "if at least 1 buffer" matches the requirements for a given VkDeviceAddress.
+    // These "seem" to be different where if "any are invalid" then everything is bad
+    const auto buffers = GetBuffersByAddress(address);
+    for (const vvl::Buffer* buffer : buffers) {
+        ASSERT_AND_CONTINUE(buffer);
+        if ((buffer->usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) != 0) {
+            if ((flags & (VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR |
+                          VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR)) == 0) {
+                skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Storage_13122), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created with VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, but address "
+                                 "flags (%s) do not contain VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR or "
+                                 "VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+            }
+        } else {
+            if ((flags & VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR) != 0) {
+                skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Storage_13123), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created without VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, but address "
+                                 "flags (%s) contain VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+            }
+        }
+
+        if ((buffer->usage & VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) != 0) {
+            if ((flags & (VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR |
+                          VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR)) == 0) {
+                skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Xfb_13124), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created with "
+                                 "VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT, but address "
+                                 "flags (%s) do not contain VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR or "
+                                 "VK_ADDRESS_COMMAND_UNKNOWN_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+            }
+        } else {
+            if ((flags & VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR) != 0) {
+                skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Xfb_13125), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created without "
+                                 "VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT, but address "
+                                 "flags (%s) contain VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+            }
+        }
+
+        if (!phys_dev_props_core11.protectedNoFault) {
+            if ((buffer->create_info.flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0) {
+                if ((flags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
+                    skip |=
+                        LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Protected_13098), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created with "
+                                 "VK_BUFFER_CREATE_PROTECTED_BIT, but address "
+                                 "flags (%s) does not contain VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.\nHint: This is valid if "
+                                 "protectedNoFault is supported.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+                }
+            } else if ((flags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
+                skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::Protected_13099), objlist,
+                                 loc.dot(Field::address),
+                                 "(0x%" PRIx64
+                                 ") belongs to %s, which was created without "
+                                 "VK_BUFFER_CREATE_PROTECTED_BIT, but address "
+                                 "flags (%s) contains VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.\nHint: This is valid if "
+                                 "protectedNoFault is supported.",
+                                 address, FormatHandle(buffer->Handle()).c_str(), string_VkAddressCommandFlagsKHR(flags).c_str());
+            }
+        }
+
+        if (flags & VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR) {
+            if (!buffer->sparse) {
+                // TODO - use VerifyBoundMemoryIsValid? Not obvious which funciton to use
+                const std::string vuid_13097 =
+                    vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::CompletelyBound_13097);
+                skip |= ValidateMemoryIsBoundToBuffer(objlist, *buffer, loc, vuid_13097.c_str());
+            } else {
+                // TODO - We should have a common util for sparse memory
+                using BufferRange = vvl::BindableMemoryTracker::BufferRange;
+                const VkDeviceSize offset = address - buffer->deviceAddress;
+                BufferRange ranges_bounds(offset, offset + size);
+                const auto ranges = buffer->GetBoundMemoryRange(ranges_bounds);
+                uint64_t start = offset;
+                bool fully_bound = true;
+                for (const auto& range : ranges) {
+                    for (const auto& memory_range : range.second) {
+                        if (start < memory_range.begin) {
+                            fully_bound = false;
+                            break;
+                        }
+                        start = memory_range.end;
+                    }
+                    if (!fully_bound) {
+                        break;
+                    }
+                }
+                if (!fully_bound || (start < (offset + size))) {
+                    skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::CompletelyBound_13097),
+                                     objlist, loc.dot(Field::flags),
+                                     "contains VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR, but the address range [0x%" PRIx64
+                                     ", 0x%" PRIx64 ") is not fully backed by memory for buffer %s.",
+                                     offset, offset + size, FormatHandle(buffer->Handle()).c_str());
+                    break;
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                 VkAddressCommandFlagsKHR dstFlags, uint32_t data,
+                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    skip |= ValidateDeviceAddressRange(pDstRange->address, pDstRange->size, false, error_obj.location.dot(Field::pDstRange),
+                                       LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_TRANSFER_DST_BIT,
+                                       "VUID-vkCmdFillMemoryKHR-dstRange-13000");
+
+    if (!IsPointerAligned(pDstRange->address, 4)) {
+        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13001", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::address), "(%" PRIx64 ") must be aligned to 4 bytes.",
+                         pDstRange->address);
+    }
+    if (!IsIntegerMultipleOf(pDstRange->size, 4)) {
+        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13002", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::size), "(%" PRIu64 ") is not a multiple of 4.",
+                         pDstRange->size);
+    }
+
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const vvl::CommandBuffer& cb_state = *cb_state_ptr;
+    if (!phys_dev_props_core11.protectedNoFault) {
+        if (cb_state.unprotected) {
+            if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
+                skip |=
+                    LogError("VUID-vkCmdFillMemoryKHR-commandBuffer-13003", commandBuffer, error_obj.location.dot(Field::dstFlags),
+                             "(%s) contains VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is unprotected and "
+                             "protectedNoFault is not supported.",
+                             string_VkAddressCommandFlagsKHR(dstFlags).c_str(), FormatHandle(cb_state).c_str());
+            }
+        } else {
+            if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
+                skip |=
+                    LogError("VUID-vkCmdFillMemoryKHR-commandBuffer-13004", commandBuffer, error_obj.location.dot(Field::dstFlags),
+                             "(%s) does not include VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is protected and "
+                             "protectedNoFault is not supported.",
+                             string_VkAddressCommandFlagsKHR(dstFlags).c_str(), FormatHandle(cb_state).c_str());
+            }
+        }
+    }
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pDstRange->address, pDstRange->size, dstFlags,
+                                          error_obj.location.dot(Field::pDstRange));
 
     return skip;
 }

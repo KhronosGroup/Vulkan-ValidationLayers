@@ -18819,6 +18819,7 @@ bool Device::PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer
         skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::indexType), vvl::Enum::VkIndexType, pInfo->indexType,
                                            "VUID-VkBindIndexBuffer3InfoKHR-indexType-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBindIndexBuffer3KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -18848,6 +18849,8 @@ bool Device::PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuff
                                           "VUID-VkBindVertexBuffer3InfoKHR-addressFlags-parameter", nullptr, false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdBindVertexBuffers3KHR(commandBuffer, firstBinding, bindingCount, pBindingInfos, context);
     return skip;
 }
 
@@ -18869,6 +18872,7 @@ bool Device::PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, c
                                       AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirect2KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -18891,6 +18895,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBu
                                       AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirect2KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -18913,6 +18918,7 @@ bool Device::PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffe
                                       AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
                                       "VUID-VkDispatchIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDispatchIndirect2KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -18954,6 +18960,7 @@ bool Device::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, cons
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMemoryKHR(commandBuffer, pCopyMemoryInfo, context);
     return skip;
 }
 
@@ -19009,6 +19016,7 @@ bool Device::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffe
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMemoryToImageKHR(commandBuffer, pCopyMemoryInfo, context);
     return skip;
 }
 
@@ -19064,6 +19072,7 @@ bool Device::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffe
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyImageToMemoryKHR(commandBuffer, pCopyMemoryInfo, context);
     return skip;
 }
 
@@ -19081,6 +19090,7 @@ bool Device::PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, co
                                   "VUID-vkCmdUpdateMemoryKHR-dstFlags-parameter", nullptr, false);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
                                   "VUID-vkCmdUpdateMemoryKHR-dataSize-arraylength", "VUID-vkCmdUpdateMemoryKHR-pData-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdUpdateMemoryKHR(commandBuffer, pDstRange, dstFlags, dataSize, pData, context);
     return skip;
 }
 
@@ -19095,6 +19105,7 @@ bool Device::PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, cons
     skip |= context.ValidateFlags(loc.dot(Field::dstFlags), vvl::FlagBitmask::VkAddressCommandFlagBitsKHR,
                                   AllVkAddressCommandFlagBitsKHR, dstFlags, kOptionalFlags,
                                   "VUID-vkCmdFillMemoryKHR-dstFlags-parameter", nullptr, false);
+    if (!skip) skip |= manual_PreCallValidateCmdFillMemoryKHR(commandBuffer, pDstRange, dstFlags, data, context);
     return skip;
 }
 
@@ -19118,6 +19129,9 @@ bool Device::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer c
     skip |= context.ValidateFlags(loc.dot(Field::queryResultFlags), vvl::FlagBitmask::VkQueryResultFlagBits,
                                   AllVkQueryResultFlagBits, queryResultFlags, kOptionalFlags,
                                   "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryResultFlags-parameter", nullptr, false);
+    if (!skip)
+        skip |= manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount,
+                                                                         pDstRange, dstFlags, queryResultFlags, context);
     return skip;
 }
 
@@ -19144,6 +19158,7 @@ bool Device::PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuff
                                       AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCount2KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -19170,6 +19185,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer comm
                                       AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -19201,6 +19217,7 @@ bool Device::PreCallValidateCmdBeginConditionalRendering2EXT(VkCommandBuffer com
                                       pConditionalRenderingBegin->flags, kOptionalFlags,
                                       "VUID-VkConditionalRenderingBeginInfo2EXT-flags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginConditionalRendering2EXT(commandBuffer, pConditionalRenderingBegin, context);
     return skip;
 }
 
@@ -19229,6 +19246,9 @@ bool Device::PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer 
                                           "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBindingInfos,
+                                                                          context);
     return skip;
 }
 
@@ -19258,6 +19278,9 @@ bool Device::PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer comman
                                       "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdBeginTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount,
+                                                                    pCounterInfos, context);
     return skip;
 }
 
@@ -19287,6 +19310,9 @@ bool Device::PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandB
                                       "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdEndTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount,
+                                                                  pCounterInfos, context);
     return skip;
 }
 
@@ -19312,6 +19338,9 @@ bool Device::PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer command
                                       AllVkAddressCommandFlagBitsKHR, pCounterInfo->addressFlags, kOptionalFlags,
                                       "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-parameter", nullptr, false);
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdDrawIndirectByteCount2EXT(commandBuffer, instanceCount, firstInstance, pCounterInfo,
+                                                                   counterOffset, vertexStride, context);
     return skip;
 }
 
@@ -19334,6 +19363,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer command
                                       AllVkAddressCommandFlagBitsKHR, pInfo->addressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirect2InfoKHR-addressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -19361,6 +19391,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer co
                                       AllVkAddressCommandFlagBitsKHR, pInfo->countAddressFlags, kOptionalFlags,
                                       "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-parameter", nullptr, false);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo, context);
     return skip;
 }
 
@@ -19433,6 +19464,9 @@ bool Device::PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pAccelerationStructure), pAccelerationStructure,
                                             "VUID-vkCreateAccelerationStructure2KHR-pAccelerationStructure-parameter");
+    if (!skip)
+        skip |=
+            manual_PreCallValidateCreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure, context);
     return skip;
 }
 

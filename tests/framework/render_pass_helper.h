@@ -56,7 +56,7 @@ class RenderPassSingleSubpass : public RenderPassHelperBase {
                                   VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL);
     // Use already initialized object
-    void AddAttachmentDescription(const VkAttachmentDescription &attachment_description);
+    void AddAttachmentDescription(const VkAttachmentDescription& attachment_description);
 
     // Pass in index to attachment description
     void AddInputAttachment(uint32_t attachment_index, VkImageLayout layout);

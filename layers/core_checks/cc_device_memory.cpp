@@ -2956,11 +2956,11 @@ bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSiz
 
     const char* vuid = kVUIDUndefined;
     if (size != 0 && address == 0) {
-        vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-size-11411" : "VUID-VkDeviceAddressRangeEXT-size-11411";
+        vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-size-11411" : "VUID-VkDeviceAddressRangeKHR-size-11411";
         skip |= LogError(vuid, objlist, loc.dot(Field::address), "is zero, but size is non-zero (%" PRIu64 ")", size);
     }
 
-    vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-address-11365" : "VUID-VkDeviceAddressRangeEXT-address-11365";
+    vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-address-11365" : "VUID-VkDeviceAddressRangeKHR-address-11365";
     BufferAddressValidation<2> buffer_address_validator = {
         {{{vuid,
            [address, size](const vvl::Buffer& buffer_state) {

@@ -296,6 +296,8 @@ class Context {
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
                             const char *array_required_vuid) const;
 
+    bool ValidateDeviceAddressFlags(const Location& loc, const VkAddressCommandFlagsKHR flags) const;
+
     template <typename T>
     ValidValue IsValidEnumValue(T value) const;
     template <typename T>
@@ -691,9 +693,45 @@ class Device : public vvl::base::Device {
 
     bool manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                VkDeviceSize dataSize, const void *pData, const Context &context) const;
+    bool manual_PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                  VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                                  const Context& context) const;
+    bool manual_PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                       const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                       const Context& context) const;
+    bool manual_PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                       const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                       const Context& context) const;
+    bool manual_PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                                const Context& context) const;
+    bool manual_PreCallValidateCmdBeginConditionalRendering2EXT(
+        VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+        const Context& context) const;
+    bool manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                        const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                        const Context& context) const;
+    bool ValidateBindTransformFeedbackBuffer2InfoEXT(const Context& context, const VkBindTransformFeedbackBuffer2InfoEXT& info,
+                                                     const Location& info_loc) const;
+    bool manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                   uint32_t bindingCount,
+                                                                   const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                   const Context& context) const;
+    bool manual_PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                           uint32_t counterRangeCount,
+                                                           const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                           const Context& context) const;
+    bool manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                            uint32_t firstInstance,
+                                                            const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                            uint32_t counterOffset, uint32_t vertexStride,
+                                                            const Context& context) const;
+    bool manual_PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                      const Context& context) const;
 
     bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                              VkDeviceSize size, uint32_t data, const Context &context) const;
+    bool manual_PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                VkAddressCommandFlagsKHR dstFlags, uint32_t data, const Context& context) const;
 
     bool manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                            const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
@@ -745,11 +783,18 @@ class Device : public vvl::base::Device {
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure,
                                                              const Context &context) const;
+    bool ValidateCreateAccelerationStructure(const VkAccelerationStructureCreateFlagsKHR create_flags,
+                                             const void* create_info_pNext, const Location& create_info_loc) const;
     bool manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkAccelerationStructureKHR *pAccelerationStructure,
                                                               const Context &context) const;
+    bool manual_PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
+                                                               const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkAccelerationStructureKHR* pAccelerationStructure,
+                                                               const Context& context) const;
     bool manual_PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                const Context &context) const;
@@ -830,6 +875,10 @@ class Device : public vvl::base::Device {
                                                             uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
                                                             const VkDeviceSize *pCounterBufferOffsets,
                                                             const Context &context) const;
+    bool manual_PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                             uint32_t counterRangeCount,
+                                                             const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                             const Context& context) const;
 
     bool manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                           uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
@@ -839,6 +888,26 @@ class Device : public vvl::base::Device {
                                                            uint32_t firstInstance, VkBuffer counterBuffer,
                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                            uint32_t vertexStride, const Context &context) const;
+    bool ValidateDrawIndirect2Info(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR& info, const Location& info_loc,
+                                   const Context& context) const;
+    bool manual_PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                   const Context& context) const;
+    bool manual_PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                          const Context& context) const;
+    bool manual_PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                            const Context& context) const;
+    bool ValidateDrawIndirectCount2Info(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR& info,
+                                        const Location& info_loc, const Context& context) const;
+    bool manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                        const Context& context) const;
+    bool manual_PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                               const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                               const Context& context) const;
+    bool manual_PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                                 const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                 const Context& context) const;
+    bool manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                       const Context& context) const;
 
     bool manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
@@ -1124,6 +1193,12 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    const Context &context) const;
+    bool manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                                  uint32_t firstQuery, uint32_t queryCount,
+                                                                  const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                                  VkAddressCommandFlagsKHR dstFlags,
+                                                                  VkQueryResultFlags queryResultFlags,
+                                                                  const Context& context) const;
     bool manual_PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                                const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
                                                                const Context &context) const;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -555,6 +555,25 @@ TEST_F(NegativeDeviceFeatureProperty, Create14DeviceDuplicatedFeatures) {
     m_second_device_ci.pNext = &features_14;
     m_second_device_ci.pEnabledFeatures = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-10360");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceFeatureProperty, DeviceAddressCommandsHostAccelerationStructure) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+
+    VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR dac_features = vku::InitStructHelper();
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = vku::InitStructHelper(&dac_features);
+    GetPhysicalDeviceFeatures2(as_features);
+    if (!dac_features.deviceAddressCommands || !as_features.accelerationStructureHostCommands) {
+        GTEST_SKIP() << "Features not supported";
+    }
+    m_second_device_ci.pNext = &as_features;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-deviceAddressCommands-13048");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }

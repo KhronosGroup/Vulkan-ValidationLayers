@@ -31,6 +31,40 @@
 
 namespace stateless {
 
+bool Device::ValidateCreateAccelerationStructure(const VkAccelerationStructureCreateFlagsKHR create_flags,
+                                                 const void* create_info_pNext, const Location& create_info_loc) const {
+    bool skip = false;
+    const bool is_2 = create_info_loc.function == Func::vkCreateAccelerationStructure2KHR;
+
+    if (create_flags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR &&
+        !enabled_features.accelerationStructureCaptureReplay) {
+        const char* vuid = is_2 ? "VUID-VkAccelerationStructureCreateInfo2KHR-createFlags-03613"
+                                : "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613";
+        skip |= LogError(vuid, device, create_info_loc.dot(Field::createFlags),
+                         "includes VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR, but "
+                         "accelerationStructureCaptureReplay feature is not enabled.");
+    }
+    if ((create_flags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+        !enabled_features.descriptorBufferCaptureReplay) {
+        const char* vuid = is_2 ? "VUID-VkAccelerationStructureCreateInfo2KHR-createFlags-08108"
+                                : "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108";
+        skip |= LogError(vuid, device, create_info_loc.dot(Field::createFlags),
+                         "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but the "
+                         "descriptorBufferCaptureReplay feature was not enabled.");
+    }
+    const auto* opaque_capture_descriptor_buffer =
+        vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(create_info_pNext);
+    if (opaque_capture_descriptor_buffer &&
+        !(create_flags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+        skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, create_info_loc.dot(Field::createFlags),
+                         "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
+                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                         PrintPNextChain(Struct::VkAccelerationStructureCreateInfoKHR, create_info_pNext).c_str());
+    }
+
+    return skip;
+}
+
 bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                   const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
@@ -38,20 +72,17 @@ bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice devic
                                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
+
     if (!enabled_features.accelerationStructure) {
         skip |= LogError("VUID-vkCreateAccelerationStructureKHR-accelerationStructure-03611", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");
     }
+
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if ((pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) != 0) {
-        if (!enabled_features.accelerationStructureCaptureReplay) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613", device,
-                             create_info_loc.dot(Field::createFlags),
-                             "includes "
-                             "VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR, "
-                             "but accelerationStructureCaptureReplay feature is not enabled.");
-        }
-    } else if (pCreateInfo->deviceAddress) {
+    skip |= ValidateCreateAccelerationStructure(pCreateInfo->createFlags, pCreateInfo->pNext, create_info_loc);
+
+    if (pCreateInfo->deviceAddress &&
+        !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
         skip |= LogError(
             "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03612", device, create_info_loc.dot(Field::createFlags),
             "(%s) does not include VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR but the deviceAddress "
@@ -68,19 +99,44 @@ bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice devic
                          "(%" PRIu64 ") must be a multiple of 256 bytes", pCreateInfo->offset);
     }
 
-    if ((pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) != 0) {
-        if (!enabled_features.descriptorBufferCaptureReplay) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108", device,
-                             create_info_loc.dot(Field::createFlags),
-                             "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but the "
-                             "descriptorBufferCaptureReplay feature was not enabled.");
-        }
-    } else if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext)) {
-        skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, create_info_loc.dot(Field::createFlags),
-                         "is missing VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
-                         PrintPNextChain(Struct::VkAccelerationStructureCreateInfoKHR, pCreateInfo->pNext).c_str());
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
+                                                                   const VkAccelerationStructureCreateInfo2KHR *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkAccelerationStructureKHR *pAccelerationStructure,
+                                                                   const Context &context) const {
+    bool skip = false;
+    const auto &error_obj = context.error_obj;
+
+    if (!enabled_features.accelerationStructure) {
+        skip |= LogError("VUID-vkCreateAccelerationStructure2KHR-accelerationStructure-03611", device, error_obj.location,
+                         "accelerationStructure feature was not enabled.");
     }
+
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    skip |= ValidateCreateAccelerationStructure(pCreateInfo->createFlags, pCreateInfo->pNext, create_info_loc);
+
+    skip |= context.ValidateDeviceAddressFlags(create_info_loc.dot(Field::addressFlags), pCreateInfo->addressFlags);
+
+    if (pCreateInfo->addressRange.address == 0) {
+        skip |= LogError("VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11602", device,
+                         create_info_loc.dot(Field::addressRange).dot(Field::address), "is 0.");
+    } else if (!IsPointerAligned(pCreateInfo->addressRange.address, 256)) {
+        skip |= LogError("VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11605", device,
+                         create_info_loc.dot(Field::addressRange).dot(Field::address),
+                         "(0x%" PRIx64 ") is not aligned to 256 bytes.", pCreateInfo->addressRange.address);
+    }
+    if (pCreateInfo->addressRange.size == 0) {
+        skip |= LogError("VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11608", device,
+                         create_info_loc.dot(Field::addressRange).dot(Field::size), "is 0.");
+    }
+    if (!enabled_features.deviceAddressCommands) {
+        skip |= LogError("VUID-vkCreateAccelerationStructure2KHR-deviceAddressCommands-13086", device, error_obj.location,
+                         "deviceAddressCommands feature is not enabled.");
+    }
+
     return skip;
 }
 

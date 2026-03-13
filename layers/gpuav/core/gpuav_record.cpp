@@ -436,12 +436,54 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
     auto &sub_state = SubState(*cb_state);
 
     const LastBound &last_bound = cb_state->GetLastBoundGraphics();
+    const char* vuid = (record_obj.location.function == vvl::Func::vkCmdDrawIndirectCount2KHR ||
+                        record_obj.location.function == vvl::Func::vkCmdDrawIndexedIndirectCount2KHR ||
+                        record_obj.location.function == vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT)
+                           ? "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13116"
+                           : "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
     valcmd::CountBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
-                        vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset,
-                        "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
+                        vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset, vuid);
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, maxDrawCount,
                                                  countBuffer, countBufferOffset);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+}
+
+void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                      const RecordObject& record_obj) {
+    const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
+    // TODO - https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    const auto count_buffer_states = GetBuffersByAddress(pInfo->countAddressRange.address);
+    for (const auto buffer_state : buffer_states) {
+        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+            continue;
+        }
+        for (const auto count_buffer_state : count_buffer_states) {
+            if ((count_buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+                continue;
+            }
+            const VkBuffer buffer = buffer_state->VkHandle();
+            const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
+            const VkBuffer countBuffer = count_buffer_state->VkHandle();
+            const VkDeviceSize countBufferOffset = pInfo->countAddressRange.address - count_buffer_state->deviceAddress;
+            const uint32_t maxDrawCount = pInfo->maxDrawCount;
+            const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+            PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                                              record_obj);
+            return;
+        }
+    }
+}
+
+void Validator::PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                             const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                             const RecordObject& record_obj) {
+    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+}
+
+void Validator::PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                               const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                               const RecordObject& record_obj) {
+    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
@@ -780,6 +822,35 @@ void Validator::PreCallRecordCmdCopyMemoryToImageIndirectKHR(
     const valcmd::CopyMemoryIndirectCommon copy_info = {pCopyMemoryToImageIndirectInfo->copyCount,
                                                         pCopyMemoryToImageIndirectInfo->copyAddressRange};
     valcmd::CopyMemoryIndirect(*this, record_obj.location, SubState(*cb_state), copy_info);
+}
+
+void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                     const VkCopyDeviceMemoryImageInfoKHR *pCopyMemoryInfo,
+                                                     const RecordObject &record_obj) {
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        // TODO - https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+        const auto buffer_states = GetBuffersByAddress(pCopyMemoryInfo->pRegions[i].addressRange.address);
+        for (const auto buffer_state : buffer_states) {
+            if (buffer_state->create_info.usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
+                VkBufferImageCopy2 region = vku::InitStructHelper();
+                region.bufferOffset = pCopyMemoryInfo->pRegions[i].addressRange.address - buffer_state->deviceAddress;
+                region.bufferImageHeight = pCopyMemoryInfo->pRegions[i].addressImageHeight;
+                region.imageSubresource = pCopyMemoryInfo->pRegions[i].imageSubresource;
+                region.imageOffset = pCopyMemoryInfo->pRegions[i].imageOffset;
+                region.imageExtent = pCopyMemoryInfo->pRegions[i].imageExtent;
+
+                VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();
+                copy_buffer_to_image_info.srcBuffer = buffer_state->VkHandle();
+                copy_buffer_to_image_info.dstImage = pCopyMemoryInfo->image;
+                copy_buffer_to_image_info.dstImageLayout = pCopyMemoryInfo->pRegions[i].imageLayout;
+                copy_buffer_to_image_info.regionCount = 1u;
+                copy_buffer_to_image_info.pRegions = &region;
+                valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*GetWrite<vvl::CommandBuffer>(commandBuffer)),
+                                          &copy_buffer_to_image_info);
+                break;
+            }
+        }
+    }
 }
 
 bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,
