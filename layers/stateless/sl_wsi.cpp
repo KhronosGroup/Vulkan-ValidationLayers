@@ -21,6 +21,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/dispatch_functions.h"
 #include "generated/enum_flag_bits.h"
+#include "utils/assert_utils.h"
 
 #include <bitset>
 
@@ -261,41 +262,35 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
                                                    const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
-    if (!pPresentInfo) return skip;
+    ASSERT_AND_RETURN_SKIP(pPresentInfo);
 
-    if (const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext)) {
-        if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
-            skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
-                             error_obj.location.pNext(Struct::VkPresentRegionsKHR, Field::swapchainCount),
-                             "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_regions->swapchainCount,
-                             error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
-                             pPresentInfo->swapchainCount);
-        }
-    }
+    const Location present_info_loc = error_obj.location.dot(Field::pPresentInfo);
 
     if (vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext) &&
         !enabled_features.swapchainMaintenance1) {
-        skip |= LogError("VUID-VkPresentInfoKHR-swapchainMaintenance1-10158", device, error_obj.location.dot(Field::pNext),
-                         "contains VkSwapchainPresentFenceInfoKHR, but swapchainMaintenance1 is not enabled");
+        skip |= LogError("VUID-VkPresentInfoKHR-swapchainMaintenance1-10158", queue, present_info_loc.dot(Field::pNext),
+                         "contains VkSwapchainPresentFenceInfoKHR, but swapchainMaintenance1 is not enabled\n%s",
+                         PrintPNextChain(vvl::Struct::VkPresentInfoKHR, pPresentInfo->pNext).c_str());
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
             if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
-                skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
-                                 "[%" PRIu32 "] and pSwapchain[%" PRIu32 "] are both %s.", i, j,
-                                 FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+                skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", queue, present_info_loc.dot(Field::pSwapchain, i),
+                                 "and pSwapchain[%" PRIu32 "] are both %s.", j, FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
             }
         }
     }
 
-    if (const auto *present_timings_info = vku::FindStructInPNextChain<VkPresentTimingsInfoEXT>(pPresentInfo->pNext)) {
-        const auto present_info_loc = error_obj.location.dot(Field::pPresentInfo);
-        if (present_timings_info->swapchainCount != pPresentInfo->swapchainCount) {
-            skip |= LogError("VUID-VkPresentTimingsInfoEXT-swapchainCount-12233", device,
-                             present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::swapchainCount),
-                             "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_timings_info->swapchainCount,
-                             present_info_loc.dot(Field::swapchainCount).Fields().c_str(), pPresentInfo->swapchainCount);
+    // The rest of these "is VkPresentInfoKHR::swapchainCount the same" are inside core validation because we indexing into both
+    // arrays there and need to make sure there is no OOB, but not observed from tests because this error in stateless validation
+    // will skip core validation
+    if (const auto* present_times_info = vku::FindStructInPNextChain<VkPresentTimesInfoGOOGLE>(pPresentInfo->pNext)) {
+        if (pPresentInfo->swapchainCount != present_times_info->swapchainCount) {
+            skip |= LogError("VUID-VkPresentTimesInfoGOOGLE-swapchainCount-01247", queue,
+                             present_info_loc.pNext(Struct::VkPresentTimesInfoGOOGLE, Field::swapchainCount),
+                             "(%" PRIu32 ") is not equal to VkPresentInfoKHR::swapchainCount (%" PRIu32 ").",
+                             present_times_info->swapchainCount, pPresentInfo->swapchainCount);
         }
     }
 
