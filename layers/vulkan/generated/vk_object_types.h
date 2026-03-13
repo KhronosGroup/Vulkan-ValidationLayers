@@ -66,19 +66,19 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeVideoSessionKHR = 33,
     kVulkanObjectTypeVideoSessionParametersKHR = 34,
     kVulkanObjectTypeDeferredOperationKHR = 35,
-    kVulkanObjectTypePipelineBinaryKHR = 36,
-    kVulkanObjectTypeDebugReportCallbackEXT = 37,
-    kVulkanObjectTypeCuModuleNVX = 38,
-    kVulkanObjectTypeCuFunctionNVX = 39,
-    kVulkanObjectTypeDebugUtilsMessengerEXT = 40,
-    kVulkanObjectTypeTensorARM = 41,
-    kVulkanObjectTypeValidationCacheEXT = 42,
-    kVulkanObjectTypeAccelerationStructureNV = 43,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 44,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 45,
-    kVulkanObjectTypeCudaModuleNV = 46,
-    kVulkanObjectTypeCudaFunctionNV = 47,
-    kVulkanObjectTypeAccelerationStructureKHR = 48,
+    kVulkanObjectTypeAccelerationStructureKHR = 36,
+    kVulkanObjectTypePipelineBinaryKHR = 37,
+    kVulkanObjectTypeDebugReportCallbackEXT = 38,
+    kVulkanObjectTypeCuModuleNVX = 39,
+    kVulkanObjectTypeCuFunctionNVX = 40,
+    kVulkanObjectTypeDebugUtilsMessengerEXT = 41,
+    kVulkanObjectTypeTensorARM = 42,
+    kVulkanObjectTypeValidationCacheEXT = 43,
+    kVulkanObjectTypeAccelerationStructureNV = 44,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 45,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 46,
+    kVulkanObjectTypeCudaModuleNV = 47,
+    kVulkanObjectTypeCudaFunctionNV = 48,
     kVulkanObjectTypeBufferCollectionFUCHSIA = 49,
     kVulkanObjectTypeMicromapEXT = 50,
     kVulkanObjectTypeTensorViewARM = 51,
@@ -170,6 +170,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
         case kVulkanObjectTypeDeferredOperationKHR:
             return VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR;
+        case kVulkanObjectTypeAccelerationStructureKHR:
+            return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         case kVulkanObjectTypePipelineBinaryKHR:
             return VK_OBJECT_TYPE_PIPELINE_BINARY_KHR;
         case kVulkanObjectTypeDebugReportCallbackEXT:
@@ -194,8 +196,6 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_CUDA_MODULE_NV;
         case kVulkanObjectTypeCudaFunctionNV:
             return VK_OBJECT_TYPE_CUDA_FUNCTION_NV;
-        case kVulkanObjectTypeAccelerationStructureKHR:
-            return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         case kVulkanObjectTypeBufferCollectionFUCHSIA:
             return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
         case kVulkanObjectTypeMicromapEXT:
@@ -294,6 +294,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeVideoSessionParametersKHR;
         case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR:
             return kVulkanObjectTypeDeferredOperationKHR;
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return kVulkanObjectTypePipelineBinaryKHR;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
@@ -318,8 +320,6 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeCudaModuleNV;
         case VK_OBJECT_TYPE_CUDA_FUNCTION_NV:
             return kVulkanObjectTypeCudaFunctionNV;
-        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA:
             return kVulkanObjectTypeBufferCollectionFUCHSIA;
         case VK_OBJECT_TYPE_MICROMAP_EXT:
@@ -410,6 +410,8 @@ static constexpr VkDebugReportObjectTypeEXT ConvertCoreObjectToDebugReportObject
             return VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
             return VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT;
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
             return VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT;
         case VK_OBJECT_TYPE_CU_MODULE_NVX:
@@ -424,8 +426,6 @@ static constexpr VkDebugReportObjectTypeEXT ConvertCoreObjectToDebugReportObject
             return VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV_EXT;
         case VK_OBJECT_TYPE_CUDA_FUNCTION_NV:
             return VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT;
-        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT;
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA:
             return VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT;
         default:
@@ -499,6 +499,8 @@ static constexpr VulkanObjectType ConvertDebugReportObjectToVulkanObject(VkDebug
             return kVulkanObjectTypeDisplayKHR;
         case VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT:
             return kVulkanObjectTypeDisplayModeKHR;
+        case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT:
+            return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT:
             return kVulkanObjectTypeDebugReportCallbackEXT;
         case VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT:
@@ -513,8 +515,6 @@ static constexpr VulkanObjectType ConvertDebugReportObjectToVulkanObject(VkDebug
             return kVulkanObjectTypeCudaModuleNV;
         case VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT:
             return kVulkanObjectTypeCudaFunctionNV;
-        case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT:
-            return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT:
             return kVulkanObjectTypeBufferCollectionFUCHSIA;
         default:
@@ -1016,6 +1016,18 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeDeferredOperationKHR> {
 };
 
 template <>
+struct VkHandleInfo<VkAccelerationStructureKHR> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeAccelerationStructureKHR;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
+    static const char* Typename() { return "VkAccelerationStructureKHR"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeAccelerationStructureKHR> {
+    typedef VkAccelerationStructureKHR Type;
+};
+
+template <>
 struct VkHandleInfo<VkPipelineBinaryKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypePipelineBinaryKHR;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -1160,18 +1172,6 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeCudaFunctionNV> {
     typedef VkCudaFunctionNV Type;
 };
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-
-template <>
-struct VkHandleInfo<VkAccelerationStructureKHR> {
-    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeAccelerationStructureKHR;
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT;
-    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
-    static const char* Typename() { return "VkAccelerationStructureKHR"; }
-};
-template <>
-struct VulkanObjectTypeInfo<kVulkanObjectTypeAccelerationStructureKHR> {
-    typedef VkAccelerationStructureKHR Type;
-};
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 template <>

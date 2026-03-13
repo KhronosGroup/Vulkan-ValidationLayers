@@ -2705,6 +2705,245 @@ virtual void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, c
                                           const RecordObject& record_obj) {}
 virtual void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                   const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                 const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                     const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                     const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                   const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                   const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                    const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                    const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                       const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                     const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                      const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                  const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                   const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                  const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                  const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                   const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                  const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                  const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                   const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                               VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                             VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                              VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                             VkAddressCommandFlagsKHR dstFlags, uint32_t data, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                           VkAddressCommandFlagsKHR dstFlags, uint32_t data, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                            VkAddressCommandFlagsKHR dstFlags, uint32_t data, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                               uint32_t firstQuery, uint32_t queryCount,
+                                                               const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                               VkAddressCommandFlagsKHR dstFlags,
+                                                               VkQueryResultFlags queryResultFlags,
+                                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                             uint32_t firstQuery, uint32_t queryCount,
+                                                             const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                             VkAddressCommandFlagsKHR dstFlags, VkQueryResultFlags queryResultFlags,
+                                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                              uint32_t firstQuery, uint32_t queryCount,
+                                                              const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                              VkAddressCommandFlagsKHR dstFlags,
+                                                              VkQueryResultFlags queryResultFlags, const RecordObject& record_obj) {
+}
+virtual bool PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                     const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                   const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                    const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                            const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                           const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+                                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                           const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+                                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                            const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+                                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                uint32_t bindingCount,
+                                                                const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                              uint32_t bindingCount,
+                                                              const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                               uint32_t bindingCount,
+                                                               const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                          uint32_t counterRangeCount,
+                                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                          const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                        uint32_t counterRangeCount,
+                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                        const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                         uint32_t counterRangeCount,
+                                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                         const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                        uint32_t counterRangeCount,
+                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                      uint32_t counterRangeCount,
+                                                      const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                       uint32_t counterRangeCount,
+                                                       const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                         uint32_t firstInstance,
+                                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                         uint32_t counterOffset, uint32_t vertexStride,
+                                                         const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                       uint32_t firstInstance,
+                                                       const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                       uint32_t counterOffset, uint32_t vertexStride,
+                                                       const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                        uint32_t firstInstance,
+                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                        uint32_t counterOffset, uint32_t vertexStride,
+                                                        const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                         const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                       const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                        const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                              const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                             const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
+                                                      const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
+                                                    const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo,
+                                                     const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
+                                                            const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkAccelerationStructureKHR* pAccelerationStructure,
+                                                            const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateAccelerationStructure2KHR(VkDevice device, const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkAccelerationStructureKHR* pAccelerationStructure,
+                                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
+                                                           const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkAccelerationStructureKHR* pAccelerationStructure,
+                                                           const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                               const ErrorObject& error_obj) const {
     return false;

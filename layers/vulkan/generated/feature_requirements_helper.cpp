@@ -2083,6 +2083,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     "VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::descriptorSetHostMapping"};
         }
 
+        case Feature::deviceAddressCommands: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->deviceAddressCommands, "VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR::deviceAddressCommands"};
+        }
+
         case Feature::deviceGeneratedCompute: {
             auto vk_struct = const_cast<VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV>(*inout_pnext_chain));

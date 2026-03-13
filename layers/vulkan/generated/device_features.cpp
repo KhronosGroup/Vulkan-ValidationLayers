@@ -637,6 +637,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->presentId |= enabled->presentId == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_ADDRESS_COMMANDS_FEATURES_KHR: {
+                const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR *>(pNext);
+                features->deviceAddressCommands |= enabled->deviceAddressCommands == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR: {
                 const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *>(pNext);

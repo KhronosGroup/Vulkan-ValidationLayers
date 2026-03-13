@@ -238,6 +238,8 @@ enum class Feature {
     descriptorPoolOverallocation,
     // VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE
     descriptorSetHostMapping,
+    // VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR
+    deviceAddressCommands,
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     deviceGeneratedCompute,
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV

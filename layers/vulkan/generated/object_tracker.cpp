@@ -77,6 +77,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     FindLeakedObjects(kVulkanObjectTypeVideoSessionKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeVideoSessionParametersKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeDeferredOperationKHR, leaked_list);
+    FindLeakedObjects(kVulkanObjectTypeAccelerationStructureKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypePipelineBinaryKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCuModuleNVX, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCuFunctionNVX, leaked_list);
@@ -87,7 +88,6 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     FindLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutNV, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCudaModuleNV, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeCudaFunctionNV, leaked_list);
-    FindLeakedObjects(kVulkanObjectTypeAccelerationStructureKHR, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeMicromapEXT, leaked_list);
     FindLeakedObjects(kVulkanObjectTypeTensorViewARM, leaked_list);
@@ -142,6 +142,7 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeVideoSessionKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeVideoSessionParametersKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeDeferredOperationKHR, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineBinaryKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCuModuleNVX, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCuFunctionNVX, loc);
@@ -152,7 +153,6 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectCommandsLayoutNV, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCudaModuleNV, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeCudaFunctionNV, loc);
-    DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeMicromapEXT, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeTensorViewARM, loc);
@@ -4473,6 +4473,119 @@ bool Device::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer,
 bool Device::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                             const ErrorObject& error_obj) const {
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
+}
+
+// vkCmdBindIndexBuffer3KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBindIndexBuffer3KHR-commandBuffer-parameter"
+
+// vkCmdBindVertexBuffers3KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBindVertexBuffers3KHR-commandBuffer-parameter"
+
+// vkCmdDrawIndirect2KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawIndirect2KHR-commandBuffer-parameter"
+
+// vkCmdDrawIndexedIndirect2KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-parameter"
+
+// vkCmdDispatchIndirect2KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDispatchIndirect2KHR-commandBuffer-parameter"
+
+// vkCmdCopyMemoryKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryKHR-commandBuffer-parameter"
+
+bool Device::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-parameter"
+    if (pCopyMemoryInfo) {
+        [[maybe_unused]] const Location pCopyMemoryInfo_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
+        skip |= ValidateObject(pCopyMemoryInfo->image, kVulkanObjectTypeImage, false,
+                               "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parameter",
+                               "UNASSIGNED-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-parameter"
+    if (pCopyMemoryInfo) {
+        [[maybe_unused]] const Location pCopyMemoryInfo_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
+        skip |= ValidateObject(pCopyMemoryInfo->image, kVulkanObjectTypeImage, false,
+                               "VUID-VkCopyDeviceMemoryImageInfoKHR-image-parameter",
+                               "UNASSIGNED-VkCopyDeviceMemoryImageInfoKHR-image-parent", pCopyMemoryInfo_loc.dot(Field::image));
+    }
+
+    return skip;
+}
+
+// vkCmdUpdateMemoryKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdUpdateMemoryKHR-commandBuffer-parameter"
+
+// vkCmdFillMemoryKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdFillMemoryKHR-commandBuffer-parameter"
+
+bool Device::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                               uint32_t firstQuery, uint32_t queryCount,
+                                                               const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                               VkAddressCommandFlagsKHR dstFlags,
+                                                               VkQueryResultFlags queryResultFlags,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-commonparent"
+    skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false,
+                           "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryPool-parameter",
+                           "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-commonparent", error_obj.location.dot(Field::queryPool));
+
+    return skip;
+}
+
+// vkCmdDrawIndirectCount2KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-parameter"
+
+// vkCmdDrawIndexedIndirectCount2KHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-parameter"
+
+// vkCmdBeginConditionalRendering2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBeginConditionalRendering2EXT-commandBuffer-parameter"
+
+// vkCmdBindTransformFeedbackBuffers2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBindTransformFeedbackBuffers2EXT-commandBuffer-parameter"
+
+// vkCmdBeginTransformFeedback2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBeginTransformFeedback2EXT-commandBuffer-parameter"
+
+// vkCmdEndTransformFeedback2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdEndTransformFeedback2EXT-commandBuffer-parameter"
+
+// vkCmdDrawIndirectByteCount2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-parameter"
+
+// vkCmdDrawMeshTasksIndirect2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-parameter"
+
+// vkCmdDrawMeshTasksIndirectCount2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-parameter"
+
+// vkCmdWriteMarkerToMemoryAMD:
+// Checked by chassis: commandBuffer: "VUID-vkCmdWriteMarkerToMemoryAMD-commandBuffer-parameter"
+
+// vkCreateAccelerationStructure2KHR:
+// Checked by chassis: device: "VUID-vkCreateAccelerationStructure2KHR-device-parameter"
+
+void Device::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
+                                                           const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkAccelerationStructureKHR* pAccelerationStructure,
+                                                           const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, pAllocator, record_obj.location,
+                         device);
 }
 
 bool Device::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,

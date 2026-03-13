@@ -459,6 +459,28 @@ PFN_vkCmdWaitEvents2KHR CmdWaitEvents2KHR;
 PFN_vkCmdPipelineBarrier2KHR CmdPipelineBarrier2KHR;
 PFN_vkCmdWriteTimestamp2KHR CmdWriteTimestamp2KHR;
 PFN_vkQueueSubmit2KHR QueueSubmit2KHR;
+PFN_vkCmdBindIndexBuffer3KHR CmdBindIndexBuffer3KHR;
+PFN_vkCmdBindVertexBuffers3KHR CmdBindVertexBuffers3KHR;
+PFN_vkCmdDrawIndirect2KHR CmdDrawIndirect2KHR;
+PFN_vkCmdDrawIndexedIndirect2KHR CmdDrawIndexedIndirect2KHR;
+PFN_vkCmdDispatchIndirect2KHR CmdDispatchIndirect2KHR;
+PFN_vkCmdCopyMemoryKHR CmdCopyMemoryKHR;
+PFN_vkCmdCopyMemoryToImageKHR CmdCopyMemoryToImageKHR;
+PFN_vkCmdCopyImageToMemoryKHR CmdCopyImageToMemoryKHR;
+PFN_vkCmdUpdateMemoryKHR CmdUpdateMemoryKHR;
+PFN_vkCmdFillMemoryKHR CmdFillMemoryKHR;
+PFN_vkCmdCopyQueryPoolResultsToMemoryKHR CmdCopyQueryPoolResultsToMemoryKHR;
+PFN_vkCmdDrawIndirectCount2KHR CmdDrawIndirectCount2KHR;
+PFN_vkCmdDrawIndexedIndirectCount2KHR CmdDrawIndexedIndirectCount2KHR;
+PFN_vkCmdBeginConditionalRendering2EXT CmdBeginConditionalRendering2EXT;
+PFN_vkCmdBindTransformFeedbackBuffers2EXT CmdBindTransformFeedbackBuffers2EXT;
+PFN_vkCmdBeginTransformFeedback2EXT CmdBeginTransformFeedback2EXT;
+PFN_vkCmdEndTransformFeedback2EXT CmdEndTransformFeedback2EXT;
+PFN_vkCmdDrawIndirectByteCount2EXT CmdDrawIndirectByteCount2EXT;
+PFN_vkCmdDrawMeshTasksIndirect2EXT CmdDrawMeshTasksIndirect2EXT;
+PFN_vkCmdDrawMeshTasksIndirectCount2EXT CmdDrawMeshTasksIndirectCount2EXT;
+PFN_vkCmdWriteMarkerToMemoryAMD CmdWriteMarkerToMemoryAMD;
+PFN_vkCreateAccelerationStructure2KHR CreateAccelerationStructure2KHR;
 PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
 PFN_vkCmdCopyImage2KHR CmdCopyImage2KHR;
 PFN_vkCmdCopyBufferToImage2KHR CmdCopyBufferToImage2KHR;
@@ -1935,6 +1957,32 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_KHR_device_address_commands", [](VkInstance , VkDevice device) {
+                CmdBindIndexBuffer3KHR = reinterpret_cast<PFN_vkCmdBindIndexBuffer3KHR>(GetDeviceProcAddr(device, "vkCmdBindIndexBuffer3KHR"));
+                CmdBindVertexBuffers3KHR = reinterpret_cast<PFN_vkCmdBindVertexBuffers3KHR>(GetDeviceProcAddr(device, "vkCmdBindVertexBuffers3KHR"));
+                CmdDrawIndirect2KHR = reinterpret_cast<PFN_vkCmdDrawIndirect2KHR>(GetDeviceProcAddr(device, "vkCmdDrawIndirect2KHR"));
+                CmdDrawIndexedIndirect2KHR = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect2KHR>(GetDeviceProcAddr(device, "vkCmdDrawIndexedIndirect2KHR"));
+                CmdDispatchIndirect2KHR = reinterpret_cast<PFN_vkCmdDispatchIndirect2KHR>(GetDeviceProcAddr(device, "vkCmdDispatchIndirect2KHR"));
+                CmdCopyMemoryKHR = reinterpret_cast<PFN_vkCmdCopyMemoryKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryKHR"));
+                CmdCopyMemoryToImageKHR = reinterpret_cast<PFN_vkCmdCopyMemoryToImageKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryToImageKHR"));
+                CmdCopyImageToMemoryKHR = reinterpret_cast<PFN_vkCmdCopyImageToMemoryKHR>(GetDeviceProcAddr(device, "vkCmdCopyImageToMemoryKHR"));
+                CmdUpdateMemoryKHR = reinterpret_cast<PFN_vkCmdUpdateMemoryKHR>(GetDeviceProcAddr(device, "vkCmdUpdateMemoryKHR"));
+                CmdFillMemoryKHR = reinterpret_cast<PFN_vkCmdFillMemoryKHR>(GetDeviceProcAddr(device, "vkCmdFillMemoryKHR"));
+                CmdCopyQueryPoolResultsToMemoryKHR = reinterpret_cast<PFN_vkCmdCopyQueryPoolResultsToMemoryKHR>(GetDeviceProcAddr(device, "vkCmdCopyQueryPoolResultsToMemoryKHR"));
+                CmdDrawIndirectCount2KHR = reinterpret_cast<PFN_vkCmdDrawIndirectCount2KHR>(GetDeviceProcAddr(device, "vkCmdDrawIndirectCount2KHR"));
+                CmdDrawIndexedIndirectCount2KHR = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount2KHR>(GetDeviceProcAddr(device, "vkCmdDrawIndexedIndirectCount2KHR"));
+                CmdBeginConditionalRendering2EXT = reinterpret_cast<PFN_vkCmdBeginConditionalRendering2EXT>(GetDeviceProcAddr(device, "vkCmdBeginConditionalRendering2EXT"));
+                CmdBindTransformFeedbackBuffers2EXT = reinterpret_cast<PFN_vkCmdBindTransformFeedbackBuffers2EXT>(GetDeviceProcAddr(device, "vkCmdBindTransformFeedbackBuffers2EXT"));
+                CmdBeginTransformFeedback2EXT = reinterpret_cast<PFN_vkCmdBeginTransformFeedback2EXT>(GetDeviceProcAddr(device, "vkCmdBeginTransformFeedback2EXT"));
+                CmdEndTransformFeedback2EXT = reinterpret_cast<PFN_vkCmdEndTransformFeedback2EXT>(GetDeviceProcAddr(device, "vkCmdEndTransformFeedback2EXT"));
+                CmdDrawIndirectByteCount2EXT = reinterpret_cast<PFN_vkCmdDrawIndirectByteCount2EXT>(GetDeviceProcAddr(device, "vkCmdDrawIndirectByteCount2EXT"));
+                CmdDrawMeshTasksIndirect2EXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirect2EXT>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirect2EXT"));
+                CmdDrawMeshTasksIndirectCount2EXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectCount2EXT>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirectCount2EXT"));
+                CmdWriteMarkerToMemoryAMD = reinterpret_cast<PFN_vkCmdWriteMarkerToMemoryAMD>(GetDeviceProcAddr(device, "vkCmdWriteMarkerToMemoryAMD"));
+                CreateAccelerationStructure2KHR = reinterpret_cast<PFN_vkCreateAccelerationStructure2KHR>(GetDeviceProcAddr(device, "vkCreateAccelerationStructure2KHR"));
+            }
+        },
+        {
             "VK_KHR_copy_commands2", [](VkInstance , VkDevice device) {
                 CmdCopyBuffer2KHR = reinterpret_cast<PFN_vkCmdCopyBuffer2KHR>(GetDeviceProcAddr(device, "vkCmdCopyBuffer2KHR"));
                 CmdCopyImage2KHR = reinterpret_cast<PFN_vkCmdCopyImage2KHR>(GetDeviceProcAddr(device, "vkCmdCopyImage2KHR"));
@@ -3002,6 +3050,28 @@ void ResetAllExtensions() {
     CmdPipelineBarrier2KHR = nullptr;
     CmdWriteTimestamp2KHR = nullptr;
     QueueSubmit2KHR = nullptr;
+    CmdBindIndexBuffer3KHR = nullptr;
+    CmdBindVertexBuffers3KHR = nullptr;
+    CmdDrawIndirect2KHR = nullptr;
+    CmdDrawIndexedIndirect2KHR = nullptr;
+    CmdDispatchIndirect2KHR = nullptr;
+    CmdCopyMemoryKHR = nullptr;
+    CmdCopyMemoryToImageKHR = nullptr;
+    CmdCopyImageToMemoryKHR = nullptr;
+    CmdUpdateMemoryKHR = nullptr;
+    CmdFillMemoryKHR = nullptr;
+    CmdCopyQueryPoolResultsToMemoryKHR = nullptr;
+    CmdDrawIndirectCount2KHR = nullptr;
+    CmdDrawIndexedIndirectCount2KHR = nullptr;
+    CmdBeginConditionalRendering2EXT = nullptr;
+    CmdBindTransformFeedbackBuffers2EXT = nullptr;
+    CmdBeginTransformFeedback2EXT = nullptr;
+    CmdEndTransformFeedback2EXT = nullptr;
+    CmdDrawIndirectByteCount2EXT = nullptr;
+    CmdDrawMeshTasksIndirect2EXT = nullptr;
+    CmdDrawMeshTasksIndirectCount2EXT = nullptr;
+    CmdWriteMarkerToMemoryAMD = nullptr;
+    CreateAccelerationStructure2KHR = nullptr;
     CmdCopyBuffer2KHR = nullptr;
     CmdCopyImage2KHR = nullptr;
     CmdCopyBufferToImage2KHR = nullptr;

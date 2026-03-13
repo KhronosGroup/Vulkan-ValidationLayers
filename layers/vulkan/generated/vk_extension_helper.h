@@ -232,6 +232,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_present_id{kNotSupported};
     ExtEnabled vk_khr_video_encode_queue{kNotSupported};
     ExtEnabled vk_khr_synchronization2{kNotSupported};
+    ExtEnabled vk_khr_device_address_commands{kNotSupported};
     ExtEnabled vk_khr_fragment_shader_barycentric{kNotSupported};
     ExtEnabled vk_khr_shader_subgroup_uniform_control_flow{kNotSupported};
     ExtEnabled vk_khr_zero_initialize_workgroup_memory{kNotSupported};
@@ -716,6 +717,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_present_id:
         case vvl::Extension::_VK_KHR_video_encode_queue:
         case vvl::Extension::_VK_KHR_synchronization2:
+        case vvl::Extension::_VK_KHR_device_address_commands:
         case vvl::Extension::_VK_KHR_fragment_shader_barycentric:
         case vvl::Extension::_VK_KHR_shader_subgroup_uniform_control_flow:
         case vvl::Extension::_VK_KHR_zero_initialize_workgroup_memory:

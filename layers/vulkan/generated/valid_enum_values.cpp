@@ -1335,6 +1335,18 @@ ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeTuningModeKHR value
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const {
+    switch (value) {
+        case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR:
+        case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
+        case VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const {
     switch (value) {
         case VK_COMPONENT_TYPE_FLOAT16_KHR:
@@ -1674,18 +1686,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkGeometryTypeKHR value) const {
 }
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const {
-    switch (value) {
-        case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR:
-        case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
-        case VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const {
     switch (value) {
         case VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR:
@@ -1906,22 +1906,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMotionIns
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_STATIC_NV:
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_MATRIX_MOTION_NV:
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_SRT_MOTION_NV:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const {
-    switch (value) {
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_EXT:
-        case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_EXT:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -3336,6 +3320,15 @@ const char* stateless::Context::DescribeEnum(VkVideoEncodeTuningModeKHR value) c
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkAccelerationStructureTypeKHR value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkAccelerationStructureTypeKHR value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) const {
     switch (value) {
         case VK_COMPONENT_TYPE_BFLOAT16_KHR:
@@ -3566,15 +3559,6 @@ const char* stateless::Context::DescribeEnum(VkGeometryTypeKHR value) const {
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkAccelerationStructureTypeKHR value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkAccelerationStructureTypeKHR value) const {
-    return nullptr;
-}
-
-template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkCopyAccelerationStructureModeKHR value) const {
     return {};
 }
@@ -3736,15 +3720,6 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkAccelerationStructureMot
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkAccelerationStructureMotionInstanceTypeNV value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkDeviceFaultAddressTypeEXT value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkDeviceFaultAddressTypeEXT value) const {
     return nullptr;
 }
 

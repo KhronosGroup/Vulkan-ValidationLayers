@@ -246,6 +246,8 @@ struct DeviceFeatures {
     bool descriptorPoolOverallocation;
     // VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE
     bool descriptorSetHostMapping;
+    // VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR
+    bool deviceAddressCommands;
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     bool deviceGeneratedCompute;
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
