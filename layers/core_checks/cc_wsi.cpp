@@ -25,7 +25,9 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "cc_synchronization.h"
 #include "core_validation.h"
+#include "core_checks/cc_vuid_maps.h"
 #include "error_message/error_strings.h"
+#include "error_message/logging.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/fence_state.h"
@@ -1790,15 +1792,14 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice d
     bool skip = false;
 
     const auto *core_instance = reinterpret_cast<core::Instance *>(instance_proxy);
+    const Location info_loc = error_obj.location.dot(Field::pSurfaceInfo);
+    const Location surface_loc = info_loc.dot(Field::surface);
     if (device_state->physical_device_count == 1) {
-        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
-            physical_device, pSurfaceInfo->surface, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
-            error_obj.location);
+        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(physical_device, pSurfaceInfo->surface, surface_loc);
     } else {
         for (uint32_t i = 0; i < device_state->physical_device_count; ++i) {
-            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
-                device_state->device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
-                "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213", error_obj.location);
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(device_state->device_group_create_info.pPhysicalDevices[i],
+                                                                        pSurfaceInfo->surface, surface_loc);
         }
     }
 
@@ -1812,16 +1813,16 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkP
                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06522",
-                                                 error_obj.location);
+    const Location info_loc = error_obj.location.dot(Field::pSurfaceInfo);
+    const Location surface_loc = info_loc.dot(Field::surface);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface, surface_loc);
 
     return skip;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
-                                                          const Location &loc) const {
+bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                          const Location& surface_loc) const {
     bool skip = false;
 
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
@@ -1835,7 +1836,11 @@ bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physi
             }
         }
         if (!is_supported) {
-            skip |= LogError(vuid, physicalDevice, loc, "surface is not supported by the physicalDevice.");
+            const LogObjectList objlist(surface, physicalDevice);
+            skip |= LogError(
+                vvl::GetSurfaceSupportVUID(surface_loc), objlist, surface_loc,
+                "(%s) is not supported by the physicalDevice. (Checked by calling vkGetPhysicalDeviceSurfaceSupportKHR internally)",
+                FormatHandle(surface).c_str());
         }
     }
 
@@ -1847,14 +1852,13 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *core_instance = static_cast<core::Instance *>(instance_proxy);
+    const Location surface_loc = error_obj.location.dot(Field::surface);
     if (device_state->physical_device_count == 1) {
-        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
-            physical_device, surface, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
+        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(physical_device, surface, surface_loc);
     } else {
         for (uint32_t i = 0; i < device_state->physical_device_count; ++i) {
-            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
-                device_state->device_group_create_info.pPhysicalDevices[i], surface,
-                "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(device_state->device_group_create_info.pPhysicalDevices[i],
+                                                                        surface, surface_loc);
         }
     }
 
@@ -1866,8 +1870,7 @@ bool core::Instance::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhys
                                                                           const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
-                                                 "VUID-vkGetPhysicalDevicePresentRectanglesKHR-surface-06211", error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, error_obj.location.dot(Field::surface));
 
     return skip;
 }
@@ -1877,8 +1880,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkP
                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(
-        physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-06211", error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, error_obj.location.dot(Field::surface));
 
     return skip;
 }
@@ -1889,9 +1891,9 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkP
                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06522",
-                                                 error_obj.location);
+    const Location info_loc = error_obj.location.dot(Field::pSurfaceInfo);
+    const Location surface_loc = info_loc.dot(Field::surface);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface, surface_loc);
 
     const auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
     ASSERT_AND_RETURN_SKIP(surface_state);
@@ -1924,8 +1926,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkP
                 !win32_full_screen_info) {
                 const LogObjectList objlist(physicalDevice, pSurfaceInfo->surface);
                 skip |= LogError("VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672", objlist,
-                                 error_obj.location.dot(Field::pSurfaceInfo)
-                                     .pNext(Struct::VkSurfaceFullScreenExclusiveInfoEXT, Field::fullScreenExclusive),
+                                 info_loc.pNext(Struct::VkSurfaceFullScreenExclusiveInfoEXT, Field::fullScreenExclusive),
                                  "is VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, but does not contain "
                                  "a VkSurfaceFullScreenExclusiveWin32InfoEXT structure.");
             }
@@ -1941,8 +1942,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPh
                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(
-        physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-surface-06211", error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, error_obj.location.dot(Field::surface));
 
     return skip;
 }
@@ -1954,8 +1954,8 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysic
                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(
-        physicalDevice, pSurfaceInfo->surface, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06522", error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
+                                                 error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface));
 
     return skip;
 }
@@ -1966,8 +1966,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysica
                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06525",
-                                                 error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, error_obj.location.dot(Field::surface));
 
     return skip;
 }
@@ -1978,8 +1977,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPh
                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(
-        physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06525", error_obj.location);
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, error_obj.location.dot(Field::surface));
 
     return skip;
 }
