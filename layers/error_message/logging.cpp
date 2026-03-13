@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include "logging.h"
 
 #include <csignal>
+#include <algorithm>
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #include <debugapi.h>
 #endif
@@ -502,6 +503,13 @@ std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t han
         str << "[" << handle_name.c_str() << "]";
     }
     return str.str();
+}
+
+LoggingLabel::LoggingLabel(const VkDebugUtilsLabelEXT* label_info) {
+    if (label_info && label_info->pLabelName) {
+        name = label_info->pLabelName;
+        std::copy_n(std::begin(label_info->color), 4, color.begin());
+    }
 }
 
 template <typename Map>
