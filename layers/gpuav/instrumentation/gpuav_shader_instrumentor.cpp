@@ -51,6 +51,7 @@
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/ray_hit_object_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
+#include "gpuav/spirv/shared_memory_oob_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
@@ -1669,6 +1670,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
 
     if (gpuav_settings.shader_instrumentation.shared_memory_data_race) {
         spirv::SharedMemoryDataRacePass pass(module);
+        modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.shared_memory_oob) {
+        spirv::SharedMemoryOobPass pass(module);
         modified |= pass.Run();
     }
 
