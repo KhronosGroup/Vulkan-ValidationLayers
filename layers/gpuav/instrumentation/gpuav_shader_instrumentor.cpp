@@ -51,6 +51,7 @@
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/trace_ray_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
+#include "gpuav/spirv/shared_memory_oob_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/debug_descriptor_pass.h"
@@ -1682,6 +1683,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         modified |= pass.Run();
     }
 
+    if (gpuav_settings.shader_instrumentation.shared_memory_oob) {
+        spirv::SharedMemoryOobPass pass(module);
+        modified |= pass.Run();
+    }
+
     if (gpuav_settings.shader_instrumentation.mesh_shading) {
         spirv::MeshShading pass(module);
         modified |= pass.Run();
@@ -1979,6 +1985,13 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
                               gpuav_settings.debug_printf_only);
 
     return ss.str();
+}
+
+std::string GetSpirvSpecLink(const uint32_t opcode) {
+    // Currently the Working Group decided to not provide "real" VUIDs as it would become duplicating the SPIR-V spec
+    // So these are not "UNASSIGNED", but instead are "SPIRV" VUs because we can point to the instruction in the SPIR-V spec
+    // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
+    return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(string_SpvOpcode(opcode));
 }
 
 }  // namespace gpuav
