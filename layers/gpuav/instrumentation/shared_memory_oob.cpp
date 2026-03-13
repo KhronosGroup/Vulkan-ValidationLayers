@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <spirv/unified1/spirv.hpp>
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -48,6 +47,13 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                     const uint32_t bound = error_record[kInst_LogError_ParameterOffset_1];
                     const uint32_t variable_id = error_record[kInst_LogError_ParameterOffset_2];
 
+                    const uint32_t instruction_position_offset =
+                        error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
+                    uint32_t opcode = 0;
+                    if (instrumented_shader) {
+                        opcode = ::spirv::GetOpcodeAtOffset(instrumented_shader->original_spirv, instruction_position_offset);
+                    }
+
                     std::ostringstream strm;
                     strm << "Shared memory variable \"";
                     if (instrumented_shader) {
@@ -55,26 +61,10 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                     } else {
                         strm << "[error, original SPIR-V not found]";
                     }
-                    strm << "\" accessed with index " << index << " which is >= the bound of " << bound << ".";
+                    strm << "\" accessed out of bounds (index == " << index << ", bound == " << bound << ").";
+                    strm << GetSpirvSpecLink(opcode);
 
-                    const uint32_t error_sub_code = GetSubError(error_record);
-                    switch (error_sub_code) {
-                        case kErrorSubCode_SharedMemoryOob_AccessChainOob:
-                            strm << GetSpirvSpecLink(spv::OpAccessChain);
-                            out_vuid_msg = "SPIRV-SharedMemoryOob-AccessChain";
-                            break;
-                        case kErrorSubCode_SharedMemoryOob_VectorExtractOob:
-                            strm << GetSpirvSpecLink(spv::OpVectorExtractDynamic);
-                            out_vuid_msg = "SPIRV-SharedMemoryOob-VectorExtractDynamic";
-                            break;
-                        case kErrorSubCode_SharedMemoryOob_VectorInsertOob:
-                            strm << GetSpirvSpecLink(spv::OpVectorInsertDynamic);
-                            out_vuid_msg = "SPIRV-SharedMemoryOob-VectorInsertDynamic";
-                            break;
-                        default:
-                            out_vuid_msg = "SPIRV-SharedMemoryOob";
-                            break;
-                    }
+                    out_vuid_msg = std::string("SPIRV-SharedMemoryOob-") + string_SpvOpcode(opcode);
 
                     out_error_msg += strm.str();
                     return error_found;

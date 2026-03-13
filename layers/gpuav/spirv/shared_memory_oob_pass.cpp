@@ -15,10 +15,10 @@
 
 #include "shared_memory_oob_pass.h"
 #include "module.h"
+#include <iostream>
 #include <spirv/unified1/spirv.hpp>
 
 #include "generated/gpuav_offline_spirv.h"
-#include "gpuav/shaders/gpuav_error_codes.h"
 #include "type_manager.h"
 
 namespace gpuav {
@@ -32,8 +32,7 @@ const static OfflineFunction kOfflineFunction = {"inst_shared_memory_oob",
 
 SharedMemoryOobPass::SharedMemoryOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
-void SharedMemoryOobPass::CreateFunctionCall(const Function& /*function*/, BasicBlock& block, InstructionIt* inst_it,
-                                             const InstructionMeta& meta) {
+void SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunction(link_function_id_, kOfflineFunction);
     const uint32_t void_type = type_manager_.GetTypeVoid().Id();
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
@@ -43,12 +42,10 @@ void SharedMemoryOobPass::CreateFunctionCall(const Function& /*function*/, Basic
     for (const auto& check : meta.checks) {
         const uint32_t function_result = module_.TakeNextId();
         const uint32_t bound_id = type_manager_.GetConstantUInt32(check.bound).Id();
-        const uint32_t subcode_id = type_manager_.GetConstantUInt32(check.error_subcode).Id();
 
         block.CreateInstruction(
             spv::OpFunctionCall,
-            {void_type, function_result, function_def, check.index_id, bound_id, inst_position_id, variable_id_const, subcode_id},
-            inst_it);
+            {void_type, function_result, function_def, check.index_id, bound_id, inst_position_id, variable_id_const}, inst_it);
     }
 
     module_.need_log_error_ = true;
@@ -85,7 +82,8 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         if (!variable || variable->StorageClass() != spv::StorageClassWorkgroup) return false;
 
         const Type* vector_type = type_manager_.FindTypeById(vector_inst->TypeId());
-        if (!vector_type || vector_type->spv_type_ != SpvType::kVector) return false;
+        if (!vector_type || (vector_type->spv_type_ != SpvType::kVector && vector_type->spv_type_ != SpvType::kVectorIdEXT))
+            return false;
 
         uint32_t index_id;
         if (opcode == spv::OpVectorExtractDynamic) {
@@ -106,9 +104,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
         }
 
         meta.variable_id = variable->Id();
-        const uint32_t subcode = (opcode == spv::OpVectorExtractDynamic) ? glsl::kErrorSubCode_SharedMemoryOob_VectorExtractOob
-                                                                         : glsl::kErrorSubCode_SharedMemoryOob_VectorInsertOob;
-        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count, subcode});
+        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count});
         return !meta.checks.empty();
     }
 
@@ -144,7 +140,8 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 
         switch (pointee_type->spv_type_) {
             case SpvType::kArray:
-            case SpvType::kVector: {
+            case SpvType::kVector:
+            case SpvType::kVectorIdEXT: {
                 auto idx_inst = module_.FindInstructionGlobal(function, idx_id);
                 assert(idx_inst);
                 auto idx_type = type_manager_.FindTypeById(idx_inst->TypeId());
@@ -155,7 +152,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
                 }
                 const uint32_t bound = (pointee_type->spv_type_ == SpvType::kArray) ? pointee_type->meta_.array.length
                                                                                     : pointee_type->meta_.vector.component_count;
-                meta.checks.push_back({idx_id, bound, glsl::kErrorSubCode_SharedMemoryOob_AccessChainOob});
+                meta.checks.push_back({idx_id, bound});
                 pointee_type = type_manager_.FindChildType(*pointee_type, 0);
             } break;
             case SpvType::kStruct: {
@@ -219,7 +216,7 @@ bool SharedMemoryOobPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                CreateFunctionCall(function, current_block, &inst_it, meta);
+                CreateFunctionCall(current_block, &inst_it, meta);
             }
         }
     }
@@ -227,7 +224,9 @@ bool SharedMemoryOobPass::Instrument() {
     return instrumentations_count_ != 0;
 }
 
-void SharedMemoryOobPass::PrintDebugInfo() const {}
+void SharedMemoryOobPass::PrintDebugInfo() const {
+    std::cout << "SharedMemoryOobPass instrumentation count: " << instrumentations_count_ << '\n';
+}
 
 }  // namespace spirv
 }  // namespace gpuav

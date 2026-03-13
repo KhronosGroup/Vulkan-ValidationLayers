@@ -127,11 +127,6 @@ const int kErrorSubCode_SharedMemoryDataRace_RaceOnLoad = 2;
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic = 3;
 const int kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic = 4;
 
-// Shared Memory OOB
-const int kErrorSubCode_SharedMemoryOob_AccessChainOob = 1;
-const int kErrorSubCode_SharedMemoryOob_VectorExtractOob = 2;
-const int kErrorSubCode_SharedMemoryOob_VectorInsertOob = 3;
-
 // MeshShading
 //
 const int kErrorSubCode_MeshShading_SetMeshOutputs = 1;

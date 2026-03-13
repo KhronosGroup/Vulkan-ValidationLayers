@@ -173,6 +173,26 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VectorInsertDynamic) {
     TestHelper(shader_source, 1);
 }
 
+TEST_F(NegativeGpuAVSharedMemoryOob, LongVectorOob) {
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        layout(constant_id = 0) const uint N = 5;
+        shared vector<uint, N> v;
+        void main() {
+            uint i = ssbo.data[0] + 5;
+            v[i] = 0;
+        }
+    )glsl";
+
+    TestHelper(shader_source, 1);
+}
+
 TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
     RETURN_IF_SKIP(InitSharedMemoryOob());
     RETURN_IF_SKIP(CheckSlangSupport());

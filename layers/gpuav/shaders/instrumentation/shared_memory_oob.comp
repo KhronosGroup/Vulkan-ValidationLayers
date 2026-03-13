@@ -21,11 +21,11 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
-void inst_shared_memory_oob(const uint index, const uint bound, const uint inst_offset, const uint variable_id, const uint error_subcode) {
+void inst_shared_memory_oob(const uint index, const uint bound, const uint inst_offset, const uint variable_id) {
     if (index >= bound) {
         error_payload = ErrorPayload(
             inst_offset,
-            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryOob << kErrorGroup_Shift) | (error_subcode << kErrorSubCode_Shift),
+            SpecConstantLinkShaderId | (kErrorGroup_SharedMemoryOob << kErrorGroup_Shift),
             index,
             bound,
             variable_id);

@@ -489,6 +489,13 @@ void FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instr
     }
 }
 
+uint32_t GetOpcodeAtOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position_offset) {
+    if (instruction_position_offset < instructions.size()) {
+        return Opcode(instructions[instruction_position_offset]);
+    }
+    return 0;
+}
+
 void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t find_opcode, uint32_t find_id) {
     uint32_t shader_debug_info_set_id = 0;
     uint32_t offset = kModuleStartingOffset;

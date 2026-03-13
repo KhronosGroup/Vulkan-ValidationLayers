@@ -131,6 +131,27 @@ TEST_F(PositiveGpuAVSharedMemoryOob, VectorExtractInBounds) {
     TestHelper(shader_source);
 }
 
+TEST_F(PositiveGpuAVSharedMemoryOob, LongVectorInBounds) {
+    AddRequiredFeature(vkt::Feature::longVector);
+    AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_long_vector : enable
+        layout(local_size_x = 5) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        layout(constant_id = 0) const uint N = 5;
+        shared vector<uint, N> v;
+        void main() {
+            v[gl_LocalInvocationIndex % N] = gl_LocalInvocationIndex;
+            barrier();
+            ssbo.data[gl_LocalInvocationIndex] = v[gl_LocalInvocationIndex % N];
+        }
+    )glsl";
+
+    TestHelper(shader_source);
+}
+
 TEST_F(PositiveGpuAVSharedMemoryOob, SlangNestedStruct) {
     RETURN_IF_SKIP(InitSharedMemoryOob());
     RETURN_IF_SKIP(CheckSlangSupport());

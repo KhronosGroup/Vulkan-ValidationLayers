@@ -33,7 +33,6 @@ class SharedMemoryOobPass : public Pass {
     struct IndexCheck {
         uint32_t index_id;
         uint32_t bound;
-        uint32_t error_subcode;
     };
 
     struct InstructionMeta {
@@ -44,7 +43,7 @@ class SharedMemoryOobPass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it, const Instruction& inst,
                                  InstructionMeta& meta);
-    void CreateFunctionCall(const Function& function, BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t link_function_id_ = 0;
 };
