@@ -4828,13 +4828,13 @@ TEST_F(NegativeSyncObject, ImageMemoryBarrier2QueueFamilyExternal) {
     imb.image = image;
     imb.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-None-09119");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-None-09097");
     m_command_buffer.BarrierKHR(imb);
     m_errorMonitor->VerifyFound();
 
     imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
-    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-None-09120");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-None-09098");
     m_command_buffer.BarrierKHR(imb);
     m_errorMonitor->VerifyFound();
 
@@ -4992,13 +4992,13 @@ TEST_F(NegativeSyncObject, ImageMemoryBarrier2QueueFamilyForeign) {
     imb.image = image;
     imb.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09121");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09099");
     m_command_buffer.BarrierKHR(imb);
     m_errorMonitor->VerifyFound();
 
     imb.srcQueueFamilyIndex = m_default_queue->family_index;
     imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT;
-    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dstQueueFamilyIndex-09122");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dstQueueFamilyIndex-09100");
     m_command_buffer.BarrierKHR(imb);
     m_errorMonitor->VerifyFound();
 

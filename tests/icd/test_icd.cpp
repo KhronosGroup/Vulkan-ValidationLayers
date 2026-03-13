@@ -1168,6 +1168,10 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     GetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
     uint32_t num_bools = 0;  // Count number of VkBool32s in extension structs
     VkBool32* feat_bools = nullptr;
+    auto dac_features = vku::FindStructInPNextChain<VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR>(pFeatures->pNext);
+    if (dac_features) {
+        dac_features->deviceAddressCommands = VK_TRUE;
+    }
     auto video_maintenance1_features = vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance1FeaturesKHR>(pFeatures->pNext);
     if (video_maintenance1_features) {
         video_maintenance1_features->videoMaintenance1 = VK_TRUE;

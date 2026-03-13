@@ -431,6 +431,7 @@ target_sources(vvl PRIVATE
     stateless/sl_descriptor.cpp
     stateless/sl_device_generated_commands.cpp
     stateless/sl_device_memory.cpp
+    stateless/sl_drawdispatch.cpp
     stateless/sl_external_object.cpp
     stateless/sl_framebuffer.cpp
     stateless/sl_image.cpp

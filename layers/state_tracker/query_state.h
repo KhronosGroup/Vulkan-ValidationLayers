@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -54,6 +54,7 @@ class QueryPool : public StateObject {
     void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state);
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const;
     QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
+    uint32_t GetQuerySize(VkQueryResultFlags flags) const;
 
     const vku::safe_VkQueryPoolCreateInfo safe_create_info;
     const VkQueryPoolCreateInfo &create_info;

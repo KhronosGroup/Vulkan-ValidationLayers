@@ -73,6 +73,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                  uint32_t region_count, const VkBufferImageCopy *regions, const Location &loc) final;
     void RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state, VkImageLayout src_image_layout,
                                   uint32_t region_count, const VkBufferImageCopy2 *regions, const Location &loc) final;
+    void RecordCopyImageToMemory(vvl::Image& src_image_state, uint32_t region_count, const VkDeviceMemoryImageCopyKHR* regions,
+                                 const Location& loc) final;
+    void RecordCopyMemoryToImage(vvl::Image& dst_image_state, uint32_t region_count, const VkDeviceMemoryImageCopyKHR* regions,
+                                 const Location& loc) final;
     void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
                          const Location &loc) final;
@@ -105,6 +109,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state, uint32_t first_query,
                                     uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride, VkQueryResultFlags flags,
                                     const Location &loc) final;
+    void RecordCopyQueryPoolResultsToMemory(vvl::QueryPool& pool_state, uint32_t first_query, uint32_t query_count,
+                                            VkQueryResultFlags flags, const Location& loc) final;
     void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                      uint32_t accelerationStructureCount, const Location &loc) final;
     void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;

@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ static inline bool IsCommandDrawMesh(Func command) {
         command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
         command == Func::vkCmdDrawMeshTasksEXT ||
         command == Func::vkCmdDrawMeshTasksIndirectEXT ||
-        command == Func::vkCmdDrawMeshTasksIndirectCountEXT;
+        command == Func::vkCmdDrawMeshTasksIndirectCountEXT ||
+        command == Func::vkCmdDrawMeshTasksIndirectCount2EXT ||
+        command == Func::vkCmdDrawMeshTasksIndirect2EXT;
 }
 
 static inline bool IsCommandDrawVertexIndexed(Func command) {
@@ -37,7 +39,9 @@ static inline bool IsCommandDrawVertexIndexed(Func command) {
         command == Func::vkCmdDrawMultiIndexedEXT ||
         command == Func::vkCmdDrawIndexedIndirect ||
         command == Func::vkCmdDrawIndexedIndirectCount ||
-        command == Func::vkCmdDrawIndexedIndirectCountKHR;
+        command == Func::vkCmdDrawIndexedIndirectCountKHR ||
+        command == Func::vkCmdDrawIndexedIndirectCount2KHR ||
+        command == Func::vkCmdDrawIndexedIndirect2KHR;
 }
 
 static inline bool IsCommandDrawVertex(Func command) {
@@ -52,7 +56,11 @@ static inline bool IsCommandDrawVertex(Func command) {
         command == Func::vkCmdDrawIndirectCountKHR ||
         command == Func::vkCmdDrawIndexedIndirectCount ||
         command == Func::vkCmdDrawIndexedIndirectCountKHR ||
-        command == Func::vkCmdDrawIndirectByteCountEXT;
+        command == Func::vkCmdDrawIndirectByteCountEXT ||
+        command == Func::vkCmdDrawIndirect2KHR ||
+        command == Func::vkCmdDrawIndirectCount2KHR ||
+        command == Func::vkCmdDrawIndexedIndirect2KHR ||
+        command == Func::vkCmdDrawIndexedIndirectCount2KHR;
 }
 
 static inline bool IsCommandDispatch(Func command) {
@@ -61,6 +69,7 @@ static inline bool IsCommandDispatch(Func command) {
         command == Func::vkCmdDispatchIndirect ||
         command == Func::vkCmdDispatchBase ||
         command == Func::vkCmdDispatchBaseKHR ||
+        command == Func::vkCmdDispatchIndirect2KHR ||
         command == Func::vkCmdDispatchGraphAMDX ||
         command == Func::vkCmdDispatchGraphIndirectAMDX ||
         command == Func::vkCmdDispatchGraphIndirectCountAMDX ||
