@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (C) 2015-2026 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,7 +48,6 @@ class PhysicalDevice : public StateObject {
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
     const VkQueueFlags supported_queues;
-    uint32_t display_plane_property_count = 0;
     uint32_t surface_formats_count = 0;
     // This is a special case not to use SpecialSupported because it is required at an instance level
     bool has_maintenance9 = false;
@@ -83,9 +82,10 @@ class PhysicalDevice : public StateObject {
 class DisplayMode : public StateObject {
   public:
     const VkPhysicalDevice physical_device;
+    const VkDisplayKHR display;
 
-    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev)
-        : StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
+    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice physical_device, VkDisplayKHR display)
+        : StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(physical_device), display(display) {}
 
     VkDisplayModeKHR VkHandle() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };

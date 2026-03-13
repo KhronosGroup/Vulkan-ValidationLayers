@@ -82,8 +82,8 @@ class Instance : public vvl::InstanceProxy {
     bool PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                      const ErrorObject& error_obj) const override;
-    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                 const Location& loc) const;
+    bool ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                         const Location& plane_index_loc) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(VkPhysicalDevice physical_device,
                                                                 const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties,

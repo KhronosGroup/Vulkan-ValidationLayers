@@ -33,6 +33,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "containers/container_utils.h"
 
@@ -1559,8 +1560,7 @@ bool core::Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysic
                                                                         uint32_t *pDisplayCount, VkDisplayKHR *pDisplays,
                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
-                                                                    error_obj.location.dot(Field::planeIndex));
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(physicalDevice, planeIndex, error_obj.location.dot(Field::planeIndex));
     return skip;
 }
 
@@ -1569,8 +1569,7 @@ bool core::Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDev
                                                                    VkDisplayPlaneCapabilitiesKHR *pCapabilities,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
-                                                                    error_obj.location.dot(Field::planeIndex));
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(physicalDevice, planeIndex, error_obj.location.dot(Field::planeIndex));
     return skip;
 }
 
@@ -1579,7 +1578,7 @@ bool core::Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDe
                                                                     VkDisplayPlaneCapabilities2KHR *pCapabilities,
                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(
+    skip |= ValidateGetPhysicalDeviceDisplayPlaneProperties(
         physicalDevice, pDisplayPlaneInfo->planeIndex, error_obj.location.dot(Field::pDisplayPlaneInfo).dot(Field::planeIndex));
     return skip;
 }
@@ -1590,7 +1589,6 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     const VkDisplayModeKHR display_mode = pCreateInfo->displayMode;
-    const uint32_t plane_index = pCreateInfo->planeIndex;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     if (pCreateInfo->alphaMode == VK_DISPLAY_PLANE_ALPHA_GLOBAL_BIT_KHR) {
         const float global_alpha = pCreateInfo->globalAlpha;
@@ -1602,12 +1600,16 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
     }
 
     auto dm_state = Get<vvl::DisplayMode>(display_mode);
-    if (!dm_state) return skip;
+    if (!dm_state) {
+        // This seems to happen when race conditions if this is a "bad" VkDisplayMode, but we are adding it via a query call at the
+        // same-ish time
+        return skip;
+    }
 
     // Get physical device from VkDisplayModeKHR state tracking
     const VkPhysicalDevice physical_device = dm_state->physical_device;
     auto pd_state = Get<vvl::PhysicalDevice>(physical_device);
-    if (!pd_state) return skip;
+    ASSERT_AND_RETURN_SKIP(pd_state);
     VkPhysicalDeviceProperties device_properties = {};
     DispatchGetPhysicalDeviceProperties(physical_device, &device_properties);
 
@@ -1626,32 +1628,96 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
                          device_properties.limits.maxImageDimension2D);
     }
 
-    if (pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) ||
-        pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR)) {
-        if (plane_index >= pd_state->display_plane_property_count) {
-            skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252", display_mode,
-                             create_info_loc.dot(Field::planeIndex),
-                             "(%" PRIu32 ") must be in the range [0, %" PRIu32
-                             "] that was returned by "
-                             "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                             "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
-                             plane_index, pd_state->display_plane_property_count - 1);
-        } else {
-            // call here once we know the plane index used is a valid plane index
-            VkDisplayPlaneCapabilitiesKHR plane_capabilities;
-            DispatchGetDisplayPlaneCapabilitiesKHR(physical_device, display_mode, plane_index, &plane_capabilities);
+    uint32_t display_plane_property_count;
+    DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &display_plane_property_count, nullptr);
+    if (pCreateInfo->planeIndex >= display_plane_property_count) {
+        skip |=
+            LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252", display_mode, create_info_loc.dot(Field::planeIndex),
+                     "(%" PRIu32 ") must be in the range [0, %" PRIu32
+                     "] that was returned by "
+                     "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\n:Hint: Do you have the plane index hardcoded?",
+                     pCreateInfo->planeIndex, display_plane_property_count - 1);
+    } else {
+        // call here once we know the plane index used is a valid plane index
+        VkDisplayPlaneCapabilitiesKHR plane_capabilities;
+        DispatchGetDisplayPlaneCapabilitiesKHR(physical_device, display_mode, pCreateInfo->planeIndex, &plane_capabilities);
 
-            if ((pCreateInfo->alphaMode & plane_capabilities.supportedAlpha) == 0) {
-                skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255", display_mode, create_info_loc,
-                                 "alphaMode is %s but planeIndex %" PRIu32
-                                 " supportedAlpha (%s) "
-                                 "does not support the mode.",
-                                 string_VkDisplayPlaneAlphaFlagBitsKHR(pCreateInfo->alphaMode), plane_index,
-                                 string_VkDisplayPlaneAlphaFlagsKHR(plane_capabilities.supportedAlpha).c_str());
-            }
+        if ((pCreateInfo->alphaMode & plane_capabilities.supportedAlpha) == 0) {
+            skip |=
+                LogError("VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255", display_mode, create_info_loc.dot(Field::alphaMode),
+                         "is %s but planeIndex %" PRIu32
+                         " does not support the mode.\nvkGetDisplayPlaneCapabilitiesKHR resulting supportedAlpha: %s",
+                         string_VkDisplayPlaneAlphaFlagBitsKHR(pCreateInfo->alphaMode), pCreateInfo->planeIndex,
+                         string_VkDisplayPlaneAlphaFlagsKHR(plane_capabilities.supportedAlpha).c_str());
         }
     }
 
+    {
+        // Some older driver bugs reported "zero" which was the same as IDENTITYY, so make this the "fallback"
+        VkSurfaceTransformFlagsKHR supported_transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+        bool reorder_possible = false;
+        uint32_t matched_display = 0;
+
+        uint32_t display_count = 0;
+        DispatchGetPhysicalDeviceDisplayPropertiesKHR(physical_device, &display_count, nullptr);
+        std::vector<VkDisplayPropertiesKHR> display_props(display_count);
+        DispatchGetPhysicalDeviceDisplayPropertiesKHR(physical_device, &display_count, display_props.data());
+        for (const auto& display_prop : display_props) {
+            if (display_prop.display == dm_state->display) {
+                // Unsure if we can have multiple display, so or-ing things together
+                supported_transform |= display_prop.supportedTransforms;
+                reorder_possible |= display_prop.planeReorderPossible == VK_TRUE;
+                matched_display++;
+            }
+        }
+
+        if ((pCreateInfo->transform & supported_transform) == 0) {
+            std::ostringstream ss;
+            ss << "(" << string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->transform) << ") is not supported for "
+               << FormatHandle(display_mode) << " (which was created with " << FormatHandle(dm_state->display) << ")\n";
+            if (matched_display == 0) {
+                ss << "vkGetPhysicalDeviceDisplayPropertiesKHR returned no matching VkDisplayKHR, which means the implicit "
+                      "supported transform is VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR";
+            } else {
+                ss << "vkGetPhysicalDeviceDisplayPropertiesKHR returned the following supportedTransforms:\n";
+                for (const auto& display_prop : display_props) {
+                    if (display_prop.display == dm_state->display) {
+                        ss << "  - " << string_VkSurfaceTransformFlagsKHR(display_prop.supportedTransforms) << '\n';
+                    }
+                }
+            }
+            skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-transform-06740", display_mode,
+                             create_info_loc.dot(Field::transform), "%s", ss.str().c_str());
+        }
+
+        if (reorder_possible) {
+            if (pCreateInfo->planeStackIndex >= display_plane_property_count) {
+                skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeReorderPossible-01253", display_mode,
+                                 create_info_loc.dot(Field::planeStackIndex),
+                                 "(%" PRIu32 ") must be in the range [0, %" PRIu32
+                                 "] that was returned by "
+                                 "vkGetPhysicalDeviceDisplayPlanePropertiesKHR.\nNote: planeReorderPossible was found to be true.",
+                                 pCreateInfo->planeStackIndex, display_plane_property_count - 1);
+            }
+        } else {
+            std::vector<VkDisplayPlanePropertiesKHR> plane_props(display_plane_property_count);
+            DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physical_device, &display_plane_property_count, plane_props.data());
+            for (uint32_t i = 0; i < display_plane_property_count; i++) {
+                const VkDisplayPlanePropertiesKHR& plane_prop = plane_props[i];
+                if (plane_prop.currentDisplay == dm_state->display &&
+                    plane_prop.currentStackIndex != pCreateInfo->planeStackIndex) {
+                    skip |=
+                        LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeReorderPossible-01253", display_mode,
+                                 create_info_loc.dot(Field::planeStackIndex),
+                                 "(%" PRIu32 ") must match currentStackIndex (%" PRIu32
+                                 ") because no VkDisplayPropertiesKHR::planeReorderPossible was VK_TRUE\ncurrentStackIndex was "
+                                 "found from pProperties[%" PRIu32 "] returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR.",
+                                 pCreateInfo->planeStackIndex, plane_prop.currentStackIndex, i);
+                }
+            }
+        }
+    }
     return skip;
 }
 
@@ -1918,20 +1984,18 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPh
     return skip;
 }
 
-bool core::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                             const Location &loc) const {
+bool core::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                     const Location& plane_index_loc) const {
     bool skip = false;
-    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    if (pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) ||
-        pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR)) {
-        if (planeIndex >= pd_state->display_plane_property_count) {
-            skip |= LogError(
-                "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, loc,
-                "is %" PRIu32
-                ", but vkGetPhysicalDeviceDisplayPlanePropertiesKHR/vkGetPhysicalDeviceDisplayPlaneProperties2KHR returned %" PRIu32
-                ". (Do you have the plane index hardcoded?).",
-                planeIndex, pd_state->display_plane_property_count);
-        }
+
+    uint32_t display_plane_property_count;
+    DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, &display_plane_property_count, nullptr);
+    if (planeIndex >= display_plane_property_count) {
+        skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, plane_index_loc,
+                         "(%" PRIu32 ") must be in the range [0, %" PRIu32
+                         "] that was returned by "
+                         "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\n:Hint: Do you have the plane index hardcoded?",
+                         planeIndex, display_plane_property_count - 1);
     }
 
     return skip;

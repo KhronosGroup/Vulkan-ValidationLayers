@@ -477,6 +477,9 @@ class DataGraphTest : public VkLayerTest {
 };
 
 class WsiTest : public VkLayerTest {
+  public:
+    void GetDisplayAndDisplayMode(VkDisplayKHR* display, VkDisplayModeKHR* display_mode);
+
   protected:
     // Find physical device group that contains physical device selected by the test framework
     std::optional<VkPhysicalDeviceGroupProperties> FindPhysicalDeviceGroup();
