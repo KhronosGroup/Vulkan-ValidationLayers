@@ -423,6 +423,22 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state
     }
 }
 
+void CommandBufferSubState::RecordCopyImageToMemory(vvl::Image& src_image_state, uint32_t region_count,
+                                                    const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
+    for (const VkDeviceMemoryImageCopyKHR& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, region.imageLayout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyMemoryToImage(vvl::Image& dst_image_state, uint32_t region_count,
+                                                    const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
+    for (const VkDeviceMemoryImageCopyKHR& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, region.imageLayout);
+    }
+}
+
 void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
                                             const VkImageBlit* regions, const Location& loc) {
@@ -779,10 +795,36 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_stat
                                                string_QueryResultType(result_type));
                 }
             }
-
             skip |= validator.ValidateQueryPoolWasReset(pool_state, first_query, query_count, loc, local_query_to_state_map,
                                                         perf_query_pass);
+            return skip;
+        });
+}
 
+void CommandBufferSubState::RecordCopyQueryPoolResultsToMemory(vvl::QueryPool& pool_state, uint32_t first_query,
+                                                               uint32_t query_count, VkQueryResultFlags flags,
+                                                               const Location& loc) {
+    query_updates.emplace_back(
+        [this, &pool_state, first_query, query_count, flags, loc](vvl::CommandBuffer& cb_state_arg, bool do_validate, VkQueryPool&,
+                                                                  uint32_t perf_query_pass, QueryMap* local_query_to_state_map) {
+            if (!do_validate) {
+                return false;
+            }
+            bool skip = false;
+            for (uint32_t i = 0; i < query_count; i++) {
+                QueryState state =
+                    GetLocalQueryState(local_query_to_state_map, pool_state.VkHandle(), first_query + i, perf_query_pass);
+                QueryResultType result_type = pool_state.GetQueryResultType(state, flags);
+                if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
+                    const LogObjectList objlist(cb_state_arg.Handle(), pool_state.Handle());
+                    skip |= validator.LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-None-13084", objlist, loc,
+                                               "Requesting a copy from query to memory on %s query %" PRIu32 ": %s",
+                                               validator.FormatHandle(pool_state.Handle()).c_str(), first_query + i,
+                                               string_QueryResultType(result_type));
+                }
+            }
+            skip |= validator.ValidateQueryPoolWasReset(pool_state, first_query, query_count, loc, local_query_to_state_map,
+                                                        perf_query_pass);
             return skip;
         });
 }

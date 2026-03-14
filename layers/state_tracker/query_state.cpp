@@ -99,6 +99,71 @@ QueryResultType QueryPool::GetQueryResultType(QueryState state, VkQueryResultFla
     return QUERYRESULT_UNKNOWN;
 }
 
+uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
+    uint32_t query_avail_data = (flags & (VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR)) ? 1 : 0;
+    uint32_t query_size_in_bytes = (flags & VK_QUERY_RESULT_64_BIT) ? sizeof(uint64_t) : sizeof(uint32_t);
+    uint32_t query_items = 0;
+    uint32_t query_size = 0;
+
+    switch (create_info.queryType) {
+        case VK_QUERY_TYPE_OCCLUSION:
+            // Occlusion queries write one integer value - the number of samples passed.
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+            // Pipeline statistics queries write one integer value for each bit that is enabled in the pipelineStatistics
+            // when the pool is created
+            {
+                query_items = CountSetBits(create_info.pipelineStatistics);
+                query_size = query_size_in_bytes * (query_items + query_avail_data);
+            }
+            break;
+
+        case VK_QUERY_TYPE_TIMESTAMP:
+            // Timestamp queries write one integer
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR:
+            // Result status only writes only status
+            query_items = 0;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+            // Transform feedback queries write two integers
+            query_items = 2;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR:
+            // Video encode feedback queries write one integer value for each bit that is enabled in
+            // VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::encodeFeedbackFlags when the pool is created
+            query_items = CountSetBits(video_encode_feedback_flags);
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
+            // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
+            query_items = perf_counter_index_count;
+            query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
+            break;
+
+        // These cases intentionally fall through to the default
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:  // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
+        default:
+            query_size = 0;
+            break;
+    }
+
+    return query_size;
+}
+
 }  // namespace vvl
 
 QueryCount::QueryCount(vvl::CommandBuffer &cb_state) {

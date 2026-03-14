@@ -352,6 +352,7 @@ vvl_sources = [
   "layers/stateless/sl_descriptor.cpp",
   "layers/stateless/sl_device_generated_commands.cpp",
   "layers/stateless/sl_device_memory.cpp",
+  "layers/stateless/sl_drawdispatch.cpp",
   "layers/stateless/sl_external_object.cpp",
   "layers/stateless/sl_framebuffer.cpp",
   "layers/stateless/sl_image.cpp",

@@ -1359,3 +1359,540 @@ TEST_F(NegativeProtectedMemory, ZeroInitializeDeviceMemory) {
     vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsCopyMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer src_buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceMemoryCopyKHR region = vku::InitStructHelper();
+    region.srcRange = src_buffer.AddressRange();
+    region.srcFlags = 0u;
+    region.dstRange = dst_buffer.AddressRange();
+    region.dstFlags = 0u;
+
+    VkCopyDeviceMemoryInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.regionCount = 1u;
+    copy_memory_info.pRegions = &region;
+
+    cb.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryKHR-commandBuffer-13014");
+    vk::CmdCopyMemoryKHR(cb, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsDraw) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer index_buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+    index_buffer_info.addressRange = index_buffer.AddressRange();
+    index_buffer_info.addressFlags = 0u;
+    index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+
+    cb.Begin();
+    cb.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer3KHR(cb, &index_buffer_info);
+
+    const uint32_t stride = sizeof(VkDrawIndexedIndirectCommand) * sizeof(VkDrawIndirectCommand);
+
+    VkDrawIndirect2InfoKHR draw_indirect_2_info = vku::InitStructHelper();
+    draw_indirect_2_info.addressRange = buffer.StridedAddressRange(stride);
+    draw_indirect_2_info.addressFlags = 0u;
+    draw_indirect_2_info.drawCount = 1u;
+
+    VkDrawIndirectCount2InfoKHR draw_indirect_count_2_info = vku::InitStructHelper();
+    draw_indirect_count_2_info.addressRange = buffer.StridedAddressRange(stride);
+    draw_indirect_count_2_info.addressFlags = 0u;
+    draw_indirect_count_2_info.countAddressRange = count_buffer.AddressRange();
+    draw_indirect_count_2_info.countAddressFlags = 0u;
+    draw_indirect_count_2_info.maxDrawCount = 1u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-13059");
+    vk::CmdDrawIndexedIndirect2KHR(cb, &draw_indirect_2_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-13060");
+    vk::CmdDrawIndexedIndirectCount2KHR(cb, &draw_indirect_count_2_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect2KHR-commandBuffer-13057");
+    vk::CmdDrawIndirect2KHR(cb, &draw_indirect_2_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-13058");
+    vk::CmdDrawIndirectCount2KHR(cb, &draw_indirect_count_2_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.EndRenderPass();
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsDrawMesh) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.pVertexInputState = nullptr;
+    pipe.gp_ci_.pInputAssemblyState = nullptr;
+    pipe.CreateGraphicsPipeline();
+
+    cb.Begin();
+    cb.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    const uint32_t stride = sizeof(VkDrawIndexedIndirectCommand) * sizeof(VkDrawIndirectCommand);
+
+    VkDrawIndirect2InfoKHR draw_indirect_2_info = vku::InitStructHelper();
+    draw_indirect_2_info.addressRange = buffer.StridedAddressRange(stride);
+    draw_indirect_2_info.addressFlags = 0u;
+    draw_indirect_2_info.drawCount = 1u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-13067");
+    vk::CmdDrawMeshTasksIndirect2EXT(cb, &draw_indirect_2_info);
+    m_errorMonitor->VerifyFound();
+
+    VkDrawIndirectCount2InfoKHR draw_indirect_count_2_info = vku::InitStructHelper();
+    draw_indirect_count_2_info.addressRange = buffer.StridedAddressRange(stride);
+    draw_indirect_count_2_info.addressFlags = 0u;
+    draw_indirect_count_2_info.countAddressRange = count_buffer.AddressRange();
+    draw_indirect_count_2_info.countAddressFlags = 0u;
+    draw_indirect_count_2_info.maxDrawCount = 1u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-13068");
+    vk::CmdDrawMeshTasksIndirectCount2EXT(cb, &draw_indirect_count_2_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.EndRenderPass();
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsDispatch) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    cb.Begin();
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDispatchIndirect2InfoKHR dispatch_indirect_info = vku::InitStructHelper();
+    dispatch_indirect_info.addressRange = buffer.AddressRange();
+    dispatch_indirect_info.addressFlags = 0u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect2KHR-commandBuffer-13049");
+    vk::CmdDispatchIndirect2KHR(cb, &dispatch_indirect_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsCopyFlag) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM,
+                                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = 0;
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    bool found = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image, memory, 0);
+
+    VkDeviceMemoryImageCopyKHR region = vku::InitStructHelper();
+    region.addressRange = buffer.AddressRange();
+    region.addressFlags = 0u;
+    region.addressRowLength = 0u;
+    region.addressImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.image = image;
+    copy_memory_info.regionCount = 1u;
+    copy_memory_info.pRegions = &region;
+
+    cb.Begin();
+    image.SetLayout(cb, VK_IMAGE_LAYOUT_GENERAL);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13025");
+    vk::CmdCopyImageToMemoryKHR(cb, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsCopyImageFlag) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    VkBufferCreateInfo buffer_ci =
+        vkt::Buffer::CreateInfo(32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    buffer_ci.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs_protected;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs_protected);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&allocate_flag_info);
+    bool found =
+        m_device->Physical().SetMemoryType(mem_reqs_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
+    alloc_info.allocationSize = mem_reqs_protected.size;
+
+    vkt::DeviceMemory memory_protected(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer, memory_protected, 0);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkDeviceMemoryImageCopyKHR region = vku::InitStructHelper();
+    region.addressRange = buffer.AddressRange();
+    region.addressFlags = VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR;
+    region.addressRowLength = 0u;
+    region.addressImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.image = image;
+    copy_memory_info.regionCount = 1u;
+    copy_memory_info.pRegions = &region;
+
+    cb.Begin();
+    image.SetLayout(cb, VK_IMAGE_LAYOUT_GENERAL);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13021");
+    vk::CmdCopyMemoryToImageKHR(cb, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsImageCopy) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       vkt::device_address);
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM,
+                                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = 0;
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    bool found = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image, memory, 0);
+
+    VkDeviceMemoryImageCopyKHR region = vku::InitStructHelper();
+    region.addressRange = buffer.AddressRange();
+    region.addressRowLength = 0u;
+    region.addressImageHeight = 0u;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32u, 32u, 1u};
+
+    VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.image = image;
+    copy_memory_info.regionCount = 1u;
+    copy_memory_info.pRegions = &region;
+
+    m_command_buffer.Begin();
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13103");
+    vk::CmdCopyMemoryToImageKHR(m_command_buffer, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13103");
+    vk::CmdCopyImageToMemoryKHR(m_command_buffer, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsCmdFillMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeKHR range;
+    range.address = buffer.Address();
+    range.size = 256u;
+    const uint32_t data = 255;
+
+    VkAddressCommandFlagsKHR flags = 0u;
+
+    cb.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillMemoryKHR-commandBuffer-13004");
+    vk::CmdFillMemoryKHR(cb, &range, flags, data);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsCmdUpdateMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeKHR range;
+    range.address = buffer.Address();
+    range.size = 256u;
+    const uint32_t data = 255;
+
+    VkAddressCommandFlagsKHR flags = 0u;
+
+    cb.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateMemoryKHR-commandBuffer-13011");
+    vk::CmdUpdateMemoryKHR(cb, &range, flags, 4u, &data);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    VkBufferCreateInfo buffer_ci =
+        vkt::Buffer::CreateInfo(256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    buffer_ci.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&allocate_flag_info);
+    alloc_info.allocationSize = 0;
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    bool found = m_device->Physical().SetMemoryType(
+        mem_reqs.memoryTypeBits, &alloc_info,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    if (!found) {
+        GTEST_SKIP() << "Memory type not found";
+    }
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
+
+    VkDeviceAddressRangeKHR range;
+    range.address = buffer.Address();
+    range.size = 256u;
+    const uint32_t data = 255;
+
+    VkAddressCommandFlagsKHR flags = 0u;
+
+    cb.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillMemoryKHR-pDstRange-13098");
+    vk::CmdFillMemoryKHR(cb, &range, flags, data);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeProtectedMemory, DeviceAddressCommandsFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer cb(*m_device, command_pool);
+
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.protectedNoFault) {
+        GTEST_SKIP() << "Test requires protectedNoFault to be VK_FALSE";
+    }
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeKHR range;
+    range.address = buffer.Address();
+    range.size = 256u;
+    const uint32_t data = 255;
+
+    VkAddressCommandFlagsKHR flags = VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR;
+
+    cb.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillMemoryKHR-pDstRange-13099");
+    vk::CmdFillMemoryKHR(cb, &range, flags, data);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}

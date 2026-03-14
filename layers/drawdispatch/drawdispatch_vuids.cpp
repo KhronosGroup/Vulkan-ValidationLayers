@@ -355,6 +355,23 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
     }
 };
 
+struct DispatchVuidsCmdDrawIndirectByteCount2EXT: DrawDispatchVuid {
+    DispatchVuidsCmdDrawIndirectByteCount2EXT() : DrawDispatchVuid(Func::vkCmdDrawIndirectByteCount2EXT) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-02646";
+        indirect_buffer_bit_02290                 = "UNASSIGNED-VkBindTransformFeedbackBuffer2InfoEXT-addressRange";
+        primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndirectByteCount2EXT-primitiveTopology-10286";
+        vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndirectByteCount2EXT-None-02721";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawIndirectByteCount2EXT-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawIndirectByteCount2EXT-dimensionCount-09905";
+    }
+};
+
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid(Func::vkCmdDispatchBase) {
         pipeline_bound_08606                     = "VUID-vkCmdDispatchBase-None-08606";
@@ -378,6 +395,123 @@ struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08117";
         tensorARM_pDescription_09900             = "VUID-vkCmdExecuteGeneratedCommandsEXT-pDescription-09900";
         tensorARM_dimensionCount_09905           = "VUID-vkCmdExecuteGeneratedCommandsEXT-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawIndirect2KHR : DrawDispatchVuid {
+    DispatchVuidsCmdDrawIndirect2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndirect2KHR) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawIndirect2KHR-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawIndirect2KHR-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawIndirect2KHR-commandBuffer-13057";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+        primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndirect2KHR-primitiveTopology-10286";
+        vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndirect2KHR-None-02721";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndirect2KHR-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawIndirect2KHR-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawIndirect2KHR-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirect2KHR-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawIndirect2KHR-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawIndirect2KHR-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawIndexedIndirect2KHR : DrawDispatchVuid {
+    DispatchVuidsCmdDrawIndexedIndirect2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirect2KHR) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08606";
+        index_binding_07312                       = "VUID-vkCmdDrawIndexedIndirect2KHR-None-07312";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-13059";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+        primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndexedIndirect2KHR-primitiveTopology-10286";
+        vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndexedIndirect2KHR-None-02721";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndexedIndirect2KHR-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawIndexedIndirect2KHR-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawIndexedIndirect2KHR-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawIndirectCount2KHR : DrawDispatchVuid {
+    DispatchVuidsCmdDrawIndirectCount2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndirectCount2KHR) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawIndirectCount2KHR-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawIndirectCount2KHR-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-13058";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+        indirect_count_buffer_bit_02715           = "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13114";
+        primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndirectCount2KHR-primitiveTopology-10286";
+        vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndirectCount2KHR-None-02721";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawIndirectCount2KHR-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawIndirectCount2KHR-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirectCount2KHR-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawIndirectCount2KHR-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawIndirectCount2KHR-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawIndexedIndirectCount2KHR : DrawDispatchVuid {
+    DispatchVuidsCmdDrawIndexedIndirectCount2KHR() : DrawDispatchVuid(Func::vkCmdDrawIndexedIndirectCount2KHR) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08606";
+        index_binding_07312                       = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-07312";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-13060";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+        indirect_count_buffer_bit_02715           = "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13114";
+        primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndexedIndirectCount2KHR-primitiveTopology-10286";
+        vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-02721";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawIndexedIndirectCount2KHR-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawIndexedIndirectCount2KHR-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDispatchIndirect2KHR : DrawDispatchVuid {
+    DispatchVuidsCmdDispatchIndirect2KHR() : DrawDispatchVuid(Func::vkCmdDispatchIndirect2KHR) {
+        pipeline_bound_08606                      = "VUID-vkCmdDispatchIndirect2KHR-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDispatchIndirect2KHR-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDispatchIndirect2KHR-commandBuffer-13049";
+        indirect_buffer_bit_02290                 = "VUID-VkDispatchIndirect2InfoKHR-addressRange-13107";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDispatchIndirect2KHR-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDispatchIndirect2KHR-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDispatchIndirect2KHR-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatchIndirect2KHR-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDispatchIndirect2KHR-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDispatchIndirect2KHR-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawMeshTasksIndirect2EXT : DrawDispatchVuid {
+    DispatchVuidsCmdDrawMeshTasksIndirect2EXT() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirect2EXT) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawMeshTasksIndirect2EXT-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawMeshTasksIndirect2EXT-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-13067";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirect2InfoKHR-addressRange-13107";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawMeshTasksIndirect2EXT-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawMeshTasksIndirect2EXT-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirect2EXT-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawMeshTasksIndirect2EXT-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawMeshTasksIndirect2EXT-dimensionCount-09905";
+    }
+};
+
+struct DispatchVuidsCmdDrawMeshTasksIndirectCount2EXT : DrawDispatchVuid {
+    DispatchVuidsCmdDrawMeshTasksIndirectCount2EXT() : DrawDispatchVuid(Func::vkCmdDrawMeshTasksIndirectCount2EXT) {
+        pipeline_bound_08606                      = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-None-08606";
+        compatible_pipeline_08600                 = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-None-08600";
+        indirect_protected_cb_02711               = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-13068";
+        indirect_buffer_bit_02290                 = "VUID-VkDrawIndirectCount2InfoKHR-addressRange-13107";
+        unprotected_command_buffer_02707          = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-02707";
+        descriptor_buffer_bit_set_08114           = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-None-08114";
+        descriptor_buffer_bit_not_set_08115       = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-None-08115";
+        descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-None-08117";
+        tensorARM_pDescription_09900              = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-pDescription-09900";
+        tensorARM_dimensionCount_09905            = "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-dimensionCount-09905";
     }
 };
 
@@ -421,9 +555,17 @@ static const std::pair<Func, DrawDispatchVuid> pairs[] = {
     {Func::vkCmdDrawMeshTasksIndirectEXT, DispatchVuidsCmdDrawMeshTasksIndirectEXT()},
     {Func::vkCmdDrawMeshTasksIndirectCountEXT, DispatchVuidsCmdDrawMeshTasksIndirectCountEXT()},
     {Func::vkCmdDrawIndirectByteCountEXT, DispatchVuidsCmdDrawIndirectByteCountEXT()},
+    {Func::vkCmdDrawIndirectByteCount2EXT, DispatchVuidsCmdDrawIndirectByteCount2EXT()},
     {Func::vkCmdDispatchBase, DispatchVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, DispatchVuidsCmdDispatchBase()},
     {Func::vkCmdExecuteGeneratedCommandsEXT, DispatchVuidsCmdExecuteGeneratedCommandsEXT()},
+    {Func::vkCmdDrawIndirect2KHR, DispatchVuidsCmdDrawIndirect2KHR()},
+    {Func::vkCmdDrawIndexedIndirect2KHR, DispatchVuidsCmdDrawIndexedIndirect2KHR()},
+    {Func::vkCmdDrawIndirectCount2KHR, DispatchVuidsCmdDrawIndirectCount2KHR()},
+    {Func::vkCmdDrawIndexedIndirectCount2KHR, DispatchVuidsCmdDrawIndexedIndirectCount2KHR()},
+    {Func::vkCmdDispatchIndirect2KHR, DispatchVuidsCmdDispatchIndirect2KHR()},
+    {Func::vkCmdDrawMeshTasksIndirect2EXT, DispatchVuidsCmdDrawMeshTasksIndirect2EXT()},
+    {Func::vkCmdDrawMeshTasksIndirectCount2EXT, DispatchVuidsCmdDrawMeshTasksIndirectCount2EXT()},
     {Func::vkCmdDispatchDataGraphARM, DispatchVuidsCmdDispatchDataGraphARM()},
     // Used if invalid function is used
     {Func::Empty, DrawDispatchVuid(Func::Empty)}
@@ -964,6 +1106,8 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         case ActionVUID::SPIRV_OPTYPETENSORARM_09906: suffix = "OpTypeTensorARM-09906"; break;
         // ### VUID-vkCmdDraw-commandBuffer-10746
         case ActionVUID::TILE_MEMORY_HEAP_10746: suffix = "commandBuffer-10746"; break;
+        // ### VUID-vkCmdDraw-protectedNoFault-13108
+        case ActionVUID::PROTECTED_BUFFER_13108: suffix = "protectedNoFault-13108"; break;
 
         // ### VUID-vkCmdDraw-viewMask-06178
         case ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178: suffix = "viewMask-06178"; break;

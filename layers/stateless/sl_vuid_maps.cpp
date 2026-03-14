@@ -129,4 +129,102 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
 }
 // clang-format on
 
+const char* GetAddressFlagVUID(const Location& loc, AddressFlagError error) {
+    if (error == AddressFlagError::AliasesStorageBuffer_13100) {
+        switch (loc.function) {
+            case Func::vkCreateAccelerationStructure2KHR:
+                return "VUID-VkAccelerationStructureCreateInfo2KHR-addressFlags-13100";
+            case Func::vkCmdBindIndexBuffer3KHR:
+                return "VUID-VkBindIndexBuffer3InfoKHR-addressFlags-13100";
+            case Func::vkCmdBindVertexBuffers3KHR:
+                return "VUID-VkBindVertexBuffer3InfoKHR-addressFlags-13100";
+            case Func::vkCmdBindTransformFeedbackBuffers2EXT:
+            case Func::vkCmdBeginTransformFeedback2EXT:
+            case Func::vkCmdEndTransformFeedback2EXT:
+            case Func::vkCmdDrawIndirectByteCount2EXT:
+                return "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-13100";
+            case Func::vkCmdBeginConditionalRendering2EXT:
+                return "VUID-VkConditionalRenderingBeginInfo2EXT-addressFlags-13100";
+            case Func::vkCmdCopyMemoryToImageKHR:
+            case Func::vkCmdCopyImageToMemoryKHR:
+                return "VUID-VkDeviceMemoryImageCopyKHR-addressFlags-13100";
+            case Func::vkCmdDispatchIndirect2KHR:
+                return "VUID-VkDispatchIndirect2InfoKHR-addressFlags-13100";
+            case Func::vkCmdWriteMarkerToMemoryAMD:
+                return "VUID-VkMemoryMarkerInfoAMD-dstFlags-13100";
+            case Func::vkCmdCopyQueryPoolResultsToMemoryKHR:
+                return "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13100";
+            case Func::vkCmdFillMemoryKHR:
+                return "VUID-vkCmdFillMemoryKHR-dstFlags-13100";
+            case Func::vkCmdUpdateMemoryKHR:
+                return "VUID-vkCmdUpdateMemoryKHR-dstFlags-13100";
+            case Func::vkCmdDrawIndirect2KHR:
+            case Func::vkCmdDrawIndexedIndirect2KHR:
+            case Func::vkCmdDrawMeshTasksIndirect2EXT:
+                return "VUID-VkDrawIndirect2InfoKHR-addressFlags-13100";
+            case Func::vkCmdDrawIndirectCount2KHR:
+            case Func::vkCmdDrawIndexedIndirectCount2KHR:
+            case Func::vkCmdDrawMeshTasksIndirectCount2EXT:
+                return (loc.field == Field::addressFlags) ? "VUID-VkDrawIndirectCount2InfoKHR-addressFlags-13100"
+                                                          : "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-13100";
+            case Func::vkCmdPipelineBarrier2KHR:
+            case Func::vkCmdPipelineBarrier2:
+                return "VUID-VkMemoryRangeBarrierKHR-addressFlags-13100";
+            case Func::vkCmdCopyMemoryKHR:
+                return (loc.field == Field::srcFlags) ? "VUID-VkDeviceMemoryCopyKHR-srcFlags-13100"
+                                                      : "VUID-VkDeviceMemoryCopyKHR-dstFlags-13100";
+            default:
+                break;
+        }
+    } else if (error == AddressFlagError::AliasesTransformFeedback_13101) {
+        switch (loc.function) {
+            case Func::vkCreateAccelerationStructure2KHR:
+                return "VUID-VkAccelerationStructureCreateInfo2KHR-addressFlags-13101";
+            case Func::vkCmdBindIndexBuffer3KHR:
+                return "VUID-VkBindIndexBuffer3InfoKHR-addressFlags-13101";
+            case Func::vkCmdBindVertexBuffers3KHR:
+                return "VUID-VkBindVertexBuffer3InfoKHR-addressFlags-13101";
+            case Func::vkCmdBindTransformFeedbackBuffers2EXT:
+            case Func::vkCmdBeginTransformFeedback2EXT:
+            case Func::vkCmdEndTransformFeedback2EXT:
+            case Func::vkCmdDrawIndirectByteCount2EXT:
+                return "VUID-VkBindTransformFeedbackBuffer2InfoEXT-addressFlags-13101";
+            case Func::vkCmdBeginConditionalRendering2EXT:
+                return "VUID-VkConditionalRenderingBeginInfo2EXT-addressFlags-13101";
+            case Func::vkCmdCopyMemoryToImageKHR:
+            case Func::vkCmdCopyImageToMemoryKHR:
+                return "VUID-VkDeviceMemoryImageCopyKHR-addressFlags-13101";
+            case Func::vkCmdDispatchIndirect2KHR:
+                return "VUID-VkDispatchIndirect2InfoKHR-addressFlags-13101";
+            case Func::vkCmdWriteMarkerToMemoryAMD:
+                return "VUID-VkMemoryMarkerInfoAMD-dstFlags-13101";
+            case Func::vkCmdCopyQueryPoolResultsToMemoryKHR:
+                return "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13101";
+            case Func::vkCmdFillMemoryKHR:
+                return "VUID-vkCmdFillMemoryKHR-dstFlags-13101";
+            case Func::vkCmdUpdateMemoryKHR:
+                return "VUID-vkCmdUpdateMemoryKHR-dstFlags-13101";
+            case Func::vkCmdDrawIndirect2KHR:
+            case Func::vkCmdDrawIndexedIndirect2KHR:
+            case Func::vkCmdDrawMeshTasksIndirect2EXT:
+                return "VUID-VkDrawIndirect2InfoKHR-addressFlags-13101";
+            case Func::vkCmdDrawIndirectCount2KHR:
+            case Func::vkCmdDrawIndexedIndirectCount2KHR:
+            case Func::vkCmdDrawMeshTasksIndirectCount2EXT:
+                return (loc.field == Field::addressFlags) ? "VUID-VkDrawIndirectCount2InfoKHR-addressFlags-13101"
+                                                          : "VUID-VkDrawIndirectCount2InfoKHR-countAddressFlags-13101";
+            case Func::vkCmdPipelineBarrier2KHR:
+            case Func::vkCmdPipelineBarrier2:
+                return "VUID-VkMemoryRangeBarrierKHR-addressFlags-13101";
+            case Func::vkCmdCopyMemoryKHR:
+                return (loc.field == Field::srcFlags) ? "VUID-VkDeviceMemoryCopyKHR-srcFlags-13101"
+                                                      : "VUID-VkDeviceMemoryCopyKHR-dstFlags-13101";
+            default:
+                break;
+        }
+    }
+    assert(false);
+    return "UNASSIGNED-Stateless-unhandled-addressFlags";
+}
+
 }  // namespace vvl

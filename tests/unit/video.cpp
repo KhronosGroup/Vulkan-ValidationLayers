@@ -2222,3 +2222,100 @@ TEST_F(NegativeVideo, NoQueueSupportForResultStatusOnly) {
     vk::CreateQueryPool(device(), &query_pool_create_info, nullptr, &query_pool);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeVideo, DeviceAddressCommandsQueryPoolResultStatusOnly) {
+    AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
+    }
+
+    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+        if (QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
+            queue_family_index = qfi;
+            break;
+        }
+    }
+
+    if (queue_family_index != VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "Test requires a queue family with support for result status queries";
+    }
+
+    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
+    query_pool_ci.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
+    query_pool_ci.queryCount = 1u;
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+
+    vkt::Buffer buffer(*m_device, sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkStridedDeviceAddressRangeKHR range = buffer.StridedAddressRange(sizeof(uint64_t));
+    range.stride = 0u;
+
+    vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer cb(*m_device, cmd_pool);
+
+    cb.Begin();
+    vk::CmdBeginQuery(cb, query_pool, 0u, 0u);
+    vk::CmdEndQuery(cb, query_pool, 0u);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-09442");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(cb, query_pool, 0u, 1u, &range, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}
+
+TEST_F(NegativeVideo, DeviceAddressCommandsQueryResultFlags) {
+    AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
+    }
+
+    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+        if (QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
+            queue_family_index = qfi;
+            break;
+        }
+    }
+
+    if (queue_family_index != VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "Test requires a queue family with support for result status queries";
+    }
+
+    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
+    query_pool_ci.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
+    query_pool_ci.queryCount = 1u;
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+
+    vkt::Buffer buffer(*m_device, sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkStridedDeviceAddressRangeKHR range = buffer.StridedAddressRange(sizeof(uint64_t));
+    range.stride = 0u;
+
+    vkt::CommandPool cmd_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer cb(*m_device, cmd_pool);
+
+    cb.Begin();
+    vk::CmdBeginQuery(cb, query_pool, 0u, 0u);
+    vk::CmdEndQuery(cb, query_pool, 0u);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-09443");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(cb, query_pool, 0u, 1u, &range, 0u,
+                                           VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+    m_errorMonitor->VerifyFound();
+
+    cb.End();
+}

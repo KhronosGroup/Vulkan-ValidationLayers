@@ -407,6 +407,29 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+
+    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
+    // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -457,6 +480,31 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                          "(%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
+    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
+    // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
+    // 'buffer'.
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
     // 'buffer'.
@@ -610,6 +658,27 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
 
     return skip;
 }
+
+bool CoreChecks::PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundCompute();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, false, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride, const ErrorObject &error_obj) const {
@@ -667,6 +736,29 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                                         uint32_t stride, const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                error_obj);
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+    skip |= ValidateIndirectCountBufferDeviceAddress(cb_state, pInfo->countAddressRange.address, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->countAddressRange.address, pInfo->countAddressRange.size,
+                                          pInfo->countAddressFlags, error_obj.location.dot(Field::countAddressRange));
+
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -731,6 +823,32 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
                                                       stride, error_obj);
 }
 
+bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                                const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    skip |= ValidateGraphicsIndexedCmd(cb_state, vuid);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+    skip |= ValidateIndirectCountBufferDeviceAddress(cb_state, pInfo->countAddressRange.address, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->countAddressRange.address, pInfo->countAddressRange.size,
+                                          pInfo->countAddressFlags, error_obj.location.dot(Field::countAddressRange));
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                             uint32_t firstInstance, VkBuffer counterBuffer,
                                                             VkDeviceSize counterBufferOffset, uint32_t counterOffset,
@@ -776,6 +894,56 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
                          "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
     }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                             uint32_t firstInstance,
+                                                             const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+                                                             uint32_t counterOffset, uint32_t vertexStride,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateCmdDrawInstance(last_bound_state, instanceCount, firstInstance, error_obj.location);
+    skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
+
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedback-02287",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
+                         "transformFeedback feature is not enabled.");
+    }
+    if (IsExtEnabled(extensions.vk_ext_transform_feedback) && !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedbackDraw-02288",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
+                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported");
+    }
+    if ((vertexStride <= 0) || (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-02289",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
+                         "(%" PRIu32 ") must be between 0 and maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+    }
+
+    if (!IsIntegerMultipleOf(counterOffset, 4)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-counterOffset-09474",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::counterOffset),
+                         "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
+    }
+    if (!IsIntegerMultipleOf(vertexStride, 4)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-09475",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
+                         "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
+    }
+
+    skip |= ValidateDeviceAddressRange(pCounterInfo->addressRange.address, pCounterInfo->addressRange.size, false,
+                                       error_obj.location.dot(Field::pCounterInfo).dot(Field::addressRange),
+                                       LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT,
+                                       vuid.indirect_buffer_bit_02290);
 
     return skip;
 }
@@ -1377,6 +1545,53 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
                                                     *indirect_buffer_state, error_obj.location);
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, error_obj.location);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+
+    // TODO: vkMapMemory() and check the contents of buffer at offset
+    // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                                  const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& last_bound_state = cb_state.GetLastBoundGraphics();
+    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, error_obj.location);
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |=
+        ValidateIndirectBufferDeviceAddress(cb_state, pInfo->addressRange.address, pInfo->addressRange.size, true, info_loc, vuid);
+    skip |= ValidateIndirectCountBufferDeviceAddress(cb_state, pInfo->countAddressRange.address, info_loc, vuid);
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->countAddressRange.address, pInfo->countAddressRange.size,
+                                          pInfo->countAddressFlags, error_obj.location.dot(Field::countAddressRange));
 
     return skip;
 }
@@ -2056,7 +2271,56 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound& last_bound_state, const Location& loc) const {
+bool CoreChecks::ValidateIndirectBufferDeviceAddress(const vvl::CommandBuffer& cb_state, VkDeviceAddress address, VkDeviceSize size,
+                                                     bool strided, const Location& info_loc,
+                                                     const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    if (!cb_state.unprotected) {
+        const Location top_loc(info_loc.function);
+        skip |= LogError(vuid.indirect_protected_cb_02711, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                         top_loc.dot(Field::commandBuffer), "is a protected command buffer.");
+    }
+
+    if (!phys_dev_props_core11.protectedNoFault) {
+        const std::string vuid_13108 = CreateActionVuid(info_loc.function, vvl::ActionVUID::PROTECTED_BUFFER_13108);
+        BufferAddressValidation<1> buffer_address_validator = {{{
+            {vuid_13108.c_str(),
+             [](const vvl::Buffer& buffer_state) { return (buffer_state.create_info.flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0; },
+             []() { return "The following buffers were created with VK_BUFFER_CREATE_PROTECTED_BIT"; }, kFlagErrorMsgBuffer},
+        }}};
+
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::addressRange).dot(Field::address),
+                                                               LogObjectList(cb_state.Handle()), address);
+
+        skip |=
+            ValidateDeviceAddressRange(address, size, strided, info_loc.dot(Field::addressRange), LogObjectList(cb_state.Handle()),
+                                       VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, vuid.indirect_buffer_bit_02290);
+    } else {
+        skip |=
+            ValidateDeviceAddressRange(address, size, strided, info_loc.dot(Field::addressRange), LogObjectList(cb_state.Handle()),
+                                       VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, vuid.indirect_buffer_bit_02290);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateIndirectCountBufferDeviceAddress(const vvl::CommandBuffer& cb_state, VkDeviceAddress address,
+                                                          const Location& info_loc, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{vuid.indirect_count_buffer_bit_02715,
+           [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+
+    skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::countAddressRange).dot(Field::address),
+                                                           LogObjectList(cb_state.Handle()), address);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_bound_state, const Location &loc) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
@@ -2640,8 +2904,9 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
             if (last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
                 const VkDeviceSize attribute_binding_extent = attr_desc.offset + GetVertexInputFormatSize(attr_desc.format);
                 if (vertex_buffer_binding->stride != 0 && vertex_buffer_binding->stride < attribute_binding_extent) {
-                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pStrides-06209",
-                                     last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                    const char* vuid_str = cb_state.bind_vertex_buffer_3_used ? "VUID-vkCmdBindVertexBuffers3KHR-addressRange-13073"
+                                                                              : "VUID-vkCmdBindVertexBuffers2-pStrides-06209";
+                    skip |= LogError(vuid_str, last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                                      "(attribute binding %" PRIu32 ", attribute location %" PRIu32 ") The pStrides value (%" PRIu64
                                      ") parameter in the last call to %s is not 0 "
                                      "and is less than the extent of the binding for the attribute (%" PRIu64 ").",

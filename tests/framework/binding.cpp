@@ -1190,6 +1190,14 @@ VkDeviceAddressRangeEXT Buffer::AddressRange() const {
     return range;
 }
 
+VkStridedDeviceAddressRangeKHR Buffer::StridedAddressRange(VkDeviceSize stride) const {
+    VkStridedDeviceAddressRangeKHR range;
+    range.address = Address();
+    range.size = create_info_.size;
+    range.stride = stride;
+    return range;
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
 
 void BufferView::Init(const Device &dev, const VkBufferViewCreateInfo &info) {

@@ -348,6 +348,11 @@ class DescriptorHeapTest : public VkLayerTest {
     bool embedded_samplers = false;
 };
 
+class DeviceAddressCommands : public VkLayerTest {
+  public:
+    void InitBasicDeviceAddressCommands();
+};
+
 class DynamicRenderingTest : public VkLayerTest {
   public:
     void InitBasicDynamicRendering();

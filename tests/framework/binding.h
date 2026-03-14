@@ -661,6 +661,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
     [[nodiscard]] VkDeviceAddress Address() const;
     [[nodiscard]] VkDeviceAddressRangeEXT AddressRange() const;
+    [[nodiscard]] VkStridedDeviceAddressRangeKHR StridedAddressRange(VkDeviceSize stride = 0) const;
 
   private:
     VkBufferCreateInfo create_info_;
