@@ -21,7 +21,7 @@
 #include "../framework/gpu_av_helper.h"
 #include "utils/math_utils.h"
 
-void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot, uint32_t api_version) {
+void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper(p_next);
@@ -30,7 +30,7 @@ void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot,
     features.disabledValidationFeatureCount = 0;
     features.pEnabledValidationFeatures = enables;
 
-    SetTargetApiVersion(api_version);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&features));
@@ -6576,7 +6576,8 @@ void NegativeDebugPrintf::CoopMat2CallbackTest(const char *shader_source, const 
         AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
         AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     }
-    RETURN_IF_SKIP(InitDebugPrintfFramework(nullptr, false, VK_API_VERSION_1_3));
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
     CreateComputePipelineHelper pipe(*this);
