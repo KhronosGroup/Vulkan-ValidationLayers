@@ -21,7 +21,7 @@
 #include "../framework/gpu_av_helper.h"
 #include "utils/math_utils.h"
 
-void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot) {
+void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot, uint32_t api_version) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper(p_next);
@@ -30,7 +30,7 @@ void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot)
     features.disabledValidationFeatureCount = 0;
     features.pEnabledValidationFeatures = enables;
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(api_version);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&features));
@@ -44,6 +44,7 @@ class NegativeDebugPrintf : public DebugPrintfTests {
   public:
     void BasicComputeTest(const char *shader, const char *message);
     void BasicFormattingTest(const char *shader, bool warning = false);
+    void CoopMat2CallbackTest(const char *shader_source, const char *message, bool needs_buffer);
 };
 
 void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *message) {
@@ -6558,4 +6559,173 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapGraphics) {
     m_errorMonitor->SetDesiredInfo("c == 20");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
+}
+
+// Helper for coopmat2 debugPrintfEXT callback tests.
+// Caller adds test-specific features/extensions before calling this.
+void NegativeDebugPrintf::CoopMat2CallbackTest(const char *shader_source, const char *message, bool needs_buffer) {
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    if (needs_buffer) {
+        AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        AddRequiredFeature(vkt::Feature::cooperativeMatrixTensorAddressing);
+        AddRequiredFeature(vkt::Feature::cooperativeMatrixBlockLoads);
+        AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+        AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    }
+    RETURN_IF_SKIP(InitDebugPrintfFramework(nullptr, false, VK_API_VERSION_1_3));
+    RETURN_IF_SKIP(InitState());
+
+    CreateComputePipelineHelper pipe(*this);
+    if (needs_buffer) {
+        pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    }
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 256 * 256 * 2, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    if (needs_buffer) {
+        pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        pipe.descriptor_set_.UpdateDescriptorSets();
+    }
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    if (needs_buffer) {
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                                  &pipe.descriptor_set_.set_, 0, nullptr);
+    }
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo(message);
+    m_errorMonitor->SetAllowedFailureMsg(message);
+    m_errorMonitor->SetAllowedFailureMsg("Debug Printf message was truncated");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, CoopMat2PerElementOp) {
+    TEST_DESCRIPTION("debugPrintfEXT inside a coopMatPerElementNV callback function");
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixPerElementOperations);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_NV_cooperative_matrix2 : enable
+        layout(local_size_x = 32) in;
+        float16_t myFunc(const in uint32_t row, const in uint32_t col, const in float16_t x) {
+            if (row == 0 && col == 0) {
+                debugPrintfEXT("perelemop callback");
+            }
+            return x;
+        }
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> m = coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(float16_t(0));
+            coopMatPerElementNV(m, m, myFunc);
+        }
+    )glsl";
+
+    CoopMat2CallbackTest(shader_source, "perelemop callback", false);
+}
+
+TEST_F(NegativeDebugPrintf, CoopMat2Reduce) {
+    TEST_DESCRIPTION("debugPrintfEXT inside a coopMatReduceNV combine callback function");
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixReductions);
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_NV_cooperative_matrix2 : enable
+        layout(local_size_x = 32) in;
+        float16_t combineFunc(const in float16_t a, const in float16_t b) {
+            debugPrintfEXT("reduce callback");
+            return a + b;
+        }
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> m = coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(float16_t(0));
+            coopMatReduceNV(m, m, gl_CooperativeMatrixReduceRowNV, combineFunc);
+        }
+    )glsl";
+
+    CoopMat2CallbackTest(shader_source, "reduce callback", false);
+}
+
+TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecode) {
+    TEST_DESCRIPTION("debugPrintfEXT inside a coopMatLoadTensorNV decode callback function");
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_NV_cooperative_matrix2 : enable
+        #extension GL_EXT_buffer_reference : enable
+        layout(local_size_x = 32) in;
+        layout(set = 0, binding = 0) buffer BufType {
+            float16_t x[];
+        } buf;
+        layout(buffer_reference, std430, buffer_reference_align = 2) buffer fp16Buf {
+            float16_t f;
+        };
+        float16_t decodeFunc(const in fp16Buf b, const in uint32_t blockCoords[2], const in uint32_t coordInBlock[2]) {
+            debugPrintfEXT("decode callback");
+            return b.f;
+        }
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            tensorLayoutNV<2> t = createTensorLayoutNV(2);
+            t = setTensorLayoutDimensionNV(t, 256, 256);
+            t = setTensorLayoutBlockSizeNV(t, 1, 1);
+            coopMatLoadTensorNV(A, buf.x, 0, t, decodeFunc);
+        }
+    )glsl";
+
+    CoopMat2CallbackTest(shader_source, "decode callback", true);
+}
+
+TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecodeWithView) {
+    TEST_DESCRIPTION("debugPrintfEXT inside a coopMatLoadTensorNV decode callback with both TensorView and DecodeFunc");
+
+    const char *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_NV_cooperative_matrix2 : enable
+        #extension GL_EXT_buffer_reference : enable
+        layout(local_size_x = 32) in;
+        layout(set = 0, binding = 0) buffer BufType {
+            float16_t x[];
+        } buf;
+        layout(buffer_reference, std430, buffer_reference_align = 2) buffer fp16Buf {
+            float16_t f;
+        };
+        float16_t decodeFunc(const in fp16Buf b, const in uint32_t blockCoords[2], const in uint32_t coordInBlock[2]) {
+            debugPrintfEXT("decode with view callback");
+            return b.f;
+        }
+        void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            tensorLayoutNV<2> t = createTensorLayoutNV(2);
+            t = setTensorLayoutDimensionNV(t, 256, 256);
+            t = setTensorLayoutBlockSizeNV(t, 1, 1);
+            tensorViewNV<2> v = createTensorViewNV(2);
+            v = setTensorViewDimensionsNV(v, 16, 16);
+            coopMatLoadTensorNV(A, buf.x, 0, t, v, decodeFunc);
+        }
+    )glsl";
+
+    CoopMat2CallbackTest(shader_source, "decode with view callback", true);
 }

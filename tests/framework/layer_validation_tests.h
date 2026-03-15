@@ -297,7 +297,7 @@ class GpuAVSharedMemoryDataRaceTest : public GpuAVTest {
 
 class DebugPrintfTests : public VkLayerTest {
   public:
-    void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
+    void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false, uint32_t api_version = VK_API_VERSION_1_1);
 };
 
 class AndroidExternalResolveTest : public VkLayerTest {
