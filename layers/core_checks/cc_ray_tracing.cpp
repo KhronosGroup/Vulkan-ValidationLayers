@@ -1445,7 +1445,7 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
     if (dst_as_state && dst_as_state->use_create_info_1) {
         if (auto buffer_state = Get<vvl::Buffer>(dst_as_state->GetBuffer())) {
             skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::dst),
-                                                  "VUID-VkCopyAccelerationStructureInfoKHR-dst-11635");
+                                                  "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
         }
     }
 
@@ -1532,7 +1532,7 @@ bool CoreChecks::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice de
         if (src_accel_struct->use_create_info_1) {
             if (auto buffer_state = Get<vvl::Buffer>(src_accel_struct->GetBuffer())) {
                 skip |= ValidateAccelStructBufferMemoryIsHostVisible(*src_accel_struct, info_loc.dot(Field::src),
-                                                                     "VUID-vkCopyAccelerationStructureToMemoryKHR-buffer-03731");
+                                                                     "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03731");
 
                 skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(
                     *src_accel_struct, info_loc.dot(Field::src), "VUID-vkCopyAccelerationStructureToMemoryKHR-buffer-03783");

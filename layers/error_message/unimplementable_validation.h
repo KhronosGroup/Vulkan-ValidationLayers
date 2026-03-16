@@ -170,7 +170,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkClusterAccelerationStructureMoveObjectsInfoNV-srcAccelerationStructure-parameter",
     "VUID-VkComputePipelineIndirectBufferInfoNV-pipelineDeviceAddressCaptureReplay-parameter",
     "VUID-VkDescriptorGetInfoEXT-accelerationStructure-parameter",
-    "VUID-VkDeviceFaultAddressInfoEXT-reportedAddress-parameter",
     "VUID-VkPartitionedAccelerationStructureUpdateInstanceDataNV-accelerationStructure-parameter",
     "VUID-VkPartitionedAccelerationStructureWriteInstanceDataNV-accelerationStructure-parameter",
     "VUID-VkStridedDeviceAddressNV-startAddress-parameter",
@@ -183,7 +182,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-parameter",
     "VUID-VkMicromapCreateInfoEXT-deviceAddress-parameter",
     "VUID-VkStridedDeviceAddressRegionKHR-deviceAddress-parameter",
-    "VUID-VkDeviceAddressRangeEXT-address-parameter",
+    "VUID-VkDeviceAddressRangeKHR-address-parameter",
 
     // These were added as a fix for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4544
     // But really the "real" fix is banning it earlier https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858

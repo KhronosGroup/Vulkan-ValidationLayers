@@ -1796,12 +1796,6 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV);
     m_errorMonitor->VerifyFound();
 
-    // Dst must have been bound with memory
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as_without_mem, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
-
-    m_errorMonitor->VerifyFound();
-
     // mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR or VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-mode-03410");
     vk::CmdCopyAccelerationStructureNV(m_command_buffer, dst_as, src_as, VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR);

@@ -727,6 +727,18 @@ const char* GetRenderPassCompatibilityVUID(const Location& loc) {
     return kVUIDUndefined;
 }
 
+const char* GetDispatchIndirectProtectVUID(const Location& loc) {
+    if (loc.function == Func::vkCmdDrawIndirect2KHR) {
+        return "VUID-VkDrawIndirect2InfoKHR-protectedNoFault-13108";
+    } else if (loc.function == Func::vkCmdDrawIndexedIndirect2KHR) {
+        return "VUID-VkDrawIndirectCount2InfoKHR-protectedNoFault-13108";
+    } else if (loc.function == Func::vkCmdDispatchIndirect2KHR) {
+        return "VUID-VkDispatchIndirect2InfoKHR-protectedNoFault-13108";
+    }
+
+    return kVUIDUndefined;
+}
+
 const char* GetBuildASVUID(const Location& loc, BuildASError error) {
     // clang-format off
     switch (error) {
