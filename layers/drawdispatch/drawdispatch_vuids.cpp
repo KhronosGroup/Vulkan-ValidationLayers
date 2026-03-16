@@ -1185,6 +1185,20 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         // ### VUID-vkCmdTraceRaysKHR-commandBuffer-03635
         case ActionVUID::RAY_QUERY_PROTECT_03635: suffix = "commandBuffer-03635"; break;
 
+        // ### VUID-vkCmdDraw-uniformBuffers-06935
+        case ActionVUID::UNIFORM_ACCESS_OOB_06935: suffix = "uniformBuffers-06935"; break;
+        // ### VUID-vkCmdDraw-storageBuffers-06936
+        case ActionVUID::STORAGE_ACCESS_OOB_06936: suffix = "storageBuffers-06936"; break;
+        // ### VUID-vkCmdDraw-None-08612
+        case ActionVUID::UNIFORM_ACCESS_OOB_08612: suffix = "None-08612"; break;
+        // ### VUID-vkCmdDraw-None-08613
+        case ActionVUID::STORAGE_ACCESS_OOB_08613: suffix = "None-08613"; break;
+        // ### VUID-vkCmdDraw-None-08114
+        case ActionVUID::INVALID_DESCRIPTOR_08114: suffix = "None-08114"; break;
+        // ### VUID-vkCmdDraw-None-10068
+        case ActionVUID::DESCRIPTOR_INDEX_OOB_10068: suffix = "None-10068"; break;
+        // ### VUID-vkCmdDrawIndirectCount-countBuffer-02717
+        case ActionVUID::INDIRECT_COUNT_LIMIT: suffix = "countBuffer-02717"; break;
     }
     // clang-format on
 
