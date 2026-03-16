@@ -14,8 +14,8 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include "drawdispatch/drawdispatch_vuids.h"
 #include "gpuav/core/gpuav.h"
-#include "gpuav/error_message/gpuav_vuids.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -143,7 +143,6 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             error_found = true;
 
             std::ostringstream strm;
-            const GpuVuid& vuid = GetGpuVuid(loc.function);
 
             if (descriptor_binding_index == vvl::kNoIndex32) {
                 assert(false);  // This means we have hit a situtation where there are no descriptors bound
@@ -168,7 +167,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                 case kErrorSubCode_DescriptorIndexing_Bounds: {
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
                          << " used to index descriptor array of length " << array_length << ".";
-                    out_vuid_msg = vuid.descriptor_index_oob_10068;
+                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_INDEX_OOB_10068);
                     error_found = true;
                 } break;
 
@@ -192,7 +191,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                                 "descriptor.";
                     }
 
-                    out_vuid_msg = vuid.invalid_descriptor_08114;
+                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::INVALID_DESCRIPTOR_08114);
                     error_found = true;
                 } break;
 
@@ -241,7 +240,6 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             }
             error_found = true;
             std::ostringstream strm;
-            const GpuVuid& vuid = GetGpuVuid(loc.function);
 
             if (descriptor_binding_index == vvl::kNoIndex32) {
                 assert(false);  // This means we have hit a situtation where there are no descriptors bound
@@ -289,12 +287,16 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                                 "enabled.";
                     }
 
+                    vvl::ActionVUID action_vuid = vvl::ActionVUID::UNKNOWN;
                     if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
                         binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                        out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
+                        action_vuid = uses_shader_object ? vvl::ActionVUID::UNIFORM_ACCESS_OOB_08612
+                                                         : vvl::ActionVUID::UNIFORM_ACCESS_OOB_06935;
                     } else {
-                        out_vuid_msg = uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
+                        action_vuid = uses_shader_object ? vvl::ActionVUID::STORAGE_ACCESS_OOB_08613
+                                                         : vvl::ActionVUID::STORAGE_ACCESS_OOB_06936;
                     }
+                    out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
                 } break;
 
                 case kErrorSubCode_DescriptorClass_TexelBufferBounds: {

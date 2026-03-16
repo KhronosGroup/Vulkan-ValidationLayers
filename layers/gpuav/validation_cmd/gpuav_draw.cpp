@@ -632,15 +632,6 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         bool skip = false;
         using namespace glsl;
 
-        const char *vuid_task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
-        const char *vuid_task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
-        const char *vuid_task_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324";
-        const char *vuid_task_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325";
-        const char *vuid_mesh_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326";
-        const char *vuid_mesh_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327";
-        const char *vuid_mesh_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328";
-        const char *vuid_mesh_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329";
-
         const uint32_t draw_i = error_record[kValCmd_ErrorPayloadDword_1];
         const char *group_count_name = is_task_shader ? "maxTaskWorkGroupCount" : "maxMeshWorkGroupCount";
         const char *group_count_total_name = is_task_shader ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount";
@@ -648,12 +639,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_PreDraw_GroupCountX: {
-                const char *vuid_group_count_exceeds_max =
-                    is_task_shader ? vuid_task_group_count_exceeds_max_x : vuid_mesh_group_count_exceeds_max_x;
+                const char* vuid = is_task_shader ? "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322"
+                                                  : "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326";
                 const uint32_t group_count_x = error_record[kValCmd_ErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountX is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[0]"
                                        " (%" PRIu32 ").",
@@ -662,12 +653,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             }
 
             case kErrorSubCode_PreDraw_GroupCountY: {
-                const char *vuid_group_count_exceeds_max =
-                    is_task_shader ? vuid_task_group_count_exceeds_max_y : vuid_mesh_group_count_exceeds_max_y;
+                const char* vuid = is_task_shader ? "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323"
+                                                  : "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07327";
                 const uint32_t group_count_y = error_record[kValCmd_ErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountY is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[1]"
                                        " (%" PRIu32 ").",
@@ -676,12 +667,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             }
 
             case kErrorSubCode_PreDraw_GroupCountZ: {
-                const char *vuid_group_count_exceeds_max =
-                    is_task_shader ? vuid_task_group_count_exceeds_max_z : vuid_mesh_group_count_exceeds_max_z;
+                const char* vuid = is_task_shader ? "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324"
+                                                  : "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328";
                 const uint32_t group_count_z = error_record[kValCmd_ErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountZ is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[2]"
                                        " (%" PRIu32 ").",
@@ -690,12 +681,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             }
 
             case kErrorSubCode_PreDraw_GroupCountTotal: {
-                const char *vuid_group_count_exceeds_max =
-                    is_task_shader ? vuid_task_group_count_exceeds_max_total : vuid_mesh_group_count_exceeds_max_total;
+                const char* vuid = is_task_shader ? "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325"
+                                                  : "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329";
                 const uint32_t group_count_total = error_record[kValCmd_ErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", size of VkDrawMeshTasksIndirectCommandEXT is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s"
                                        " (%" PRIu32 ").",
