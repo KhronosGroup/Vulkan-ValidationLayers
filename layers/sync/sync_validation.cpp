@@ -2295,6 +2295,8 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!syncval_settings.submit_time_validation) return skip;
 
+    std::lock_guard lock_guard(queue_mutex_);
+
     ClearPending();
 
     vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, *this);
@@ -2475,7 +2477,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!syncval_settings.submit_time_validation) return skip;
 
-    std::lock_guard lock_guard(queue_submit_mutex_);
+    std::lock_guard lock_guard(queue_mutex_);
 
     ClearPending();
 

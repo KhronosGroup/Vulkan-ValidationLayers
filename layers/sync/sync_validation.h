@@ -63,7 +63,7 @@ class SyncValidator : public vvl::DeviceProxy {
     std::vector<std::shared_ptr<QueueSyncState>> queue_sync_states_;
     QueueId queue_id_limit_ = 0;
 
-    mutable std::mutex queue_submit_mutex_;
+    mutable std::mutex queue_mutex_;
 
     // Semaphore signal registry
     vvl::unordered_map<VkSemaphore, SignalInfo> binary_signals_;
