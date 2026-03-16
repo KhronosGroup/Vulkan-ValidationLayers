@@ -1091,3 +1091,46 @@ TEST_F(PositiveSyncValWsi, PresentAfterAcquire) {
     m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValWsi, ConcurrentPresentAndSubmit) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11226
+    TEST_DESCRIPTION("Present and Submit to different queues at the same time");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    if (!IsPlatformMockICD()) {
+        // There is nvidia driver bug that causes device lost when you present/submit on different queues frequently.
+        // It is time dependent, reproducible only in release builds.
+        GTEST_SKIP() << "This test only runs on MockICD (until nvidia driver bug is fixed)";
+    }
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Test requires two queues";
+    }
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+    const int N = 500;
+
+    // QueueSubmit on the second queue and QueuePresent on the main queue run in parallel.
+    // It is a valid setup because submits to different queues do not require synchronization.
+    std::thread thread([&] {
+        vkt::Fence fence(*m_device);
+        for (int i = 0; i < N; i++) {
+            m_second_queue->Submit(vkt::no_cmd, fence);
+            fence.Wait(kWaitTimeout);
+            fence.Reset();
+        }
+    });
+    {
+        vkt::Semaphore acquire_semaphore(*m_device);
+        for (int i = 0; i < N; i++) {
+            const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+            m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
+            m_default_queue->Wait();
+        }
+    }
+    thread.join();
+}
