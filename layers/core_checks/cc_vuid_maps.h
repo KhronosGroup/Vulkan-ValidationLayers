@@ -101,6 +101,7 @@ const std::string &GetImageImageLayoutVUID(const Location &loc);
 
 const char* GetSurfaceSupportVUID(const Location& loc);
 const char* GetRenderPassCompatibilityVUID(const Location& loc);
+const char* GetDispatchIndirectProtectVUID(const Location& loc);
 
 enum class BuildASError {
     IsBuilt_03667,

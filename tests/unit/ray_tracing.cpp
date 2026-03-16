@@ -581,7 +581,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     copy_info.src = valid_blas->handle();
     copy_info.dst = blas_no_mem->handle();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-dst-11635");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -698,7 +698,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     copy_info.dst = blas_no_mem->handle();
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-dst-11635");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -2227,7 +2227,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureToMemoryKHR-buffer-03731");
+    m_errorMonitor->SetDesiredError("VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03731");
     vk::CopyAccelerationStructureToMemoryKHR(*m_device, VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 

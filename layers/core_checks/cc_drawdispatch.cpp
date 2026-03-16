@@ -25,6 +25,7 @@
 #include <string>
 #include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
+#include "core_checks/cc_vuid_maps.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
@@ -2263,9 +2264,9 @@ bool CoreChecks::ValidateIndirectBufferDeviceAddress(const vvl::CommandBuffer& c
     }
 
     if (!phys_dev_props_core11.protectedNoFault) {
-        const std::string vuid_13108 = CreateActionVuid(info_loc.function, vvl::ActionVUID::PROTECTED_BUFFER_13108);
+        const char* vuid_13108 = vvl::GetDispatchIndirectProtectVUID(info_loc);
         BufferAddressValidation<1> buffer_address_validator = {{{
-            {vuid_13108.c_str(),
+            {vuid_13108,
              [](const vvl::Buffer& buffer_state) { return (buffer_state.create_info.flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0; },
              []() { return "The following buffers were created with VK_BUFFER_CREATE_PROTECTED_BIT"; }, kFlagErrorMsgBuffer},
         }}};
