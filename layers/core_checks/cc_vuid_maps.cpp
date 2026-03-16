@@ -722,6 +722,20 @@ const char* GetRenderPassCompatibilityVUID(const Location& loc) {
         return "VUID-vkCmdExecuteGeneratedCommandsNV-renderPass-02684";
     } else if (loc.function == Func::vkCmdExecuteGeneratedCommandsEXT) {
         return "VUID-vkCmdExecuteGeneratedCommandsEXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndexedIndirect2KHR) {
+        return "VUID-vkCmdDrawIndexedIndirect2KHR-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndexedIndirectCount2KHR) {
+        return "VUID-vkCmdDrawIndexedIndirectCount2KHR-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirect2KHR) {
+        return "VUID-vkCmdDrawIndirect2KHR-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirectByteCount2EXT) {
+        return "VUID-vkCmdDrawIndirectByteCount2EXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawIndirectCount2KHR) {
+        return "VUID-vkCmdDrawIndirectCount2KHR-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirect2EXT) {
+        return "VUID-vkCmdDrawMeshTasksIndirect2EXT-renderPass-02684";
+    } else if (loc.function == Func::vkCmdDrawMeshTasksIndirectCount2EXT) {
+        return "VUID-vkCmdDrawMeshTasksIndirectCount2EXT-renderPass-02684";
     }
 
     return kVUIDUndefined;

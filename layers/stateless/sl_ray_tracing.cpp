@@ -56,7 +56,9 @@ bool Device::ValidateCreateAccelerationStructure(const VkAccelerationStructureCr
         vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(create_info_pNext);
     if (opaque_capture_descriptor_buffer &&
         !(create_flags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, create_info_loc.dot(Field::createFlags),
+        const char* vuid = is_2 ? "VUID-VkAccelerationStructureCreateInfo2KHR-pNext-08109"
+                                : "VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109";
+        skip |= LogError(vuid, device, create_info_loc.dot(Field::createFlags),
                          "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
                          "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
                          PrintPNextChain(Struct::VkAccelerationStructureCreateInfoKHR, create_info_pNext).c_str());
