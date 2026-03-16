@@ -86,6 +86,8 @@ class Instruction {
     bool IsTensor() const;
     bool IsConstant() const;
     bool IsSpecConstant() const;
+    // Returns the function ID referenced by this instruction (OpFunctionCall, or coopmat2 callback operands), or 0 if none.
+    uint32_t GetCalledFunctionId() const;
 
     // Auto-generated helper functions
     spv::StorageClass StorageClass() const;

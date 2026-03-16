@@ -249,8 +249,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             current_function->inst_map_[result_id] = new_inst.get();
         }
 
-        if (opcode == spv::OpFunctionCall) {
-            function_call_map[current_function->id_].insert(new_inst->Word(3));
+        const uint32_t called_function_id = new_inst->GetCalledFunctionId();
+        if (called_function_id != 0) {
+            function_call_map[current_function->id_].insert(called_function_id);
         }
 
         if (opcode == spv::OpFunctionEnd) {

@@ -618,4 +618,30 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
     }
 }
 
+uint32_t Instruction::GetCalledFunctionId() const {
+    const uint32_t opcode = Opcode();
+    if (opcode == spv::OpFunctionCall) {
+        return Word(3);
+    } else if (opcode == spv::OpCooperativeMatrixPerElementOpNV) {
+        return Word(4);
+    } else if (opcode == spv::OpCooperativeMatrixReduceNV) {
+        return Word(5);
+    } else if (opcode == spv::OpCooperativeMatrixLoadTensorNV) {
+        uint32_t idx = 7;
+        const uint32_t mem_operand = Word(6);
+        if (mem_operand & spv::MemoryAccessAlignedMask) idx++;
+        if (mem_operand & spv::MemoryAccessMakePointerAvailableMask) idx++;
+        if (mem_operand & spv::MemoryAccessMakePointerVisibleMask) idx++;
+        if (idx < Length()) {
+            const uint32_t tensor_operand = Word(idx);
+            idx++;
+            if (tensor_operand & spv::TensorAddressingOperandsTensorViewMask) idx++;
+            if ((tensor_operand & spv::TensorAddressingOperandsDecodeFuncMask) && idx < Length()) {
+                return Word(idx);
+            }
+        }
+    }
+    return 0;
+}
+
 }  // namespace spirv
