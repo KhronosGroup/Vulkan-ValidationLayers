@@ -144,7 +144,8 @@ const int kErrorSubCode_Sanitizer_ImageGather = 2;
 const int kErrorSubCode_Sanitizer_Pow = 3;
 const int kErrorSubCode_Sanitizer_Atan2 = 4;
 const int kErrorSubCode_Sanitizer_Fminmax = 5;
-const int kErrorSubCode_Sanitizer_Count = 6;  // update when adding new item
+const int kErrorSubCode_Sanitizer_CoopMatAlignment = 6;
+const int kErrorSubCode_Sanitizer_Count = 7;  // update when adding new item
 
 // Pre Draw
 //

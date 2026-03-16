@@ -120,6 +120,25 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         }
                         out_vuid_msg = "SPIRV-Sanitizer-Fminmax";
                     } break;
+                    case kErrorSubCode_Sanitizer_CoopMatAlignment: {
+                        const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_0];
+                        const uint32_t required_alignment = error_record[kInst_LogError_ParameterOffset_1];
+                        const uint32_t misaligned_flags = error_record[kInst_LogError_ParameterOffset_2];
+                        const bool stride_misaligned = (misaligned_flags & 0x1) != 0;
+                        const bool pointer_misaligned = (misaligned_flags & 0x2) != 0;
+                        strm << string_SpvOpcode(opcode) << " has a ";
+                        if (stride_misaligned && pointer_misaligned) {
+                            strm << "Pointer and Stride operand that are";
+                        } else if (pointer_misaligned) {
+                            strm << "Pointer operand that is";
+                        } else {
+                            strm << "Stride operand that is";
+                        }
+                        strm << " not aligned to the required " << required_alignment
+                             << " byte alignment (the lesser of 16 bytes and the natural alignment of a row or column of the "
+                                "matrix).";
+                        out_vuid_msg = "VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986";
+                    } break;
                     default:
                         error_found = false;
                         break;

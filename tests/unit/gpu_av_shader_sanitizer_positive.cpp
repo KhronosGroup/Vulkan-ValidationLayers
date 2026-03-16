@@ -18,9 +18,70 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "cooperative_matrix_helper.h"
 #include "shader_helper.h"
 
 class PositiveGpuAVShaderSanitizer : public GpuAVGpuAVShaderSanitizer {};
+
+void GpuAVGpuAVShaderSanitizer::InitCoopMatFp16() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    CooperativeMatrixHelper helper(*this);
+    bool found = false;
+    for (const auto& prop : helper.coop_matrix_props) {
+        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && prop.AType == VK_COMPONENT_TYPE_FLOAT16_KHR && prop.MSize == 16 &&
+            prop.KSize == 16) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "fp16 16x16 A-type cooperative matrix property not found";
+    }
+}
+
+void GpuAVGpuAVShaderSanitizer::CoopMatAlignmentTest(const char* cs_source, const std::vector<uint32_t>& params,
+                                                     bool expect_error) {
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer payload_buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    const VkDeviceSize param_size = params.size() * sizeof(uint32_t);
+    vkt::Buffer param_buffer(*m_device, param_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto* ptr = static_cast<uint32_t*>(param_buffer.Memory().Map());
+    memcpy(ptr, params.data(), param_size);
+    param_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, payload_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, param_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    if (expect_error) {
+        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986");
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986");
+    }
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    if (expect_error) {
+        m_errorMonitor->VerifyFound();
+    }
+}
 
 // Set a single SSBO to all zero
 void GpuAVGpuAVShaderSanitizer::SimpleZeroComputeTest(const char* shader, int source_type, const char* expected_error,
@@ -402,4 +463,75 @@ TEST_F(PositiveGpuAVShaderSanitizer, FMinMax) {
     )glsl";
 
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, CoopMatAlignedStride) {
+    TEST_DESCRIPTION("OpCooperativeMatrixLoadKHR with a properly aligned stride (fp16, component_size=2)");
+    RETURN_IF_SKIP(InitCoopMatFp16());
+    const char* cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         layout(local_size_x = 64) in;
+         layout(set=0, binding=0) coherent buffer SSBO { float16_t payload[]; };
+         layout(set=0, binding=1) buffer ParamSSBO { uint stride_val; uint offset_val; };
+         void main() {
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+            coopMatLoad(matA, payload, offset_val, stride_val, gl_CooperativeMatrixLayoutRowMajor);
+            coopMatStore(matA, payload, offset_val, stride_val, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+    CoopMatAlignmentTest(cs_source, {8, 8}, false);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, CoopMatAlignedPointerBDA) {
+    TEST_DESCRIPTION("OpCooperativeMatrixLoadKHR with a BDA pointer that is properly aligned");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitCoopMatFp16());
+
+    const char* cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_buffer_reference : enable
+         layout(local_size_x = 64) in;
+         layout(buffer_reference, std430) buffer BufRef { float16_t data[]; };
+         layout(set=0, binding=0) buffer AddrSSBO { uint64_t addr; };
+         void main() {
+            BufRef buf = BufRef(addr);
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+            coopMatLoad(matA, buf.data, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer payload_buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkDeviceAddress aligned_addr = payload_buffer.Address();
+
+    vkt::Buffer addr_buffer(*m_device, sizeof(VkDeviceAddress), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto* addr_ptr = static_cast<VkDeviceAddress*>(addr_buffer.Memory().Map());
+    *addr_ptr = aligned_addr;
+    addr_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, addr_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
