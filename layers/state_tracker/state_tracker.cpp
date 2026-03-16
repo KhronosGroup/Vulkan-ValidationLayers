@@ -4155,7 +4155,12 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
             uint32_t swapchain_image_count = 0;
             DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, nullptr);
             std::vector<VkImage> swapchain_images(swapchain_image_count);
-            DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, swapchain_images.data());
+            VkResult res = DispatchGetSwapchainImagesKHR(device, *pSwapchain, &swapchain_image_count, swapchain_images.data());
+            if (res != VK_SUCCESS) {
+                // There is a chance the application is out of memory, it will also fail for the user, but we want to avoid crashing
+                // here
+                return;
+            }
             swapchain->images.resize(swapchain_image_count);
             const auto &image_ci = swapchain->image_create_info;
             for (uint32_t i = 0; i < swapchain_image_count; ++i) {
@@ -4186,7 +4191,6 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
     if (old_swapchain_state) {
         old_swapchain_state->retired = true;
     }
-    return;
 }
 
 void DeviceState::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
