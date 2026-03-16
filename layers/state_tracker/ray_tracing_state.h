@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "containers/span.h"
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/buffer_state.h"
 #include "generated/dispatch_functions.h"
@@ -112,11 +113,26 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
           buffer_state(buf_state),
           buffer_device_address(buffer_device_address),
+          use_create_info_1(true),
+          use_create_info_2(false),
           create_flags(pCreateInfo->createFlags),
           offset(pCreateInfo->offset),
           size(pCreateInfo->size),
           type(pCreateInfo->type),
           device_address_range(GetDeviceAddressRange()) {}
+    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfo2KHR *pCreateInfo,
+                             std::shared_ptr<Buffer> &&buf_state, const VkDeviceAddress buffer_device_address)
+        : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
+          buffer_state(buf_state),
+          buffer_device_address(buffer_device_address),
+          use_create_info_1(false),
+          use_create_info_2(true),
+          create_flags(pCreateInfo->createFlags),
+          offset(pCreateInfo->addressRange.address - buffer_state->deviceAddress),
+          size(pCreateInfo->addressRange.size),
+          type(pCreateInfo->type),
+          device_address_range(pCreateInfo->addressRange.address,
+                               pCreateInfo->addressRange.address + pCreateInfo->addressRange.size) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {
@@ -163,6 +179,12 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     VkDeviceAddress acceleration_structure_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
+
+    // VK_KHR_device_address_commands added a 2nd, much different, way to create the AS.
+    // Some VUs depend on which one was used
+    const bool use_create_info_1;
+    // Created with a VkDeviceAddress (VK_KHR_device_address_commands)
+    const bool use_create_info_2;
 
   private:
     const VkAccelerationStructureCreateFlagsKHR create_flags = 0;

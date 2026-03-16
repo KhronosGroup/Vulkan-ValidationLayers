@@ -152,7 +152,7 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
     void BindMemory(StateObject *, std::shared_ptr<vvl::DeviceMemory> &, VkDeviceSize, VkDeviceSize, VkDeviceSize) override {}
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &) const override { return BoundMemoryRange{}; }
-    BoundRanges GetBoundRanges(const BufferRange &, const std::vector<BufferRange> &) const override { return {}; }
+    BoundRanges GetBoundRanges(const BufferRange&, const std::vector<BufferRange>&) const override { return {}; }
     DeviceMemoryState GetBoundMemoryStates() const override { return DeviceMemoryState{}; }
 };
 
@@ -232,7 +232,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
     // No reason to have this function for multi planar memory
-    BoundRanges GetBoundRanges(const BufferRange &, const std::vector<BufferRange> &) const override {
+    BoundRanges GetBoundRanges(const BufferRange&, const std::vector<BufferRange>&) const override {
         assert(false);
         return {};
     }

@@ -856,6 +856,18 @@ void DeviceState::PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     cb_state->RecordFillBuffer(*buffer_state, dstOffset, size, record_obj.location);
 }
 
+void DeviceState::PostCallRecordCmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                 VkAddressCommandFlagsKHR dstFlags, uint32_t data, const RecordObject& record_obj) {
+    if (disabled[command_buffer_state]) {
+        return;
+    }
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordFillMemory(*pDstRange, record_obj.location);
+
+    TrackDeviceAddressRange(*cb_state, pDstRange->address, pDstRange->size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
+}
+
 void DeviceState::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
                                                      const RecordObject &record_obj) {
@@ -892,6 +904,54 @@ void DeviceState::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuf
 
     cb_state->RecordCopyImageToBuffer2(*src_image_state, *dst_buffer_state, pCopyImageToBufferInfo->srcImageLayout,
                                        pCopyImageToBufferInfo->regionCount, pCopyImageToBufferInfo->pRegions, record_obj.location);
+}
+
+void DeviceState::PostCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                        const RecordObject& record_obj) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    auto dst_image_state = Get<Image>(pCopyMemoryInfo->image);
+    ASSERT_AND_RETURN(dst_image_state);
+    cb_state->AddChild(dst_image_state);
+
+    cb_state->RecordCopyMemoryToImage(*dst_image_state, pCopyMemoryInfo->regionCount, pCopyMemoryInfo->pRegions,
+                                      record_obj.location);
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCopyMemoryInfo->pRegions[i].addressRange.address,
+                                pCopyMemoryInfo->pRegions[i].addressRange.size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT);
+    }
+}
+
+void DeviceState::PostCallRecordCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyDeviceMemoryImageInfoKHR *pCopyMemoryInfo,
+                                                        const RecordObject &record_obj) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    auto src_image_state = Get<Image>(pCopyMemoryInfo->image);
+    ASSERT_AND_RETURN(src_image_state);
+    cb_state->AddChild(src_image_state);
+
+    cb_state->RecordCopyImageToMemory(*src_image_state, pCopyMemoryInfo->regionCount, pCopyMemoryInfo->pRegions,
+                                      record_obj.location);
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCopyMemoryInfo->pRegions[i].addressRange.address,
+                                pCopyMemoryInfo->pRegions[i].addressRange.size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
+    }
+}
+
+void DeviceState::PostCallRecordCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                                 const RecordObject& record_obj) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCopyMemory(pCopyMemoryInfo->regionCount, pCopyMemoryInfo->pRegions, record_obj.location);
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCopyMemoryInfo->pRegions[i].dstRange.address,
+                                pCopyMemoryInfo->pRegions[i].dstRange.size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT);
+    }
 }
 
 void DeviceState::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -2757,6 +2817,26 @@ void DeviceState::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
     Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state)));
 }
 
+void DeviceState::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
+                                                                const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkAccelerationStructureKHR* pAccelerationStructure,
+                                                                const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11880
+    const auto buffer_states = GetBuffersByAddress(pCreateInfo->addressRange.address);
+    for (const auto buffer_state : buffer_states) {
+        if (buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+            auto buffer_state_ptr = Get<Buffer>(buffer_state->VkHandle());
+            Add(std::make_shared<AccelerationStructureKHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state_ptr),
+                                                           pCreateInfo->addressRange.address));
+            break;
+        }
+    }
+}
+
 void DeviceState::PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
@@ -3327,11 +3407,19 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
     PostCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
 }
 
+void DeviceState::PostCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR *pInfo,
+                                                       const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->index_buffer_binding = IndexBufferBinding(pInfo->addressRange.address, pInfo->addressRange.size, pInfo->indexType);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+}
+
 void DeviceState::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
+    cb_state->bind_vertex_buffer_3_used = false;
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<Buffer>(pBuffers[i]);
@@ -3355,6 +3443,19 @@ void DeviceState::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     ASSERT_AND_RETURN(buffer_state);
     cb_state->AddChild(buffer_state);
     cb_state->RecordUpdateBuffer(*buffer_state, dstOffset, dataSize, record_obj.location);
+}
+
+void DeviceState::PostCallRecordCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                   VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                                   const RecordObject& record_obj) {
+    if (disabled[command_buffer_state]) {
+        return;
+    }
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordUpdateMemory(*pDstRange, record_obj.location);
+
+    TrackDeviceAddressRange(*cb_state, pDstRange->address, pDstRange->size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
 }
 
 void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -3508,6 +3609,18 @@ void DeviceState::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandB
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCopyQueryPoolResults(queryPool, dstBuffer, firstQuery, queryCount, dstOffset, stride, flags,
                                          record_obj.location);
+}
+
+void DeviceState::PostCallRecordCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                                   uint32_t firstQuery, uint32_t queryCount,
+                                                                   const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                                   VkAddressCommandFlagsKHR dstFlags,
+                                                                   VkQueryResultFlags queryResultFlags,
+                                                                   const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCopyQueryPoolResultsToMemory(queryPool, firstQuery, queryCount, pDstRange, dstFlags, queryResultFlags,
+                                                 record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pDstRange->address, pDstRange->size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
 }
 
 void DeviceState::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -3696,6 +3809,19 @@ void DeviceState::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     cb_state->transform_feedback_active = true;
 }
 
+void DeviceState::PostCallRecordCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                              uint32_t counterRangeCount,
+                                                              const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                              const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCommand(record_obj.location);
+    cb_state->transform_feedback_active = true;
+    for (uint32_t i = 0; i < counterRangeCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCounterInfos[i].addressRange.address, pCounterInfos[i].addressRange.size,
+                                VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+    }
+}
+
 void DeviceState::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                            uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
                                                            const VkDeviceSize *pCounterBufferOffsets,
@@ -3703,6 +3829,37 @@ void DeviceState::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer comma
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
     cb_state->transform_feedback_active = false;
+}
+
+void DeviceState::PostCallRecordCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                            uint32_t counterRangeCount,
+                                                            const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                            const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCommand(record_obj.location);
+    cb_state->transform_feedback_active = false;
+    for (uint32_t i = 0; i < counterRangeCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCounterInfos[i].addressRange.address, pCounterInfos[i].addressRange.size,
+                                VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+    }
+}
+
+void DeviceState::PostCallRecordCmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                             uint32_t firstInstance,
+                                                             const VkBindTransformFeedbackBuffer2InfoEXT *pCounterInfo,
+                                                             uint32_t counterOffset, uint32_t vertexStride,
+                                                             const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCommand(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pCounterInfo->addressRange.address, pCounterInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
+}
+
+void DeviceState::PostCallRecordCmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD *pInfo,
+                                                          const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordCommand(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->dstRange.address, pInfo->dstRange.size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
 }
 
 void DeviceState::PostCallRecordCmdBeginConditionalRenderingEXT(
@@ -3715,6 +3872,15 @@ void DeviceState::PostCallRecordCmdBeginConditionalRenderingEXT(
 void DeviceState::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordEndConditionalRendering(record_obj.location);
+}
+
+void DeviceState::PostCallRecordCmdBeginConditionalRendering2EXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfo2EXT *pConditionalRenderingBegin,
+    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordBeginConditionalRendering(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pConditionalRenderingBegin->addressRange.address,
+                            pConditionalRenderingBegin->addressRange.size, VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
 }
 
 void DeviceState::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
@@ -5407,6 +5573,64 @@ void DeviceState::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     }
 }
 
+void DeviceState::PostCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                        const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDispatch(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                           const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                    const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                         const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
+                                                                const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                             const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
+void DeviceState::PostCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
+                                                                  const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                  const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordDraw(record_obj.location);
+    TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
+                            VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
+}
+
 void DeviceState::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                                VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                                VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
@@ -5716,6 +5940,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     if (pStrides) {
         cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
+    cb_state->bind_vertex_buffer_3_used = false;
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
@@ -5729,6 +5954,31 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
         if (!disabled[command_buffer_state] && pBuffers[i]) {
             cb_state->AddChild(buffer_state);
         }
+    }
+}
+
+void DeviceState::PostCallRecordCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                         uint32_t bindingCount, const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                         const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    cb_state->bind_vertex_buffer_3_used = true;
+
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3381
+    // The stride is "last to set it wins"
+    if (pBindingInfos->setStride) {
+        cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        const VkBindVertexBuffer3InfoKHR &binding_info = pBindingInfos[i];
+
+        const VkDeviceSize *stride_ptr = binding_info.setStride ? &binding_info.addressRange.stride : nullptr;
+        cb_state->current_vertex_buffer_binding_info[i + firstBinding].Set(binding_info.addressRange.address,
+                                                                           binding_info.addressRange.size, stride_ptr);
+
+        TrackDeviceAddressRange(*cb_state, binding_info.addressRange.address, binding_info.addressRange.size,
+                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     }
 }
 
@@ -6340,6 +6590,18 @@ void DeviceState::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->transform_feedback_buffers_bound = bindingCount;
+}
+
+void DeviceState::PostCallRecordCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                    uint32_t bindingCount,
+                                                                    const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                    const RecordObject& record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->transform_feedback_buffers_bound = bindingCount;
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pBindingInfos[i].addressRange.address, pBindingInfos[i].addressRange.size,
+                                VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT);
+    }
 }
 
 void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,

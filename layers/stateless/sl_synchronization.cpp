@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,11 +50,19 @@ bool Device::ValidateDependencyInfo(const Context &context, const VkDependencyIn
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
-        const VkMemoryBarrier2 &memory_barrier = dep_info.pMemoryBarriers[i];
-        skip |= context.ValidateStructPnext(barrier_loc, memory_barrier.pNext, allowed_structs.size(),
-                                            allowed_structs.data(), GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDependencyInfo-pMemoryBarriers-10606",
+        const VkMemoryBarrier2& memory_barrier = dep_info.pMemoryBarriers[i];
+        skip |= context.ValidateStructPnext(barrier_loc, memory_barrier.pNext, allowed_structs.size(), allowed_structs.data(),
+                                            GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfo-pMemoryBarriers-10606",
                                             "VUID-VkDependencyInfo-pMemoryBarriers-10605");
+    }
+
+    if (const auto memory_range_barriers_info = vku::FindStructInPNextChain<VkMemoryRangeBarriersInfoKHR>(dep_info.pNext)) {
+        for (uint32_t i = 0; i < memory_range_barriers_info->memoryRangeBarrierCount; ++i) {
+            const VkMemoryRangeBarrierKHR& memory_range_barrier = memory_range_barriers_info->pMemoryRangeBarriers[i];
+            skip |= context.ValidateDeviceAddressFlags(
+                loc.pNext(Struct::VkMemoryRangeBarrierKHR).dot(Field::pMemoryRangeBarriers, i).dot(Field::addressFlags),
+                memory_range_barrier.addressFlags);
+        }
     }
 
     return skip;

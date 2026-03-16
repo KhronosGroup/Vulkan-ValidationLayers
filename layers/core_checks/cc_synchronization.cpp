@@ -2342,11 +2342,15 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
                                        const vvl::CommandBuffer &cb_state, const BufferBarrier &mem_barrier) const {
     bool skip = false;
 
+    const bool is_memory_range = barrier_loc.structure == vvl::Struct::VkMemoryRangeBarrierKHR;
+
     // Validate buffer barrier queue family indices
     if (auto buffer_state = Get<vvl::Buffer>(mem_barrier.buffer)) {
         auto buf_loc = barrier_loc.dot(Field::buffer);
-        const auto &mem_vuid = GetBufferBarrierVUID(buf_loc, vvl::BufferError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());
+        if (!is_memory_range) {
+            const auto& mem_vuid = GetBufferBarrierVUID(buf_loc, vvl::BufferError::kNoMemory);
+            skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());
+        }
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, buf_loc, mem_barrier, buffer_state->Handle(),
                                              buffer_state->create_info.sharingMode, cb_state.command_pool->queueFamilyIndex);
@@ -2358,7 +2362,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
             skip |=
                 LogError(vuid, objects, offset_loc, "%s has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ".",
                          FormatHandle(mem_barrier.buffer).c_str(), HandleToUint64(mem_barrier.offset), HandleToUint64(buffer_size));
-        } else if (mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
+        } else if (!is_memory_range && mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
             auto size_loc = barrier_loc.dot(Field::size);
             const auto &vuid = GetBufferBarrierVUID(size_loc, vvl::BufferError::kSizeOutOfRange);
             skip |=
@@ -2504,6 +2508,28 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
             const Location barrier_loc = tensor_dep_info_loc.dot(Struct::VkTensorMemoryBarrierARM, Field::pTensorMemoryBarriers, i);
             const TensorBarrier barrier(tensor_barrier_dep_info->pTensorMemoryBarriers[i]);
             skip |= ValidateTensorBarrier(objects, barrier_loc, cb_state, barrier);
+        }
+    }
+
+    const VkMemoryRangeBarriersInfoKHR* memory_range_barriers_info =
+        vku::FindStructInPNextChain<VkMemoryRangeBarriersInfoKHR>(dep_info.pNext);
+    if (memory_range_barriers_info) {
+        for (uint32_t i = 0; i < memory_range_barriers_info->memoryRangeBarrierCount; ++i) {
+            const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryRangeBarrierKHR, Field::pMemoryRangeBarriers, i);
+            const VkMemoryRangeBarrierKHR& memory_range_barrier = memory_range_barriers_info->pMemoryRangeBarriers[i];
+
+            skip |= ValidateDeviceAddressCommands(cb_state.VkHandle(), memory_range_barrier.addressRange.address,
+                                                  memory_range_barrier.addressRange.size, memory_range_barrier.addressFlags,
+                                                  barrier_loc.dot(Field::addressRange));
+
+            // TODO - This not ideal, we should redo BufferBarrier to handle a memory range
+            const auto buffer_states = GetBuffersByAddress(memory_range_barrier.addressRange.address);
+            for (const auto buffer_state : buffer_states) {
+                const BufferBarrier barrier(memory_range_barrier, *buffer_state);
+                const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
+                skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
+                skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
+            }
         }
     }
 
@@ -2674,8 +2700,8 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
                                        OwnershipTransferOp ownership_transfer_op, VkDependencyFlags dependency_flags) const {
     bool skip = false;
     const VkQueueFlags queue_flags = cb_state.GetQueueFlags();
-    const bool is_sync2 =
-        IsValueIn(barrier_loc.structure, {Struct::VkMemoryBarrier2, Struct::VkBufferMemoryBarrier2, Struct::VkImageMemoryBarrier2});
+    const bool is_sync2 = IsValueIn(barrier_loc.structure, {Struct::VkMemoryBarrier2, Struct::VkBufferMemoryBarrier2,
+                                                            Struct::VkImageMemoryBarrier2, Struct::VkMemoryRangeBarrierKHR});
 
     // Validate Sync2 stages in this function because they are defined per barrier structure.
     // Sync1 stages are shared by all barriers (vkCmdPipelineBarrier api) and are validated once per barrier command call.

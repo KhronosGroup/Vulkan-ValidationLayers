@@ -32,6 +32,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "core_validation.h"
+#include "cc_buffer_address.h"
 #include "generated/command_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/image_layout_utils.h"
@@ -602,6 +603,23 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
     return PreCallValidateCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, error_obj);
 }
 
+bool CoreChecks::PreCallValidateCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    skip |= ValidateDeviceAddressRange(pInfo->addressRange.address, pInfo->addressRange.size, false,
+                                       info_loc.dot(Field::addressRange), LogObjectList(commandBuffer),
+                                       VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT, "VUID-VkBindIndexBuffer3InfoKHR-addressRange-13051");
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
+                                          info_loc.dot(Field::addressRange));
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                      const ErrorObject &error_obj) const {
@@ -652,6 +670,42 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
                          "(%" PRIu64 ") is not less than the buffer size (%" PRIu64 ") minus dstOffset (%" PRIu64 ").", dataSize,
                          dst_buffer_state->create_info.size, dstOffset);
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                                   VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData,
+                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pDstRange->address, pDstRange->size, dstFlags,
+                                          error_obj.location.dot(Field::pDstRange));
+
+    skip |= ValidateDeviceAddressRange(pDstRange->address, pDstRange->size, false, error_obj.location.dot(Field::pDstRange),
+                                       LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_TRANSFER_DST_BIT,
+                                       "VUID-vkCmdUpdateMemoryKHR-dstRange-13005");
+
+    if (!phys_dev_props_core11.protectedNoFault) {
+        const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+        if (cb_state.unprotected) {
+            if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
+                skip |= LogError("VUID-vkCmdUpdateMemoryKHR-commandBuffer-13010", commandBuffer,
+                                 error_obj.location.dot(Field::dstFlags),
+                                 "(%s) contains VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is unprotected and "
+                                 "protectedNoFault is not supported.",
+                                 string_VkAddressCommandFlagsKHR(dstFlags).c_str(), FormatHandle(commandBuffer).c_str());
+            }
+        } else {
+            if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
+                skip |= LogError(
+                    "VUID-vkCmdUpdateMemoryKHR-commandBuffer-13011", commandBuffer, error_obj.location.dot(Field::dstFlags),
+                    "(%s) does not include VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is protected and "
+                    "protectedNoFault is not supported.",
+                    string_VkAddressCommandFlagsKHR(dstFlags).c_str(), FormatHandle(commandBuffer).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -2121,50 +2175,91 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
-                                                             uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-                                                             const VkDeviceSize *pCounterBufferOffsets,
-                                                             const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                    uint32_t bindingCount,
+                                                                    const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,
+                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    const auto *pipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    if (cb_state->transform_feedback_active) {
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-None-02365", commandBuffer, error_obj.location,
+                         "transform feedback is active.");
+    }
+    for (uint32_t i = 0; i < bindingCount; i++) {
+        const Location info_loc = error_obj.location.dot(Field::pBindingInfos, i);
+        const VkBindTransformFeedbackBuffer2InfoEXT& binding_info = pBindingInfos[i];
+
+        skip |= ValidateDeviceAddressRange(binding_info.addressRange.address, binding_info.addressRange.size, true,
+                                           info_loc.dot(Field::addressRange), LogObjectList(commandBuffer),
+                                           VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
+                                           "VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13091");
+
+        skip |= ValidateDeviceAddressCommands(commandBuffer, binding_info.addressRange.address, binding_info.addressRange.size,
+                                              binding_info.addressFlags, info_loc.dot(Field::addressRange));
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdBeginTransformFeedback(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const {
+    bool skip = false;
+    skip |= ValidateCmd(cb_state, error_obj.location);
+
+    const bool is_xfb_2 = error_obj.location.function == Func::vkCmdBeginTransformFeedback2EXT;
+    if (cb_state.transform_feedback_active) {
+        const char* vuid =
+            is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-02367" : "VUID-vkCmdBeginTransformFeedbackEXT-None-02367";
+        skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "transform feedback is active.");
+    }
+
+    const auto* pipe = cb_state.GetLastBoundGraphics().pipeline_state;
     if (!pipe && !enabled_features.shaderObject) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-06233", commandBuffer, error_obj.location,
-                         "No graphics pipeline has been bound yet.");
+        const char* vuid =
+            is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-06233" : "VUID-vkCmdBeginTransformFeedbackEXT-None-06233";
+        skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "No graphics pipeline has been bound yet.");
     } else if (pipe && pipe->pre_raster_state) {
-        const ShaderStageState* stage_state = pipe->GetShaderStageState(pipe->pre_raster_state->last_stage);
+        const ShaderStageState *stage_state = pipe->GetShaderStageState(pipe->pre_raster_state->last_stage);
         if (stage_state && stage_state->HasSpirv()) {
             if (!stage_state->entrypoint->execution_mode.Has(spirv::ExecutionModeSet::xfb_bit)) {
-                const LogObjectList objlist(commandBuffer, pipe->Handle());
-                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128", objlist, error_obj.location,
-                                 "The last bound pipeline (%s) has no Xfb Execution Mode for %s.",
-                                 FormatHandle(pipe->Handle()).c_str(), stage_state->entrypoint->Describe().c_str());
+                const LogObjectList objlist(cb_state.VkHandle(), pipe->Handle());
+                const char *vuid =
+                    is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-04128" : "VUID-vkCmdBeginTransformFeedbackEXT-None-04128";
+                skip |=
+                    LogError(vuid, objlist, error_obj.location, "The last bound pipeline (%s) has no Xfb Execution Mode for %s.",
+                             FormatHandle(pipe->Handle()).c_str(), stage_state->entrypoint->Describe().c_str());
             }
         }
     }
 
-    if (cb_state->transform_feedback_active) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-02367", commandBuffer, error_obj.location,
-                         "transform feedback is active.");
-    }
-
-    if (cb_state->active_render_pass) {
-        const auto &rp_ci = cb_state->active_render_pass->create_info;
+    if (cb_state.active_render_pass) {
+        const auto& rp_ci = cb_state.active_render_pass->create_info;
         for (uint32_t i = 0; i < rp_ci.subpassCount; ++i) {
             // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
             if (rp_ci.pSubpasses[i].viewMask > 0) {
-                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-02373", commandBuffer, error_obj.location,
-                                 "active render pass (%s) has multiview enabled.",
-                                 FormatHandle(cb_state->active_render_pass->Handle()).c_str());
+                const char* vuid =
+                    is_xfb_2 ? "VUID-vkCmdBeginTransformFeedback2EXT-None-02373" : "VUID-vkCmdBeginTransformFeedbackEXT-None-02373";
+                skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "active render pass (%s) has multiview enabled.",
+                                 FormatHandle(cb_state.active_render_pass->Handle()).c_str());
                 break;
             }
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                             uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                             const VkDeviceSize* pCounterBufferOffsets,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+
+    skip |= ValidateCmdBeginTransformFeedback(*cb_state, error_obj);
+
     if ((counterBufferCount + firstCounterBuffer) > cb_state->transform_feedback_buffers_bound) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630", commandBuffer,
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-09630", commandBuffer,
                          error_obj.location.dot(Field::firstCounterBuffer),
                          "is %" PRIu32 " and counterBufferCount is %" PRIu32
                          " but vkCmdBindTransformFeedbackBuffersEXT only bound %" PRIu32 " buffers.",
@@ -2175,8 +2270,9 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     // if pCounterBuffers is nullptr.
     if (pCounterBuffers == nullptr) {
         if (pCounterBufferOffsets != nullptr) {
-            skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffer-02371", commandBuffer, error_obj.location,
-                             "pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.");
+            skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffer-02371", commandBuffer,
+                             error_obj.location.dot(Field::pCounterBuffers), "is NULL but pCounterBufferOffsets (%p) is not NULL.",
+                             pCounterBufferOffsets);
         }
     } else {
         for (uint32_t i = 0; i < counterBufferCount; ++i) {
@@ -2190,17 +2286,63 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                 skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-02370", objlist,
                                  error_obj.location.dot(Field::pCounterBuffers, i),
-                                 "is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").", i,
-                                 pCounterBufferOffsets[i]);
+                                 "have a VkBuffer of size %" PRIu64
+                                 " which is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").",
+                                 buffer_state->create_info.size, i, pCounterBufferOffsets[i]);
             }
 
             if ((buffer_state->usage & VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
-                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
-                                 error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
-                                 string_VkBufferUsageFlags2(buffer_state->usage).c_str());
+                skip |= LogError(
+                    "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
+                    error_obj.location.dot(Field::pCounterBuffers, i),
+                    "was created without VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT (usage created with %s).",
+                    string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                              uint32_t counterRangeCount,
+                                                              const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+
+    skip |= ValidateCmdBeginTransformFeedback(*cb_state, error_obj);
+
+    if ((counterRangeCount + firstCounterRange) > cb_state->transform_feedback_buffers_bound) {
+        skip |= LogError("VUID-vkCmdBeginTransformFeedback2EXT-firstCounter-09630", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterRange),
+                         "is %" PRIu32 " and counterBufferCount is %" PRIu32
+                         " but vkCmdBindTransformFeedbackBuffers2EXT only bound %" PRIu32 " buffers.",
+                         firstCounterRange, counterRangeCount, cb_state->transform_feedback_buffers_bound);
+    }
+
+    for (uint32_t i = 0; i < counterRangeCount; i++) {
+        const Location loc = error_obj.location.dot(Field::pCounterInfos, i);
+        skip |= ValidateDeviceAddressRange(pCounterInfos[i].addressRange.address, pCounterInfos[i].addressRange.size, false,
+                                           loc.dot(Field::addressRange), LogObjectList(commandBuffer),
+                                           VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT,
+                                           "VUID-vkCmdBeginTransformFeedback2EXT-pCounterInfos-13094");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdEndTransformFeedback(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const {
+    bool skip = false;
+    skip |= ValidateCmd(cb_state, error_obj.location);
+
+    const bool is_xfb_2 = error_obj.location.function == Func::vkCmdEndTransformFeedback2EXT;
+
+    if (!cb_state.transform_feedback_active) {
+        const char* vuid =
+            is_xfb_2 ? "VUID-vkCmdEndTransformFeedback2EXT-None-02375" : "VUID-vkCmdEndTransformFeedbackEXT-None-02375";
+        skip |= LogError(vuid, cb_state.VkHandle(), error_obj.location, "transform feedback is not active.");
     }
 
     return skip;
@@ -2212,11 +2354,8 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (!cb_state->transform_feedback_active) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-02375", commandBuffer, error_obj.location,
-                         "transform feedback is not active.");
-    }
+
+    skip |= ValidateCmdEndTransformFeedback(*cb_state, error_obj);
 
     if (pCounterBuffers) {
         for (uint32_t i = 0; i < counterBufferCount; ++i) {
@@ -2241,6 +2380,26 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                  string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                            uint32_t counterRangeCount,
+                                                            const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+
+    skip |= ValidateCmdEndTransformFeedback(*cb_state, error_obj);
+
+    for (uint32_t i = 0; i < counterRangeCount; ++i) {
+        const Location loc = error_obj.location.dot(Field::pCounterInfos, i);
+        skip |= ValidateDeviceAddressRange(pCounterInfos[i].addressRange.address, pCounterInfos[i].addressRange.size, false,
+                                           loc.dot(Field::addressRange), LogObjectList(commandBuffer),
+                                           VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT,
+                                           "VUID-vkCmdEndTransformFeedback2EXT-pCounterInfos-13096");
     }
 
     return skip;
@@ -2315,6 +2474,27 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                         uint32_t bindingCount, const VkBindVertexBuffer3InfoKHR* pBindingInfos,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        const Location binding_info_loc = error_obj.location.dot(Field::pBindingInfos, i);
+        const VkBindVertexBuffer3InfoKHR& info = pBindingInfos[i];
+        const VkStridedDeviceAddressRangeKHR& address_range = info.addressRange;
+
+        skip |=
+            ValidateDeviceAddressRange(address_range.address, address_range.size, true, binding_info_loc.dot(Field::addressRange),
+                                       LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT,
+                                       "VUID-VkBindVertexBuffer3InfoKHR-addressRange-13074");
+
+        skip |= ValidateDeviceAddressCommands(commandBuffer, info.addressRange.address, info.addressRange.size, info.addressFlags,
+                                              error_obj.location.dot(Field::addressRange));
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
     const ErrorObject &error_obj) const {
@@ -2351,6 +2531,31 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
             }
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBeginConditionalRendering2EXT(
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->conditional_rendering_active) {
+        skip |= LogError("VUID-vkCmdBeginConditionalRendering2EXT-None-13063", commandBuffer, error_obj.location,
+                         "Conditional rendering is already active.");
+    }
+
+    skip |= ValidateDeviceAddressCommands(commandBuffer, pConditionalRenderingBegin->addressRange.address,
+                                          pConditionalRenderingBegin->addressRange.size, pConditionalRenderingBegin->addressFlags,
+                                          error_obj.location.dot(Field::addressRange));
+
+    skip |= ValidateDeviceAddressRange(
+        pConditionalRenderingBegin->addressRange.address, pConditionalRenderingBegin->addressRange.size, false,
+        error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressRange), LogObjectList(commandBuffer),
+        VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT, "VUID-VkConditionalRenderingBeginInfo2EXT-addressRange-13064");
 
     return skip;
 }

@@ -369,6 +369,8 @@ void CommandBuffer::ResetCBState() {
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
 
+    bind_vertex_buffer_3_used = false;
+
     SetDescriptorMode(vvl::DescriptorModeUnknown, vvl::Func::Empty);
     // Need to reset on initalization
     descriptor_heap.Reset();
@@ -636,6 +638,26 @@ void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer d
 
     for (auto &item : sub_states_) {
         item.second->RecordCopyQueryPoolResults(*pool_state, *buffer_state, firstQuery, queryCount, dstOffset, stride, flags, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyQueryPoolResultsToMemory(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                                       const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                       VkAddressCommandFlagsKHR dstFlags, VkQueryResultFlags queryResultFlags,
+                                                       const Location& loc) {
+    RecordCommand(loc);
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
+
+    auto pool_state = dev_data.Get<QueryPool>(queryPool);
+    ASSERT_AND_RETURN(pool_state);
+    if (!dev_data.disabled[command_buffer_state]) {
+        AddChild(pool_state);
+    }
+
+    for (auto& item : sub_states_) {
+        item.second->RecordCopyQueryPoolResultsToMemory(*pool_state, firstQuery, queryCount, queryResultFlags, loc);
     }
 }
 
@@ -1979,6 +2001,28 @@ void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::B
     }
 }
 
+void CommandBuffer::RecordCopyImageToMemory(vvl::Image& src_image_state, uint32_t region_count,
+                                            const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
+    RecordCommand(loc);
+
+    for (auto& item : sub_states_) {
+        item.second->RecordCopyImageToMemory(src_image_state, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyMemoryToImage(vvl::Image& dst_image_state, uint32_t region_count,
+                                            const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
+    RecordCommand(loc);
+
+    for (auto& item : sub_states_) {
+        item.second->RecordCopyMemoryToImage(dst_image_state, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyMemory(uint32_t region_count, const VkDeviceMemoryCopyKHR* regions, const Location& loc) {
+    RecordCommand(loc);
+}
+
 void CommandBuffer::RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
                                     const Location &loc) {
@@ -2053,6 +2097,18 @@ void CommandBuffer::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize o
     for (auto &item : sub_states_) {
         item.second->RecordUpdateBuffer(buffer_state, offset, size, loc);
     }
+}
+
+void CommandBuffer::RecordFillMemory(VkDeviceAddressRangeKHR range, const Location& loc) {
+    RecordCommand(loc);
+    // TODO - Sync val will want the range
+    (void)range;
+}
+
+void CommandBuffer::RecordUpdateMemory(VkDeviceAddressRangeKHR range, const Location& loc) {
+    RecordCommand(loc);
+    // TODO - Sync val will want the range
+    (void)range;
 }
 
 void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info,

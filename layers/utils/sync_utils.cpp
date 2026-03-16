@@ -22,6 +22,13 @@
 #include "generated/vk_extension_helper.h"
 #include "utils/hash_vk_types.h"
 #include <vulkan/vk_enum_string_helper.h>
+#include "state_tracker/buffer_state.h"
+
+BufferBarrier::BufferBarrier(const VkMemoryRangeBarrierKHR& barrier, const vvl::Buffer& buffer)
+    : OwnershipTransferBarrier(barrier),
+      buffer(buffer.VkHandle()),
+      offset(barrier.addressRange.address - buffer.deviceAddress),
+      size(barrier.addressRange.size) {}
 
 size_t QFOImageTransferBarrier::hash() const {
     // Ignoring the layout information for the purpose of the hash, as we're interested in QFO release/acquisition w.r.t.

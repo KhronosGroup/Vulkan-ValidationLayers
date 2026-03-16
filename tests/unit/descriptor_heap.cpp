@@ -562,7 +562,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
         resource_desc_info.data.pAddressRange = &invalid_device_address_range;
         VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-size-11411");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-size-11411");
         vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
         m_errorMonitor->VerifyFound();
     }
@@ -579,7 +579,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
         resource_desc_info.data.pTexelBuffer = &texel_buffer_info;
         VkHostAddressRangeEXT descriptors = {data.data(), static_cast<size_t>(size)};
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-size-11411");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-size-11411");
         vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
         m_errorMonitor->VerifyFound();
     }
@@ -1581,7 +1581,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
         bind_info.reservedRangeOffset = heap_props.samplerDescriptorAlignment;
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-address-11365");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-address-11365");
         vk::CmdBindSamplerHeapEXT(secondary, &bind_info);
         m_errorMonitor->VerifyFound();
 
@@ -1618,7 +1618,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
         bind_info.reservedRangeOffset = 0;
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-address-11365");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-address-11365");
         vk::CmdBindResourceHeapEXT(secondary, &bind_info);
         m_errorMonitor->VerifyFound();
 
@@ -2795,7 +2795,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         bind_info.heapRange = {heap.Address(), heap_size + 1};
         bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRange;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-address-11365");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-address-11365");
         m_command_buffer.Begin();
         vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
         m_command_buffer.End();
@@ -2826,7 +2826,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
         bind_info.heapRange = {heap.Address(), heap_size + 1};
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-address-11365");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-address-11365");
         m_command_buffer.Begin();
         vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
         m_command_buffer.End();
@@ -2989,7 +2989,7 @@ TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTests) {
         desc_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
         desc_info.data.pTexelBuffer = &texel_buffer_info;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeEXT-address-11365");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddressRangeKHR-address-11365");
         vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
         m_errorMonitor->VerifyFound();
     }

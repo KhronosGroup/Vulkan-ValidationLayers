@@ -459,6 +459,10 @@ template <>
 uint32_t GetRowLength<VkImageToMemoryCopy>(VkImageToMemoryCopy data) {
     return data.memoryRowLength;
 }
+template <>
+uint32_t GetRowLength<VkDeviceMemoryImageCopyKHR>(VkDeviceMemoryImageCopyKHR data) {
+    return data.addressRowLength;
+}
 template <typename T>
 uint32_t GetImageHeight(T data) {
     return data.bufferImageHeight;
@@ -470,6 +474,10 @@ uint32_t GetImageHeight<VkMemoryToImageCopy>(VkMemoryToImageCopy data) {
 template <>
 uint32_t GetImageHeight<VkImageToMemoryCopy>(VkImageToMemoryCopy data) {
     return data.memoryImageHeight;
+}
+template <>
+uint32_t GetImageHeight<VkDeviceMemoryImageCopyKHR>(VkDeviceMemoryImageCopyKHR data) {
+    return data.addressImageHeight;
 }
 
 // Common between non-image to/from image copies
@@ -4161,6 +4169,257 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
 
     skip |= ValidateCopyMemoryToImageIndirectInfo(*cb_state, *pCopyMemoryToImageIndirectInfo,
                                                   error_obj.location.dot(Field::pCopyMemoryToImageIndirectInfo));
+
+    return skip;
+}
+
+// vkCmdCopyMemoryToImageKHR and vkCmdCopyImageToMemoryKHR (VK_KHR_device_address_commands)
+// TODO - We duplciate logic to not add more complexity to the already over-complicated templated ValidateMemoryImageCopyCommon()
+bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
+                                              const VkCopyDeviceMemoryImageInfoKHR& copy_memory_info,
+                                              const Location& info_loc) const {
+    bool skip = false;
+
+    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(command_buffer);
+    const vvl::CommandBuffer& cb_state = *cb_state_ptr;
+
+    auto image_state = Get<vvl::Image>(copy_memory_info.image);
+    ASSERT_AND_RETURN_SKIP(image_state);
+    const Location image_loc = info_loc.dot(Field::image);
+
+    const bool is_memory_to_image = info_loc.function == Func::vkCmdCopyMemoryToImageKHR;
+    const LogObjectList objlist(command_buffer, image_state->Handle());
+
+    skip |= ValidateMemoryIsBoundToImage(objlist, *image_state, image_loc, "VUID-VkCopyDeviceMemoryImageInfoKHR-image-07966");
+
+    if (image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-image-07969", objlist, image_loc,
+                         "must not have been created with flags containing "
+                         "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+    }
+
+    skip |= ValidateImageSampleCount(command_buffer, *image_state, VK_SAMPLE_COUNT_1_BIT, image_loc,
+                                     "VUID-VkCopyDeviceMemoryImageInfoKHR-image-07973");
+
+    for (uint32_t i = 0; i < copy_memory_info.regionCount; ++i) {
+        const VkDeviceMemoryImageCopyKHR& region = copy_memory_info.pRegions[i];
+        const Location region_loc = info_loc.dot(Field::pRegions, i);
+        const Location subresource_loc = region_loc.dot(Field::imageSubresource);
+
+        skip |= ValidateHeterogeneousCopyData(region, *image_state, objlist, region_loc);
+        skip |= ValidateImageSubresourceLayers(objlist, *image_state, region.imageSubresource, subresource_loc);
+
+        if (!phys_dev_props_core11.protectedNoFault) {
+            if (cb_state.unprotected) {
+                if ((region.addressFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
+                    const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13102"
+                                                          : "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13102";
+                    skip |= LogError(
+                        vuid, objlist, region_loc.dot(Field::addressFlags),
+                        "is %s, but command buffer (%s) is not a protected command buffer and protectedNoFault is not supported",
+                        string_VkAddressCommandFlagsKHR(region.addressFlags).c_str(), FormatHandle(command_buffer).c_str());
+                }
+                if ((image_state->create_info.flags & VK_IMAGE_CREATE_PROTECTED_BIT) != 0) {
+                    const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13103"
+                                                          : "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13103";
+                    skip |= LogError(
+                        vuid, objlist, region_loc.dot(Field::image),
+                        "(%s) was created with flags (%s), but command buffer (%s) is not a protected command buffer and "
+                        "protectedNoFault is not supported",
+                        FormatHandle(image_state->Handle()).c_str(),
+                        string_VkImageCreateFlags(image_state->create_info.flags).c_str(), FormatHandle(command_buffer).c_str());
+                }
+            } else {
+                if (is_memory_to_image) {
+                    if ((image_state->create_info.flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0) {
+                        skip |=
+                            LogError("VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13021", objlist, region_loc.dot(Field::image),
+                                     "(%s) was created with flags (%s), but command buffer (%s) is a protected command buffer and "
+                                     "protectedNoFault is not supported",
+                                     FormatHandle(image_state->Handle()).c_str(),
+                                     string_VkImageCreateFlags(image_state->create_info.flags).c_str(),
+                                     FormatHandle(command_buffer).c_str());
+                    }
+                } else {
+                    if ((region.addressFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
+                        skip |= LogError(
+                            "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13025", objlist, region_loc.dot(Field::addressFlags),
+                            "is %s (missing VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR), but command buffer (%s) is a protected "
+                            "command buffer",
+                            string_VkAddressCommandFlagsKHR(region.addressFlags).c_str(), FormatHandle(command_buffer).c_str());
+                    }
+                }
+            }
+        }
+
+        if (!IsIntegerMultipleOf(region.addressRange.address, 4)) {
+            const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
+                const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13104"
+                                                      : "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13104";
+                skip |= LogError(vuid, objlist, region_loc.dot(Field::addressRange).dot(Field::address),
+                                 "(%" PRIu64 ") is not a multiple of 4, but is %s (From %s)", region.addressRange.address,
+                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str(),
+                                 FormatHandle(cb_state.command_pool->Handle()).c_str());
+            }
+        }
+
+        {
+            const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-imageOffset-13105"
+                                                  : "VUID-vkCmdCopyImageToMemoryKHR-imageOffset-13105";
+            const VkExtent3D granularity = GetImageTransferGranularity(cb_state, *image_state);
+            skip |= ValidateTransferGranularityOffset(objlist, region.imageOffset, granularity, region_loc.dot(Field::imageOffset),
+                                                      vuid);
+            VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
+            skip |= ValidateTransferGranularityExtent(objlist, region.imageExtent, region.imageOffset, granularity,
+                                                      subresource_extent, *image_state, region_loc.dot(Field::imageExtent), vuid);
+        }
+
+        {
+            const char *vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-addressRange-13128"
+                                                  : "VUID-vkCmdCopyImageToMemoryKHR-addressRange-13129";
+            const VkBufferUsageFlagBits2 usage =
+                is_memory_to_image ? VK_BUFFER_USAGE_TRANSFER_SRC_BIT : VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            skip |= ValidateDeviceAddressRange(region.addressRange.address, region.addressRange.size, false,
+                                               region_loc.dot(Field::addressRange), LogObjectList(command_buffer), usage, vuid);
+        }
+
+        if ((region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT;
+            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
+                const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13106"
+                                                      : "VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-13106";
+                skip |=
+                    LogError(vuid, objlist, region_loc.dot(Field::imageSubresource).dot(Field::aspectMask),
+                             "is %s, but is %s (From %s)", string_VkImageAspectFlags(region.imageSubresource.aspectMask).c_str(),
+                             DescribeRequiredQueueFlag(cb_state, *physical_device_state, required_flags).c_str(),
+                             FormatHandle(cb_state.command_pool->Handle()).c_str());
+            }
+            if (!IsIntegerMultipleOf(region.addressRange.address, 4)) {
+                skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-image-13031", objlist,
+                                 region_loc.dot(Field::addressRange).dot(Field::address),
+                                 "(%" PRIu64 ") is not a multiple of 4, but image (%s) is a depth/stencil image.",
+                                 region.addressRange.address, FormatHandle(image_state->Handle()).c_str());
+            }
+        }
+
+        const VkImageLayout transfer_layout =
+            is_memory_to_image ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        if (!IsValueIn(region.imageLayout, {VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, transfer_layout})) {
+            const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-imageLayout-13019"
+                                                  : "VUID-vkCmdCopyImageToMemoryKHR-imageLayout-13023";
+            skip |= LogError(vuid, objlist, region_loc.dot(Field::imageLayout),
+                             "is %s, but must be VK_IMAGE_LAYOUT_GENERAL, "
+                             "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, or %s.",
+                             string_VkImageLayout(region.imageLayout), string_VkImageLayout(transfer_layout));
+        }
+
+        const VkImageUsageFlagBits required_usage =
+            is_memory_to_image ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if ((image_state->create_info.usage & required_usage) == 0) {
+            const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-pCopyMemoryInfo-13020"
+                                                  : "VUID-vkCmdCopyImageToMemoryKHR-pCopyMemoryInfo-13024";
+            skip |= LogError(vuid, objlist, region_loc.dot(Field::image), "(%s) was created with usage (%s) which is missing %s.",
+                             FormatHandle(image_state->Handle()).c_str(),
+                             string_VkImageUsageFlags(image_state->create_info.usage).c_str(),
+                             string_VkImageUsageFlagBits(required_usage));
+        }
+
+        skip |= ValidateSubresourceImageLayout(cb_state, *image_state, region.imageSubresource, region.imageOffset.z,
+                                               region.imageExtent.depth, region.imageLayout, region_loc.dot(Field::imageLayout),
+                                               "VUID-VkCopyDeviceMemoryImageInfoKHR-imageLayout-13028");
+
+        vvl::range<VkDeviceAddress> region_range{region.addressRange.address,
+                                                 region.addressRange.address + region.addressRange.size};
+        for (uint32_t j = i + 1; j < copy_memory_info.regionCount; ++j) {
+            const VkDeviceMemoryImageCopyKHR& other_region = copy_memory_info.pRegions[j];
+            vvl::range<VkDeviceAddress> other_region_range{other_region.addressRange.address,
+                                                           other_region.addressRange.address + other_region.addressRange.size};
+            if (region_range.intersects(other_region_range)) {
+                skip |= LogError("VUID-VkCopyDeviceMemoryImageInfoKHR-addressRange-13026", objlist,
+                                 region_loc.dot(Field::addressRange), "%s overlaps with pRegions[%" PRIu32 "].addressRange %s",
+                                 string_range_hex(region_range).c_str(), j, string_range_hex(other_region_range).c_str());
+            }
+        }
+
+        skip |= ValidateDeviceAddressCommands(command_buffer, region.addressRange.address, region.addressRange.size,
+                                              region.addressFlags, region_loc.dot(Field::addressRange));
+
+        // Todo https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/merge_requests/310#note_589155
+        // skip |= ValidateBufferBounds(cb_state, image_state, region.addressRange, region, region_loc);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                        const ErrorObject& error_obj) const {
+    return ValidateCmdCopyMemoryToImage(commandBuffer, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+}
+
+bool CoreChecks::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
+                                                        const ErrorObject& error_obj) const {
+    return ValidateCmdCopyMemoryToImage(commandBuffer, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+}
+
+bool CoreChecks::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
+                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+
+    for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        const VkDeviceMemoryCopyKHR& region = pCopyMemoryInfo->pRegions[i];
+        const Location region_loc = error_obj.location.dot(Field::pRegions, i);
+        const LogObjectList objlist(commandBuffer);
+
+        BufferAddressValidation<1> src_buffer_address_validator = {
+            {{{"VUID-VkDeviceMemoryCopyKHR-srcRange-13017",
+               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT) == 0; },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT"; }, kUsageErrorMsgBuffer}}}};
+
+        skip |= src_buffer_address_validator.ValidateDeviceAddress(*this, region_loc.dot(Field::srcRange).dot(Field::address),
+                                                                   objlist, region.srcRange.address);
+
+        BufferAddressValidation<1> dst_buffer_address_validator = {
+            {{{"VUID-VkDeviceMemoryCopyKHR-dstRange-13018",
+               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_TRANSFER_DST_BIT) == 0; },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_TRANSFER_DST_BIT"; }, kUsageErrorMsgBuffer}}}};
+
+        skip |= dst_buffer_address_validator.ValidateDeviceAddress(*this, region_loc.dot(Field::dstRange).dot(Field::address),
+                                                                   objlist, region.dstRange.address);
+
+        if (!phys_dev_props_core11.protectedNoFault) {
+            if (cb_state->unprotected) {
+                if (region.srcFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) {
+                    skip |=
+                        LogError("VUID-vkCmdCopyMemoryKHR-commandBuffer-13012", objlist, region_loc.dot(Field::srcFlags),
+                                 "(%s) contains VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is not a protected "
+                                 "command buffer and protectedNoFault is not supported",
+                                 string_VkAddressCommandFlagsKHR(region.srcFlags).c_str(), FormatHandle(commandBuffer).c_str());
+                }
+                if (region.dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) {
+                    skip |=
+                        LogError("VUID-vkCmdCopyMemoryKHR-commandBuffer-13013", objlist, region_loc.dot(Field::dstFlags),
+                                 "(%s) contains VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, but command buffer (%s) is not a protected "
+                                 "command buffer and protectedNoFault is not supported",
+                                 string_VkAddressCommandFlagsKHR(region.dstFlags).c_str(), FormatHandle(commandBuffer).c_str());
+                }
+            } else {
+                if ((region.dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
+                    skip |= LogError("VUID-vkCmdCopyMemoryKHR-commandBuffer-13014", objlist, region_loc.dot(Field::dstFlags),
+                                     "(%s) is missing VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.",
+                                     string_VkAddressCommandFlagsKHR(region.dstFlags).c_str());
+                }
+            }
+        }
+
+        skip |= ValidateDeviceAddressCommands(commandBuffer, region.srcRange.address, region.srcRange.size, region.srcFlags,
+                                              region_loc.dot(Field::srcRange));
+        skip |= ValidateDeviceAddressCommands(commandBuffer, region.dstRange.address, region.dstRange.size, region.dstFlags,
+                                              region_loc.dot(Field::dstRange));
+    }
 
     return skip;
 }

@@ -16,6 +16,7 @@
 #include <vulkan/vulkan_core.h>
 #include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 class NegativeDeviceAddress : public VkLayerTest {};
 
@@ -438,7 +439,7 @@ TEST_F(NegativeDeviceAddress, BindSamplerHeap) {
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
     vkt::Buffer sampler_heap(*m_device, vkt::Buffer::CreateInfo(heap_size, 0, {}, &buffer_usage),
-                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
     bind_info.heapRange = sampler_heap.AddressRange();
@@ -633,6 +634,155 @@ TEST_F(NegativeDeviceAddress, RangeSplitBetweenBuffers) {
     m_command_buffer.End();
 
     heap1.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddress, IndexBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+    VkBindIndexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.addressRange = buffer.AddressRange();
+    info.addressFlags = 0u;
+    info.indexType = VK_INDEX_TYPE_UINT32;
+
+    m_command_buffer.Begin();
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &info);
+    m_command_buffer.End();
+
+    buffer.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddress, CmdDrawIndirect2KHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(buffer.Memory().Map());
+    draw_ptr->vertexCount = 3u;
+    draw_ptr->instanceCount = 1u;
+    draw_ptr->firstVertex = 0u;
+    draw_ptr->firstInstance = 0u;
+
+    VkDrawIndirect2InfoKHR info = vku::InitStructHelper();
+    info.addressRange = buffer.StridedAddressRange(sizeof(VkDrawIndirectCommand));
+    info.addressFlags = 0u;
+    info.drawCount = 1u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirect2KHR(m_command_buffer, &info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    buffer.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddress, CmdFillMemoryUsage) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceAddressRangeKHR range;
+    range.address = buffer.Address();
+    range.size = 256u;
+    const uint32_t data = 255;
+
+    VkAddressCommandFlagsKHR flags = 0u;
+
+    m_command_buffer.Begin();
+    vk::CmdFillMemoryKHR(m_command_buffer, &range, flags, data);
+    m_command_buffer.End();
+
+    buffer.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddress, ConditionalRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::conditionalRendering);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT, vkt::device_address);
+
+    VkConditionalRenderingBeginInfo2EXT info = vku::InitStructHelper();
+    info.addressRange = buffer.AddressRange();
+    info.addressFlags = 0u;
+    info.flags = 0u;
+
+    m_command_buffer.Begin();
+    vk::CmdBeginConditionalRendering2EXT(m_command_buffer, &info);
+    vk::CmdEndConditionalRenderingEXT(m_command_buffer);
+    m_command_buffer.End();
+
+    buffer.Destroy();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddress, TransformFeedback) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(
+        *m_device, 256u,
+        VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT | VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT,
+        vkt::device_address);
+    VkBindTransformFeedbackBuffer2InfoEXT info = vku::InitStructHelper();
+    info.addressRange = buffer.AddressRange();
+    info.addressFlags = VK_ADDRESS_COMMAND_TRANSFORM_FEEDBACK_BUFFER_USAGE_BIT_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindTransformFeedbackBuffers2EXT(m_command_buffer, 0u, 1u, &info);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    buffer.Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
