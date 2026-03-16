@@ -193,6 +193,23 @@ bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, cons
                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "Query with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active.");
             }
+            const VkQueryPipelineStatisticFlags invalidFlags =
+                VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_PRIMITIVES_BIT | VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT |
+                VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT;
+            if (query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+                (query_pool_state->create_info.pipelineStatistics & invalidFlags)) {
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_STATISTICS_QUERIES_07076),
+                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                                 "Query with type VK_QUERY_TYPE_PIPELINE_STATISTICS is active, that was created with "
+                                 "pipelineStatistics (%s) incompatible with mesh shaders.",
+                                 string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics).c_str());
+            }
         }
     }
     return skip;
