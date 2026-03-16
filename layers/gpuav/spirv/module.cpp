@@ -249,35 +249,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             current_function->inst_map_[result_id] = new_inst.get();
         }
 
-        if (opcode == spv::OpFunctionCall) {
-            function_call_map[current_function->id_].insert(new_inst->Word(3));
-        }
-
-        // Coopmat2 callback functions are not called via OpFunctionCall, but are still reachable
-        if (opcode == spv::OpCooperativeMatrixPerElementOpNV) {
-            // Word(4) = Func
-            function_call_map[current_function->id_].insert(new_inst->Word(4));
-        } else if (opcode == spv::OpCooperativeMatrixReduceNV) {
-            // Word(5) = CombineFunc (after Matrix=Word(3), Reduce literal=Word(4))
-            function_call_map[current_function->id_].insert(new_inst->Word(5));
-        } else if (opcode == spv::OpCooperativeMatrixLoadTensorNV) {
-            // DecodeFunc is optional, gated by TensorAddressingOperands bitmask.
-            // Layout: ResultType(1), Result(2), Pointer(3), Object(4), TensorLayout(5),
-            //         MemoryOperand literal(6), [extra memory operand words...],
-            //         TensorAddressingOperands literal, [TensorView ID], [DecodeFunc ID]
-            uint32_t idx = 7;  // first word after MemoryOperand literal
-            const uint32_t mem_operand = new_inst->Word(6);
-            if (mem_operand & spv::MemoryAccessAlignedMask) idx++;
-            if (mem_operand & spv::MemoryAccessMakePointerAvailableMask) idx++;
-            if (mem_operand & spv::MemoryAccessMakePointerVisibleMask) idx++;
-            if (idx < new_inst->Length()) {
-                const uint32_t tensor_operand = new_inst->Word(idx);
-                idx++;
-                if (tensor_operand & spv::TensorAddressingOperandsTensorViewMask) idx++;
-                if ((tensor_operand & spv::TensorAddressingOperandsDecodeFuncMask) && idx < new_inst->Length()) {
-                    function_call_map[current_function->id_].insert(new_inst->Word(idx));
-                }
-            }
+        const uint32_t called_function_id = new_inst->GetCalledFunctionId();
+        if (called_function_id != 0) {
+            function_call_map[current_function->id_].insert(called_function_id);
         }
 
         if (opcode == spv::OpFunctionEnd) {
