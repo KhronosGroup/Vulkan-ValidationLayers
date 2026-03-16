@@ -432,7 +432,7 @@ void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_inf
     const AccessContext& from_context = signal_info.batch->access_context_;
     const SemaphoreScope& signal_scope = signal_info.first_scope;
     const QueueId queue_id = GetQueueId();
-    const auto queue_flags = queue_state_->GetQueueFlags();
+    const VkQueueFlags queue_flags = queue_state_->GetQueueFlags();
     SemaphoreScope wait_scope{queue_id, SyncExecScope::MakeDst(queue_flags, VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL)};
 
     // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the present accesses
@@ -443,21 +443,35 @@ void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_inf
     SyncBarrier noop_barrier;
     const BatchBarrierOp noop_barrier_op(wait_scope.queue, noop_barrier);
 
-    // Otherwise apply semaphore rules apply
-    const ApplySemaphoreBarrierAction sem_not_same_queue_op(signal_scope, wait_scope);
-    const SemaphoreScope noop_semaphore_scope(queue_id, noop_barrier.dst_exec_scope);
-    const ApplySemaphoreBarrierAction noop_sem_op(signal_scope, noop_semaphore_scope);
-
     // For each presented image
     for (const auto& presented : presented_images) {
-        if (signal_scope.queue == wait_scope.queue) {
-            // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the
-            // valid accesses for the sync scope.
-            access_context_.ResolveFromContext(sem_same_queue_op, from_context, presented.range_gen);
-            access_context_.ResolveFromContext(noop_barrier_op, from_context);
+        if (signal_info.acquired_image) {
+            const AcquiredImage& acquired_image = *signal_info.acquired_image;
+
+            // Update last synchronized presentation
+            if (acquired_image.present_tag != kInvalidTag) {
+                const VkSwapchainKHR swapchain = acquired_image.image->create_from_swapchain;
+                last_synchronized_present.Update(swapchain, acquired_image.present_tag);
+            }
+
+            ApplyAcquireNextSemaphoreAction apply_acq(wait_scope, acquired_image.acquire_tag);
+            access_context_.ResolveFromContext(apply_acq, from_context, acquired_image.generator);
+
         } else {
-            access_context_.ResolveFromContext(sem_not_same_queue_op, from_context, presented.range_gen);
-            access_context_.ResolveFromContext(noop_sem_op, from_context);
+            if (signal_scope.queue == wait_scope.queue) {
+                // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the
+                // valid accesses for the sync scope.
+                access_context_.ResolveFromContext(sem_same_queue_op, from_context, presented.range_gen);
+                access_context_.ResolveFromContext(noop_barrier_op, from_context);
+            } else {
+                // Otherwise apply semaphore rules apply
+                const ApplySemaphoreBarrierAction sem_not_same_queue_op(signal_scope, wait_scope);
+                access_context_.ResolveFromContext(sem_not_same_queue_op, from_context, presented.range_gen);
+
+                const SemaphoreScope noop_semaphore_scope(queue_id, noop_barrier.dst_exec_scope);
+                const ApplySemaphoreBarrierAction noop_sem_op(signal_scope, noop_semaphore_scope);
+                access_context_.ResolveFromContext(noop_sem_op, from_context);
+            }
         }
     }
 }
@@ -466,7 +480,7 @@ void QueueBatchContext::ResolveSubmitSemaphoreWait(const SignalInfo& signal_info
     assert(signal_info.batch);
 
     const SemaphoreScope& signal_scope = signal_info.first_scope;
-    const auto queue_flags = queue_state_->GetQueueFlags();
+    const VkQueueFlags queue_flags = queue_state_->GetQueueFlags();
     SemaphoreScope wait_scope{GetQueueId(), SyncExecScope::MakeDst(queue_flags, wait_mask)};
 
     const AccessContext& from_context = signal_info.batch->access_context_;

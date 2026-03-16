@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1073,5 +1073,21 @@ TEST_F(PositiveSyncValWsi, BindSwapchainImage2) {
     m_default_queue->Submit2(command_buffer1, vkt::Wait(acquire_semaphore1), vkt::Signal(submit_semaphore1));
     m_default_queue->Present(m_swapchain, image_index1, submit_semaphore1);
 
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValWsi, PresentAfterAcquire) {
+    TEST_DESCRIPTION("Present waits for acquire's semaphore");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+    vkt::Semaphore acquire_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
     m_default_queue->Wait();
 }
