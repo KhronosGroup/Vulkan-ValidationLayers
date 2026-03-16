@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -342,7 +342,6 @@ TEST_F(PositiveGpuAVSpirv, VulkanMemoryModelDeviceScope) {
 
 TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
     TEST_DESCRIPTION("Catches bug when various OpStore are in top of a function");
-
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -350,6 +349,7 @@ TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
       #version 450
       layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;  // data[4]
 
+      layout(local_size_x = 1) in;
       int foo() {
             return (gl_WorkGroupSize.x > 1) ? 1 : 0;
       }
