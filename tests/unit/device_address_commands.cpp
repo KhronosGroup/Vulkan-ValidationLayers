@@ -3332,7 +3332,7 @@ TEST_F(NegativeDeviceAddressCommands, DispatchIndirectUsage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount) {
+TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount2) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::transformFeedback);
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
@@ -3351,7 +3351,7 @@ TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount) {
     counter_info.addressRange = buffer.AddressRange();
     counter_info.addressFlags = 0u;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBindTransformFeedbackBuffer2InfoEXT-addressRange");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13061");
     vk::CmdDrawIndirectByteCount2EXT(m_command_buffer, 3u, 0u, &counter_info, 0u, sizeof(uint32_t));
     m_errorMonitor->VerifyFound();
 
@@ -4205,5 +4205,111 @@ TEST_F(NegativeDeviceAddressCommands, XfbBufferInvalidAddressFlags) {
     vk::CmdFillMemoryKHR(m_command_buffer, &range, flags, data);
     m_errorMonitor->VerifyFound();
 
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, AccelerationStructureOpaqueDescriptor) {
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
+
+    std::vector<uint32_t> opaque_capture_descriptor_data(64, 0);
+    VkOpaqueCaptureDescriptorDataCreateInfoEXT opaque_capture = vku::InitStructHelper();
+    opaque_capture.opaqueCaptureDescriptorData = opaque_capture_descriptor_data.data();
+
+    VkAccelerationStructureCreateInfo2KHR as_ci = vku::InitStructHelper(&opaque_capture);
+    as_ci.createFlags = 0u;
+    as_ci.addressRange = buffer.AddressRange();
+    as_ci.addressFlags = 0u;
+    as_ci.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+    VkAccelerationStructureKHR as;
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureCreateInfo2KHR-pNext-08109");
+    vk::CreateAccelerationStructure2KHR(*m_device, &as_ci, nullptr, &as);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceAddressCommands, DispatchIndirect2AddressMultiple) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer index_buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDispatchIndirect2InfoKHR dispatch_indirect_info = vku::InitStructHelper();
+    dispatch_indirect_info.addressRange = buffer.AddressRange();
+    dispatch_indirect_info.addressRange.address += 1u;
+    dispatch_indirect_info.addressRange.size = 512u;
+    dispatch_indirect_info.addressFlags = 0u;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDispatchIndirect2InfoKHR-addressRange-13109");
+    vk::CmdDispatchIndirect2KHR(m_command_buffer, &dispatch_indirect_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, QueryIncompatibleFlags) {
+    AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
+    query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_ci.queryCount = 1u;
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
+
+    vkt::Buffer buffer(*m_device, sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkStridedDeviceAddressRangeKHR range = buffer.StridedAddressRange(sizeof(uint32_t));
+
+    m_command_buffer.Begin();
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+
+    VkQueryResultFlags queryResultFlags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-09443");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 0u, &range, 0u, queryResultFlags);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount2AddressMultiple) {
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkBindTransformFeedbackBuffer2InfoEXT counter_info = vku::InitStructHelper();
+    counter_info.addressRange = buffer.AddressRange();
+    counter_info.addressRange.address += 1u;
+    counter_info.addressRange.size = 512u;
+    counter_info.addressFlags = 0u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13062");
+    vk::CmdDrawIndirectByteCount2EXT(m_command_buffer, 3u, 0u, &counter_info, 0u, sizeof(uint32_t));
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
