@@ -1035,6 +1035,8 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         case ActionVUID::XFB_QUERIES_07074: suffix = "None-07074"; break;
         // ### VUID-vkCmdDrawMeshTasksEXT-None-07075
         case ActionVUID::PG_QUERIES_07075: suffix = "None-07075"; break;
+        // ### VUID-vkCmdDrawMeshTasksEXT-pipelineStatistics-07076
+        case ActionVUID::PIPELINE_STATISTICS_QUERIES_07076: suffix = "pipelineStatistics-07076"; break;
 
         // ### VUID-vkCmdTraceRaysKHR-None-09458
         case ActionVUID::RTX_STACK_SIZE_09458: suffix = "None-09458"; break;
