@@ -218,6 +218,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkMemoryToImageCopy-imageSubresource-parameter",
     "VUID-VkImageToMemoryCopy-imageSubresource-parameter",
     "VUID-VkCopyMemoryToImageIndirectCommandKHR-imageSubresource-parameter",
+    "VUID-VkDeviceMemoryImageCopyKHR-imageSubresource-parameter",
     // VkImageSubresourceRange
     "VUID-VkImageMemoryBarrier-subresourceRange-parameter",
     "VUID-VkImageMemoryBarrier2-subresourceRange-parameter",
@@ -402,6 +403,9 @@ const char* unimplementable_validation[] = {
     "VUID-VkResourceDescriptorInfoEXT-pAddressRange-parameter",
     "VUID-VkResourceDescriptorInfoEXT-pTensorARM-parameter",
     "VUID-VkResourceDescriptorInfoEXT-pTexelBuffer-parameter",
+    "VUID-vkCmdBeginTransformFeedback2EXT-pCounterInfos-parameter",
+    "VUID-vkCmdEndTransformFeedback2EXT-pCounterInfos-parameter",
+    "VUID-vkCmdBindTransformFeedbackBuffers2EXT-pBindingInfos-parameter",
     "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04058",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
@@ -556,6 +560,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkDestroyExternalComputeQueueNV-pAllocator-parameter",
     "VUID-vkDestroyTensorARM-pAllocator-parameter",
     "VUID-vkDestroyTensorViewARM-pAllocator-parameter",
+    "VUID-vkCreateAccelerationStructure2KHR-pAllocator-parameter",
 
     // about requiring external host access synchronization, can't be verified
     "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-09762",
@@ -774,6 +779,7 @@ const char* not_going_to_do[] = {
     "VUID-VkMemoryToImageCopy-pRegions-09062",
     "VUID-VkResolveImageInfo2-pRegions-00255",
     "VUID-vkCmdResolveImage-pRegions-00255",
+    "VUID-VkCopyDeviceMemoryImageInfoKHR-addressRange-13027",
 
     // Adding a bunch of generated code to check crazy edge cases for an extension that was only ever added to
     // layer OpenGL ES on Vulkan is not worth it
