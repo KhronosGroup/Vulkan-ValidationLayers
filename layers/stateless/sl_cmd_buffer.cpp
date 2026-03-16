@@ -198,7 +198,8 @@ bool Device::manual_PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer
     }
     for (uint32_t i = 0; i < counterRangeCount; i++) {
         const Location info_loc = error_obj.location.dot(Field::pCounterInfos, i);
-        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pCounterInfos[i], info_loc);
+
+        skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), pCounterInfos[i].addressFlags);
 
         const VkDeviceSize range_size = pCounterInfos[i].addressRange.size;
         if (range_size > 0 && range_size < 4) {
@@ -412,6 +413,36 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
     const auto& error_obj = context.error_obj;
     skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
 
+    if (queryCount > 1 && pDstRange->stride == 0) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-09438", objlist,
+                         error_obj.location.dot(Field::queryCount), "is %" PRIu32 " but stride is zero.", queryCount);
+    }
+
+    if (queryResultFlags & VK_QUERY_RESULT_64_BIT) {
+        if (!IsPointerAligned(pDstRange->address, 8) || !IsIntegerMultipleOf(pDstRange->stride, 8)) {
+            const LogObjectList objlist(commandBuffer, queryPool);
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13078", objlist,
+                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
+                             "(0x%" PRIx64 ") must be aligned to 8 and pDstRange.stride (%" PRIu64 ") must be a multiple of 8.",
+                             pDstRange->address, pDstRange->stride);
+        }
+    } else {
+        if (!IsPointerAligned(pDstRange->address, 4) || !IsIntegerMultipleOf(pDstRange->stride, 4)) {
+            const LogObjectList objlist(commandBuffer, queryPool);
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13077", objlist,
+                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
+                             "(0x%" PRIx64 ") must be aligned to 4 and pDstRange.stride (%" PRIu64 ") must be a multiple of 4.",
+                             pDstRange->address, pDstRange->stride);
+        }
+    }
+
+    if (dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13085", objlist,
+                         error_obj.location.dot(Field::dstFlags), "(%s) must not contain VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.",
+                         string_VkAddressCommandFlagsKHR(dstFlags).c_str());
+    }
     return skip;
 }
 
@@ -518,6 +549,25 @@ bool Device::manual_PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuf
     const auto& error_obj = context.error_obj;
     skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
 
+    if (!IsPointerAligned(pDstRange->address, 4)) {
+        skip |= LogError("VUID-vkCmdUpdateMemoryKHR-pDstRange-13006", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::address),
+                         "(0x%" PRIx64 ") must be aligned to 4 bytes.", pDstRange->address);
+    }
+    if (pDstRange->size > 65536) {
+        skip |= LogError("VUID-vkCmdUpdateMemoryKHR-pDstRange-13007", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::size), "(%" PRIu64 ") is greater than 65536.",
+                         pDstRange->size);
+    }
+    if (dataSize > pDstRange->size) {
+        skip |= LogError("VUID-vkCmdUpdateMemoryKHR-dataSize-13008", commandBuffer, error_obj.location.dot(Field::dataSize),
+                         "(%" PRIu64 ") is greater than pDstRange->size (%" PRIu64 ").", dataSize, pDstRange->size);
+    }
+    if (!IsIntegerMultipleOf(dataSize, 4)) {
+        skip |= LogError("VUID-vkCmdUpdateMemoryKHR-dataSize-13009", commandBuffer, error_obj.location.dot(Field::dataSize),
+                         "(%" PRIu64 ") is not a multiple of 4.", dataSize);
+    }
+
     return skip;
 }
 
@@ -594,9 +644,21 @@ bool Device::manual_PreCallValidateCmdBeginConditionalRendering2EXT(
     const Context& context) const {
     bool skip = false;
 
-    skip |= context.ValidateDeviceAddressFlags(
-        context.error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressFlags),
-        pConditionalRenderingBegin->addressFlags);
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressFlags),
+                                               pConditionalRenderingBegin->addressFlags);
+
+    if (!IsPointerAligned(pConditionalRenderingBegin->addressRange.address, 4)) {
+        skip |= LogError("VUID-VkConditionalRenderingBeginInfo2EXT-addressRange-13065", commandBuffer,
+                         error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressRange).dot(Field::address),
+                         "(0x%" PRIx64 ") must be aligned to 4 bytes.", pConditionalRenderingBegin->addressRange.address);
+    }
+
+    if (pConditionalRenderingBegin->addressRange.size < 4) {
+        skip |= LogError("VUID-VkConditionalRenderingBeginInfo2EXT-addressRange-13066", commandBuffer,
+                         error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressRange).dot(Field::size),
+                         "(%" PRIu64 ") is less than 4.", pConditionalRenderingBegin->addressRange.size);
+    }
 
     return skip;
 }
@@ -606,47 +668,53 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer comm
                                                             const Context& context) const {
     bool skip = false;
 
-    skip |= context.ValidateDeviceAddressFlags(context.error_obj.location.dot(Field::pBindingInfos).dot(Field::addressFlags),
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::pBindingInfos).dot(Field::addressFlags),
                                                pBindingInfos->addressFlags);
 
     if (firstBinding >= phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers3KHR-firstBinding-13070", commandBuffer,
-                         context.error_obj.location.dot(Field::firstBinding),
+                         error_obj.location.dot(Field::firstBinding),
                          "(%" PRIu32 ") is not less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
                          phys_dev_props.limits.maxVertexInputBindings);
     } else if (firstBinding + bindingCount > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers3KHR-firstBinding-13071", commandBuffer,
-                         context.error_obj.location.dot(Field::firstBinding),
+                         error_obj.location.dot(Field::firstBinding),
                          "(%" PRIu32 ") + bindingCount (%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
                          firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
     }
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        if (pBindingInfos[i].setStride == VK_TRUE) {
-            if (pBindingInfos[i].addressRange.stride > phys_dev_props.limits.maxVertexInputBindingStride) {
-                skip |=
-                    LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13126", commandBuffer,
-                             context.error_obj.location.dot(Field::pBindingInfos, i).dot(Field::addressRange).dot(Field::stride),
-                             "(%" PRIu64 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
-                             pBindingInfos[i].addressRange.stride, phys_dev_props.limits.maxVertexInputBindingStride);
+        const Location binding_info_loc = error_obj.location.dot(Field::pBindingInfos, i);
+        const VkBindVertexBuffer3InfoKHR& info = pBindingInfos[i];
+        const VkStridedDeviceAddressRangeKHR& address_range = info.addressRange;
+
+        if (address_range.size == 0) {
+            if (!enabled_features.nullDescriptor) {
+                skip |= LogError("VUID-VkBindVertexBuffer3InfoKHR-size-13072", commandBuffer,
+                                 binding_info_loc.dot(Field::addressRange).dot(Field::size),
+                                 "is 0, but the nullDescriptor feature is not enabled.");
+            } else if (address_range.address != 0) {
+                skip |= LogError("VUID-VkBindVertexBuffer3InfoKHR-addressRange-13075", commandBuffer,
+                                 binding_info_loc.dot(Field::addressRange).dot(Field::size),
+                                 "is 0, but addressRange.address (0x%" PRIx64 ") must be zero.", info.addressRange.address);
+            }
+        }
+
+        if (info.setStride == VK_TRUE) {
+            if (info.addressRange.stride > phys_dev_props.limits.maxVertexInputBindingStride) {
+                skip |= LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13126", commandBuffer,
+                                 binding_info_loc.dot(Field::addressRange).dot(Field::stride),
+                                 "(%" PRIu64 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
+                                 info.addressRange.stride, phys_dev_props.limits.maxVertexInputBindingStride);
             }
         } else {
-            if (pBindingInfos[i].addressRange.stride != 0) {
-                skip |=
-                    LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13127", commandBuffer,
-                             context.error_obj.location.dot(Field::pBindingInfos, i).dot(Field::addressRange).dot(Field::stride),
-                             "is (%" PRIu64 "), but setStride is VK_FALSE.", pBindingInfos[i].addressRange.stride);
+            if (info.addressRange.stride != 0) {
+                skip |= LogError("VUID-VkBindVertexBuffer3InfoKHR-setStride-13127", commandBuffer,
+                                 binding_info_loc.dot(Field::addressRange).dot(Field::stride),
+                                 "(%" PRIu64 ") is non-zero, but setStride is VK_FALSE.", info.addressRange.stride);
             }
         }
     }
-
-    return skip;
-}
-
-bool Device::ValidateBindTransformFeedbackBuffer2InfoEXT(const Context& context, const VkBindTransformFeedbackBuffer2InfoEXT& info,
-                                                         const Location& info_loc) const {
-    bool skip = false;
-
-    skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), info.addressFlags);
 
     return skip;
 }
@@ -675,11 +743,22 @@ bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommand
 
     for (uint32_t i = 0; i < bindingCount; i++) {
         const Location info_loc = error_obj.location.dot(Field::pBindingInfos, i);
-        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pBindingInfos[i], info_loc);
-        const VkDeviceSize range_size = pBindingInfos[i].addressRange.size;
+        const VkBindTransformFeedbackBuffer2InfoEXT& binding_info = pBindingInfos[i];
+
+        skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), binding_info.addressFlags);
+
+        const VkDeviceSize range_size = binding_info.addressRange.size;
         if (range_size > 0 && range_size < 4) {
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13090", commandBuffer,
                              info_loc.dot(Field::addressRange).dot(Field::size), "is %" PRIu64 ".", range_size);
+        }
+
+        if (binding_info.addressRange.size > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize) {
+            skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13092", commandBuffer,
+                             info_loc.dot(Field::addressRange).dot(Field::size),
+                             "(%" PRIu64 ") is greater than maxTransformFeedbackBufferSize (%" PRIu64 ").",
+                             binding_info.addressRange.size,
+                             phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize);
         }
     }
 
@@ -711,7 +790,7 @@ bool Device::manual_PreCallValidateCmdEndTransformFeedback2EXT(VkCommandBuffer c
 
     for (uint32_t i = 0; i < counterRangeCount; i++) {
         const Location info_loc = error_obj.location.dot(Field::pCounterInfos, i);
-        skip |= ValidateBindTransformFeedbackBuffer2InfoEXT(context, pCounterInfos[i], info_loc);
+        skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), pCounterInfos[i].addressFlags);
 
         const VkDeviceSize range_size = pCounterInfos[i].addressRange.size;
         if (range_size > 0 && range_size < 4) {
@@ -730,8 +809,32 @@ bool Device::manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer 
                                                                 const Context& context) const {
     bool skip = false;
 
-    skip |=
-        ValidateBindTransformFeedbackBuffer2InfoEXT(context, *pCounterInfo, context.error_obj.location.dot(Field::pCounterInfo));
+    const auto& error_obj = context.error_obj;
+    skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::pCounterInfo).dot(Field::addressFlags),
+                                               pCounterInfo->addressFlags);
+
+    if (!enabled_features.transformFeedback) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedback-02287", commandBuffer, error_obj.location,
+                         "transformFeedback feature is not enabled.");
+    }
+    if (IsExtEnabled(extensions.vk_ext_transform_feedback) && !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedbackDraw-02288", commandBuffer, error_obj.location,
+                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported");
+    }
+    if (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-02289", commandBuffer,
+                         error_obj.location.dot(Field::vertexStride),
+                         "(%" PRIu32 ") is larger than maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+    }
+    if (!IsIntegerMultipleOf(counterOffset, 4)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-counterOffset-09474", commandBuffer,
+                         error_obj.location.dot(Field::counterOffset), "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
+    }
+    if (!IsIntegerMultipleOf(vertexStride, 4)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-09475", commandBuffer,
+                         error_obj.location.dot(Field::vertexStride), "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
+    }
 
     return skip;
 }
@@ -811,6 +914,17 @@ bool Device::manual_PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffe
 
     const auto& error_obj = context.error_obj;
     skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
+
+    if (!IsPointerAligned(pDstRange->address, 4)) {
+        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13001", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::address),
+                         "(0x%" PRIx64 ") must be aligned to 4 bytes.", pDstRange->address);
+    }
+    if (!IsIntegerMultipleOf(pDstRange->size, 4)) {
+        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13002", commandBuffer,
+                         error_obj.location.dot(Field::pDstRange).dot(Field::size), "(%" PRIu64 ") is not a multiple of 4.",
+                         pDstRange->size);
+    }
 
     return skip;
 }

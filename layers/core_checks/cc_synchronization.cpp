@@ -2518,15 +2518,17 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
             const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryRangeBarrierKHR, Field::pMemoryRangeBarriers, i);
             const VkMemoryRangeBarrierKHR& memory_range_barrier = memory_range_barriers_info->pMemoryRangeBarriers[i];
 
+            skip |= ValidateDeviceAddressCommands(cb_state.VkHandle(), memory_range_barrier.addressRange.address,
+                                                  memory_range_barrier.addressRange.size, memory_range_barrier.addressFlags,
+                                                  barrier_loc.dot(Field::addressRange));
+
+            // TODO - This not ideal, we should redo BufferBarrier to handle a memory range
             const auto buffer_states = GetBuffersByAddress(memory_range_barrier.addressRange.address);
             for (const auto buffer_state : buffer_states) {
                 const BufferBarrier barrier(memory_range_barrier, *buffer_state);
                 const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
                 skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
                 skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
-                skip |= ValidateDeviceAddressCommands(cb_state.VkHandle(), memory_range_barrier.addressRange.address,
-                                                      memory_range_barrier.addressRange.size, memory_range_barrier.addressFlags,
-                                                      barrier_loc.dot(Field::addressRange));
             }
         }
     }

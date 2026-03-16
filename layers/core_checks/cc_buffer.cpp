@@ -574,17 +574,6 @@ bool CoreChecks::PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, 
                                        LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_TRANSFER_DST_BIT,
                                        "VUID-vkCmdFillMemoryKHR-dstRange-13000");
 
-    if (!IsPointerAligned(pDstRange->address, 4)) {
-        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13001", commandBuffer,
-                         error_obj.location.dot(Field::pDstRange).dot(Field::address), "(%" PRIx64 ") must be aligned to 4 bytes.",
-                         pDstRange->address);
-    }
-    if (!IsIntegerMultipleOf(pDstRange->size, 4)) {
-        skip |= LogError("VUID-vkCmdFillMemoryKHR-pDstRange-13002", commandBuffer,
-                         error_obj.location.dot(Field::pDstRange).dot(Field::size), "(%" PRIu64 ") is not a multiple of 4.",
-                         pDstRange->size);
-    }
-
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     const vvl::CommandBuffer& cb_state = *cb_state_ptr;
     if (!phys_dev_props_core11.protectedNoFault) {

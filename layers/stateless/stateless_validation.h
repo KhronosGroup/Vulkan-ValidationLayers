@@ -710,8 +710,6 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                         const VkBindVertexBuffer3InfoKHR* pBindingInfos,
                                                         const Context& context) const;
-    bool ValidateBindTransformFeedbackBuffer2InfoEXT(const Context& context, const VkBindTransformFeedbackBuffer2InfoEXT& info,
-                                                     const Location& info_loc) const;
     bool manual_PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                    uint32_t bindingCount,
                                                                    const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos,

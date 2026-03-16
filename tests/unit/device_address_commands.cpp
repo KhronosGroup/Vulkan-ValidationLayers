@@ -1184,7 +1184,6 @@ TEST_F(NegativeDeviceAddressCommands, QueryProtectedFlag) {
 
     m_command_buffer.Begin();
     vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-pDstRange-13099");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13085");
     vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR, 0u);
     m_errorMonitor->VerifyFound();
@@ -1465,6 +1464,8 @@ TEST_F(NegativeDeviceAddressCommands, TransformFeedbackFeature) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
+    // Limit is not set when feature is not enabled
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13092");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-transformFeedback-02355");
     vk::CmdBindTransformFeedbackBuffers2EXT(m_command_buffer, 0u, 1u, &info);
     m_errorMonitor->VerifyFound();

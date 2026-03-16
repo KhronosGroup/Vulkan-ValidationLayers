@@ -402,8 +402,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
         skip |= LogError("VUID-vkCmdDrawIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
     }
-    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
-    // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
+
     return skip;
 }
 
@@ -423,9 +422,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffe
 
     skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
                                           error_obj.location.dot(Field::addressRange));
-
-    // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
-    // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
 
     return skip;
 }
@@ -911,34 +907,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer com
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateCmdDrawInstance(last_bound_state, instanceCount, firstInstance, error_obj.location);
     skip |= ValidateVTGShaderStages(last_bound_state, error_obj.location);
-
-    if (!enabled_features.transformFeedback) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedback-02287",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
-                         "transformFeedback feature is not enabled.");
-    }
-    if (IsExtEnabled(extensions.vk_ext_transform_feedback) && !phys_dev_ext_props.transform_feedback_props.transformFeedbackDraw) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-transformFeedbackDraw-02288",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
-                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackDraw is not supported");
-    }
-    if ((vertexStride <= 0) || (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride)) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-02289",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
-                         "(%" PRIu32 ") must be between 0 and maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
-                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
-    }
-
-    if (!IsIntegerMultipleOf(counterOffset, 4)) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-counterOffset-09474",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::counterOffset),
-                         "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
-    }
-    if (!IsIntegerMultipleOf(vertexStride, 4)) {
-        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-vertexStride-09475",
-                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
-                         "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
-    }
 
     skip |= ValidateDeviceAddressRange(pCounterInfo->addressRange.address, pCounterInfo->addressRange.size, false,
                                        error_obj.location.dot(Field::pCounterInfo).dot(Field::addressRange),
@@ -1475,8 +1443,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
         }
     }
 
-    // TODO: vkMapMemory() and check the contents of buffer at offset
-    // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
     if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
@@ -1565,9 +1531,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer com
 
     skip |= ValidateDeviceAddressCommands(commandBuffer, pInfo->addressRange.address, pInfo->addressRange.size, pInfo->addressFlags,
                                           error_obj.location.dot(Field::addressRange));
-
-    // TODO: vkMapMemory() and check the contents of buffer at offset
-    // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
 
     return skip;
 }
@@ -2278,8 +2241,8 @@ bool CoreChecks::ValidateIndirectBufferDeviceAddress(const vvl::CommandBuffer& c
 
     if (!cb_state.unprotected) {
         const Location top_loc(info_loc.function);
-        skip |= LogError(vuid.indirect_protected_cb_02711, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         top_loc.dot(Field::commandBuffer), "is a protected command buffer.");
+        skip |= LogError(vuid.indirect_protected_cb_02711, cb_state.Handle(), top_loc.dot(Field::commandBuffer),
+                         "is a protected command buffer.");
     }
 
     if (!phys_dev_props_core11.protectedNoFault) {

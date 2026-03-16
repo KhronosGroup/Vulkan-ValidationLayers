@@ -451,7 +451,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                       const RecordObject& record_obj) {
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
-    // TODO - https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
     const auto count_buffer_states = GetBuffersByAddress(pInfo->countAddressRange.address);
     for (const auto buffer_state : buffer_states) {
         if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
@@ -828,7 +828,7 @@ void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuff
                                                      const VkCopyDeviceMemoryImageInfoKHR *pCopyMemoryInfo,
                                                      const RecordObject &record_obj) {
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
-        // TODO - https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
         const auto buffer_states = GetBuffersByAddress(pCopyMemoryInfo->pRegions[i].addressRange.address);
         for (const auto buffer_state : buffer_states) {
             if (buffer_state->create_info.usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {

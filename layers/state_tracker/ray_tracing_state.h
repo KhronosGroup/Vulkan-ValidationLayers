@@ -17,11 +17,10 @@
  * limitations under the License.
  */
 #pragma once
+#include "containers/span.h"
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/buffer_state.h"
 #include "generated/dispatch_functions.h"
-
-#include <cassert>
 
 namespace vvl {
 class AccelerationStructureNVSubState;

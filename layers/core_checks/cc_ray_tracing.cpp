@@ -1538,8 +1538,6 @@ bool CoreChecks::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice de
                     *src_accel_struct, info_loc.dot(Field::src), "VUID-vkCopyAccelerationStructureToMemoryKHR-buffer-03783");
             }
         } else {
-        }
-        if (src_accel_struct->use_create_info_2) {
             skip |= LogError("VUID-vkCopyAccelerationStructureToMemoryKHR-src-11678", device, info_loc.dot(Field::src),
                              "was created with vkCreateAccelerationStructure2KHR, but needs to be created with "
                              "vkCreateAccelerationStructureKHR");

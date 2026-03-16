@@ -2825,7 +2825,7 @@ void DeviceState::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    // TODO - https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11880
     const auto buffer_states = GetBuffersByAddress(pCreateInfo->addressRange.address);
     for (const auto buffer_state : buffer_states) {
         if (buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {

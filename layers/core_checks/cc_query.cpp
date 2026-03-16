@@ -1152,11 +1152,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuff
 
     const LogObjectList objlist(commandBuffer, queryPool);
 
-    if (queryCount > 1 && pDstRange->stride == 0) {
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-09438", objlist,
-                         error_obj.location.dot(Field::queryCount), "is %" PRIu32 " but stride is zero.", queryCount);
-    }
-
     if ((query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP) && (queryResultFlags & VK_QUERY_RESULT_PARTIAL_BIT)) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-09439", objlist,
                          error_obj.location.dot(Field::queryResultFlags),
@@ -1188,21 +1183,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuff
                          "(%s) include both STATUS_BIT and AVAILABILITY_BIT.", string_VkQueryResultFlags(queryResultFlags).c_str());
     }
 
-    if (queryResultFlags & VK_QUERY_RESULT_64_BIT) {
-        if (!IsPointerAligned(pDstRange->address, 8) || !IsIntegerMultipleOf(pDstRange->stride, 8)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13078", objlist,
-                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
-                             "(0x%" PRIx64 ") must be aligned to 8 and pDstRange.stride (%" PRIu64 ") must be a multiple of 8.",
-                             pDstRange->address, pDstRange->stride);
-        }
-    } else {
-        if (!IsPointerAligned(pDstRange->address, 4) || !IsIntegerMultipleOf(pDstRange->stride, 4)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13077", objlist,
-                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
-                             "(0x%" PRIx64 ") must be aligned to 4 and pDstRange.stride (%" PRIu64 ") must be a multiple of 4.",
-                             pDstRange->address, pDstRange->stride);
-        }
-    }
     if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR && !result_with_status) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-09442", objlist,
                          error_obj.location.dot(Field::queryResultFlags),
@@ -1246,12 +1226,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuff
 
     skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, error_obj.location,
                                      "VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-None-13083");
-
-    if (dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) {
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13085", objlist,
-                         error_obj.location.dot(Field::dstFlags), "(%s) must not contain VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.",
-                         string_VkAddressCommandFlagsKHR(dstFlags).c_str());
-    }
 
     skip |= ValidateDeviceAddressCommands(commandBuffer, pDstRange->address, pDstRange->size, dstFlags,
                                           error_obj.location.dot(Field::pDstRange));
