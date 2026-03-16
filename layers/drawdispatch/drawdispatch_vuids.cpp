@@ -360,7 +360,7 @@ struct DispatchVuidsCmdDrawIndirectByteCount2EXT: DrawDispatchVuid {
         pipeline_bound_08606                      = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08606";
         compatible_pipeline_08600                 = "VUID-vkCmdDrawIndirectByteCount2EXT-None-08600";
         indirect_protected_cb_02711               = "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-02646";
-        indirect_buffer_bit_02290                 = "UNASSIGNED-VkBindTransformFeedbackBuffer2InfoEXT-addressRange";
+        indirect_buffer_bit_02290                 = "VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13061";
         primitive_topology_patch_list_10286       = "VUID-vkCmdDrawIndirectByteCount2EXT-primitiveTopology-10286";
         vertex_binding_attribute_02721            = "VUID-vkCmdDrawIndirectByteCount2EXT-None-02721";
         unprotected_command_buffer_02707          = "VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-02707";

@@ -404,13 +404,13 @@ bool Device::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
 
 bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                                                                       uint32_t firstQuery, uint32_t queryCount,
-                                                                      const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                                      const VkStridedDeviceAddressRangeKHR *pDstRange,
                                                                       VkAddressCommandFlagsKHR dstFlags,
                                                                       VkQueryResultFlags queryResultFlags,
-                                                                      const Context& context) const {
+                                                                      const Context &context) const {
     bool skip = false;
 
-    const auto& error_obj = context.error_obj;
+    const auto &error_obj = context.error_obj;
     skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
 
     if (queryCount > 1 && pDstRange->stride == 0) {
@@ -437,12 +437,21 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
         }
     }
 
+    if ((queryResultFlags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (queryResultFlags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-09443", objlist,
+                         error_obj.location.dot(Field::queryResultFlags),
+                         "(%s) includes both VK_QUERY_RESULT_WITH_STATUS_BIT_KHR and VK_QUERY_RESULT_WITH_AVAILABILITY_BIT.",
+                         string_VkQueryResultFlags(queryResultFlags).c_str());
+    }
+
     if (dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) {
         const LogObjectList objlist(commandBuffer, queryPool);
         skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-dstFlags-13085", objlist,
                          error_obj.location.dot(Field::dstFlags), "(%s) must not contain VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR.",
                          string_VkAddressCommandFlagsKHR(dstFlags).c_str());
     }
+
     return skip;
 }
 
@@ -826,6 +835,11 @@ bool Device::manual_PreCallValidateCmdDrawIndirectByteCount2EXT(VkCommandBuffer 
                          error_obj.location.dot(Field::vertexStride),
                          "(%" PRIu32 ") is larger than maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
                          phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+    }
+    if (!IsPointerAligned(pCounterInfo->addressRange.address, 4)) {
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-pInfo-13062", commandBuffer,
+                         error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::addressRange).dot(Field::address),
+                         "(0x%" PRIx64 ") must be aligned to 4 bytes.", pCounterInfo->addressRange.address);
     }
     if (!IsIntegerMultipleOf(counterOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCount2EXT-counterOffset-09474", commandBuffer,

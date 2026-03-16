@@ -287,6 +287,13 @@ bool Device::manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer comma
                          "(%" PRIu64 ") is less than sizeof(VkDispatchIndirectCommand) (%zu).", pInfo->addressRange.size,
                          sizeof(VkDispatchIndirectCommand));
     }
+
+    if (!IsPointerAligned(pInfo->addressRange.address, 4u)) {
+        skip |= LogError("VUID-VkDispatchIndirect2InfoKHR-addressRange-13109", commandBuffer,
+                         info_loc.dot(Field::addressRange).dot(Field::address), "(0x%" PRIu64 ") must be aligned to 4 bytes.",
+                         pInfo->addressRange.address);
+    }
+
     skip |= context.ValidateDeviceAddressFlags(info_loc.dot(Field::addressFlags), pInfo->addressFlags);
 
     return skip;
