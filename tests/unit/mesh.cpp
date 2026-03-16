@@ -1340,3 +1340,48 @@ TEST_F(NegativeMesh, PrimitiveCountConstant) {
     VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMesh, IncompatiblePipelineStatisticsQuery) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    AddRequiredFeature(vkt::Feature::meshShaderQueries);
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char *mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3, 1);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.pVertexInputState = nullptr;
+    pipe.gp_ci_.pInputAssemblyState = nullptr;
+    pipe.CreateGraphicsPipeline();
+
+    VkQueryPoolCreateInfo query_pool_create_info = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 3);
+    query_pool_create_info.pipelineStatistics =
+        VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT | VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT;
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, query_pool_create_info.queryCount);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-pipelineStatistics-07076");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
