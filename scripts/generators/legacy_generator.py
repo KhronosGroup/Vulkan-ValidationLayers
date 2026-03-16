@@ -26,79 +26,6 @@ class LegacyGenerator(BaseGenerator):
         self.all_device_extensions = set()
         self.all_instance_extensions = set()
 
-        # Try and provide a mapping of the "new" function to replace
-        # (This should really be in the vk.xml) - Update: it is, just need to add it
-        self.replacement = {
-            "vkGetPhysicalDeviceFeatures" : {
-                "version" : "vkGetPhysicalDeviceFeatures2",
-                "extension" : "vkGetPhysicalDeviceFeatures2KHR",
-            },
-            "vkGetPhysicalDeviceFormatProperties" : {
-                "version" : "vkGetPhysicalDeviceFormatProperties2",
-                "extension" : "vkGetPhysicalDeviceFormatProperties2KHR",
-            },
-            "vkGetPhysicalDeviceImageFormatProperties" : {
-                "version" : "vkGetPhysicalDeviceImageFormatProperties2",
-                "extension" : "vkGetPhysicalDeviceImageFormatProperties2KHR",
-            },
-            "vkGetPhysicalDeviceProperties" : {
-                "version" : "vkGetPhysicalDeviceProperties2",
-                "extension" : "vkGetPhysicalDeviceProperties2KHR",
-            },
-            "vkGetPhysicalDeviceQueueFamilyProperties" : {
-                "version" : "vkGetPhysicalDeviceQueueFamilyProperties2",
-                "extension" : "vkGetPhysicalDeviceQueueFamilyProperties2KHR",
-            },
-            "vkGetPhysicalDeviceMemoryProperties" : {
-                "version" : "vkGetPhysicalDeviceMemoryProperties2",
-                "extension" : "vkGetPhysicalDeviceMemoryProperties2KHR",
-            },
-            "vkGetPhysicalDeviceSparseImageFormatProperties" : {
-                "version" : "vkGetPhysicalDeviceSparseImageFormatProperties2",
-                "extension" : "vkGetPhysicalDeviceSparseImageFormatProperties2KHR",
-            },
-            "vkCreateRenderPass" : {
-                "version" : "vkCreateRenderPass2",
-                "extension" : "vkCreateRenderPass2KHR",
-            },
-            "vkCmdBeginRenderPass" : {
-                "version" : "vkCmdBeginRenderPass2",
-                "extension" : "vkCmdBeginRenderPass2KHR",
-            },
-            "vkCmdNextSubpass" : {
-                "version" : "vkCmdNextSubpass2",
-                "extension" : "vkCmdNextSubpass2KHR",
-            },
-            "vkCmdEndRenderPass" : {
-                "version" : "vkCmdEndRenderPass2",
-                "extension" : "vkCmdEndRenderPass2KHR",
-            },
-            "vkCmdPipelineBarrier" : {
-                "version" : "vkCmdPipelineBarrier2",
-                "extension" : "vkCmdPipelineBarrier2KHR",
-            },
-            "vkQueueSubmit" : {
-                "version" : "vkQueueSubmit2",
-                "extension" : "vkQueueSubmit2KHR",
-            },
-            "vkCmdWriteTimestamp" : {
-                "version" : "vkCmdWriteTimestamp2",
-                "extension" : "vkCmdWriteTimestamp2KHR",
-            },
-            "vkCmdSetEvent" : {
-                "version" : "vkCmdSetEvent2",
-                "extension" : "vkCmdSetEvent2KHR",
-            },
-            "vkCmdResetEvent" : {
-                "version" : "vkCmdResetEvent2",
-                "extension" : "vkCmdResetEvent2KHR",
-            },
-            "vkCmdWaitEvents" : {
-                "version" : "vkCmdWaitEvents2",
-                "extension" : "vkCmdWaitEvents2KHR",
-            },
-        }
-
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -252,8 +179,8 @@ class LegacyGenerator(BaseGenerator):
                 if firstCheck:
                     firstCheck = False
 
-                if command.name in self.replacement:
-                    replacement = f'which contains {self.replacement[command.name]["version"]} that can be used instead'
+                if command.legacy.supersededBy:
+                    replacement = f'which contains {command.legacy.supersededBy} that can be used instead'
 
                 out.append(f'''
                     {logic} (api_version >= {command.legacy.version.nameApi}) {{
@@ -267,8 +194,19 @@ class LegacyGenerator(BaseGenerator):
                 if firstCheck:
                     firstCheck = False
 
-                if command.name in self.replacement:
-                    replacement = f'which contains {self.replacement[command.name]["extension"]} that can be used instead'
+                if command.legacy.supersededBy:
+                    # Currenty the |supersededBy| only has the version
+                    # Slightly hacky way to check, will be fine until we have some strange legacy combo
+                    new_command = command.legacy.supersededBy # backup value
+                    if new_command[-3:].isupper() and new_command[-3:].isalpha():
+                        new_command = command.legacy.supersededBy
+                    elif (command.legacy.supersededBy + 'KHR') in self.vk.commands:
+                        new_command += 'KHR'
+                    elif (command.legacy.supersededBy + 'EXT') in self.vk.commands:
+                        new_command += 'EXT'
+                    else:
+                        print(f'WARNING - need to fix supersededBy logic for {command.name} with {command.legacy.supersededBy}')
+                    replacement = f'which contains {new_command} that can be used instead'
 
                 out.append(f'''
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{

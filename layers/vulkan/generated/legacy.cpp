@@ -236,8 +236,8 @@ bool Device::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuf
         reported = true;
         LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
                    "vkCmdUpdateBuffer is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
-                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+                   "which contains vkCmdUpdateMemoryKHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -251,8 +251,8 @@ bool Device::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffe
         reported = true;
         LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
                    "vkCmdFillBuffer is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
-                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+                   "which contains vkCmdFillMemoryKHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -313,10 +313,11 @@ bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffe
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdCopyQueryPoolResults is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdCopyQueryPoolResults is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdCopyQueryPoolResultsToMemoryKHR that can be used instead.\nSee more information about this legacy "
+            "in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -486,10 +487,11 @@ bool Device::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, V
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDispatchIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDispatchIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdDispatchIndirect2KHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -652,8 +654,8 @@ bool Device::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuf
         reported = true;
         LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
                    "vkCmdDrawIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
-                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+                   "which contains vkCmdDrawIndirect2KHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -665,10 +667,11 @@ bool Device::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDrawIndexedIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawIndexedIndirect is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdDrawIndexedIndirect2KHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -743,10 +746,11 @@ bool Device::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDrawIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdDrawIndirectCount2KHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -759,10 +763,11 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDrawIndexedIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawIndexedIndirectCount is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains vkCmdDrawIndexedIndirectCount2KHR that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -861,8 +866,8 @@ bool Device::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
         reported = true;
         LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
                    "vkCmdCopyBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
-                   "which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+                   "which contains vkCmdCopyMemoryKHR that can be used instead.\nSee more information about this legacy in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -875,10 +880,11 @@ bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdCopyBufferToImage2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdCopyBufferToImage2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdCopyMemoryToImageKHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -891,10 +897,11 @@ bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdCopyImageToBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdCopyImageToBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdCopyImageToMemoryKHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -937,10 +944,11 @@ bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, V
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdBindIndexBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdBindIndexBuffer2 is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdBindIndexBuffer3KHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -990,8 +998,8 @@ bool Device::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer c
         LogWarning(
             "WARNING-legacy-buffer-commands", device, error_obj.location,
             "vkCmdBindTransformFeedbackBuffersEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+            "extension which contains vkCmdBindTransformFeedbackBuffers2EXT that can be used instead.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1008,8 +1016,8 @@ bool Device::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer command
         LogWarning(
             "WARNING-legacy-buffer-commands", device, error_obj.location,
             "vkCmdBeginTransformFeedbackEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+            "extension which contains vkCmdBeginTransformFeedback2EXT that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1023,10 +1031,11 @@ bool Device::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBu
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdEndTransformFeedbackEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdEndTransformFeedbackEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains vkCmdEndTransformFeedback2EXT that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1040,10 +1049,11 @@ bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandB
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDrawIndirectByteCountEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawIndirectByteCountEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains vkCmdDrawIndirectByteCount2EXT that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1059,8 +1069,8 @@ bool Device::PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer comm
         LogWarning(
             "WARNING-legacy-buffer-commands", device, error_obj.location,
             "vkCmdBeginConditionalRenderingEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+            "extension which contains vkCmdBeginConditionalRendering2EXT that can be used instead.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1072,10 +1082,11 @@ bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuff
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdWriteBufferMarker2AMD is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdWriteBufferMarker2AMD is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdWriteMarkerToMemoryAMD that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1089,10 +1100,11 @@ bool Device::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuff
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdBindVertexBuffers2EXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdBindVertexBuffers2EXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands extension "
+            "which contains vkCmdBindVertexBuffers3KHR that can be used instead.\nSee more information about this legacy in the "
+            "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1291,8 +1303,8 @@ bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, cons
         LogWarning(
             "WARNING-legacy-buffer-commands", device, error_obj.location,
             "vkCreateAccelerationStructureKHR is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+            "extension which contains vkCreateAccelerationStructure2KHR that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1304,10 +1316,11 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandB
 
     if (IsExtEnabled(extensions.vk_khr_device_address_commands)) {
         reported = true;
-        LogWarning("WARNING-legacy-buffer-commands", device, error_obj.location,
-                   "vkCmdDrawMeshTasksIndirectEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-                   "extension which contains the new feature to replace it.\nSee more information about this legacy in the "
-                   "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+        LogWarning(
+            "WARNING-legacy-buffer-commands", device, error_obj.location,
+            "vkCmdDrawMeshTasksIndirectEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
+            "extension which contains vkCmdDrawMeshTasksIndirect2EXT that can be used instead.\nSee more information about this "
+            "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
@@ -1324,8 +1337,8 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer com
         LogWarning(
             "WARNING-legacy-buffer-commands", device, error_obj.location,
             "vkCmdDrawMeshTasksIndirectCountEXT is a legacy command and this VkDevice enabled the VK_KHR_device_address_commands "
-            "extension which contains the new feature to replace it.\nSee more information about this legacy in the specification: "
-            "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
+            "extension which contains vkCmdDrawMeshTasksIndirectCount2EXT that can be used instead.\nSee more information about "
+            "this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-buffer-commands");
     }
     return false;
 }
