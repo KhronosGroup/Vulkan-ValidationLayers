@@ -22,6 +22,7 @@ namespace gpuav {
 namespace spirv {
 
 struct Constant;
+struct Function;
 
 // Holds OpTypeResult for |x| and |y| operand
 struct BoolResultXY {
@@ -56,14 +57,17 @@ class SanitizerPass : public Pass {
 
         // Used to pass along constant values found
         uint32_t constant_value = 0;
+        uint32_t component_size = 0;
     };
 
-    bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
 
     uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t PowCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t Atan2Check(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     BoolResultXY FminmaxCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    uint32_t GetCoopMatPointerAddress(const Type* pointer_type, uint32_t pointer_id, BasicBlock& block, InstructionIt* inst_it);
+    uint32_t GetCoopMatElementIndex(const Instruction* pointer_inst, BasicBlock& block, InstructionIt* inst_it);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(uint32_t sub_code);

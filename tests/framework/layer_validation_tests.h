@@ -244,6 +244,8 @@ class GpuAVTest : public virtual VkLayerTest {
 class GpuAVGpuAVShaderSanitizer : public GpuAVTest {
   public:
     void SimpleZeroComputeTest(const char *shader, int source_type, const char *expected_error = nullptr, uint32_t error_count = 1);
+    void InitCoopMatFp16();
+    void CoopMatAlignmentTest(const char* cs_source, const std::vector<uint32_t>& params, bool expect_error);
 };
 
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {

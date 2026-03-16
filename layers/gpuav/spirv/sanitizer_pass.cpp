@@ -15,6 +15,7 @@
 
 #include "sanitizer_pass.h"
 #include "containers/container_utils.h"
+#include "cooperative_matrix.h"
 #include "function_basic_block.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "module.h"
@@ -39,6 +40,7 @@ const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCode_Sanitizer_Cou
     {"inst_sanitizer_pow", instrumentation_sanitizer_comp_function_2_offset},
     {"inst_sanitizer_atan2", instrumentation_sanitizer_comp_function_3_offset},
     {"inst_sanitizer_fminmax", instrumentation_sanitizer_comp_function_4_offset},
+    {"inst_sanitizer_coop_mat_alignment", instrumentation_sanitizer_comp_function_5_offset},
 };
 
 SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
@@ -190,6 +192,32 @@ BoolResultXY SanitizerPass::FminmaxCheck(BasicBlock& block, InstructionIt* inst_
     return result_bool_id;
 }
 
+// For BDA pointers, converts the pointer to its low 32 bits. Returns 0 if not a BDA pointer.
+uint32_t SanitizerPass::GetCoopMatPointerAddress(const Type* pointer_type, uint32_t pointer_id, BasicBlock& block,
+                                                 InstructionIt* inst_it) {
+    if (pointer_type && pointer_type->spv_type_ == SpvType::kPointer &&
+        pointer_type->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+        module_.use_bda_ = true;
+        const Type& uint32_type = type_manager_.GetTypeInt(32, false);
+        const Type& uint64_type = type_manager_.GetTypeInt(64, false);
+        const uint32_t ptr_uint64_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), ptr_uint64_id, pointer_id}, inst_it);
+        const uint32_t ptr_uint32_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpUConvert, {uint32_type.Id(), ptr_uint32_id, ptr_uint64_id}, inst_it);
+        return ptr_uint32_id;
+    }
+    return type_manager_.GetConstantZeroUint32().Id();
+}
+
+// For SSBO pointers via OpAccessChain, extracts the last index. Returns 0 if not an access chain.
+uint32_t SanitizerPass::GetCoopMatElementIndex(const Instruction* pointer_inst, BasicBlock& block, InstructionIt* inst_it) {
+    if (pointer_inst && pointer_inst->IsNonPtrAccessChain()) {
+        const uint32_t last_index_id = pointer_inst->Word(pointer_inst->Length() - 1);
+        return CastToUint32(last_index_id, block, inst_it);
+    }
+    return type_manager_.GetConstantZeroUint32().Id();
+}
+
 uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId(meta.sub_code);
@@ -259,6 +287,25 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
                                 {bool_type, function_result, function_def, is_invalid_id.x, is_invalid_id.y, inst_position_id,
                                  vector_size_id, glsl_opcode_id},
                                 inst_it);
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_CoopMatAlignment) {
+        const bool is_load = meta.target_instruction->Opcode() == spv::OpCooperativeMatrixLoadKHR;
+        const uint32_t stride_id = is_load ? meta.target_instruction->Word(5) : meta.target_instruction->Word(4);
+        const uint32_t pointer_id = is_load ? meta.target_instruction->Word(3) : meta.target_instruction->Word(1);
+        const uint32_t stride_uint_id = CastToUint32(stride_id, block, inst_it);
+
+        const Instruction* pointer_inst = block.function_->FindInstruction(pointer_id);
+        const Type* pointer_type = pointer_inst ? type_manager_.FindTypeById(pointer_inst->TypeId()) : nullptr;
+        const uint32_t pointer_address_id = GetCoopMatPointerAddress(pointer_type, pointer_id, block, inst_it);
+        const uint32_t element_index_id = GetCoopMatElementIndex(pointer_inst, block, inst_it);
+
+        const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+        const uint32_t component_size_id = type_manager_.CreateConstantUInt32(meta.component_size).Id();
+        const uint32_t alignment_id = type_manager_.CreateConstantUInt32(meta.constant_value).Id();
+        const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {bool_type, function_result, function_def, stride_uint_id, component_size_id, alignment_id,
+                                 pointer_address_id, element_index_id, inst_position_id, opcode_id},
+                                inst_it);
     } else {
         assert(false);
     }
@@ -294,7 +341,7 @@ bool SanitizerPass::IsConstantZero(const Constant& constant) const {
     return false;
 }
 
-bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
+bool SanitizerPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
     meta.target_instruction = &inst;
 
@@ -346,6 +393,19 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
         meta.skip_safe_mode = true;
         meta.result_type = type_manager_.FindTypeById(inst.TypeId());
         return true;
+    } else if (opcode == spv::OpCooperativeMatrixLoadKHR || opcode == spv::OpCooperativeMatrixStoreKHR) {
+        CooperativeMatrixAccess cma = GetCooperativeMatrixAccess(inst, function);
+        const uint32_t natural_alignment = (cma.is_row_major ? cma.columns : cma.rows) * cma.component_size;
+        const uint32_t required_alignment = natural_alignment < 16 ? natural_alignment : 16;
+        if (required_alignment <= 1) {
+            return false;
+        }
+
+        meta.sub_code = glsl::kErrorSubCode_Sanitizer_CoopMatAlignment;
+        meta.constant_value = required_alignment;
+        meta.component_size = cma.component_size;
+        meta.skip_safe_mode = true;
+        return true;
     }
 
     return false;
@@ -381,7 +441,7 @@ bool SanitizerPass::Instrument() {
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(function, *(inst_it->get()), meta)) {
                     continue;
                 }
 
