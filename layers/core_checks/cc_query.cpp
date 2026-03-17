@@ -625,7 +625,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool, active_query_obj.pool);
             skip |= LogError(vuid, objlist, loc,
                              "query %" PRIu32
-                             " from pool %s has same queryType (%s) as active query "
+                             " in %s has same queryType (%s) as active query "
                              "%" PRIu32 " from pool %s inside this command buffer (%s).",
                              query_obj.index, FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType),
                              active_query_obj.index, FormatHandle(active_query_obj.pool).c_str(), FormatHandle(cb_state).c_str());

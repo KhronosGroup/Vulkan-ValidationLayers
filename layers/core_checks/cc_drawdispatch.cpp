@@ -187,14 +187,19 @@ bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, cons
             if (query_type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::XFB_QUERIES_07074),
                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "Query with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT is active.");
-            }
-            if (query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                                 "query %" PRIu32
+                                 " in %s with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT is active.\nHint: vkCmdEndQuery "
+                                 "must be called on Transform Feedback prior to drawing with a mesh shader.",
+                                 query.slot, FormatHandle(query.pool).c_str());
+            } else if (query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PG_QUERIES_07075),
                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "Query with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active.");
+                                 "query %" PRIu32
+                                 " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active.\nHint: vkCmdEndQuery must be "
+                                 "called on Transform Feedback prior to drawing with a mesh shader.",
+                                 query.slot, FormatHandle(query.pool).c_str());
             }
-            const VkQueryPipelineStatisticFlags invalidFlags =
+            const VkQueryPipelineStatisticFlags invalid_flags =
                 VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
                 VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
                 VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT |
@@ -204,12 +209,16 @@ bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, cons
                 VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT |
                 VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT;
             if (query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-                (query_pool_state->create_info.pipelineStatistics & invalidFlags)) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_STATISTICS_QUERIES_07076),
-                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "Query with type VK_QUERY_TYPE_PIPELINE_STATISTICS is active, that was created with "
-                                 "pipelineStatistics (%s) incompatible with mesh shaders.",
-                                 string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics).c_str());
+                (query_pool_state->create_info.pipelineStatistics & invalid_flags)) {
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::PIPELINE_STATISTICS_QUERIES_07076),
+                    cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                    "query %" PRIu32
+                    " in %s with type VK_QUERY_TYPE_PIPELINE_STATISTICS is active, which is invalid because it was created with "
+                    "pipelineStatistics (%s) which is incompatible with mesh shaders. (You need to call vkCmdEndQuery prior to "
+                    "drawing with a mesh shader.)",
+                    query.slot, FormatHandle(query.pool).c_str(),
+                    string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics & invalid_flags).c_str());
             }
         }
     }
@@ -2312,23 +2321,23 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
         return skip;
     }
 
-    bool primitives_generated_query = false;
     for (const auto &query : cb_state.active_queries) {
         auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-        if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-            primitives_generated_query = true;
-            break;
+        if (!query_pool_state || query_pool_state->create_info.queryType != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+            continue;
         }
-    }
 
-    if (primitives_generated_query) {
         if (!with_rasterizer_discard && last_bound_state.IsRasterizationDisabled()) {
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_06708),
-                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
-                             "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but "
-                             "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.");
+            skip |=
+                LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_06708),
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                         "query %" PRIu32
+                         " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and %s is VK_TRUE, but the "
+                         "primitivesGeneratedQueryWithRasterizerDiscard feature was not enabled.",
+                         query.slot, FormatHandle(query.pool).c_str(), last_bound_state.DescribeRasterizationDisabled().c_str());
         }
+
+        // rasterizationStream doesn't have dynamic state, so only possible from a pipeline
         const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
         if (!with_non_zero_streams && pipeline) {
             const auto rasterization_state_stream_ci =
@@ -2336,12 +2345,15 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
             if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_STREAMS_06709),
                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
-                                 "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
-                                 ", but primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
-                                 rasterization_state_stream_ci->rasterizationStream);
+                                 "query %" PRIu32
+                                 " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and "
+                                 "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream was set to %" PRIu32
+                                 ", but the primitivesGeneratedQueryWithNonZeroStreams feature was not enabled.",
+                                 query.slot, FormatHandle(query.pool).c_str(), rasterization_state_stream_ci->rasterizationStream);
             }
         }
+
+        break;  // only need to check the feature VUs once
     }
 
     return skip;

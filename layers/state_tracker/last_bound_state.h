@@ -102,6 +102,7 @@ struct LastBound {
     VkStencilOpState GetStencilOpStateBack() const;
     VkSampleCountFlagBits GetRasterizationSamples() const;
     bool IsRasterizationDisabled() const;
+    std::string DescribeRasterizationDisabled() const;
     bool IsLogicOpEnabled() const;
     VkColorComponentFlags GetColorWriteMask(uint32_t i) const;
     bool IsColorWriteEnabled(uint32_t i) const;

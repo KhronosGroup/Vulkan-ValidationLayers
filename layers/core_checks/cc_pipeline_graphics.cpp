@@ -3527,8 +3527,10 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
             if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), query.pool);
                 skip |= LogError(CreateActionVuid(vuid, vvl::ActionVUID::MESH_SHADER_QUERIES_07073), objlist, vuid.loc(),
-                                 "Query (slot %" PRIu32 ") with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active.",
-                                 query.slot);
+                                 "query %" PRIu32
+                                 " in %s with type VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT is active, but the current pipeline "
+                                 "is drawing with non-mesh shader stages.",
+                                 query.slot, FormatHandle(query.pool).c_str());
             }
         }
     }

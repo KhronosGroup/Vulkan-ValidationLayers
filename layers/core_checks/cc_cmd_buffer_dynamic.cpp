@@ -663,21 +663,22 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) &&
         !enabled_features.primitivesGeneratedQueryWithNonZeroStreams && cb_state.dynamic_state_value.rasterization_stream != 0) {
-        bool pgq_active = false;
         for (const auto& active_query : cb_state.active_queries) {
             auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
-            if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-                pgq_active = true;
-                break;
+            if (!query_pool_state || query_pool_state->create_info.queryType != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                continue;
             }
-        }
-        if (pgq_active) {
             skip |= LogError(
                 CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_QUERY_07481), cb_state.Handle(), loc,
-                "Query with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active and primitivesGeneratedQueryWithNonZeroStreams "
-                "feature is not enabled, but rasterizationStreams set with vkCmdSetRasterizationStreamEXT() was %" PRIu32 ".%s",
-                cb_state.dynamic_state_value.rasterization_stream,
+                "query %" PRIu32
+                " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active and the last call to "
+                "vkCmdSetRasterizationStreamEXT() set rasterizationStreams as %" PRIu32
+                " (non-zero), but the primitivesGeneratedQueryWithNonZeroStreams "
+                "feature was not enabled.%s",
+                active_query.slot, FormatHandle(active_query.pool).c_str(), cb_state.dynamic_state_value.rasterization_stream,
                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT).c_str());
+
+            break;  // only need to check the feature VUs once
         }
     }
 
