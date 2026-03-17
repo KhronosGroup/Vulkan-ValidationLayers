@@ -424,7 +424,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                              const Location& secondary_cb_loc) const;
     bool ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
-                                             const Location& secondary_cb_loc, const QueryObject* active_occlusion_query) const;
+                                             const Location& secondary_cb_loc) const;
     bool ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                               const Location& secondary_cb_loc) const;
     bool ValidateSecondaryCommandBufferDescriptorHeapInheritance(const vvl::CommandBuffer& cb_state,
