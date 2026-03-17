@@ -849,64 +849,92 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
     return skip;
 }
 
-bool CoreChecks::ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer &cb_state,
-                                                     const vvl::CommandBuffer &secondary_cb_state, const Location &secondary_cb_loc,
-                                                     const QueryObject *active_occlusion_query) const {
+bool CoreChecks::ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer& cb_state,
+                                                     const vvl::CommandBuffer& secondary_cb_state,
+                                                     const Location& secondary_cb_loc) const {
     bool skip = false;
-    if (disabled[query_validation]) return skip;
+    if (disabled[query_validation]) {
+        return skip;
+    }
 
-    vvl::unordered_set<int> active_types;
-    for (const auto &query_object : cb_state.active_queries) {
-        auto query_pool_state = Get<vvl::QueryPool>(query_object.pool);
+    if (!secondary_cb_state.has_inheritance && secondary_cb_state.started_queries.empty()) {
+        return skip;
+    }
+
+    // Originally tried to do this once and not need to recall for each secondary command buffer, but since we already need to loop
+    // to make sure the pipelineStatistics match, it was easier to just do it each time here... also the query list should hopefully
+    // not be
+    vvl::unordered_set<VkQueryType> active_types;
+    for (const auto& active_query : cb_state.active_queries) {
+        auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
         if (!query_pool_state) {
             continue;
         }
-        if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS && secondary_cb_state.has_inheritance) {
+
+        const VkQueryType query_type = query_pool_state->create_info.queryType;
+        active_types.insert(query_pool_state->create_info.queryType);
+
+        if (query_type != VK_QUERY_TYPE_OCCLUSION && query_type != VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+            const Location top_loc(secondary_cb_loc.function);
+            skip |= LogError(
+                "VUID-vkCmdExecuteCommands-commandBuffer-07594", cb_state.Handle(), top_loc,
+                "query %" PRIu32
+                " in %s with type %s is active. Only VK_QUERY_TYPE_OCCLUSION or VK_QUERY_TYPE_PIPELINE_STATISTICS are allowed.",
+                active_query.slot, FormatHandle(active_query.pool).c_str(), string_VkQueryType(query_type));
+            return skip;
+        }
+
+        if (!secondary_cb_state.has_inheritance) {
+            continue;
+        }
+
+        if (query_type == VK_QUERY_TYPE_OCCLUSION) {
+            if (secondary_cb_state.inheritance_info.occlusionQueryEnable != VK_TRUE) {
+                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00102", objlist, secondary_cb_loc,
+                                 "(%s) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE, but "
+                                 "primary %s has query %" PRIu32 " in %s with VK_QUERY_TYPE_OCCLUSION that is still active.",
+                                 FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str(),
+                                 active_query.slot, FormatHandle(active_query.pool).c_str());
+            }
+            if ((secondary_cb_state.inheritance_info.queryFlags & active_query.control_flags) != active_query.control_flags) {
+                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-commandBuffer-00103", objlist, secondary_cb_loc,
+                             "(%s) was recorded with VkCommandBufferInheritanceInfo::queryFlags %s, but primary "
+                             "%s has query %" PRIu32
+                             " in %s with VK_QUERY_TYPE_OCCLUSION that is still active but with VkQueryControlFlags %s.",
+                             FormatHandle(secondary_cb_state.Handle()).c_str(),
+                             string_VkQueryControlFlags(secondary_cb_state.inheritance_info.queryFlags).c_str(),
+                             FormatHandle(cb_state.Handle()).c_str(), active_query.slot, FormatHandle(active_query.pool).c_str(),
+                             string_VkQueryControlFlags(active_query.control_flags).c_str());
+            }
+        } else if (query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
             VkQueryPipelineStatisticFlags cmd_buf_statistics = secondary_cb_state.inheritance_info.pipelineStatistics;
             if ((cmd_buf_statistics & query_pool_state->create_info.pipelineStatistics) !=
                 query_pool_state->create_info.pipelineStatistics) {
-                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), query_object.pool);
-                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, secondary_cb_loc,
-                                 "was recorded with pInheritanceInfo::pipelineStatistics %s, but query %" PRIu32
-                                 " in %s is still active and was created with %s instead.",
-                                 string_VkQueryPipelineStatisticFlags(cmd_buf_statistics).c_str(), query_object.slot,
-                                 FormatHandle(query_object.pool).c_str(),
-                                 string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics).c_str());
+                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), active_query.pool);
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, secondary_cb_loc,
+                             "was recorded with pInheritanceInfo::pipelineStatistics %s, but primary %s has query %" PRIu32
+                             " in %s with VK_QUERY_TYPE_PIPELINE_STATISTICS that is still active and was created with %s.",
+                             string_VkQueryPipelineStatisticFlags(cmd_buf_statistics).c_str(),
+                             FormatHandle(cb_state.Handle()).c_str(), active_query.slot, FormatHandle(active_query.pool).c_str(),
+                             string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics).c_str());
             }
         }
-        active_types.insert(query_pool_state->create_info.queryType);
     }
+
     for (const auto &query_object : secondary_cb_state.started_queries) {
         if (auto query_pool_state = Get<vvl::QueryPool>(query_object.pool)) {
             if (active_types.count(query_pool_state->create_info.queryType)) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), query_object.pool);
-                skip |= LogError(
-                    "VUID-vkCmdExecuteCommands-pCommandBuffers-00105", objlist, secondary_cb_loc,
-                    "(%s) is trying to begin a %s query in %s, but that is already active in the primary command buffer (%s).",
-                    FormatHandle(secondary_cb_state).c_str(), string_VkQueryType(query_pool_state->create_info.queryType),
-                    FormatHandle(query_object.pool).c_str(), FormatHandle(cb_state).c_str());
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00105", objlist, secondary_cb_loc,
+                             "(%s) is trying to begin a %s query in %s, but that is already active in the primary %s.",
+                             FormatHandle(secondary_cb_state).c_str(), string_VkQueryType(query_pool_state->create_info.queryType),
+                             FormatHandle(query_object.pool).c_str(), FormatHandle(cb_state).c_str());
             }
-        }
-    }
-
-    if (active_occlusion_query && secondary_cb_state.has_inheritance) {
-        if (secondary_cb_state.inheritance_info.occlusionQueryEnable != VK_TRUE) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00102", objlist, secondary_cb_loc,
-                             "(%s) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE, but "
-                             "primary command buffer %s has an active occlusion query",
-                             FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
-        }
-        if ((secondary_cb_state.inheritance_info.queryFlags & active_occlusion_query->control_flags) !=
-            active_occlusion_query->control_flags) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00103", objlist, secondary_cb_loc,
-                             "(%s) was recorded with VkCommandBufferInheritanceInfo::queryFlags %s, but primary command buffer "
-                             "%s has an active occlusion query with VkQueryControlFlags %s.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str(),
-                             string_VkQueryControlFlags(secondary_cb_state.inheritance_info.queryFlags).c_str(),
-                             FormatHandle(cb_state.Handle()).c_str(),
-                             string_VkQueryControlFlags(active_occlusion_query->control_flags).c_str());
         }
     }
 
@@ -1251,21 +1279,6 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                      "has an active query, but the inheritedQueries feature was not enabled.");
     }
 
-    const QueryObject *active_occlusion_query = nullptr;
-    for (const auto &active_query : cb_state.active_queries) {
-        auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
-        if (!query_pool_state) continue;
-        const auto query_type = query_pool_state->create_info.queryType;
-        if (query_type == VK_QUERY_TYPE_OCCLUSION) {
-            active_occlusion_query = &active_query;
-        }
-        if (query_type != VK_QUERY_TYPE_OCCLUSION && query_type != VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-07594", commandBuffer, error_obj.location,
-                             "query %" PRIu32 " in %s with type %s is active.", active_query.slot,
-                             FormatHandle(active_query.pool).c_str(), string_VkQueryType(query_type));
-        }
-    }
-
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
     if (rp_state) {
         skip |= ValidateCmdExecuteCommandsRenderPass(cb_state, *rp_state, error_obj.location);
@@ -1413,7 +1426,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
         skip |= ValidateSecondaryCommandBufferDescriptorHeapInheritance(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_cb_state, secondary_cb_loc);
-        skip |= ValidateSecondaryCommandBufferQuery(cb_state, secondary_cb_state, secondary_cb_loc, active_occlusion_query);
+        skip |= ValidateSecondaryCommandBufferQuery(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |= ValidateSecondaryCommandBufferLayout(cb_state, secondary_cb_state, secondary_cb_loc);
         skip |=
             ValidateCommandBufferState(secondary_cb_state, secondary_cb_loc, 0, "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
