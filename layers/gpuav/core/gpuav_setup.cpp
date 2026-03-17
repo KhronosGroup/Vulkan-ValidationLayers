@@ -467,27 +467,13 @@ void Validator::InitSettings(const Location& loc) {
         AdjustmentWarning(device, loc, adjustment_warnings.c_str());
     }
 
-    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && !gpuav_settings.descriptor_buffer_override) {
-        // "can" work, just need more testing now
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings == 1) {
         AdjustmentWarning(
             device, loc,
-            "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-            "[Disabling all shader instrumentation checks] (this does NOT include debug print)"
-            "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you are not going "
-            "to use descriptor buffers.");
+            "VK_EXT_descriptor_buffer is enabled with a device that only supports maxResourceDescriptorBufferBindings of "
+            "1\nCurrently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]");
+        gpuav_settings.debug_printf_enabled = false;
         gpuav_settings.DisableShaderInstrumentationAndOptions();
-
-        if (phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings == 1) {
-            if (gpuav_settings.debug_printf_enabled) {
-                AdjustmentWarning(
-                    device, loc,
-                    "VK_EXT_descriptor_buffer is enabled with a device that only supports maxResourceDescriptorBufferBindings of "
-                    "1\nNeed to disable DebugPrintf as we currently don't have a fallback path. [Disabling debug_printf]"
-                    "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you "
-                    "are not going to use descriptor buffers.");
-                gpuav_settings.debug_printf_enabled = false;
-            }
-        }
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

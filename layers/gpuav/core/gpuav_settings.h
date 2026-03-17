@@ -55,8 +55,6 @@ struct GpuAVSettings {
     uint32_t invalid_index_command = 8191;                      // N-1
     uint32_t indices_buffer_count = invalid_index_command + 1;  // N
 
-    bool descriptor_buffer_override = false;
-
     // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected
     // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
     // of the settings exposed

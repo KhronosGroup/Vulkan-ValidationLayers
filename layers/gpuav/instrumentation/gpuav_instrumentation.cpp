@@ -557,10 +557,6 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
                                                                 const LastBound& last_bound,
                                                                 const InstBindingPipeLayout& inst_binding_pipe_layout,
                                                                 const Location& loc) {
-    if (!gpuav.gpuav_settings.debug_printf_enabled) {
-        return;  // currently only thing enabled
-    }
-
     VkPipelineLayout bind_pipeline_layout_handle = inst_binding_pipe_layout.handle;
 
     if (inst_binding_pipe_layout.handle == VK_NULL_HANDLE) {
@@ -585,7 +581,6 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
         cb_state.resource_descriptor_buffer_index_ = 0;
     }
 
-    // Currently only DebugPrintf is using the Descriptor Buffer so we just put our information in front
     const VkDeviceSize front_offset = 0;
     DispatchCmdSetDescriptorBufferOffsetsEXT(cb_state.VkHandle(), last_bound.bind_point, bind_pipeline_layout_handle,
                                              gpuav.instrumentation_desc_set_bind_index_, 1,
