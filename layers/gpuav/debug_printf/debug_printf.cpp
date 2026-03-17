@@ -429,8 +429,8 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
 
     cb_state.on_instrumentation_desc_buffer_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, VkDescriptorAddressInfoEXT& out_address_info,
-            uint32_t& out_dst_binding) {
+            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&,
+            VkDescriptorAddressInfoEXT& out_address_info, uint32_t& out_dst_binding) {
             vko::BufferRange debug_printf_output_buffer =
                 cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
             std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
@@ -447,7 +447,7 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
 
     cb_state.on_instrumentation_desc_heap_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location& loc, VkDeviceAddress& out_address,
+            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, VkDeviceAddress& out_address,
             uint32_t& out_dst_binding) {
             vko::BufferRange debug_printf_output_buffer =
                 cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);

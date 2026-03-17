@@ -261,6 +261,12 @@ class GpuAVMesh : public GpuAVTest {
     void InitBasicMeshAndTask(bool safe_mode = true);
 };
 
+class GpuAVDescriptorBuffer : public GpuAVTest {
+  public:
+    void InitBasicDescriptorBuffer(bool safe_mode = true);
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+};
+
 class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
   public:
     void ComputeStorageBufferTest(const char *shader, int source_type, VkDeviceSize buffer_size,

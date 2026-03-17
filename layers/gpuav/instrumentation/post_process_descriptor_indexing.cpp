@@ -72,9 +72,29 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
             out_dst_binding = glsl::kBindingInstPostProcess;
         });
 
+    cb.on_instrumentation_desc_buffer_update_functions.emplace_back(
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&,
+                                                  VkDescriptorAddressInfoEXT& out_address_info, uint32_t& out_dst_binding) mutable {
+            PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
+            if (pp_cb_state) {
+                out_address_info.address = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset_address;
+                out_address_info.range = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.size;
+            } else {
+                // Eventually, no descriptor set was bound in command buffer.
+                // Instrumenation descriptor set is already defined at this point and needs a binding,
+                // so just provide a dummy buffer
+                if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
+                    dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
+                }
+                out_address_info.address = dummy_buffer_range.offset_address;
+                out_address_info.range = dummy_buffer_range.size;
+            }
+            out_dst_binding = glsl::kBindingInstPostProcess;
+        });
+
     cb.on_instrumentation_desc_heap_update_functions.emplace_back(
-        [dummy_address_range = VkDeviceAddressRangeEXT{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
-                                                          VkDeviceAddress& out_address, uint32_t& out_dst_binding) mutable {
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
+                                                  VkDeviceAddress& out_address, uint32_t& out_dst_binding) mutable {
             PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
             if (pp_cb_state) {
                 out_address = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset_address;
@@ -82,12 +102,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 // Eventually, no descriptor set was bound in command buffer.
                 // Instrumenation descriptor set is already defined at this point and needs a binding,
                 // so just provide a dummy address range
-                if (dummy_address_range.address == 0) {
-                    auto dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
-                    dummy_address_range.address = dummy_buffer_range.offset_address;
-                    dummy_address_range.size = dummy_buffer_range.size;
+                if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
+                    dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
                 }
-                out_address = dummy_address_range.address;
+                out_address = dummy_buffer_range.offset_address;
             }
             out_dst_binding = glsl::kBindingInstPostProcess;
         });
