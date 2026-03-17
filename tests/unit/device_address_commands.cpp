@@ -2095,7 +2095,7 @@ TEST_F(NegativeDeviceAddressCommands, ConditionalRenderingAlignment) {
 TEST_F(NegativeDeviceAddressCommands, CopyUnboundImageMemory) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
-    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer buffer(*m_device, 4096u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2942,8 +2942,7 @@ TEST_F(NegativeDeviceAddressCommands, CopyDeviceMemoryAddressOverlap) {
     m_command_buffer.End();
 }
 
-// Todo https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/merge_requests/310#note_589155
-TEST_F(NegativeDeviceAddressCommands, DISABLED_CopyDeviceMemorySize) {
+TEST_F(NegativeDeviceAddressCommands, CopyDeviceMemorySize) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
     vkt::Buffer buffer(*m_device, 32u * 32u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
