@@ -179,6 +179,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/query_positive.cpp
     unit/ray_tracing.cpp
     unit/ray_tracing_nv.cpp
+    unit/ray_tracing_micromap.cpp
+    unit/ray_tracing_micromap_positive.cpp
     unit/ray_tracing_pipeline.cpp
     unit/ray_tracing_pipeline_positive.cpp
     unit/ray_tracing_pipeline_nv.cpp

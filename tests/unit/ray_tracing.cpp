@@ -3706,63 +3706,6 @@ TEST_F(NegativeRayTracing, HostBuildOverlappingScratchBuffers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, OpacityMicromapFeatureDisable) {
-    TEST_DESCRIPTION("Micromap feature is disabled");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::accelerationStructure);
-    RETURN_IF_SKIP(Init());
-
-    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-micromap-07430");
-
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
-
-    VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
-
-    maCreateInfo.createFlags = 0;
-    maCreateInfo.buffer = buffer;
-    maCreateInfo.offset = 0;
-    maCreateInfo.size = 0;
-    maCreateInfo.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
-    maCreateInfo.deviceAddress = 0ull;
-
-    vk::CreateMicromapEXT(device(), &maCreateInfo, nullptr, &micromap);
-
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeRayTracing, OpacityMicromapCaptureReplayFeatureDisable) {
-    TEST_DESCRIPTION("Micromap capture replay feature is disabled");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::micromap);
-    RETURN_IF_SKIP(Init());
-
-    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-deviceAddress-07431");
-
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
-
-    VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
-
-    maCreateInfo.createFlags = 0;
-    maCreateInfo.buffer = buffer;
-    maCreateInfo.offset = 0;
-    maCreateInfo.size = 0;
-    maCreateInfo.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
-    maCreateInfo.deviceAddress = 0x100000ull;
-
-    vk::CreateMicromapEXT(device(), &maCreateInfo, nullptr, &micromap);
-
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeRayTracing, AccelerationStructureGeometry) {
     TEST_DESCRIPTION("Test VkAccelerationStructureGeometryKHR parameters");
 
