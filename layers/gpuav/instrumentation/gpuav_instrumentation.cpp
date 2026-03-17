@@ -533,13 +533,15 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator &gpuav, 
         error_loggers.emplace_back(error_logger_register(gpuav, cb_state, last_bound));
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, error_info, error_loggers = std::move(error_loggers)](
-                                                              const uint32_t *error_record, const Location &loc_with_debug_region,
-                                                              const LogObjectList &objlist) {
-        bool skip = false;
-        skip |= LogInstrumentationError(gpuav, cb_state, objlist, error_info, error_record, loc_with_debug_region, error_loggers);
-        return skip;
-    };
+    const VkCommandBuffer cb_handle = cb_state.VkHandle();
+    CommandBufferSubState::ErrorLoggerFunc error_logger =
+        [&gpuav, &cb_handle, error_info, error_loggers = std::move(error_loggers)](
+            const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
+            bool skip = false;
+            skip |=
+                LogInstrumentationError(gpuav, cb_handle, objlist, error_info, error_record, loc_with_debug_region, error_loggers);
+            return skip;
+        };
 
     cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 
