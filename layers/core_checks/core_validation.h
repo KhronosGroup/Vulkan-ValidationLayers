@@ -1348,6 +1348,8 @@ class CoreChecks : public vvl::DeviceProxy {
     template <typename RegionType>
     bool ValidateBufferBounds(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const vvl::Buffer& buffer_state,
                               const RegionType& region, const Location& region_loc) const;
+    bool ValidateDeviceAddressBufferBounds(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                           const VkDeviceMemoryImageCopyKHR& region, const Location& region_loc) const;
 
     template <typename RegionType>
     bool ValidateCopyBufferImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
