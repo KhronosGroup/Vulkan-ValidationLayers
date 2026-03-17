@@ -2051,6 +2051,34 @@ bool CoreChecks::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, con
                                 error_obj.location.dot(Field::pCopyImageInfo));
 }
 
+static VkDeviceSize FindCopyBlockSize(const VkFormat image_format, const VkFormat compatible_format, VkImageAspectFlags aspectMask) {
+    if (aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+        // Spec in VkBufferImageCopy section list special cases for each format
+        if (aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+            return 1;
+        } else {
+            // VK_IMAGE_ASPECT_DEPTH_BIT
+            switch (image_format) {
+                case VK_FORMAT_D16_UNORM:
+                case VK_FORMAT_D16_UNORM_S8_UINT:
+                    return 2;
+                    break;
+                case VK_FORMAT_D32_SFLOAT:
+                case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                // packed with the D24 value in the LSBs of the word, and undefined values in the eight MSBs
+                case VK_FORMAT_X8_D24_UNORM_PACK32:
+                case VK_FORMAT_D24_UNORM_S8_UINT:
+                    return 4;
+                    break;
+                default:
+                    // Any misuse of formats vs aspect mask should be caught before here
+                    return 0;
+            }
+        }
+    }
+    return vkuFormatTexelBlockSize(compatible_format);
+}
+
 template <typename RegionType>
 bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                       const vvl::Buffer &buffer_state, const RegionType &region, const Location &region_loc) const {
@@ -2064,40 +2092,13 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const 
         return skip;
     }
 
-    VkDeviceSize block_size = 0;
     const VkFormat format = image_state.create_info.format;
     bool is_multiplane = vkuFormatIsMultiplane(format);
     const VkFormat compatible_format =
         is_multiplane
             ? vkuFindMultiplaneCompatibleFormat(format, static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask))
             : format;
-
-    if (region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
-        // Spec in VkBufferImageCopy section list special cases for each format
-        if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-            block_size = 1;
-        } else {
-            // VK_IMAGE_ASPECT_DEPTH_BIT
-            switch (format) {
-                case VK_FORMAT_D16_UNORM:
-                case VK_FORMAT_D16_UNORM_S8_UINT:
-                    block_size = 2;
-                    break;
-                case VK_FORMAT_D32_SFLOAT:
-                case VK_FORMAT_D32_SFLOAT_S8_UINT:
-                // packed with the D24 value in the LSBs of the word, and undefined values in the eight MSBs
-                case VK_FORMAT_X8_D24_UNORM_PACK32:
-                case VK_FORMAT_D24_UNORM_S8_UINT:
-                    block_size = 4;
-                    break;
-                default:
-                    // Any misuse of formats vs aspect mask should be caught before here
-                    return false;
-            }
-        }
-    } else {
-        block_size = vkuFormatTexelBlockSize(compatible_format);
-    }
+    const VkDeviceSize block_size = FindCopyBlockSize(format, compatible_format, region.imageSubresource.aspectMask);
 
     const VkExtent3D block_extent = vkuFormatTexelBlockExtent(format);
     // From spec:
@@ -2146,6 +2147,74 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const 
            << ", layer = " << last_layer << "}\nrowExtent = " << row_extent << ", sliceExtent = " << slice_extent
            << ", layerExtent = " << layer_extent << "\nThe final byte found is at bufferOffset (" << region.bufferOffset
            << ") + texelOffset (" << texel_offset << ") + blockSize (" << block_size << ") ";
+
+        if (is_multiplane) {
+            ss << "(" << string_VkFormat(compatible_format) << ", the compatible format for plane "
+               << vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask)) << " of "
+               << string_VkFormat(format) << ")";
+        } else {
+            ss << "(" << string_VkFormat(format) << ")";
+        }
+        skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ExceedBufferBounds_00171), objlist, region_loc,
+                         "%s", ss.str().c_str());
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDeviceAddressBufferBounds(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                                   const VkDeviceMemoryImageCopyKHR& region, const Location& region_loc) const {
+    bool skip = false;
+
+    const uint32_t normalized_layer_count = image_state.NormalizeLayerCount(region.imageSubresource);
+    const uint32_t z_copies = std::max(region.imageExtent.depth, normalized_layer_count);
+    // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
+    // to ignore.
+    if (region.imageExtent.width == 0 || region.imageExtent.height == 0 || region.imageExtent.depth == 0 || z_copies == 0) {
+        return skip;
+    }
+
+    const VkFormat format = image_state.create_info.format;
+    bool is_multiplane = vkuFormatIsMultiplane(format);
+    const VkFormat compatible_format =
+        is_multiplane
+            ? vkuFindMultiplaneCompatibleFormat(format, static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask))
+            : format;
+    const VkDeviceSize block_size = FindCopyBlockSize(format, compatible_format, region.imageSubresource.aspectMask);
+
+    const VkExtent3D block_extent = vkuFormatTexelBlockExtent(format);
+    const uint32_t last_x = region.imageExtent.width - 1;
+    const uint32_t last_y = region.imageExtent.height - 1;
+    const uint32_t last_z = region.imageExtent.depth - 1;
+    const uint32_t last_layer = normalized_layer_count - 1;
+
+    const VkDeviceSize row_extent =
+        static_cast<VkDeviceSize>(std::ceil(std::max(region.addressRowLength, region.imageExtent.width) / block_extent.width)) *
+        block_size;
+    const VkDeviceSize slice_extent =
+        static_cast<VkDeviceSize>(std::ceil(std::max(region.addressImageHeight, region.imageExtent.height) / block_extent.height)) *
+        row_extent;
+    const VkDeviceSize layer_extent =
+        static_cast<VkDeviceSize>(std::ceil(region.imageExtent.depth / block_extent.depth)) * slice_extent;
+
+    const VkDeviceSize x_value = static_cast<VkDeviceSize>(std::floor(last_x / block_extent.width)) * block_size;
+    const VkDeviceSize y_value = static_cast<VkDeviceSize>(std::floor(last_y / block_extent.height)) * row_extent;
+    const VkDeviceSize z_value = static_cast<VkDeviceSize>(std::floor(last_z / block_extent.depth)) * slice_extent;
+    const VkDeviceSize layer_value = static_cast<VkDeviceSize>(last_layer) * layer_extent;
+    VkDeviceSize texel_offset = x_value + y_value + z_value + layer_value;
+
+    const VkDeviceSize buffer_copy_size = texel_offset + block_size;
+
+    if (region.addressRange.size < buffer_copy_size) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        std::ostringstream ss;
+        ss << "is trying to copy " << buffer_copy_size << " bytes to/from the buffer address (" << region.addressRange.address
+           << ") which exceeds the addressRange.size of " << region.addressRange.size
+           << " bytes.\nLast texel coordinate of the image is at {x = " << last_x << ", y = " << last_y << ", z = " << last_z
+           << ", layer = " << last_layer << "}\nrowExtent = " << row_extent << ", sliceExtent = " << slice_extent
+           << ", layerExtent = " << layer_extent << "\nThe final byte found is at address ("
+           << region.addressRange.address + region.addressRange.size << ") + texelOffset (" << texel_offset << ") + blockSize ("
+           << block_size << ") ";
 
         if (is_multiplane) {
             ss << "(" << string_VkFormat(compatible_format) << ", the compatible format for plane "
@@ -4345,8 +4414,7 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
         skip |= ValidateDeviceAddressCommands(command_buffer, region.addressRange.address, region.addressRange.size,
                                               region.addressFlags, region_loc.dot(Field::addressRange));
 
-        // Todo https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/merge_requests/310#note_589155
-        // skip |= ValidateBufferBounds(cb_state, image_state, region.addressRange, region, region_loc);
+        skip |= ValidateDeviceAddressBufferBounds(cb_state, *image_state, region, region_loc);
     }
 
     return skip;
