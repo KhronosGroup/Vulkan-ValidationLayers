@@ -5943,6 +5943,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (pStrides) {
         cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+        cb_state->stride_set_with_bind_vertex_buffer_3 = false;
     }
     cb_state->bind_vertex_buffer_3_used = false;
 
@@ -5965,14 +5966,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers3KHR(VkCommandBuffer command
                                                          uint32_t bindingCount, const VkBindVertexBuffer3InfoKHR* pBindingInfos,
                                                          const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     cb_state->bind_vertex_buffer_3_used = true;
-
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3381
-    // The stride is "last to set it wins"
-    if (pBindingInfos->setStride) {
-        cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
-    }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         const VkBindVertexBuffer3InfoKHR &binding_info = pBindingInfos[i];
@@ -5983,6 +5977,15 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers3KHR(VkCommandBuffer command
 
         TrackDeviceAddressRange(*cb_state, binding_info.addressRange.address, binding_info.addressRange.size,
                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3381
+        // The stride is "last to set it wins"
+        if (binding_info.setStride) {
+            cb_state->stride_set_with_bind_vertex_buffer_3 = true;
+        }
+    }
+    if (cb_state->stride_set_with_bind_vertex_buffer_3) {
+        cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
 }
 
@@ -6203,6 +6206,7 @@ void DeviceState::PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuff
                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    cb_state->stride_set_with_bind_vertex_buffer_3 = false;
 
     const auto pipeline_state = cb_state->GetLastBoundGraphics().pipeline_state;
     if (pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {

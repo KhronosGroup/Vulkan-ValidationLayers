@@ -1106,6 +1106,8 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         case ActionVUID::SPIRV_OPTYPETENSORARM_09906: suffix = "OpTypeTensorARM-09906"; break;
         // ### VUID-vkCmdDraw-commandBuffer-10746
         case ActionVUID::TILE_MEMORY_HEAP_10746: suffix = "commandBuffer-10746"; break;
+        // ### VUID-vkCmdDraw-None-13118
+        case ActionVUID::BIND_VERTEX_BUFFERS_3_STRIDE_13118: suffix = "None-13118"; break;
 
         // ### VUID-vkCmdDraw-viewMask-06178
         case ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178: suffix = "viewMask-06178"; break;

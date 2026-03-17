@@ -549,6 +549,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     // vkCmdBindVertexBuffers3KHR
     bool bind_vertex_buffer_3_used{false};
+    bool stride_set_with_bind_vertex_buffer_3{false};
 
     std::shared_ptr<vvl::DeviceMemory> bound_tile_memory;
 

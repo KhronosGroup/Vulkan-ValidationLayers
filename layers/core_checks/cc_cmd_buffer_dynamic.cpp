@@ -526,6 +526,17 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
     }
 
+    if (cb_state.stride_set_with_bind_vertex_buffer_3 &&
+        !last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) &&
+        !last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        LogObjectList objlist(last_bound_state.cb_state.Handle());
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BIND_VERTEX_BUFFERS_3_STRIDE_13118), objlist, loc,
+                         "vkCmdBindVertexBuffers3KHR() was called with at least one of VkBindVertexBuffer3InfoKHR::setStride being "
+                         "VK_TRUE, the pipeline %s was created without VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE or "
+                         "VK_DYNAMIC_STATE_VERTEX_INPUT_EXT dynamic states",
+                         FormatHandle(last_bound_state.pipeline_state->Handle()).c_str());
+    }
+
     return skip;
 }
 

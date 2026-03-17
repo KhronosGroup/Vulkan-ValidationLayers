@@ -370,6 +370,7 @@ void CommandBuffer::ResetCBState() {
     transform_feedback_buffers_bound = 0;
 
     bind_vertex_buffer_3_used = false;
+    stride_set_with_bind_vertex_buffer_3 = false;
 
     SetDescriptorMode(vvl::DescriptorModeUnknown, vvl::Func::Empty);
     // Need to reset on initalization
