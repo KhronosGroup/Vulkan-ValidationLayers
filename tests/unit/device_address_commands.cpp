@@ -4313,3 +4313,43 @@ TEST_F(NegativeDeviceAddressCommands, DrawIndirectByteCount2AddressMultiple) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceAddressCommands, BindVertexBuffers3Stride) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_TRUE;
+    info.addressRange = buffer.StridedAddressRange(sizeof(uint32_t));
+    info.addressRange.stride = 4u;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 1u, &info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-13118");
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
