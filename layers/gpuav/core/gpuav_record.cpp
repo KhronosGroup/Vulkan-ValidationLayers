@@ -260,7 +260,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
 
             std::ostringstream ss;
             ss << "\tSetting VkPhysicalDeviceDescriptorBufferPropertiesEXT::descriptorBufferAddressSpaceSize to "
-               << desc_buffer_props->resourceDescriptorBufferAddressSpaceSize << "and resourceDescriptorBufferAddressSpaceSize to "
+               << desc_buffer_props->resourceDescriptorBufferAddressSpaceSize << " and resourceDescriptorBufferAddressSpaceSize to "
                << desc_buffer_props->descriptorBufferAddressSpaceSize << " (reserving " << bytes_to_reserve << " bytes)";
             adjustment_warnings += ss.str();
             adjustment_warnings += '\n';

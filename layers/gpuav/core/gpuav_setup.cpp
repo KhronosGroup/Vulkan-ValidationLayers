@@ -268,7 +268,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();
         error_buffer_ci.size = glsl::kErrorBufferByteSize;
         error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
             error_buffer_ci.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
         VmaAllocationCreateInfo error_buffer_alloc_ci = {};
@@ -289,7 +289,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
 
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
             buffer_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
         buffer_info.size = gpuav_settings.indices_buffer_count * indices_buffer_alignment_;
@@ -474,6 +474,13 @@ void Validator::InitSettings(const Location& loc) {
             "1\nCurrently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]");
         gpuav_settings.debug_printf_enabled = false;
         gpuav_settings.DisableShaderInstrumentationAndOptions();
+    }
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        AdjustmentWarning(device, loc,
+                          "VK_EXT_descriptor_buffer or VK_EXT_descriptor_heap is enabled. Currently tracking descriptors is not "
+                          "fully supported yet. [Disabling gpuav_descriptor_checks]");
+        gpuav_settings.shader_instrumentation.descriptor_checks = false;
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

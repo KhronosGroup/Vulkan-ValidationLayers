@@ -33,11 +33,12 @@ struct VertexAttributeFetchOff {
     vko::Buffer buffer;
     bool valid = false;
 
-    VertexAttributeFetchOff(Validator& gpuav, bool descriptor_heap_enabled) : buffer(gpuav) {
+    VertexAttributeFetchOff(Validator& gpuav, bool need_address) : buffer(gpuav) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = 4 * sizeof(uint32_t);
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if (descriptor_heap_enabled) {
+        if (need_address) {
+            // For Descriptor Buffer/Heap
             buffer_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
         VmaAllocationCreateInfo alloc_info = {};

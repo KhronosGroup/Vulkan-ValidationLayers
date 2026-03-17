@@ -76,7 +76,8 @@ void CommandBufferSubState::AllocateResources(const Location& loc) {
             VkBufferCreateInfo buffer_info = vku::InitStructHelper();
             buffer_info.size = GetCmdErrorsCountsBufferByteSize();
             buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            if (IsExtEnabled(gpuav_.extensions.vk_ext_descriptor_heap)) {
+            if (IsExtEnabled(gpuav_.extensions.vk_ext_descriptor_buffer) ||
+                IsExtEnabled(gpuav_.extensions.vk_ext_descriptor_heap)) {
                 buffer_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             }
             VmaAllocationCreateInfo alloc_info = {};
