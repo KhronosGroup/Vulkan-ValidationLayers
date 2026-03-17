@@ -196,6 +196,13 @@ bool LastBound::IsRasterizationDisabled() const {
     return false;
 }
 
+std::string LastBound::DescribeRasterizationDisabled() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+        return "the last call to vkCmdSetRasterizerDiscardEnableEXT";
+    }
+    return "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable";
+}
+
 bool LastBound::IsLogicOpEnabled() const {
     if (IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {

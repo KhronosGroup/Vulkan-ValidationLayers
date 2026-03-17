@@ -491,8 +491,8 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
 
     for (const auto &query_obj : cb_state.active_queries) {
         skip |= LogError("VUID-vkEndCommandBuffer-commandBuffer-00061", commandBuffer, error_obj.location,
-                         "Ending command buffer with in progress query: %s, query %" PRIu32 ".",
-                         FormatHandle(query_obj.pool).c_str(), query_obj.slot);
+                         "Ending command buffer with a query in progress: query %" PRIu32 " in %s.", query_obj.slot,
+                         FormatHandle(query_obj.pool).c_str());
     }
     if (cb_state.conditional_rendering_active) {
         skip |= LogError("VUID-vkEndCommandBuffer-None-01978", commandBuffer, error_obj.location,
@@ -870,9 +870,9 @@ bool CoreChecks::ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer &c
                 query_pool_state->create_info.pipelineStatistics) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), query_object.pool);
                 skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, secondary_cb_loc,
-                                 "was recorded with pInheritanceInfo::pipelineStatistics %s but the active query pool (%s) was "
-                                 "created with %s.",
-                                 string_VkQueryPipelineStatisticFlags(cmd_buf_statistics).c_str(),
+                                 "was recorded with pInheritanceInfo::pipelineStatistics %s, but query %" PRIu32
+                                 " in %s is still active and was created with %s instead.",
+                                 string_VkQueryPipelineStatisticFlags(cmd_buf_statistics).c_str(), query_object.slot,
                                  FormatHandle(query_object.pool).c_str(),
                                  string_VkQueryPipelineStatisticFlags(query_pool_state->create_info.pipelineStatistics).c_str());
             }
@@ -1264,7 +1264,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
         if (query_type != VK_QUERY_TYPE_OCCLUSION && query_type != VK_QUERY_TYPE_PIPELINE_STATISTICS) {
             skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-07594", commandBuffer, error_obj.location,
-                             "query with type %s is active.", string_VkQueryType(query_type));
+                             "query %" PRIu32 " in %s with type %s is active.", active_query.slot,
+                             FormatHandle(active_query.pool).c_str(), string_VkQueryType(query_type));
         }
     }
 
