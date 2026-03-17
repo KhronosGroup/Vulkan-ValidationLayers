@@ -601,7 +601,13 @@ vvl::DescriptorSetLayout::DescriptorSetLayout(vvl::DeviceState &device_state, co
       desc_set_layout_ci(pCreateInfo) {
     const bool is_descriptor_buffer = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
     if (is_descriptor_buffer) {
-        DispatchGetDescriptorSetLayoutSizeEXT(device_state.VkHandle(), handle, &layout_size_in_bytes_);
+        // There is no real size to query (see VU 11811 / 11812)
+        const bool has_opaque_size =
+            (pCreateInfo->flags & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT |
+                                   VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)) != 0;
+        if (!has_opaque_size) {
+            DispatchGetDescriptorSetLayoutSizeEXT(device_state.VkHandle(), handle, &layout_size_in_bytes_);
+        }
     }
 
     if (pCreateInfo->pBindings) {
