@@ -1883,9 +1883,15 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     uint32_t payload_memory_type = 0;
     {
         const bool dedicated_allocation = (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+        VkImageMemoryRequirementsInfo2 image_memory_requirements = vku::InitStructHelper();
+        image_memory_requirements.image = image;
+        VkMemoryDedicatedRequirements dedicated_requirements = vku::InitStructHelper();
+        VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&dedicated_requirements);
+        vk::GetImageMemoryRequirements2(*m_device, &image_memory_requirements, &memory_requirements);
         VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
         dedicated_info.image = image;
-        auto export_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
+        auto export_info = vku::InitStruct<VkExportMemoryAllocateInfo>(
+            (dedicated_allocation || dedicated_requirements.requiresDedicatedAllocation) ? &dedicated_info : nullptr);
         export_info.handleTypes = handle_type;
         auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0, &export_info);
         memory.Init(*m_device, alloc_info);
