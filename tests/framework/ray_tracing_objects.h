@@ -190,8 +190,10 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     AccelerationStructureKHR& SetOffset(VkDeviceSize offset);
 
     // For create info 2
-    AccelerationStructureKHR& SetCreateWithVersion2(bool create_with_version_2, bool auto_set_address_range);
-    AccelerationStructureKHR& SetAddressRange(VkDeviceAddressRangeKHR address_range);
+    AccelerationStructureKHR& SetCreateWithVersion2(bool create_with_version_2);
+    // If no address range is explicitly supplied, it will be computed automatically
+    // at Create() time based on AS's buffer.
+    AccelerationStructureKHR& SetAddressRange(std::optional<VkDeviceAddressRangeKHR> address_range);
     AccelerationStructureKHR& SetAddressFlags(VkAddressCommandFlagsKHR address_flags);
 
     AccelerationStructureKHR& SetDeviceBuffer(vkt::Buffer&& buffer);
@@ -215,16 +217,16 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
 
   private:
     bool create_with_version_2_ = false;
-    bool auto_set_address_range_ = false;
     const vkt::Device* device_;
     bool is_null_ = false;
     VkAccelerationStructureCreateInfoKHR vk_info_ = vku::InitStructHelper();
-    VkAccelerationStructureCreateInfo2KHR vk_info_2_ = vku::InitStructHelper();
     vkt::Buffer device_buffer_;
     VkMemoryAllocateFlags buffer_memory_allocate_flags_{};
     VkMemoryPropertyFlags buffer_memory_property_flags_{};
     VkBufferUsageFlags buffer_usage_flags_{};
     bool buffer_init_no_mem_ = false;
+    VkAccelerationStructureCreateInfo2KHR vk_info_2_ = vku::InitStructHelper();
+    std::optional<VkDeviceAddressRangeKHR> address_range_ = std::nullopt;
 };
 
 class BuildGeometryInfoKHR {

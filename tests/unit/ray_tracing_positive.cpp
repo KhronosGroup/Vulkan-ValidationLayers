@@ -2291,7 +2291,7 @@ TEST_F(PositiveRayTracing, CreateAccelerationStructure2KHR) {
     for (size_t i = 0; i < blas_count; ++i) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         // use vkCreateAccelerationStructure2KHR
-        blas.GetDstAS()->SetCreateWithVersion2(true, true);
+        blas.GetDstAS()->SetCreateWithVersion2(true);
         blas.GetDstAS()->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
         blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
         blas_vec.emplace_back(std::move(blas));
