@@ -20,7 +20,7 @@
 
 namespace vvl {
 
-const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinaryInfoError error) {
+const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinaryInfoError error) {
     static const std::map<PipelineBinaryInfoError, std::array<Entry, 5>> errors{
         {PipelineBinaryInfoError::PNext_09616,
          {{
@@ -80,7 +80,7 @@ const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinary
          }}},
     };
 
-    const auto &result = FindVUID(error, loc, errors);
+    const auto& result = FindVUID(error, loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-Stateless-unhandled-pipelinebinaryinfo-error");

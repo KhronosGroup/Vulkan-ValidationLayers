@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -19,31 +19,31 @@
 
 #include "state_tracker/device_generated_commands_state.h"
 
-vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::DeviceState &dev, VkIndirectExecutionSetEXT handle,
-                                                const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo)
+vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::DeviceState& dev, VkIndirectExecutionSetEXT handle,
+                                                const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       is_pipeline(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT),
       is_shader_objects(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT) {
     if (is_pipeline && pCreateInfo->info.pPipelineInfo) {
-        const VkIndirectExecutionSetPipelineInfoEXT &pipeline_info = *pCreateInfo->info.pPipelineInfo;
+        const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info = *pCreateInfo->info.pPipelineInfo;
         max_pipeline_count = pipeline_info.maxPipelineCount;
     } else if (is_shader_objects && pCreateInfo->info.pShaderInfo) {
-        const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
+        const VkIndirectExecutionSetShaderInfoEXT& shader_info = *pCreateInfo->info.pShaderInfo;
         max_shader_count = shader_info.maxShaderCount;
     }
 }
 
-vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::DeviceState &dev, VkIndirectCommandsLayoutEXT handle,
-                                                    const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo)
+vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::DeviceState& dev, VkIndirectCommandsLayoutEXT handle,
+                                                    const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectCommandsLayoutEXT),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       // default to graphics as it is most common and has most cases
       bind_point(VK_PIPELINE_BIND_POINT_GRAPHICS) {
     for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++) {
-        const VkIndirectCommandsLayoutTokenEXT &token = pCreateInfo->pTokens[i];
+        const VkIndirectCommandsLayoutTokenEXT& token = pCreateInfo->pTokens[i];
         switch (token.type) {
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
                 has_execution_set_token = true;

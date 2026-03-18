@@ -37,7 +37,7 @@ size_t QFOImageTransferBarrier::hash() const {
     return hc.Value();
 }
 
-bool QFOImageTransferBarrier::operator==(const QFOImageTransferBarrier &rhs) const {
+bool QFOImageTransferBarrier::operator==(const QFOImageTransferBarrier& rhs) const {
     // Ignoring layout w.r.t. equality. See comment in hash above.
     return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (subresourceRange == rhs.subresourceRange);
 }
@@ -47,13 +47,13 @@ size_t QFOBufferTransferBarrier::hash() const {
     return hc.Value();
 }
 
-bool QFOBufferTransferBarrier::operator==(const QFOBufferTransferBarrier &rhs) const {
+bool QFOBufferTransferBarrier::operator==(const QFOBufferTransferBarrier& rhs) const {
     return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (offset == rhs.offset) && (size == rhs.size);
 }
 
 namespace sync_utils {
 // IMPORTANT: the features listed here should also be reflected in GetFeatureNameMap()
-VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions &device_extensions) {
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions) {
     VkPipelineStageFlags2 result = 0;
     if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
@@ -101,7 +101,7 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     return result;
 }
 
-VkAccessFlags2 DisabledAccesses(const DeviceExtensions &device_extensions) {
+VkAccessFlags2 DisabledAccesses(const DeviceExtensions& device_extensions) {
     VkAccessFlags2 result = 0;
     if (!IsExtEnabled(device_extensions.vk_qcom_tile_shading)) {
         result |= VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM | VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
@@ -129,7 +129,7 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
 
     if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        for (const auto &all_commands : syncAllCommandStagesByQueueFlags()) {
+        for (const auto& all_commands : syncAllCommandStagesByQueueFlags()) {
             if (all_commands.first & queue_flags) {
                 expanded |= all_commands.second & ~disabled_feature_mask;
             }
@@ -192,7 +192,7 @@ std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1) {
     return string_VkAccessFlags2(mask);
 }
 
-ExecScopes GetExecScopes(const VkDependencyInfo &dep_info) {
+ExecScopes GetExecScopes(const VkDependencyInfo& dep_info) {
     ExecScopes result{};
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
         result.src |= dep_info.pMemoryBarriers[i].srcStageMask;

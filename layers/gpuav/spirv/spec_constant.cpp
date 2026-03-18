@@ -280,7 +280,6 @@ bool Module::ConstantFoldVectorShuffle(Instruction* inst, const Type& result_typ
 }
 
 bool Module::ConstantFoldCompositeExtract(Instruction* inst, const Type& result_type) {
-
     // There might be multiple indices
     uint32_t current_id = inst->Word(4);
     for (uint32_t i = 5; i < inst->Length(); i++) {
@@ -340,7 +339,7 @@ bool Module::ConstantFoldCompositeInsert(Instruction* inst, const Type& result_t
     const uint32_t vec_length = result_type.VectorSize();
     for (uint32_t i = 0; i < vec_length; i++) {
         if (i == index) {
-            uint32_t insert_id = inst->Word(4); // |object| operand
+            uint32_t insert_id = inst->Word(4);  // |object| operand
             words.emplace_back(insert_id);
         } else if (base_composite->inst_.Opcode() == spv::OpConstantNull) {
             words.emplace_back(type_manager_.GetConstantZeroUint32().Id());
@@ -373,14 +372,13 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
         return ConstantFoldCompositeInsert(inst, result_type);
     }
 
-
     const bool is_vector = result_type.spv_type_ == SpvType::kVector;
     uint32_t vector_length = is_vector ? result_type.inst_.Word(3) : 1;
     const Type& scalar_type = is_vector ? *type_manager_.FindTypeById(result_type.inst_.Word(2)) : result_type;
 
     small_vector<uint32_t, 4> new_composite_components;
 
-    const uint32_t start_operand_index = 4; // into OpSpecConstantOp
+    const uint32_t start_operand_index = 4;  // into OpSpecConstantOp
     const uint32_t final_operand_index = inst->Length();
     // Scalar will have a single lane
     for (uint32_t lane = 0; lane < vector_length; lane++) {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 #include "containers/container_utils.h"
 
 // We are trying to query unsupported handle types, which means we will likley trigger *-handleType-parameter VUs
-void IgnoreHandleTypeError(ErrorMonitor *monitor) {
+void IgnoreHandleTypeError(ErrorMonitor* monitor) {
     monitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter");
 
     monitor->SetAllowedFailureMsg("VUID-VkFenceGetFdInfoKHR-handleType-parameter");
@@ -42,7 +42,7 @@ void IgnoreHandleTypeError(ErrorMonitor *monitor) {
     monitor->SetAllowedFailureMsg("VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter");
 }
 
-VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo& buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type) {
     VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
     external_info.flags = buffer_create_info.flags;
@@ -53,7 +53,7 @@ VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, c
     return external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 }
 
-VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkImageCreateInfo& image_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type) {
     VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
     external_info.handleType = handle_type;
@@ -119,7 +119,7 @@ VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkP
 }
 
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
-                                                                       const VkBufferCreateInfo &buffer_create_info,
+                                                                       const VkBufferCreateInfo& buffer_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features) {
     VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
     external_info.flags = buffer_create_info.flags;
@@ -140,7 +140,7 @@ VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysica
 }
 
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
-                                                                       const VkImageCreateInfo &image_create_info,
+                                                                       const VkImageCreateInfo& image_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features) {
     VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
     VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&external_info);
@@ -166,7 +166,7 @@ VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysica
 }
 
 VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(VkPhysicalDevice gpu,
-                                                                           const VkImageCreateInfo &image_create_info,
+                                                                           const VkImageCreateInfo& image_create_info,
                                                                            VkExternalMemoryFeatureFlagsNV requested_features) {
     VkExternalMemoryHandleTypeFlagsNV supported_types = 0;
     IterateFlags<VkExternalMemoryHandleTypeFlagBitsNV>(
@@ -183,7 +183,7 @@ VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(VkPhy
     return supported_types;
 }
 
-bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCreateInfo& buffer_create_info,
                                         VkExternalMemoryHandleTypeFlagBits handle_type) {
     VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
     external_info.flags = buffer_create_info.flags;
@@ -197,7 +197,7 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCrea
     return (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
 }
 
-bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo& image_create_info,
                                         VkExternalMemoryHandleTypeFlagBits handle_type) {
     VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
     external_info.handleType = handle_type;

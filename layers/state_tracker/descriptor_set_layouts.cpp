@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
 
 namespace vvl {
 
-DescriptorSetLayoutList::DescriptorSetLayoutList(size_t size) : list(size){}
+DescriptorSetLayoutList::DescriptorSetLayoutList(size_t size) : list(size) {}
 
-const vvl::DescriptorSetLayout *DescriptorSetLayoutList::FindFromVariable(const spirv::ResourceInterfaceVariable &variable) const {
+const vvl::DescriptorSetLayout* DescriptorSetLayoutList::FindFromVariable(const spirv::ResourceInterfaceVariable& variable) const {
     const uint32_t set = variable.decorations.set;
     if (set < list.size()) {
         const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = list[set];

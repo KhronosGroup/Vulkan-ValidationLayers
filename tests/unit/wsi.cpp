@@ -195,7 +195,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
 
 TEST_F(NegativeWsi, SwapchainImage) {
     TEST_DESCRIPTION("Swapchain images with invalid parameters");
-    const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+    const char* vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
 
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::sparseBinding);
@@ -612,7 +612,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     m_errorMonitor->VerifyFound();
 
     std::vector<VkFence> fence_handles;
-    for (const auto &fence : fences) {
+    for (const auto& fence : fences) {
         fence_handles.push_back(fence.handle());
     }
 
@@ -687,7 +687,7 @@ TEST_F(NegativeWsi, SwapchainNotSupported) {
     vkt::Device test_device(Gpu(), device_create_info);
 
     // Initialize extensions manually because we don't use InitState() in this test
-    for (const char *device_ext_name : m_device_extension_names) {
+    for (const char* device_ext_name : m_device_extension_names) {
         vk::InitDeviceExtension(instance(), test_device, device_ext_name);
     }
 
@@ -748,7 +748,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     m_errorMonitor->VerifyFound();
 
     std::vector<VkFence> fence_handles;
-    for (const auto &fence : fences) {
+    for (const auto& fence : fences) {
         fence_handles.push_back(fence.handle());
     }
 
@@ -1209,7 +1209,7 @@ TEST_F(NegativeWsi, DeviceMask) {
         if ((group_props[i].physicalDeviceCount > 1) && !test_run) {
             for (uint32_t j = 0; j < group_props[i].physicalDeviceCount; j++) {
                 if (tgt == group_props[i].physicalDevices[j]) {
-                    void *data;
+                    void* data;
                     VkDeviceMemory mi_mem;
                     alloc_flags_info.deviceMask = 3;
                     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mi_mem);
@@ -3036,26 +3036,26 @@ TEST_F(NegativeWsi, CreatingWaylandSurface) {
     AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    wl_display *display = nullptr;
-    wl_registry *registry = nullptr;
-    wl_surface *surface = nullptr;
-    wl_compositor *compositor = nullptr;
+    wl_display* display = nullptr;
+    wl_registry* registry = nullptr;
+    wl_surface* surface = nullptr;
+    wl_compositor* compositor = nullptr;
     {
         display = wl_display_connect(nullptr);
         if (!display) {
             GTEST_SKIP() << "couldn't create wayland surface";
         }
 
-        auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+        auto global = [](void* data, struct wl_registry* registry, uint32_t id, const char* interface, uint32_t version) {
             (void)version;
             const std::string_view interface_str = interface;
             if (interface_str == "wl_compositor") {
-                auto compositor = reinterpret_cast<wl_compositor **>(data);
-                *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
+                auto compositor = reinterpret_cast<wl_compositor**>(data);
+                *compositor = reinterpret_cast<wl_compositor*>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
             }
         };
 
-        auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
+        auto global_remove = [](void* data, struct wl_registry* registry, uint32_t id) {
             (void)data;
             (void)registry;
             (void)id;
@@ -3120,7 +3120,7 @@ TEST_F(NegativeWsi, CreatingXcbSurface) {
     AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    xcb_connection_t *xcb_connection = xcb_connect(nullptr, nullptr);
+    xcb_connection_t* xcb_connection = xcb_connect(nullptr, nullptr);
     ASSERT_TRUE(xcb_connection);
 
     // NOTE: This is technically an invalid window! (There is no width/height)
@@ -3172,7 +3172,7 @@ TEST_F(NegativeWsi, CreatingX11Surface) {
         GTEST_SKIP() << "Test requires working display\n";
     }
 
-    Display *x11_display = XOpenDisplay(nullptr);
+    Display* x11_display = XOpenDisplay(nullptr);
     ASSERT_TRUE(x11_display != nullptr);
 
     const int screen = DefaultScreen(x11_display);
@@ -3344,7 +3344,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     fence.Wait(kWaitTimeout);
     SetPresentImageLayout(images[image_index]);
 
-    vkt::Queue *other = m_device->QueuesWithGraphicsCapability()[1];
+    vkt::Queue* other = m_device->QueuesWithGraphicsCapability()[1];
 
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
 
@@ -5977,7 +5977,7 @@ TEST_F(NegativeWsi, PresentTimingsOutOfOrder) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -6107,7 +6107,7 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -6237,7 +6237,7 @@ TEST_F(NegativeWsi, TimeDomain) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -6349,7 +6349,7 @@ TEST_F(NegativeWsi, GetSwapchainTimeDomainProperties) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -6438,7 +6438,7 @@ TEST_F(NegativeWsi, PresentTimingQueueUnset) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -6542,7 +6542,7 @@ TEST_F(NegativeWsi, InvalidTimeDomainId) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;

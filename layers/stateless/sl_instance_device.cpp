@@ -26,12 +26,12 @@ namespace stateless {
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
 struct StringJoinSizeTrait {
-    static size_t size(const String &str) { return str.size(); }
+    static size_t size(const String& str) { return str.size(); }
 };
 
 template <>
-struct StringJoinSizeTrait<const char *> {
-    static size_t size(const char *str) {
+struct StringJoinSizeTrait<const char*> {
+    static size_t size(const char* str) {
         if (!str) return 0;
         return strlen(str);
     }
@@ -46,14 +46,14 @@ struct StringJoinSizeTrait<const char *> {
 // Return type based on sep type
 template <typename String = std::string, typename StringCollection = std::vector<String>,
           typename Accessor = StringJoinSizeTrait<typename StringCollection::value_type>>
-static inline String string_join(const String &sep, const StringCollection &strings) {
+static inline String string_join(const String& sep, const StringCollection& strings) {
     String joined;
     const size_t count = strings.size();
     if (!count) return joined;
 
     // Prereserved storage, s.t. we will execute in linear time (avoids reallocation copies)
     size_t reserve = (count - 1) * sep.size();
-    for (const auto &str : strings) {
+    for (const auto& str : strings) {
         reserve += Accessor::size(str);  // abstracted to allow const char * type in StringCollection
     }
     joined.reserve(reserve + 1);
@@ -71,13 +71,13 @@ static inline String string_join(const String &sep, const StringCollection &stri
 
 // Requires StringCollection::value_type has a const char * constructor and is compatible the string_join::String above
 template <typename StringCollection = std::vector<std::string>, typename SepString = std::string>
-static inline SepString string_join(const char *sep, const StringCollection &strings) {
+static inline SepString string_join(const char* sep, const StringCollection& strings) {
     return string_join<SepString, StringCollection>(SepString(sep), strings);
 }
 
 template <typename ExtensionState>
-bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                                     vvl::Extension extension, const Location &extension_loc) const {
+bool Instance::ValidateExtensionReqs(const ExtensionState& extensions, const char* vuid, const char* extension_type,
+                                     vvl::Extension extension, const Location& extension_loc) const {
     bool skip = false;
     if (extension == vvl::Extension::Empty) {
         return skip;
@@ -89,8 +89,8 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
     }
 
     // Check against the required list in the info
-    std::vector<const char *> missing;
-    for (const auto &req : info.requirements) {
+    std::vector<const char*> missing;
+    for (const auto& req : info.requirements) {
         if (!IsExtEnabled(extensions.*(req.enabled))) {
             missing.push_back(req.name);
         }
@@ -105,15 +105,15 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
     return skip;
 }
 
-ExtEnabled ExtensionStateByName(const DeviceExtensions &extensions, vvl::Extension extension) {
+ExtEnabled ExtensionStateByName(const DeviceExtensions& extensions, vvl::Extension extension) {
     auto info = extensions.GetInfo(extension);
     // unknown extensions can't be enabled in extension struct
     ExtEnabled state = info.state ? extensions.*(info.state) : kNotSupported;
     return state;
 }
 
-bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                             VkInstance *pInstance, const ErrorObject &error_obj) const {
+bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                             VkInstance* pInstance, const ErrorObject& error_obj) const {
     bool skip = false;
     Location loc = error_obj.location;
     // Note: From the spec--
@@ -207,7 +207,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
     // avoid redundant pNext-pNext errors from the cases where we have specific VUs by returning early
-    const auto *debug_report_callback = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext);
+    const auto* debug_report_callback = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext);
     if (debug_report_callback && !instance_extensions.vk_ext_debug_report) {
         skip |=
             LogError("VUID-VkInstanceCreateInfo-pNext-04925", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
@@ -215,7 +215,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
                      PrintPNextChain(Struct::VkInstanceCreateInfo, pCreateInfo->pNext).c_str());
         return skip;
     }
-    const auto *debug_utils_messenger = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext);
+    const auto* debug_utils_messenger = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext);
     if (debug_utils_messenger && !instance_extensions.vk_ext_debug_utils) {
         skip |=
             LogError("VUID-VkInstanceCreateInfo-pNext-04926", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
@@ -223,7 +223,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
                      PrintPNextChain(Struct::VkInstanceCreateInfo, pCreateInfo->pNext).c_str());
         return skip;
     }
-    const auto *direct_driver_loading_list = vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext);
+    const auto* direct_driver_loading_list = vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext);
     if (direct_driver_loading_list && !instance_extensions.vk_lunarg_direct_driver_loading) {
         skip |= LogError(
             "VUID-VkInstanceCreateInfo-pNext-09400", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
@@ -232,7 +232,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
         return skip;
     }
 
-    if (const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext)) {
+    if (const auto* validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext)) {
         bool debug_printf = false;
         bool gpu_assisted = false;
         bool reserve_slot = false;
@@ -277,11 +277,11 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
     return skip;
 }
 
-void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count) {
+void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice* phys_devices, const int count) {
     // Assume phys_devices is valid
     assert(phys_devices);
     for (int i = 0; i < count; ++i) {
-        const auto &phys_device = phys_devices[i];
+        const auto& phys_device = phys_devices[i];
         if (0 == physical_device_properties_map.count(phys_device)) {
             auto phys_dev_props = new VkPhysicalDeviceProperties;
             DispatchGetPhysicalDeviceProperties(phys_device, phys_dev_props);
@@ -301,8 +301,8 @@ void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevic
     }
 }
 
-void Instance::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                      VkPhysicalDevice *pPhysicalDevices, const RecordObject &record_obj) {
+void Instance::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+                                                      VkPhysicalDevice* pPhysicalDevices, const RecordObject& record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
@@ -312,36 +312,36 @@ void Instance::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint3
     }
 }
 
-void Instance::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                           VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-                                                           const RecordObject &record_obj) {
+void Instance::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                           VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
+                                                           const RecordObject& record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
 
     if (pPhysicalDeviceGroupCount && pPhysicalDeviceGroupProperties) {
         for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
-            const auto &group = pPhysicalDeviceGroupProperties[i];
+            const auto& group = pPhysicalDeviceGroupProperties[i];
             CommonPostCallRecordEnumeratePhysicalDevice(group.physicalDevices, group.physicalDeviceCount);
         }
     }
 }
 
-void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-                                            const RecordObject &record_obj) {
+void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {
     for (auto it = physical_device_properties_map.begin(); it != physical_device_properties_map.end();) {
         delete (it->second);
         it = physical_device_properties_map.erase(it);
     }
 }
 
-void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
     std::vector<VkExtensionProperties> ext_props{};
     uint32_t ext_count = 0;
     DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
     ext_props.resize(ext_count);
     DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, ext_props.data());
-    for (const auto &prop : ext_props) {
+    for (const auto& prop : ext_props) {
         vvl::Extension extension = GetExtension(prop.extensionName);
         if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
             discard_rectangles_extension_version = prop.specVersion;
@@ -353,29 +353,29 @@ void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Loca
     has_zero_queues = pCreateInfo->queueCreateInfoCount == 0;
 }
 
-bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                  const Context &context) const {
+bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                                  const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     // VU was removed in 1.4.344
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4725
-    skip |= context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount),
-                                            create_info_loc.dot(Field::ppEnabledLayerNames), pCreateInfo->enabledLayerCount,
-                                            pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
-                                            "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
+    skip |=
+        context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount), create_info_loc.dot(Field::ppEnabledLayerNames),
+                                    pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
+                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
     if (pCreateInfo->ppEnabledLayerNames) {
         for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-            skip |=
-                context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
-                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
+            skip |= context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
+                                           "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter",
+                                           pCreateInfo->ppEnabledLayerNames[i]);
         }
     }
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
-    const auto &exposed_extensions = physical_device_extensions.at(physicalDevice);
+    const auto& exposed_extensions = physical_device_extensions.at(physicalDevice);
     const bool portability_supported = exposed_extensions.vk_khr_portability_subset;
     bool portability_requested = false;
     bool fragmentmask_requested = false;
@@ -421,7 +421,8 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     }
 
     if (fragmentmask_requested) {
-        const auto *descriptor_buffer_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
+        const auto* descriptor_buffer_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
         if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer) {
             skip |=
                 LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, create_info_loc.dot(Field::ppEnabledExtensionNames),
@@ -450,9 +451,9 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                          PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
     }
 
-    const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
+    const VkPhysicalDeviceFeatures* features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
 
-    if (const auto *robustness2_features =
+    if (const auto* robustness2_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(pCreateInfo->pNext)) {
         if (features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
             skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesKHR-robustBufferAccess2-04000", physicalDevice,
@@ -460,7 +461,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *raytracing_features =
+    if (const auto* raytracing_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext)) {
         if (raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
             !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
@@ -475,16 +476,16 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
 
     // might be set in Feature12 struct
     bool any_update_after_bind_feature = false;
-    if (const auto *di_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext)) {
+    if (const auto* di_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext)) {
         any_update_after_bind_feature = di_features->descriptorBindingUniformBufferUpdateAfterBind ||
                                         di_features->descriptorBindingStorageBufferUpdateAfterBind ||
                                         di_features->descriptorBindingUniformTexelBufferUpdateAfterBind ||
                                         di_features->descriptorBindingStorageTexelBufferUpdateAfterBind;
     }
 
-    const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
+    const auto* vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
     if (vulkan_11_features) {
-        const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
+        const VkBaseOutStructure* current = reinterpret_cast<const VkBaseOutStructure*>(pCreateInfo->pNext);
         constexpr std::array illegal_feature_structs_with_11 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
                                                                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
                                                                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES,
@@ -502,7 +503,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
-            current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+            current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
         }
 
         // Check features are enabled if matching extension is passed in as well
@@ -514,9 +515,9 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    const auto *vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
+    const auto* vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
-        const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
+        const VkBaseOutStructure* current = reinterpret_cast<const VkBaseOutStructure*>(pCreateInfo->pNext);
         constexpr std::array illegal_feature_structs_with_12 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES,
@@ -542,7 +543,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
-            current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+            current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
         }
         // Check features are enabled if matching extension is passed in as well
         if (vulkan_12_features->drawIndirectCount == VK_FALSE &&
@@ -593,9 +594,9 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                         vulkan_12_features->descriptorBindingStorageTexelBufferUpdateAfterBind;
     }
 
-    const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
+    const auto* vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
     if (vulkan_13_features) {
-        const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
+        const VkBaseOutStructure* current = reinterpret_cast<const VkBaseOutStructure*>(pCreateInfo->pNext);
         constexpr std::array illegal_feature_structs_with_13 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES,
@@ -621,14 +622,14 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
-            current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+            current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
         }
     }
 
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
-    const auto *vulkan_14_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan14Features>(pCreateInfo->pNext);
+    const auto* vulkan_14_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan14Features>(pCreateInfo->pNext);
     if (vulkan_14_features) {
-        const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
+        const VkBaseOutStructure* current = reinterpret_cast<const VkBaseOutStructure*>(pCreateInfo->pNext);
         constexpr std::array illegal_feature_structs_with_14 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_ROTATE_FEATURES,
@@ -654,7 +655,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
-            current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+            current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
         }
         if (vulkan_14_features->pushDescriptor == VK_FALSE &&
             enabled_extensions.find(vvl::Extension::_VK_KHR_push_descriptor) != enabled_extensions.end()) {
@@ -667,7 +668,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
-            const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
+            const VkDeviceQueueCreateInfo& queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             const uint32_t requested_queue_family = queue_create_info.queueFamilyIndex;
             if (requested_queue_family == VK_QUEUE_FAMILY_IGNORED) {
                 skip |= LogError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", physicalDevice,
@@ -688,7 +689,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
 
             // Need to know if protectedMemory feature is passed in preCall to creating the device
             VkBool32 protected_memory = VK_FALSE;
-            const auto *protected_features =
+            const auto* protected_features =
                 vku::FindStructInPNextChain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
             if (protected_features) {
                 protected_memory = protected_features->protectedMemory;
@@ -705,7 +706,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
 
     // feature dependencies for VK_KHR_variable_pointers
     {
-        const auto *variable_pointers_features =
+        const auto* variable_pointers_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
         VkBool32 variable_pointers = VK_FALSE;
         VkBool32 variable_pointers_storage_buffer = VK_FALSE;
@@ -725,7 +726,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
 
     // feature dependencies for VK_KHR_multiview
     {
-        const auto *multiview_features = vku::FindStructInPNextChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+        const auto* multiview_features = vku::FindStructInPNextChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
         VkBool32 multiview = VK_FALSE;
         VkBool32 multiview_geometry_shader = VK_FALSE;
         VkBool32 multiview_tessellation_shader = VK_FALSE;
@@ -748,8 +749,8 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                          error_obj.location, "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
         }
 
-        const auto *fsr_features = vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
-        const auto *mesh_shader_features = vku::FindStructInPNextChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
+        const auto* fsr_features = vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+        const auto* mesh_shader_features = vku::FindStructInPNextChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
         if (mesh_shader_features) {
             if ((multiview == VK_FALSE) && (mesh_shader_features->multiviewMeshShader)) {
                 skip |= LogError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-multiviewMeshShader-07032", physicalDevice,
@@ -776,9 +777,9 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *fragment_shading_rate_features =
+    if (const auto* fragment_shading_rate_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext)) {
-        const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
+        const VkPhysicalDeviceShadingRateImageFeaturesNV* shading_rate_image_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
 
         if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
@@ -797,7 +798,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             }
         }
 
-        const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
+        const VkPhysicalDeviceFragmentDensityMapFeaturesEXT* fragment_density_map_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
 
         if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
@@ -832,7 +833,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *shader_image_atomic_int64_features =
+    if (const auto* shader_image_atomic_int64_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext)) {
         if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
             !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
@@ -842,7 +843,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *shader_atomic_float_features =
+    if (const auto* shader_atomic_float_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext)) {
         if (shader_atomic_float_features->sparseImageFloat32Atomics && !shader_atomic_float_features->shaderImageFloat32Atomics) {
             skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", physicalDevice, error_obj.location,
@@ -857,7 +858,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *shader_atomic_float2_features =
+    if (const auto* shader_atomic_float2_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext)) {
         if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
             !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
@@ -867,7 +868,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    if (const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext)) {
+    if (const auto* device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext)) {
         for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
             for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                 if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
@@ -881,7 +882,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         }
     }
 
-    const auto *cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
+    const auto* cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
     if (cache_control && cache_control->disableInternalCache) {
         VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&pipeline_binary_props);
@@ -897,10 +898,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const Context &context) const {
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+    VkImageFormatProperties2* pImageFormatProperties, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pImageFormatInfo != nullptr) {
         const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
@@ -917,7 +918,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                 }
             }
         }
-        const auto image_drm_format = vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
+        const auto image_drm_format =
+            vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
         if (image_drm_format) {
             if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
@@ -993,10 +995,10 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
 bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                             VkImageType type, VkImageTiling tiling,
                                                                             VkImageUsageFlags usage, VkImageCreateFlags flags,
-                                                                            VkImageFormatProperties *pImageFormatProperties,
-                                                                            const Context &context) const {
+                                                                            VkImageFormatProperties* pImageFormatProperties,
+                                                                            const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248", physicalDevice,
@@ -1006,10 +1008,10 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPh
     return skip;
 }
 
-bool Device::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
-                                                              const Context &context) const {
+bool Device::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
+                                                              const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location name_info_loc = error_obj.location.dot(Field::pNameInfo);
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587", device, name_info_loc.dot(Field::objectType),
@@ -1028,10 +1030,10 @@ bool Device::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, c
     return skip;
 }
 
-bool Device::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
-                                                             const Context &context) const {
+bool Device::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo,
+                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908", device,
                          error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "cannot be VK_OBJECT_TYPE_UNKNOWN.");
@@ -1040,16 +1042,16 @@ bool Device::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, co
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceProperties2 *pProperties,
-                                                                  const Context &context) const {
+                                                                  VkPhysicalDeviceProperties2* pProperties,
+                                                                  const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
-    const auto *api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
+    const auto& error_obj = context.error_obj;
+    const auto* api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
     if (api_props_lists && api_props_lists->pLayeredApis) {
         for (uint32_t i = 0; i < api_props_lists->layeredApiCount; i++) {
-            if (const auto *api_vulkan_props = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiVulkanPropertiesKHR>(
+            if (const auto* api_vulkan_props = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiVulkanPropertiesKHR>(
                     api_props_lists->pLayeredApis[i].pNext)) {
-                const VkBaseOutStructure *current = static_cast<const VkBaseOutStructure *>(api_vulkan_props->properties.pNext);
+                const VkBaseOutStructure* current = static_cast<const VkBaseOutStructure*>(api_vulkan_props->properties.pNext);
                 while (current) {
                     // only VkPhysicalDeviceDriverProperties and VkPhysicalDeviceIDProperties allowed
                     if (current->sType != VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES &&
@@ -1070,16 +1072,16 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevi
 }
 
 bool Instance::ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                          VkFormatProperties2 *pFormatProperties, const Context &context) const {
+                                                          VkFormatProperties2* pFormatProperties, const Context& context) const {
     bool skip = false;
 
     if (IsValueIn(format, {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
                            VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
-        const auto &exposed_extensions = physical_device_extensions.at(physicalDevice);
+        const auto& exposed_extensions = physical_device_extensions.at(physicalDevice);
 
         if (api_version < VK_API_VERSION_1_3 && !exposed_extensions.vk_khr_maintenance5 &&
             !exposed_extensions.vk_ext_ycbcr_2plane_444_formats) {
-            const char *vuid = context.error_obj.location.function == Func::vkGetPhysicalDeviceFormatProperties
+            const char* vuid = context.error_obj.location.function == Func::vkGetPhysicalDeviceFormatProperties
                                    ? "VUID-vkGetPhysicalDeviceFormatProperties-None-12272"
                                    : "VUID-vkGetPhysicalDeviceFormatProperties2-None-12273";
             skip |=
@@ -1091,8 +1093,8 @@ bool Instance::ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physi
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                       VkFormatProperties *pFormatProperties,
-                                                                       const Context &context) const {
+                                                                       VkFormatProperties* pFormatProperties,
+                                                                       const Context& context) const {
     if (!pFormatProperties) {
         return false;
     }
@@ -1102,8 +1104,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysica
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                        VkFormatProperties2 *pFormatProperties,
-                                                                        const Context &context) const {
+                                                                        VkFormatProperties2* pFormatProperties,
+                                                                        const Context& context) const {
     return ValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, context);
 }
 

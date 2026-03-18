@@ -17,8 +17,8 @@
 #include "../framework/descriptor_helper.h"
 #include <algorithm>
 
-void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
-                                                      VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
+void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR* features2 /*= nullptr*/,
+                                                      VkValidationFeaturesEXT* enabled_features /*= nullptr*/) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -51,7 +51,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     validation_features.pEnabledValidationFeatures = validation_feature_enables;
     validation_features.disabledValidationFeatureCount = 4;
     validation_features.pDisabledValidationFeatures = validation_feature_disables;
-    RETURN_IF_SKIP(InitFramework(gpu_assisted ? (void *)&validation_features : (void *)&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitFramework(gpu_assisted ? (void*)&validation_features : (void*)&kDisableMessageLimit));
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     if (gpu_assisted && IsPlatformMockICD()) {
@@ -78,11 +78,11 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         GTEST_SKIP() << "Did not find required ray tracing properties";
     }
 
-    vkt::Queue *ray_tracing_queue = m_default_queue;
+    vkt::Queue* ray_tracing_queue = m_default_queue;
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
-    vkt::Queue *compute_only_queue = m_device->ComputeOnlyQueue();
+    vkt::Queue* compute_only_queue = m_device->ComputeOnlyQueue();
     if (compute_only_queue) {
         ray_tracing_queue = compute_only_queue;
         ray_tracing_queue_family_index = compute_only_queue->family_index;
@@ -108,8 +108,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     aabb_buffer.Init(*m_device, aabb_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
                      vvl::make_span(&ray_tracing_queue_family_index, 1));
 
-    uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.Memory().Map();
-    std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
+    uint8_t* mapped_aabb_buffer_data = (uint8_t*)aabb_buffer.Memory().Map();
+    std::memcpy(mapped_aabb_buffer_data, (uint8_t*)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
     aabb_buffer.Memory().Unmap();
 
     VkGeometryNV geometry = vku::InitStructHelper();
@@ -155,8 +155,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     instance_buffer.Init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
                          vvl::make_span(&ray_tracing_queue_family_index, 1));
 
-    uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.Memory().Map();
-    std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
+    uint8_t* mapped_instance_buffer_data = (uint8_t*)instance_buffer.Memory().Map();
+    std::memcpy(mapped_instance_buffer_data, (uint8_t*)instances.data(), static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.Memory().Unmap();
 
     VkAccelerationStructureInfoNV top_level_as_info = vku::InitStructHelper();
@@ -216,8 +216,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                                                     VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV |
                                                     VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV;
 
-    void *layout_pnext = nullptr;
-    void *allocate_pnext = nullptr;
+    void* layout_pnext = nullptr;
+    void* allocate_pnext = nullptr;
     VkDescriptorPoolCreateFlags pool_create_flags = 0;
     VkDescriptorSetLayoutCreateFlags layout_create_flags = 0;
     VkDescriptorBindingFlags ds_binding_flags[3] = {};
@@ -310,7 +310,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
     const vkt::PipelineLayout pipeline_layout_variable(*m_device, {&ds_variable.layout_});
 
-    const auto SetImagesArrayLength = [](const std::string &shader_template, const std::string &length_str) {
+    const auto SetImagesArrayLength = [](const std::string& shader_template, const std::string& length_str) {
         const std::string to_replace = "IMAGES_ARRAY_LENGTH";
 
         std::string result = shader_template;
@@ -591,12 +591,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     const std::string call_source_runtime = SetImagesArrayLength(call_source_template, "");
 
     struct TestCase {
-        const std::string &rgen_shader_source;
-        const std::string &ahit_shader_source;
-        const std::string &chit_shader_source;
-        const std::string &miss_shader_source;
-        const std::string &intr_shader_source;
-        const std::string &call_shader_source;
+        const std::string& rgen_shader_source;
+        const std::string& ahit_shader_source;
+        const std::string& chit_shader_source;
+        const std::string& miss_shader_source;
+        const std::string& intr_shader_source;
+        const std::string& call_shader_source;
         bool variable_length;
         uint32_t rgen_index;
         uint32_t ahit_index;
@@ -604,7 +604,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         uint32_t miss_index;
         uint32_t intr_index;
         uint32_t call_index;
-        const char *expected_error;
+        const char* expected_error;
     };
 
     std::vector<TestCase> tests;
@@ -665,7 +665,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     // Iteration 0 tests with no descriptor set bound (to sanity test "draw" validation). Iteration 1
     // tests what's in the test case vector.
-    for (const auto &test : tests) {
+    for (const auto& test : tests) {
         if (gpu_assisted) {
             m_errorMonitor->SetDesiredError(test.expected_error);
         }
@@ -754,7 +754,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                                                                     static_cast<std::size_t>(shader_binding_table_buffer_size),
                                                                     shader_binding_table_data.data()));
 
-        uint8_t *mapped_shader_binding_table_data = (uint8_t *)shader_binding_table_buffer.Memory().Map();
+        uint8_t* mapped_shader_binding_table_data = (uint8_t*)shader_binding_table_buffer.Memory().Map();
         std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
         shader_binding_table_buffer.Memory().Unmap();
 
@@ -794,7 +794,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
         ray_tracing_command_buffer.End();
         // Update the index of the texture that the shaders should read
-        uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.Memory().Map();
+        uint32_t* mapped_storage_buffer_data = (uint32_t*)storage_buffer.Memory().Map();
         mapped_storage_buffer_data[0] = test.rgen_index;
         mapped_storage_buffer_data[1] = test.ahit_index;
         mapped_storage_buffer_data[2] = test.chit_index;
@@ -814,7 +814,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         m_errorMonitor->VerifyFound();
 
         if (gpu_assisted) {
-            mapped_storage_buffer_data = (uint32_t *)storage_buffer.Memory().Map();
+            mapped_storage_buffer_data = (uint32_t*)storage_buffer.Memory().Map();
             ASSERT_TRUE(mapped_storage_buffer_data[6] == 1);
             ASSERT_TRUE(mapped_storage_buffer_data[7] == 2);
             ASSERT_TRUE(mapped_storage_buffer_data[8] == 3);
@@ -940,7 +940,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                                /*width=*/1, /*height=*/1, /*depth=*/1);
 
             m_errorMonitor->VerifyFound();
-            const auto &limits = m_device->Physical().limits_;
+            const auto& limits = m_device->Physical().limits_;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-width-02469");
             uint32_t invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
@@ -1054,17 +1054,17 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     constexpr std::array aabbs = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
     constexpr std::array transforms = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo.Memory().Map();
-    std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    uint8_t* mapped_vbo_buffer_data = (uint8_t*)vbo.Memory().Map();
+    std::memcpy(mapped_vbo_buffer_data, (uint8_t*)vertices.data(), sizeof(float) * vertices.size());
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo.Memory().Map();
-    std::memcpy(mapped_ibo_buffer_data, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    uint8_t* mapped_ibo_buffer_data = (uint8_t*)ibo.Memory().Map();
+    std::memcpy(mapped_ibo_buffer_data, (uint8_t*)indicies.data(), sizeof(uint32_t) * indicies.size());
 
-    uint8_t *mapped_tbo_buffer_data = (uint8_t *)tbo.Memory().Map();
-    std::memcpy(mapped_tbo_buffer_data, (uint8_t *)transforms.data(), sizeof(float) * transforms.size());
+    uint8_t* mapped_tbo_buffer_data = (uint8_t*)tbo.Memory().Map();
+    std::memcpy(mapped_tbo_buffer_data, (uint8_t*)transforms.data(), sizeof(float) * transforms.size());
 
-    uint8_t *mapped_aabbbo_buffer_data = (uint8_t *)aabbbo.Memory().Map();
-    std::memcpy(mapped_aabbbo_buffer_data, (uint8_t *)aabbs.data(), sizeof(float) * aabbs.size());
+    uint8_t* mapped_aabbbo_buffer_data = (uint8_t*)aabbbo.Memory().Map();
+    std::memcpy(mapped_aabbbo_buffer_data, (uint8_t*)aabbs.data(), sizeof(float) * aabbs.size());
 
     VkGeometryNV valid_geometry_triangles = vku::InitStructHelper();
     valid_geometry_triangles.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
@@ -1091,7 +1091,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     valid_geometry_aabbs.geometry.aabbs.offset = 0;
     valid_geometry_aabbs.geometry.aabbs.stride = 24;
 
-    const auto GetCreateInfo = [](const VkGeometryNV &geometry) {
+    const auto GetCreateInfo = [](const VkGeometryNV& geometry) {
         VkAccelerationStructureCreateInfoNV as_create_info = vku::InitStructHelper();
         as_create_info.info = vku::InitStructHelper();
         as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;

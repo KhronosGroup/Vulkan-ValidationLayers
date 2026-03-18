@@ -664,7 +664,6 @@ void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, co
             base.tensor_barriers.emplace_back(barrier);
         }
     }
-
 }
 
 static void SetQueryState(const QueryObject& object, QueryState value, QueryMap* local_query_to_state_map) {

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2022 NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@
 #include "../framework/ray_tracing_objects.h"
 
 // Tests for NVIDIA-specific best practices
-const char *kEnableNVIDIAValidation = "validate_best_practices_nvidia";
+const char* kEnableNVIDIAValidation = "validate_best_practices_nvidia";
 
 static constexpr float defaultQueuePriority = 0.0f;
 
@@ -70,7 +70,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    image_ci.extent = { 512, 512, 1 };
+    image_ci.extent = {512, 512, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -100,7 +100,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     // This should be VK_FORMAT_D24_UNORM_S8_UINT, but that's not a required format.
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    image_ci.extent = { 512, 512, 1 };
+    image_ci.extent = {512, 512, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -113,7 +113,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
         m_errorMonitor->Finish();
     }
 
-    VkFormat formats[] = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT };
+    VkFormat formats[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT};
 
     for (VkFormat format : formats) {
         image_ci.format = format;
@@ -246,9 +246,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
-    vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
+    vkt::Queue* graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
-    vkt::Queue *compute_queue = nullptr;
+    vkt::Queue* compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
         auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->family_index != graphics_queue->family_index) {
@@ -261,11 +261,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << "Could not find a compute queue different from the graphics queue, skipping test";
     }
 
-    std::array<vkt::Queue *, 2> queues = {{graphics_queue, compute_queue}};
+    std::array<vkt::Queue*, 2> queues = {{graphics_queue, compute_queue}};
 
     auto build_geometry_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
-    for (vkt::Queue *queue : queues) {
+    for (vkt::Queue* queue : queues) {
         vkt::CommandPool compute_pool(*m_device, queue->family_index);
         vkt::CommandBuffer cmd_buffer(*m_device, compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
@@ -329,17 +329,23 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
     memory_ai.pNext = &priority;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-AllocateMemory-ReuseAllocations");
-    { vkt::DeviceMemory memory(*m_device, memory_ai); }
+    {
+        vkt::DeviceMemory memory(*m_device, memory_ai);
+    }
 
     std::this_thread::sleep_for(std::chrono::seconds{6});
 
-    { vkt::DeviceMemory memory(*m_device, memory_ai); }
+    {
+        vkt::DeviceMemory memory(*m_device, memory_ai);
+    }
 
     m_errorMonitor->Finish();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-AllocateMemory-ReuseAllocations");
 
-    { vkt::DeviceMemory memory(*m_device, memory_ai); }
+    {
+        vkt::DeviceMemory memory(*m_device, memory_ai);
+    }
 
     m_errorMonitor->VerifyFound();
 }
@@ -520,11 +526,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     }
 
     VkDescriptorSetLayoutBinding large_bindings[] = {
-        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
-        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
     VkDescriptorSetLayoutBinding small_bindings[] = {
-        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
 
     VkDescriptorSetLayoutCreateInfo large_set_layout_ci = vku::InitStructHelper();
@@ -572,12 +578,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineSwitchTessGeometryMesh) {
         GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         void main() {}
     )glsl";
 
-    const char *gsSource = R"glsl(
+    const char* gsSource = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 3) out;

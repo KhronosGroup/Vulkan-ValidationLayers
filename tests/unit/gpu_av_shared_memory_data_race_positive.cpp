@@ -24,17 +24,18 @@ void GpuAVSharedMemoryDataRaceTest::InitSharedMemoryDataRace(uint32_t message_li
     // some tests can report a variable number of errors, depending on the order invocations
     // execute the instructions (max one error reported per invocation). message_limit should
     // be set to the minimum number of expected errors.
-    RETURN_IF_SKIP(InitGpuAvFramework({{OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &message_limit}}, false));
+    RETURN_IF_SKIP(InitGpuAvFramework(
+        {{OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &message_limit}}, false));
     RETURN_IF_SKIP(InitState());
 }
 
 class PositiveGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
   protected:
-    void TestHelper(const char *source, int source_type, spv_target_env env = SPV_ENV_VULKAN_1_2,
+    void TestHelper(const char* source, int source_type, spv_target_env env = SPV_ENV_VULKAN_1_2,
                     VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR);
 };
 
-void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char *shader_source, int source_type, spv_target_env env,
+void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, int source_type, spv_target_env env,
                                                    VkScopeKHR coopmat_scope) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace());
     if (source_type == SPV_SOURCE_SLANG) {
@@ -67,7 +68,7 @@ void PositiveGpuAVSharedMemoryDataRace::TestHelper(const char *shader_source, in
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleScalar) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
 
@@ -82,7 +83,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleScalar) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleElementAccess) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -96,7 +97,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SingleElementAccess) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -112,7 +113,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 3) in;
@@ -128,7 +129,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArrayBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 3) in;
@@ -143,7 +144,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, BasicStructBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -168,7 +169,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, BasicStructBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, StructVsScalarBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -190,7 +191,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, StructVsScalarBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorVsScalarBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -210,7 +211,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorVsScalarBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVariablesBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -234,7 +235,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVariablesBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVectorsBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -258,7 +259,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, TwoVectorsBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoad) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -274,7 +275,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, MultiLoad) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorArrayBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 4) in;
@@ -293,7 +294,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, VectorArrayBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SpecConstantArrayBarrier) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -310,7 +311,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SpecConstantArrayBarrier) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, NoLocalSize) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
 
@@ -324,7 +325,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, NoLocalSize) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SpvEnvVulkan13) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
 
@@ -377,7 +378,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
-    const char *shader_source = R"slang(
+    const char* shader_source = R"slang(
         RWStructuredBuffer<float> outputBuffer;
 
         [numthreads(2, 1, 1)]
@@ -409,7 +410,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangNestedStruct) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
-    const char *shader_source = R"slang(
+    const char* shader_source = R"slang(
         RWStructuredBuffer<uint4> outputBuffer;
         groupshared uint4 a;
         groupshared uint4 b;
@@ -449,7 +450,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
 }
 
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint2) {
-    const char *shader_source = R"slang(
+    const char* shader_source = R"slang(
         RWStructuredBuffer<uint4> outputBuffer;
         groupshared uint4 a;
         groupshared uint4 b;
@@ -488,7 +489,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangMultiEntryPoint2) {
 TEST_F(PositiveGpuAVSharedMemoryDataRace, LongVectorArrayBarrier) {
     AddRequiredFeature(vkt::Feature::longVector);
     AddRequiredExtensions(VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME);
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_long_vector : enable
 
@@ -513,7 +514,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, StoreBarrierCoopMatLoad) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -540,7 +541,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatStoreBarrierLoad) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -573,7 +574,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjoint) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -608,7 +609,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, StoreBarrierCoopMatLoadWorkgroup) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -637,7 +638,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatStoreBarrierLoadWorkgroup) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -665,7 +666,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointVector)
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -698,7 +699,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointFloat) 
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -731,7 +732,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointVec4) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -765,7 +766,7 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, CoopMatLoadCoopMatStoreDisjointUint8) 
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_KHR_cooperative_matrix : enable
         #extension GL_KHR_memory_scope_semantics : enable

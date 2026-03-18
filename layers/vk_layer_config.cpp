@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2024 Valve Software
- * Copyright 2015-2024 Google Inc.
- * Copyright 2019-2024 LunarG, Inc.
+ * Copyright 2014-2026 Valve Software
+ * Copyright 2015-2026 Google Inc.
+ * Copyright 2019-2026 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,22 +43,22 @@
 #endif
 
 #if defined(__ANDROID__)
-static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
-    std::string *property = static_cast<std::string *>(cookie);
+static void PropCallback(void* cookie, [[maybe_unused]] const char* name, const char* value, [[maybe_unused]] uint32_t serial) {
+    std::string* property = static_cast<std::string*>(cookie);
     *property = value;
 }
 #endif
 
-std::string GetEnvironment(const char *variable) {
+std::string GetEnvironment(const char* variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
-    const char *output = getenv(variable);
+    const char* output = getenv(variable);
     return output == NULL ? "" : output;
 #elif defined(_WIN32)
     int size = GetEnvironmentVariable(variable, NULL, 0);
     if (size == 0) {
         return "";
     }
-    char *buffer = new char[size];
+    char* buffer = new char[size];
     GetEnvironmentVariable(variable, buffer, size);
     std::string output = buffer;
     delete[] buffer;
@@ -73,7 +73,7 @@ std::string GetEnvironment(const char *variable) {
         var = "debug.vvl." + var;
     }
 
-    const prop_info *prop_info = __system_property_find(var.data());
+    const prop_info* prop_info = __system_property_find(var.data());
 
     if (prop_info) {
         std::string property;
@@ -87,7 +87,7 @@ std::string GetEnvironment(const char *variable) {
 #endif
 }
 
-void SetEnvironment(const char *variable, const char *value) {
+void SetEnvironment(const char* variable, const char* value) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     setenv(variable, value, 1);
 #elif defined(_WIN32)
@@ -109,7 +109,7 @@ static inline bool IsHighIntegrity() {
         DWORD buffer_size;
         if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
                                 &buffer_size) != 0) {
-            const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
+            const TOKEN_MANDATORY_LABEL* mandatory_label = (const TOKEN_MANDATORY_LABEL*)mandatory_label_buffer;
             const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
             const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
 

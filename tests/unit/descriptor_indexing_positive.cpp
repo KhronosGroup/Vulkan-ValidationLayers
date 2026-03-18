@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings) {
+void DescriptorIndexingTest::ComputePipelineShaderTest(const char* shader, std::vector<VkDescriptorSetLayoutBinding>& bindings) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -61,7 +61,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;
         layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;
@@ -235,7 +235,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderBasic) {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0) buffer block { int x; };
@@ -256,7 +256,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderSampler2D) {
         {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0) buffer block { vec2 x; };
@@ -276,7 +276,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderImageBufferArray) {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0) buffer block { int x; };
@@ -303,7 +303,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderMultiArrayIndexing) {
         {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) uniform A { uint value; };
@@ -368,7 +368,7 @@ TEST_F(PositiveDescriptorIndexing, StaticAccessSomeOfTheArray) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_0, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { float x; } bufs[2];
         void main() {
@@ -421,7 +421,7 @@ TEST_F(PositiveDescriptorIndexing, VariableDescriptorCountBuffer) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set = 0, binding = 0) buffer SSBO { int x; } bufs[3];
         void main() {

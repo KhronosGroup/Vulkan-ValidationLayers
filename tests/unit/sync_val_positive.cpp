@@ -28,8 +28,7 @@ static const std::array syncval_disables = {
     VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
     VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
-
-void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings) {
+void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings) {
     std::vector<VkLayerSettingEXT> settings;
 
     static const SyncValSettings test_default_sync_settings = [] {
@@ -42,7 +41,7 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
         settings.load_op_after_store_op_validation = true;
         return settings;
     }();
-    const SyncValSettings &sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
+    const SyncValSettings& sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
 
     const auto submit_time_validation = static_cast<VkBool32>(sync_settings.submit_time_validation);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
@@ -73,7 +72,7 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
     InitFramework(&validation_features);
 }
 
-void VkSyncValTest::InitSyncVal(const SyncValSettings *p_sync_settings) {
+void VkSyncValTest::InitSyncVal(const SyncValSettings* p_sync_settings) {
     RETURN_IF_SKIP(InitSyncValFramework(p_sync_settings));
     RETURN_IF_SKIP(InitState());
 }
@@ -1031,7 +1030,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
         bailout.store(true);
     }
-    for (auto &waiter : waiters) {
+    for (auto& waiter : waiters) {
         waiter.join();
     }
     signaling_thread.join();
@@ -1199,7 +1198,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 2 or 3
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
@@ -1264,7 +1263,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 1
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
         void main() {
@@ -1329,7 +1328,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from texel buffer 1
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8ui) uniform uimageBuffer texel_buffer_array[];
         void main() {
@@ -1406,7 +1405,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {
@@ -1524,7 +1523,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {
@@ -1710,7 +1709,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
         GTEST_SKIP() << "Transfer-only queue is not present";
     }
@@ -2158,7 +2157,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, copy_dst_area_size, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -2213,7 +2212,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -2273,7 +2272,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -2317,7 +2316,7 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, rgba8) uniform image2D image;
         void main(){
@@ -2366,7 +2365,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer ssbo { uint data[]; };
         void main(){
@@ -2398,7 +2397,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer ssbo { uint data[]; };
         void main(){
@@ -2440,7 +2439,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
     descriptor_set.WriteDescriptorBufferInfo(1, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer i_am_counter { uint counter[]; };
         layout(set=0, binding=1) buffer i_am_data { uint data[]; };
@@ -2477,7 +2476,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
     descriptor_set.WriteDescriptorBufferInfo(1, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer i_am_counter { uint counter[]; };
         layout(set=0, binding=1) buffer i_am_data { uint data[]; };
@@ -2517,7 +2516,7 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
         GTEST_SKIP() << "Transfer-only queue is needed";
     }
@@ -2863,7 +2862,7 @@ TEST_F(PositiveSyncVal, CmdDispatchBase) {
     descriptor_set.WriteDescriptorBufferInfo(1, buffer_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer buffer_a { uint values_a[]; };
         layout(set=0, binding=1) buffer buffer_b { uint values_b[]; };
@@ -3020,7 +3019,7 @@ TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D color_image0;
         layout(set=0, binding=1) uniform sampler2D color_image1;
@@ -3852,9 +3851,9 @@ TEST_F(PositiveSyncVal, ApplyManyGlobalBarriers) {
 
     m_command_buffer.Begin();
     for (size_t i = 0; i < accesses.size() - 1; i++) {
-        const auto &access_a = accesses[i];
+        const auto& access_a = accesses[i];
         for (size_t k = i + 1; k < accesses.size(); k++) {
-            const auto &access_b = accesses[k];
+            const auto& access_b = accesses[k];
 
             VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
             global_barrier.srcStageMask = access_a.first;

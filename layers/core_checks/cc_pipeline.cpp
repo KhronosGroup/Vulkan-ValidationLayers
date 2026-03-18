@@ -45,9 +45,9 @@ bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t sub
 }
 
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
-bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
-                                                      const VkPipelineRobustnessCreateInfo &pipeline_robustness_info,
-                                                      const Location &loc) const {
+bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline& pipeline,
+                                                      const VkPipelineRobustnessCreateInfo& pipeline_robustness_info,
+                                                      const Location& loc) const {
     bool skip = false;
 
     if (!enabled_features.pipelineRobustness) {
@@ -169,18 +169,18 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
-                                                                   uint32_t *pExecutableCount,
-                                                                   VkPipelineExecutablePropertiesKHR *pProperties,
-                                                                   const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
+                                                                   uint32_t* pExecutableCount,
+                                                                   VkPipelineExecutablePropertiesKHR* pProperties,
+                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, nullptr, error_obj.location,
                                            "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo,
-                                                const Location &loc, const char *feature_vuid) const {
+bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                                const Location& loc, const char* feature_vuid) const {
     bool skip = false;
 
     // If feature is not enabled, not allowed to call dispatch call below
@@ -209,10 +209,10 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 }
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device,
-                                                                   const VkPipelineExecutableInfoKHR *pExecutableInfo,
-                                                                   uint32_t *pStatisticCount,
-                                                                   VkPipelineExecutableStatisticKHR *pStatistics,
-                                                                   const ErrorObject &error_obj) const {
+                                                                   const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                                                   uint32_t* pStatisticCount,
+                                                                   VkPipelineExecutableStatisticKHR* pStatistics,
+                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
@@ -229,8 +229,8 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 }
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
-    VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &error_obj) const {
+    VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR* pStatistics, const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
@@ -247,8 +247,8 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
-                                                const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
+                                                const ErrorObject& error_obj) const {
     bool skip = false;
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
         skip |= ValidateObjectNotInUse(pipeline_state.get(), error_obj.location, "VUID-vkDestroyPipeline-pipeline-00765");
@@ -256,7 +256,7 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
     return skip;
 }
 
-static bool MatchSampleLocationsInfo(const vku::safe_VkSampleLocationsInfoEXT &info_1, const VkSampleLocationsInfoEXT &info_2) {
+static bool MatchSampleLocationsInfo(const vku::safe_VkSampleLocationsInfoEXT& info_1, const VkSampleLocationsInfoEXT& info_2) {
     if (info_1.sampleLocationsPerPixel != info_2.sampleLocationsPerPixel ||
         info_1.sampleLocationGridSize.width != info_2.sampleLocationGridSize.width ||
         info_1.sampleLocationGridSize.height != info_2.sampleLocationGridSize.height ||
@@ -272,11 +272,11 @@ static bool MatchSampleLocationsInfo(const vku::safe_VkSampleLocationsInfoEXT &i
     return true;
 }
 
-bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::CommandBuffer &cb_state,
-                                                              const vvl::Pipeline &pipeline_state, const vvl::RenderPass &rp_state,
-                                                              const Location &loc) const {
+bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::CommandBuffer& cb_state,
+                                                              const vvl::Pipeline& pipeline_state, const vvl::RenderPass& rp_state,
+                                                              const Location& loc) const {
     bool skip = false;
-    const auto *multisample_state = pipeline_state.MultisampleState();
+    const auto* multisample_state = pipeline_state.MultisampleState();
     if (!multisample_state) {
         return skip;
     } else if (rp_state.UsesDynamicRendering()) {
@@ -287,12 +287,12 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
 
     const uint32_t subpass = cb_state.GetActiveSubpass();
     if (!phys_dev_ext_props.sample_locations_props.variableSampleLocations) {
-        const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
+        const auto* sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
         if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
             !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
             bool found = false;
             for (uint32_t i = 0; i < cb_state.sample_locations_begin_info.postSubpassSampleLocationsCount; ++i) {
-                const auto &post_subpass_sample_location = cb_state.sample_locations_begin_info.pPostSubpassSampleLocations[i];
+                const auto& post_subpass_sample_location = cb_state.sample_locations_begin_info.pPostSubpassSampleLocations[i];
                 if (post_subpass_sample_location.subpassIndex == subpass) {
                     if (MatchSampleLocationsInfo(post_subpass_sample_location.sampleLocationsInfo,
                                                  sample_locations->sampleLocationsInfo)) {
@@ -340,7 +340,7 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
 }
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipeline pipeline, const ErrorObject &error_obj) const {
+                                                VkPipeline pipeline, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     bool skip = false;
@@ -349,7 +349,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
     auto pipeline_ptr = Get<vvl::Pipeline>(pipeline);
     ASSERT_AND_RETURN_SKIP(pipeline_ptr);
-    const vvl::Pipeline &pipeline_state = *pipeline_ptr;
+    const vvl::Pipeline& pipeline_state = *pipeline_ptr;
 
     if (pipelineBindPoint != pipeline_state.pipeline_type) {
         const LogObjectList objlist(cb_state->Handle(), pipeline);
@@ -426,10 +426,10 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
-                                           const Location &loc) const {
+bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
+                                           const Location& loc) const {
     bool skip = false;
-    const auto *pool = cb_state.command_pool;
+    const auto* pool = cb_state.command_pool;
     // The loss of a pool in a recording cmd is reported in DestroyCommandPool
     if (!pool) {
         return skip;
@@ -442,10 +442,10 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
                                            ? (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)
                                            : VK_QUEUE_FLAG_BITS_MAX_ENUM;
 
-    const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
+    const auto& qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
     if (0 == (qfp.queueFlags & required_mask)) {
         const LogObjectList objlist(cb_state.Handle(), pool->Handle());
-        const char *vuid = kVUIDUndefined;
+        const char* vuid = kVUIDUndefined;
         switch (loc.function) {
             case Func::vkCmdBindDescriptorSets:
                 vuid = "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361";
@@ -504,7 +504,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *spec, const Location &loc) const {
+bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo* spec, const Location& loc) const {
     bool skip = false;
     if (!spec) {
         return skip;
@@ -512,7 +512,7 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
 
     for (auto i = 0u; i < spec->mapEntryCount; i++) {
         const Location map_loc = loc.dot(Field::pMapEntries, i);
-        const auto &map_entry = spec->pMapEntries[i];
+        const auto& map_entry = spec->pMapEntries[i];
         if (map_entry.offset >= spec->dataSize) {
             skip |= LogError("VUID-VkSpecializationInfo-offset-00773", device, map_loc.dot(Field::offset),
                              "is %" PRIu32 " but dataSize is %zu (for constantID %" PRIu32 ").", map_entry.offset, spec->dataSize,
@@ -536,12 +536,12 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline &pipeline,
-                                                 const Location &loc) const {
+bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,
+                                                 const Location& loc) const {
     bool skip = false;
     uint32_t total_resources = 0;
 
-    const auto &rp_state = pipeline.RenderPassState();
+    const auto& rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->UsesDynamicRendering()) {
             total_resources += rp_state->dynamic_pipeline_rendering_create_info.colorAttachmentCount;
@@ -555,9 +555,9 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 
     // TODO: This reuses a lot of GetDescriptorCountMaxPerStage but currently would need to make it agnostic in a way to handle
     // input from CreatePipeline and CreatePipelineLayout level
-    const auto &layout_state = pipeline.PipelineLayoutState();
+    const auto& layout_state = pipeline.PipelineLayoutState();
     if (layout_state) {
-        for (const auto &set_layout : layout_state->set_layouts.list) {
+        for (const auto& set_layout : layout_state->set_layouts.list) {
             if (!set_layout) {
                 continue;
             }
@@ -567,7 +567,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
             }
 
             for (uint32_t binding_idx = 0; binding_idx < set_layout->GetBindingCount(); binding_idx++) {
-                const VkDescriptorSetLayoutBinding *binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+                const VkDescriptorSetLayoutBinding* binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
                 // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
                 if (((stage & binding->stageFlags) != 0) && (binding->descriptorCount > 0)) {
                     // Check only descriptor types listed in maxPerStageResources description in spec
@@ -593,7 +593,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     }
 
     if (total_resources > phys_dev_props.limits.maxPerStageResources) {
-        const char *vuid = nullptr;
+        const char* vuid = nullptr;
         if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
             vuid = "VUID-VkComputePipelineCreateInfo-layout-01687";
         } else if ((stage & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
@@ -610,14 +610,13 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
-                                             const vku::safe_VkPipelineShaderStageCreateInfo &stage_ci, const void *pipeline_ci_pnext,
-                                             const Location &loc) const {
+bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,
+                                             const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
+                                             const void* pipeline_ci_pnext, const Location& loc) const {
     bool skip = false;
     const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(pipeline_ci_pnext);
 
-    if (binary_info && binary_info->binaryCount != 0)
-    {
+    if (binary_info && binary_info->binaryCount != 0) {
         return skip;
     }
 
@@ -711,14 +710,14 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR *pPipelineCreateInfo,
-                                                  VkPipelineBinaryKeyKHR *pPipelineKey, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
+                                                  VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const {
     bool skip = false;
 
     // Used when getting global key
     if (!pPipelineCreateInfo) return skip;
 
-    const VkBaseOutStructure *pipeline_create_info = reinterpret_cast<const VkBaseOutStructure *>(pPipelineCreateInfo->pNext);
+    const VkBaseOutStructure* pipeline_create_info = reinterpret_cast<const VkBaseOutStructure*>(pPipelineCreateInfo->pNext);
     if (pipeline_create_info) {
         if (pipeline_create_info->sType != VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX &&
             pipeline_create_info->sType != VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO &&
@@ -732,7 +731,7 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
         }
     }
 
-    const auto *binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(pPipelineCreateInfo->pNext);
+    const auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(pPipelineCreateInfo->pNext);
     if (binary_info && (binary_info->binaryCount > 0)) {
         skip |=
             LogError("VUID-vkGetPipelineKeyKHR-pNext-09605", device,
@@ -743,9 +742,9 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
     return skip;
 }
 
-bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               const ErrorObject& error_obj) const {
     auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
     bool skip = false;
 
@@ -760,16 +759,16 @@ bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, 
     }
 
     if (pipeline_state->binary_data_released) {
-        skip |= LogError("VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09618", pInfo->pipeline, error_obj.location.dot(Field::pInfo).dot(Field::pipeline),
-                         "has been called multiple times.");
+        skip |= LogError("VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09618", pInfo->pipeline,
+                         error_obj.location.dot(Field::pInfo).dot(Field::pipeline), "has been called multiple times.");
     }
 
     return skip;
 }
 
-void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              const RecordObject &record_obj) {
+void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }

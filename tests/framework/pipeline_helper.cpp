@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 
 #include "pipeline_helper.h"
 
-CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
+CreatePipelineHelper::CreatePipelineHelper(VkLayerTest& test, void* pNext) : layer_test_(test) {
     // default VkDevice, can be overwritten if multi-device tests
     device_ = layer_test_.DeviceObj();
 
@@ -121,7 +121,7 @@ CreatePipelineHelper::~CreatePipelineHelper() { Destroy(); }
 
 void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
 
-void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
+void CreatePipelineHelper::ResetShaderInfo(const char* vertex_shader_text, const char* fragment_shader_text) {
     vs_ = std::make_unique<VkShaderObj>(*device_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
     fs_ = std::make_unique<VkShaderObj>(*device_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
@@ -154,7 +154,7 @@ void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
     gp_ci_.pDynamicState = &dyn_state_ci_;
 }
 
-void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
+void CreatePipelineHelper::InitVertexInputLibInfo(void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
 
@@ -167,7 +167,7 @@ void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
     shader_stages_.clear();
 }
 
-void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
 
@@ -185,7 +185,7 @@ void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreat
     gp_ci_.pStages = info;
 }
 
-void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
@@ -206,7 +206,7 @@ void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreate
     gp_ci_.pStages = info;
 }
 
-void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
+void CreatePipelineHelper::InitFragmentOutputLibInfo(void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
@@ -225,7 +225,7 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     shader_stages_.clear();
 }
 
-void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo> &info, void *p_next) {
+void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo>& info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags =
         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
@@ -297,7 +297,7 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind, bool no
                                        &pipeline_);
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, void *pNext) {
+CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, void* pNext) {
     // default VkDevice, can be overwritten if multi-device tests
     device_ = &device;
 
@@ -324,12 +324,12 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, vo
     cp_ci_.layout = VK_NULL_HANDLE;
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext)
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest& test, void* pNext)
     : CreateComputePipelineHelper(*test.DeviceObj(), pNext) {}
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(CreateComputePipelineHelper &&rhs) noexcept { *this = std::move(rhs); }
+CreateComputePipelineHelper::CreateComputePipelineHelper(CreateComputePipelineHelper&& rhs) noexcept { *this = std::move(rhs); }
 
-CreateComputePipelineHelper &CreateComputePipelineHelper::operator=(CreateComputePipelineHelper &&rhs) noexcept {
+CreateComputePipelineHelper& CreateComputePipelineHelper::operator=(CreateComputePipelineHelper&& rhs) noexcept {
     dsl_bindings_ = std::move(rhs.dsl_bindings_);
     descriptor_set_ = std::move(rhs.descriptor_set_);
 
@@ -424,7 +424,7 @@ GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint3
     stage_ci.pName = "main";
 }
 
-SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *vertex_shader, const char *fragment_shader)
+SimpleGPL::SimpleGPL(VkLayerTest& test, VkPipelineLayout layout, const char* vertex_shader, const char* fragment_shader)
     : vertex_input_lib_(test), pre_raster_lib_(test), frag_shader_lib_(test), frag_out_lib_(test) {
     auto device = test.DeviceObj();
 

@@ -151,7 +151,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -176,7 +176,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     ASSERT_TRUE(*data = test_data);
 }
 
@@ -241,7 +241,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     }
 
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
-    std::vector<const vkt::DescriptorSetLayout *> layouts(set_count);
+    std::vector<const vkt::DescriptorSetLayout*> layouts(set_count);
     for (uint32_t i = 0; i < set_count; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
@@ -252,7 +252,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     vkt::PipelineLayout pl_layout(*m_device, layouts);
     m_errorMonitor->VerifyFound();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -280,7 +280,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
         pl_layout.Destroy();
 
-        uint32_t *data = (uint32_t *)buffer.Memory().Map();
+        uint32_t* data = (uint32_t*)buffer.Memory().Map();
         if (*data != test_data)
             m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
         *data = 0;
@@ -302,7 +302,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
         m_default_queue->SubmitAndWait(m_command_buffer);
-        uint32_t *data = (uint32_t *)buffer.Memory().Map();
+        uint32_t* data = (uint32_t*)buffer.Memory().Map();
         if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
         *data = 0;
         buffer.Memory().Unmap();
@@ -320,7 +320,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -385,7 +385,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -457,7 +457,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -518,7 +518,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -629,7 +629,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -823,7 +823,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         layout (set = 1, binding = 0) uniform sampler2D samplerColor;
         layout(location = 0) out vec4 color;
@@ -884,7 +884,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             kHostVisibleMemProps);
-    auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    auto draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -908,7 +908,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     kHostVisibleMemProps);
-    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
+    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand*)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -956,21 +956,21 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
 }
 
 class PositiveGpuAVParameterized : public GpuAVTest,
-                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char *>, uint32_t>> {};
+                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char*>, uint32_t>> {};
 
 TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
 
-    std::vector<const char *> setting_names = std::get<0>(GetParam());
+    std::vector<const char*> setting_names = std::get<0>(GetParam());
     const uint32_t setting_values = std::get<1>(GetParam());
 
     std::vector<VkLayerSettingEXT> layer_settings(setting_names.size());
     std::vector<VkBool32> layer_settings_values(setting_names.size());
     for (const auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
-        VkLayerSettingEXT &layer_setting = layer_settings[setting_name_i];
-        VkBool32 &layer_setting_value = layer_settings_values[setting_name_i];
+        VkLayerSettingEXT& layer_setting = layer_settings[setting_name_i];
+        VkBool32& layer_setting_value = layer_settings_values[setting_name_i];
 
         layer_setting_value = (setting_values & (1u << setting_name_i)) ? VK_TRUE : VK_FALSE;
         layer_setting = {OBJECT_LAYER_NAME, setting_name, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &layer_setting_value};
@@ -982,7 +982,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             kHostVisibleMemProps);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -1007,7 +1007,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     kHostVisibleMemProps);
-    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
+    VkDrawIndexedIndirectCommand* indexed_draw_ptr = (VkDrawIndexedIndirectCommand*)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -1029,12 +1029,12 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
-    std::vector<const char *> setting_names = std::get<0>(info.param);
+static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
+    std::vector<const char*> setting_names = std::get<0>(info.param);
     const uint32_t setting_values = std::get<1>(info.param);
     std::ostringstream test_name;
     for (auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
-        const char *enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
+        const char* enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
         if (setting_name_i != 0) {
             test_name << "_";
         }
@@ -1049,32 +1049,32 @@ static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamI
 // is based on the number of settings in the settings list. If you have N settings, you want your range end to be uint32_t(1) << N
 INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
 
-                         ::testing::Combine(::testing::Values(std::vector<const char *>(
+                         ::testing::Combine(::testing::Values(std::vector<const char*>(
                                                 {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_validate_ray_query",
                                                  "gpuav_select_instrumented_shaders"})),
                                             ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
                              return GetGpuAvSettingsCombinationTestName(info);
                          });
 
 INSTANTIATE_TEST_SUITE_P(GpuAvMainSettings, PositiveGpuAVParameterized,
 
-                         ::testing::Combine(::testing::Values(std::vector<const char *>({"gpuav_shader_instrumentation",
-                                                                                         "gpuav_buffers_validation"})),
+                         ::testing::Combine(::testing::Values(std::vector<const char*>({"gpuav_shader_instrumentation",
+                                                                                        "gpuav_buffers_validation"})),
                                             ::testing::Range(uint32_t(0), uint32_t(1) << 2)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
                              return GetGpuAvSettingsCombinationTestName(info);
                          });
 
 INSTANTIATE_TEST_SUITE_P(GpuAvBufferContentValidationSettings, PositiveGpuAVParameterized,
-                         ::testing::Combine(::testing::Values(std::vector<const char *>(
+                         ::testing::Combine(::testing::Values(std::vector<const char*>(
                                                 {"gpuav_indirect_draws_buffers", "gpuav_indirect_dispatches_buffers",
                                                  "gpuav_indirect_trace_rays_buffers", "gpuav_buffer_copies"})),
                                             ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
                              return GetGpuAvSettingsCombinationTestName(info);
                          });
 
@@ -1088,7 +1088,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    auto& indirect_draw_parameters = *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1126,7 +1126,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     plci.pPushConstantRanges = push_constant_ranges.data();
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1154,7 +1154,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
         )glsl";
     VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1200,7 +1200,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
+    auto storage_buffer_ptr = static_cast<int32_t*>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
@@ -1226,7 +1226,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Graphics pipeline
     // ---
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1254,7 +1254,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         )glsl";
     VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1295,7 +1295,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    auto& indirect_draw_parameters = *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1309,7 +1309,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Compute pipeline
     // ---
 
-    const char *compute_source = R"glsl(
+    const char* compute_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1354,8 +1354,8 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
 
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                     kHostVisibleMemProps);
-    auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
+    auto& indirect_dispatch_parameters =
+        *static_cast<VkDispatchIndirectCommand*>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
@@ -1384,12 +1384,12 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
+    auto compute_storage_buffer_ptr = static_cast<int32_t*>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
+    auto graphics_storage_buffer_ptr = static_cast<int32_t*>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
@@ -1404,7 +1404,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    auto& indirect_draw_parameters = *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1475,7 +1475,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     pipeline_layout_ci.setLayoutCount = 2;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; int b;};
         void main() {
@@ -1550,7 +1550,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     pipeline_layout_ci.setLayoutCount = 3;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 {
             int a;
@@ -1713,7 +1713,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    const char *shader_source_1 = R"glsl(
+    const char* shader_source_1 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1722,7 +1722,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[48] = 0; // invalid!
         }
     )glsl";
-    const char *shader_source_2 = R"glsl(
+    const char* shader_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1731,7 +1731,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[24] = 0; // invalid!
         }
     )glsl";
-    const char *shader_source_3 = R"glsl(
+    const char* shader_source_3 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1793,9 +1793,9 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     buffer_ci.size = pre_process_size;
     vkt::Buffer pre_process_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
 
-    uint32_t *block_buffer_ptr = (uint32_t *)block_buffer.Memory().Map();
+    uint32_t* block_buffer_ptr = (uint32_t*)block_buffer.Memory().Map();
     block_buffer_ptr[0] = 2;  // pick pipeline 2
-    VkDispatchIndirectCommand *indirect_command_ptr = (VkDispatchIndirectCommand *)(block_buffer_ptr + 1);
+    VkDispatchIndirectCommand* indirect_command_ptr = (VkDispatchIndirectCommand*)(block_buffer_ptr + 1);
     indirect_command_ptr->x = 1;
     indirect_command_ptr->y = 1;
     indirect_command_ptr->z = 1;
@@ -1944,9 +1944,9 @@ TEST_F(PositiveGpuAV, FailedSampler) {
     VkSampler sampler_handle;
 
     struct Alloc {
-        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
-        static VKAPI_ATTR void *VKAPI_CALL reallocFunc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
-        static VKAPI_ATTR void VKAPI_CALL freeFunc(void *, void *){};
+        static VKAPI_ATTR void* VKAPI_CALL alloc(void*, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void* VKAPI_CALL reallocFunc(void*, void*, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void VKAPI_CALL freeFunc(void*, void*) {};
     };
     const VkAllocationCallbacks bad_allocator = {nullptr, Alloc::alloc, Alloc::reallocFunc, Alloc::freeFunc, nullptr, nullptr};
 
@@ -2077,7 +2077,7 @@ TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
     const vkt::PipelineLayout g_pipeline_layout(*m_device, {&descriptor_set1.layout_}, {pc_ranges});
     const vkt::PipelineLayout c_pipeline_layout(*m_device, {&descriptor_set2.layout_}, {pc_ranges});
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(push_constant) uniform PushConstants {
             uint a[4];
@@ -2114,7 +2114,7 @@ TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
 
     vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                        kHostVisibleMemProps);
-    auto &indirect_dispatch_parameters = *static_cast<VkDispatchIndirectCommand *>(dispatch_params_buffer.Memory().Map());
+    auto& indirect_dispatch_parameters = *static_cast<VkDispatchIndirectCommand*>(dispatch_params_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1u;
     indirect_dispatch_parameters.y = 1u;
     indirect_dispatch_parameters.z = 1u;

@@ -21,7 +21,7 @@
 
 namespace stateless {
 
-bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &description, const Location &description_loc) const {
+bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& description, const Location& description_loc) const {
     bool skip = false;
 
     if (description.format == VK_FORMAT_UNDEFINED) {
@@ -37,7 +37,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
     }
 
     // pStrides can be null
-    if (const auto *strides = description.pStrides) {
+    if (const auto* strides = description.pStrides) {
         if (description.tiling == VK_TENSOR_TILING_OPTIMAL_ARM) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-pDescription-09720", device, description_loc.dot(Field::tiling),
                              "is VK_TENSOR_TILING_OPTIMAL_ARM, but pDescription::pStrides (%p) is not null", description.pStrides);
@@ -110,7 +110,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
 
     {
         int64_t total_elements = 1;
-        auto *dims = description.pDimensions;
+        auto* dims = description.pDimensions;
         auto would_overflow = false;
         for (uint32_t i = 0; i < description.dimensionCount; i++) {
             if (INT64_MAX / total_elements >= dims[i]) {
@@ -130,8 +130,8 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
         }
         if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements || would_overflow) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
-                             "the total number of elements (%" PRIi64 ") is greater than maxTensorElements (%" PRIu64 ")", total_elements,
-                             phys_dev_ext_props.tensor_properties.maxTensorElements);
+                             "the total number of elements (%" PRIi64 ") is greater than maxTensorElements (%" PRIu64 ")",
+                             total_elements, phys_dev_ext_props.tensor_properties.maxTensorElements);
         }
     }
 
@@ -153,9 +153,9 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
-                                                   const Context &context) const {
+bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                                   const Context& context) const {
     bool skip = false;
 
     if (!enabled_features.tensors) {

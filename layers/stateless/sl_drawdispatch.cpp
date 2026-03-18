@@ -44,8 +44,8 @@ bool Device::ValidateDrawIndirect2Info(VkCommandBuffer commandBuffer, const VkDr
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR *pInfo,
-                                                       const Context &context) const {
+bool Device::manual_PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                       const Context& context) const {
     bool skip = false;
 
     const Location info_loc = context.error_obj.location.dot(Field::pInfo);
@@ -84,8 +84,8 @@ bool Device::manual_PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR *pInfo,
-                                                              const Context &context) const {
+bool Device::manual_PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                              const Context& context) const {
     bool skip = false;
 
     const Location info_loc = context.error_obj.location.dot(Field::pInfo);
@@ -124,8 +124,8 @@ bool Device::manual_PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer co
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR *pInfo,
-                                                                const Context &context) const {
+bool Device::manual_PreCallValidateCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                                const Context& context) const {
     bool skip = false;
 
     const Location info_loc = context.error_obj.location.dot(Field::pInfo);
@@ -161,8 +161,8 @@ bool Device::ValidateDrawIndirectCount2Info(VkCommandBuffer commandBuffer, const
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR *pInfo,
-                                                            const Context &context) const {
+bool Device::manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                            const Context& context) const {
     bool skip = false;
 
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
@@ -209,8 +209,8 @@ bool Device::manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer comm
 }
 
 bool Device::manual_PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
-                                                                   const VkDrawIndirectCount2InfoKHR *pInfo,
-                                                                   const Context &context) const {
+                                                                   const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                   const Context& context) const {
     bool skip = false;
 
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
@@ -258,8 +258,8 @@ bool Device::manual_PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuff
     return skip;
 }
 bool Device::manual_PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
-                                                                     const VkDrawIndirectCount2InfoKHR *pInfo,
-                                                                     const Context &context) const {
+                                                                     const VkDrawIndirectCount2InfoKHR* pInfo,
+                                                                     const Context& context) const {
     bool skip = false;
 
     if ((extensions.vk_khr_draw_indirect_count != kEnabledByCreateinfo) &&
@@ -276,8 +276,8 @@ bool Device::manual_PreCallValidateCmdDrawMeshTasksIndirectCount2EXT(VkCommandBu
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR *pInfo,
-                                                           const Context &context) const {
+bool Device::manual_PreCallValidateCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                           const Context& context) const {
     bool skip = false;
 
     const Location info_loc = context.error_obj.location.dot(Field::pInfo);

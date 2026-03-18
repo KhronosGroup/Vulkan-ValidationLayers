@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,11 +88,11 @@ bool FormatFeatures2AreSupported(VkPhysicalDevice phy, VkFormat format, VkImageT
     return (features == (phy_features & features));
 }
 
-VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits) {
+VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo& ci, VkImageFormatProperties& out_limits) {
     return vk::GetPhysicalDeviceImageFormatProperties(gpu, ci.format, ci.imageType, ci.tiling, ci.usage, ci.flags, &out_limits);
 }
 
-bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo &ci, const VkFormatFeatureFlags features) {
+bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo& ci, const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
     if (!FormatFeaturesAreSupported(gpu, ci.format, ci.tiling, features)) {
         return false;
@@ -121,7 +121,7 @@ bool BufferFormatAndFeaturesSupported(VkPhysicalDevice gpu, VkFormat format, VkF
     return (features == (gpu_features & features));
 }
 
-bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {
+bool operator==(const VkDebugUtilsLabelEXT& rhs, const VkDebugUtilsLabelEXT& lhs) {
     bool is_equal = (rhs.color[0] == lhs.color[0]) && (rhs.color[1] == lhs.color[1]) && (rhs.color[2] == lhs.color[2]) &&
                     (rhs.color[3] == lhs.color[3]);
     if (is_equal) {
@@ -135,8 +135,8 @@ bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT,
-                                                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
-    auto *data = reinterpret_cast<DebugUtilsLabelCheckData *>(pUserData);
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+    auto* data = reinterpret_cast<DebugUtilsLabelCheckData*>(pUserData);
     data->callback(pCallbackData, data);
     return VK_FALSE;
 }
@@ -178,31 +178,31 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
     return return_format;
 }
 
-void VkLayerTest::CreateSamplerTest(const VkSamplerCreateInfo &create_info, const char *vuid) {
+void VkLayerTest::CreateSamplerTest(const VkSamplerCreateInfo& create_info, const char* vuid) {
     Monitor().SetDesiredError(vuid);
     vkt::Sampler sampler(*m_device, create_info);
     Monitor().VerifyFound();
 }
 
-void VkLayerTest::CreateBufferTest(const VkBufferCreateInfo &create_info, const char *vuid) {
+void VkLayerTest::CreateBufferTest(const VkBufferCreateInfo& create_info, const char* vuid) {
     Monitor().SetDesiredError(vuid);
     vkt::Buffer buffer(*m_device, create_info, vkt::no_mem);
     Monitor().VerifyFound();
 }
 
-void VkLayerTest::CreateImageTest(const VkImageCreateInfo &create_info, const char *vuid) {
+void VkLayerTest::CreateImageTest(const VkImageCreateInfo& create_info, const char* vuid) {
     Monitor().SetDesiredError(vuid);
     vkt::Image image(*m_device, create_info, vkt::no_mem);
     Monitor().VerifyFound();
 }
 
-void VkLayerTest::CreateBufferViewTest(const VkBufferViewCreateInfo &create_info, const char *vuid) {
+void VkLayerTest::CreateBufferViewTest(const VkBufferViewCreateInfo& create_info, const char* vuid) {
     Monitor().SetDesiredError(vuid);
     vkt::BufferView view(*m_device, create_info);
     Monitor().VerifyFound();
 }
 
-void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo &create_info, const char *vuid) {
+void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo& create_info, const char* vuid) {
     Monitor().SetDesiredError(vuid);
     vkt::ImageView view(*m_device, create_info);
     Monitor().VerifyFound();
@@ -240,8 +240,8 @@ VkResolveModeFlagBits VkLayerTest::FindSupportedStencilResolveMode() {
     return stencil_resolve_mode;
 }
 
-void VkLayerTest::CreateRenderPassTest(const VkRenderPassCreateInfo &create_info, bool rp2_supported, const char *rp1_vuid,
-                                       const char *rp2_vuid) {
+void VkLayerTest::CreateRenderPassTest(const VkRenderPassCreateInfo& create_info, bool rp2_supported, const char* rp1_vuid,
+                                       const char* rp2_vuid) {
     if (rp1_vuid) {
         // If the second VUID is not provided, set it equal to the first VUID.  In this way,
         // we can check both vkCreateRenderPass and vkCreateRenderPass2 with the same VUID
@@ -263,8 +263,8 @@ void VkLayerTest::CreateRenderPassTest(const VkRenderPassCreateInfo &create_info
     }
 }
 
-void VkLayerTest::CreateRenderPassBeginTest(const VkCommandBuffer command_buffer, const VkRenderPassBeginInfo *begin_info,
-                                            bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
+void VkLayerTest::CreateRenderPassBeginTest(const VkCommandBuffer command_buffer, const VkRenderPassBeginInfo* begin_info,
+                                            bool rp2_supported, const char* rp1_vuid, const char* rp2_vuid) {
     VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
 
@@ -296,7 +296,7 @@ void VkLayerTest::CreateRenderPassBeginTest(const VkCommandBuffer command_buffer
     }
 }
 
-VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next) {
+VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void* p_next) {
     VkSamplerCreateInfo sampler_create_info = vku::InitStructHelper(p_next);
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
@@ -329,7 +329,7 @@ float NearestSmaller(const float from) {
     return std::nextafter(from, negative_direction);
 }
 
-void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2, void *instance_pnext) {
+void VkLayerTest::Init(VkPhysicalDeviceFeatures* features, VkPhysicalDeviceFeatures2* features2, void* instance_pnext) {
     RETURN_IF_SKIP(InitFramework(instance_pnext));
     RETURN_IF_SKIP(InitState(features, features2));
 }
@@ -414,7 +414,7 @@ APIVersion VkLayerTest::DeviceValidationVersion() const {
 }
 
 template <>
-VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2 &features2) {
+VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2& features2) {
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
     } else {
@@ -427,7 +427,7 @@ VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDevi
 }
 
 template <>
-VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2) {
+VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2& props2) {
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
     } else {
@@ -440,8 +440,8 @@ VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysical
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT& fpvkSetPhysicalDeviceFormatPropertiesEXT,
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT& fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
     if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
@@ -464,8 +464,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(
-    PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
-    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
+    PFN_vkSetPhysicalDeviceFormatProperties2EXT& fpvkSetPhysicalDeviceFormatProperties2EXT,
+    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT& fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
     if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
@@ -488,8 +488,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     return true;
 }
 
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkSetPhysicalDeviceLimitsEXT,
-                                         PFN_vkGetOriginalPhysicalDeviceLimitsEXT &fpvkGetOriginalPhysicalDeviceLimitsEXT) {
+bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT& fpvkSetPhysicalDeviceLimitsEXT,
+                                         PFN_vkGetOriginalPhysicalDeviceLimitsEXT& fpvkGetOriginalPhysicalDeviceLimitsEXT) {
     if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
@@ -511,8 +511,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
     return true;
 }
 
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpvkSetPhysicalDeviceFeaturesEXT,
-                                         PFN_vkGetOriginalPhysicalDeviceFeaturesEXT &fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
+bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT& fpvkSetPhysicalDeviceFeaturesEXT,
+                                         PFN_vkGetOriginalPhysicalDeviceFeaturesEXT& fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
     if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
@@ -534,7 +534,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
     return true;
 }
 
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT) {
+bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT& fpvkSetPhysicalDeviceProperties2EXT) {
     if (IsPlatformMockICD()) {
         printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
         return false;
@@ -554,7 +554,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
     return true;
 }
 
-void PrintAndroid(const char *c) {
+void PrintAndroid(const char* c) {
     (void)c;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", c);
@@ -562,19 +562,19 @@ void PrintAndroid(const char *c) {
 }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && !defined(VVL_MOCK_ANDROID)
-const char *appTag = "VulkanLayerValidationTests";
+const char* appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
 static bool active = false;
 
 // Convert Intents to argv
 // Ported from Hologram sample, only difference is flexible key
-std::vector<std::string> get_args(android_app &app, const char *intent_extra_data_key) {
+std::vector<std::string> get_args(android_app& app, const char* intent_extra_data_key) {
     std::vector<std::string> args;
-    JavaVM &vm = *app.activity->vm;
-    JNIEnv *p_env;
+    JavaVM& vm = *app.activity->vm;
+    JNIEnv* p_env;
     if (vm.AttachCurrentThread(&p_env, nullptr) != JNI_OK) return args;
 
-    JNIEnv &env = *p_env;
+    JNIEnv& env = *p_env;
     jobject activity = app.activity->clazz;
     jmethodID get_intent_method = env.GetMethodID(env.GetObjectClass(activity), "getIntent", "()Landroid/content/Intent;");
     jobject intent = env.CallObjectMethod(activity, get_intent_method);
@@ -586,7 +586,7 @@ std::vector<std::string> get_args(android_app &app, const char *intent_extra_dat
 
     std::string args_str;
     if (extra_str) {
-        const char *extra_utf = env.GetStringUTFChars(extra_str, nullptr);
+        const char* extra_utf = env.GetStringUTFChars(extra_str, nullptr);
         args_str = extra_utf;
         env.ReleaseStringUTFChars(extra_str, extra_utf);
         env.DeleteLocalRef(extra_str);
@@ -606,9 +606,9 @@ std::vector<std::string> get_args(android_app &app, const char *intent_extra_dat
     return args;
 }
 
-void addFullTestCommentIfPresent(const ::testing::TestInfo &test_info, std::string &error_message) {
-    const char *const type_param = test_info.type_param();
-    const char *const value_param = test_info.value_param();
+void addFullTestCommentIfPresent(const ::testing::TestInfo& test_info, std::string& error_message) {
+    const char* const type_param = test_info.type_param();
+    const char* const value_param = test_info.value_param();
 
     if (type_param != NULL || value_param != NULL) {
         error_message.append(", where ");
@@ -624,12 +624,12 @@ void addFullTestCommentIfPresent(const ::testing::TestInfo &test_info, std::stri
 
 class LogcatPrinter : public ::testing::EmptyTestEventListener {
     // Called before a test starts.
-    virtual void OnTestStart(const ::testing::TestInfo &test_info) {
+    virtual void OnTestStart(const ::testing::TestInfo& test_info) {
         __android_log_print(ANDROID_LOG_INFO, appTag, "[ RUN      ] %s.%s", test_info.test_case_name(), test_info.name());
     }
 
     // Called after a failed assertion or a SUCCEED() invocation.
-    virtual void OnTestPartResult(const ::testing::TestPartResult &result) {
+    virtual void OnTestPartResult(const ::testing::TestPartResult& result) {
         // If the test part succeeded, we don't need to do anything.
         if (result.type() == ::testing::TestPartResult::kSuccess) return;
 
@@ -638,7 +638,7 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
     }
 
     // Called after a test ends.
-    virtual void OnTestEnd(const ::testing::TestInfo &info) {
+    virtual void OnTestEnd(const ::testing::TestInfo& info) {
         std::string result;
         if (info.result()->Passed()) {
             result.append("[       OK ]");
@@ -660,9 +660,9 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
     };
 };
 
-static int32_t processInput(struct android_app *, AInputEvent *) { return 0; }
+static int32_t processInput(struct android_app*, AInputEvent*) { return 0; }
 
-static void processCommand(struct android_app *app, int32_t cmd) {
+static void processCommand(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW: {
             if (app->window) {
@@ -682,13 +682,13 @@ static void processCommand(struct android_app *app, int32_t cmd) {
     }
 }
 
-static void destroyActivity(struct android_app *app) {
+static void destroyActivity(struct android_app* app) {
     ANativeActivity_finish(app->activity);
 
     // Wait for APP_CMD_DESTROY
     while (app->destroyRequested == 0) {
-        struct android_poll_source *source = nullptr;
-        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void **>(&source));
+        struct android_poll_source* source = nullptr;
+        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void**>(&source));
         if (result == ALOOPER_POLL_ERROR) {
             __android_log_print(ANDROID_LOG_ERROR, appTag, "ALooper_pollOnce returned an error");
         }
@@ -701,14 +701,14 @@ static void destroyActivity(struct android_app *app) {
     }
 }
 
-void android_main(struct android_app *app) {
+void android_main(struct android_app* app) {
     app->onAppCmd = processCommand;
     app->onInputEvent = processInput;
 
     while (1) {
-        struct android_poll_source *source;
+        struct android_poll_source* source;
 
-        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void **>(&source));
+        int result = ALooper_pollOnce(-1, nullptr, nullptr, reinterpret_cast<void**>(&source));
         if (result == ALOOPER_POLL_ERROR) {
             __android_log_print(ANDROID_LOG_ERROR, appTag, "ALooper_pollOnce returned an error");
             VkTestFramework::Finish();
@@ -741,7 +741,7 @@ void android_main(struct android_app *app) {
             }
 
             int argc = 2;
-            char *argv[] = {(char *)"foo", (char *)filter.c_str()};
+            char* argv[] = {(char*)"foo", (char*)filter.c_str()};
             __android_log_print(ANDROID_LOG_DEBUG, appTag, "filter = %s", argv[1]);
 
             // Route output to files until we can override the gtest output
@@ -750,7 +750,7 @@ void android_main(struct android_app *app) {
 
             ::testing::InitGoogleTest(&argc, argv);
 
-            ::testing::TestEventListeners &listeners = ::testing::UnitTest::GetInstance()->listeners();
+            ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
             listeners.Append(new LogcatPrinter);
 
             VkTestFramework::InitArgs(&argc, argv);
@@ -783,7 +783,7 @@ void android_main(struct android_app *app) {
 
 // Makes any failed assertion throw, allowing for graceful cleanup of resources instead of hard aborts
 class ThrowListener : public testing::EmptyTestEventListener {
-    void OnTestPartResult(const testing::TestPartResult &result) override {
+    void OnTestPartResult(const testing::TestPartResult& result) override {
         if (result.type() == testing::TestPartResult::kFatalFailure) {
             // We need to make sure an exception wasn't already thrown so we dont throw another exception at the same time
             std::exception_ptr ex = std::current_exception();
@@ -802,7 +802,7 @@ class ThrowListener : public testing::EmptyTestEventListener {
 // class. This #ifndef thus makes sure that when the definition is
 // present we do not include the default main entry point.
 #ifndef VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int result;
 
 #if defined(_WIN32)

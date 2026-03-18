@@ -624,7 +624,8 @@ TEST_F(PositiveQuery, QueryPoolResetBit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1, VK_QUERY_POOL_CREATE_RESET_BIT_KHR);
+    VkQueryPoolCreateInfo qpci =
+        vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1, VK_QUERY_POOL_CREATE_RESET_BIT_KHR);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 

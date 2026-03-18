@@ -37,7 +37,7 @@ TEST_F(NegativeVertexInput, AttributeFormat) {
 
     input_attribs.location = 0;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
@@ -55,7 +55,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
@@ -107,8 +107,8 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     }
     // clang-format on
 
-    for (const auto &test_case : test_cases) {
-        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    for (const auto& test_case : test_cases) {
+        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper& helper) {
             vibdd.binding = test_case.div_binding;
             vibdd.divisor = test_case.div_divisor;
             vibd.binding = test_case.desc_binding;
@@ -146,7 +146,7 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
         GTEST_SKIP() << "This device does not support vertexBindingDivisors";
     }
 
-    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper& helper) {
         helper.vi_ci_.pNext = &pvids_ci;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -174,7 +174,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
     vibd.stride = 12;
     vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper& helper) {
         helper.vi_ci_.pNext = &pvids_ci;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -192,7 +192,7 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
@@ -244,8 +244,8 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
     }
     // clang-format on
 
-    for (const auto &test_case : test_cases) {
-        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    for (const auto& test_case : test_cases) {
+        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper& helper) {
             vibdd.binding = test_case.div_binding;
             vibdd.divisor = test_case.div_divisor;
             vibd.binding = test_case.desc_binding;
@@ -284,7 +284,7 @@ TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
         GTEST_SKIP() << "This device does not support vertexBindingDivisors";
     }
 
-    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper& helper) {
         helper.vi_ci_.pNext = &pvids_ci;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -313,7 +313,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
     vibd.stride = 12;
     vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper& helper) {
         helper.vi_ci_.pNext = &pvids_ci;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -342,7 +342,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero14) {
     vibd.stride = 12;
     vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper& helper) {
         helper.vi_ci_.pNext = &pvids_ci;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
@@ -363,7 +363,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = m_device->Physical().limits_.maxVertexInputBindings;
 
-    const auto set_binding = [&](CreatePipelineHelper &helper) {
+    const auto set_binding = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
     };
@@ -382,7 +382,7 @@ TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.stride = m_device->Physical().limits_.maxVertexInputBindingStride + 1;
 
-    const auto set_binding = [&](CreatePipelineHelper &helper) {
+    const auto set_binding = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
     };
@@ -401,7 +401,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.location = m_device->Physical().limits_.maxVertexInputAttributes;
 
-    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+    const auto set_attribute = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
@@ -423,7 +423,7 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.binding = m_device->Physical().limits_.maxVertexInputBindings;
 
-    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+    const auto set_attribute = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
@@ -456,7 +456,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.format = VK_FORMAT_R8_UNORM;
     vertex_input_attribute_description.offset = maxVertexInputAttributeOffset + 1;
-    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+    const auto set_attribute = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
@@ -491,7 +491,7 @@ TEST_F(NegativeVertexInput, BindingDescriptions) {
     input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
     input_attrib.offset = 0;
 
-    const auto set_Info = [&](CreatePipelineHelper &helper) {
+    const auto set_Info = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = input_bindings.data();
         helper.vi_ci_.vertexBindingDescriptionCount = binding_count;
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
@@ -530,7 +530,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
     // Let the last input_attribs description use binding which is not defined
     input_attribs[attribute_count - 1].binding = 1;
 
-    const auto set_Info = [&](CreatePipelineHelper &helper) {
+    const auto set_Info = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexAttributeDescriptions = input_attribs.data();
@@ -614,7 +614,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec4 y;
@@ -660,7 +660,7 @@ TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec4 y;
@@ -704,7 +704,7 @@ TEST_F(NegativeVertexInput, VertextBindingMultipleLocations) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec4 y;
@@ -750,7 +750,7 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=1) in vec4 x;
         layout(location=2) in vec4 y;
@@ -844,7 +844,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     input_attribs[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     input_attribs[2].offset = offsetof(VboEntry, input2);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         layout(location = 1) in vec4 input1;
@@ -908,7 +908,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         void main(){
@@ -949,7 +949,7 @@ TEST_F(NegativeVertexInput, VertexStride) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         void main(){
@@ -992,7 +992,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         void main(){
@@ -1041,7 +1041,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         void main(){
@@ -1087,7 +1087,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         layout(location = 1) in float y;
@@ -1137,7 +1137,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float x;
         void main(){
@@ -1202,7 +1202,7 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
@@ -1225,7 +1225,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
@@ -1317,7 +1317,7 @@ TEST_F(NegativeVertexInput, AttributeNotProvided) {
     )glsl";
     VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-07904");
@@ -1337,7 +1337,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -1346,7 +1346,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     )glsl";
     VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -1429,7 +1429,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     //         layout(location = 4) ivec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -1474,7 +1474,8 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attribs[2] = {
-        {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0}, {5, 0, VK_FORMAT_R32G32B32A32_SINT, 0},  // should be uint
+        {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+        {5, 0, VK_FORMAT_R32G32B32A32_SINT, 0},  // should be uint
     };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
@@ -1482,7 +1483,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -1526,7 +1527,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -1580,7 +1581,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in float x; /* attrib provided float */
         void main(){
@@ -1590,7 +1591,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
 
     VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         helper.vi_ci_.pVertexBindingDescriptions = input_bindings;
         helper.vi_ci_.vertexBindingDescriptionCount = 2;
@@ -1613,7 +1614,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         layout(location = 0) in float pos; // 32-bit
         void main() {}
@@ -1647,7 +1648,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in float64_t pos;
@@ -1682,7 +1683,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in f64vec2 pos;
@@ -1730,7 +1731,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     //         float64 y;
     //         ivec4 z;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpCapability Float64
                OpMemoryModel Logical Simple
@@ -1898,7 +1899,7 @@ TEST_F(NegativeVertexInput, NoBoundVertexBuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         void main(){}
@@ -1961,7 +1962,7 @@ TEST_F(NegativeVertexInput, ResetCmdSetVertexInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in uvec4 x;
         void main(){}
@@ -2009,7 +2010,7 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float a;
         layout(location = 1) in float b;

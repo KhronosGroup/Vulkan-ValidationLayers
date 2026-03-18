@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
- * Copyright (c) 2023-2025 NVIDIA Corporation
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
+ * Copyright (c) 2023-2026 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@
 
 class NegativeGpuAVCooperativeVector : public GpuAVTest {
   public:
-    void RunTest(const char *expected_error, const char *shaderBody);
+    void RunTest(const char* expected_error, const char* shaderBody);
 };
 
-void NegativeGpuAVCooperativeVector::RunTest(const char *expected_error, const char *shaderBody) {
+void NegativeGpuAVCooperativeVector::RunTest(const char* expected_error, const char* shaderBody) {
     TEST_DESCRIPTION("GPU AV negative tests for CooperativeVector");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);

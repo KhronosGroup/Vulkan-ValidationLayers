@@ -499,7 +499,7 @@ TEST_F(NegativeHostImageCopy, Image1D) {
 TEST_F(NegativeHostImageCopy, Image1DMultiSampled) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "VK_SAMPLE_COUNT_2_BIT not supported";
     }
@@ -2273,7 +2273,7 @@ TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlap) {
     vkt::Image image(*m_device, image_ci, kHostVisibleMemProps);
     image.SetLayout(layout);
 
-    VkDeviceAddress *data = (VkDeviceAddress *)image.Memory().Map();
+    VkDeviceAddress* data = (VkDeviceAddress*)image.Memory().Map();
 
     VkImageToMemoryCopy region = vku::InitStructHelper();
     region.pHostPointer = data;
@@ -2344,7 +2344,7 @@ TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
     vkt::Image image(*m_device, image_ci, kHostVisibleMemProps);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkDeviceAddress *data = (VkDeviceAddress *)image.Memory().Map();
+    VkDeviceAddress* data = (VkDeviceAddress*)image.Memory().Map();
 
     VkMemoryToImageCopy region2 = vku::InitStructHelper();
     region2.pHostPointer = data;

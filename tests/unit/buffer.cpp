@@ -146,7 +146,7 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
 TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
     RETURN_IF_SKIP(Init());
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     const VkDeviceSize min_alignment = dev_limits.minTexelBufferOffsetAlignment;
     if (min_alignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
@@ -220,7 +220,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoFeatures) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
     RETURN_IF_SKIP(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     const VkDeviceSize min_alignment = dev_limits.minTexelBufferOffsetAlignment;
     if (min_alignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
@@ -251,7 +251,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoFeatures) {
 
 TEST_F(NegativeBuffer, BufferViewMaxTexelBufferElements) {
     RETURN_IF_SKIP(Init());
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     // Create a new test buffer that is larger than VkPhysicalDeviceLimits::maxTexelBufferElements
     // The spec min max is just 64K, but some implementations support a much larger value than that.
     // Skip the test if the limit is very large to not allocate excessive amounts of memory.

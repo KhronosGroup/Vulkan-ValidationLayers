@@ -26,7 +26,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -39,7 +39,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    const char *object_name = "bad_pipeline";
+    const char* object_name = "bad_pipeline";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     name_info.objectHandle = (uint64_t)pipe.Handle();
@@ -64,7 +64,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -76,7 +76,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
     const vkt::Shader comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], shader_source));
 
-    const char *object_name = "bad_shader_object";
+    const char* object_name = "bad_shader_object";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_SHADER_EXT;
     name_info.objectHandle = (uint64_t)comp_shader.handle();
@@ -98,7 +98,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, OpLine) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"(
+    const char* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %2 = OpExtInstImport "GLSL.std.450"
@@ -158,7 +158,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderDebugInfoDebugLine) {
 
     // Manually ran:
     //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.0
-    const char *shader_source = R"(
+    const char* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -243,7 +243,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -278,7 +278,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndexMulti) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(push_constant) uniform PushConstants { int x; } pc;
@@ -342,7 +342,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, StageInfo) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -374,7 +374,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -421,7 +421,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
     //     debugPrintfEXT("Fragment value is %i", 8);
     //     c_out = vec4(0.0);
     // }
-    const char *shader_source = R"(
+    const char* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %9 = OpExtInstImport "NonSemantic.DebugPrintf"
@@ -523,7 +523,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion1) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -557,7 +557,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion2) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {

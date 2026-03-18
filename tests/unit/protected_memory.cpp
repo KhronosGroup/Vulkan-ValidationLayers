@@ -909,7 +909,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-        vk::CmdUpdateBuffer(m_command_buffer, buffer_protected, 0, 4, (void *)update_data);
+        vk::CmdUpdateBuffer(m_command_buffer, buffer_protected, 0, 4, (void*)update_data);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.BeginRenderPass(rp, framebuffer, render_area.extent.width, render_area.extent.height);
@@ -978,7 +978,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-commandBuffer-01814");
-        vk::CmdUpdateBuffer(protectedCommandBuffer, buffer_unprotected, 0, 4, (void *)update_data);
+        vk::CmdUpdateBuffer(protectedCommandBuffer, buffer_unprotected, 0, 4, (void*)update_data);
         m_errorMonitor->VerifyFound();
 
         protectedCommandBuffer.BeginRenderPass(rp, framebuffer, render_area.extent.width, render_area.extent.height);
@@ -1104,7 +1104,7 @@ TEST_F(NegativeProtectedMemory, RayQuery) {
     InitRenderTarget();
 
     // kFragmentMinimalGlsl but with added OpCapability RayQueryKHR
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
                OpCapability RayQueryKHR
                OpExtension "SPV_KHR_ray_query"

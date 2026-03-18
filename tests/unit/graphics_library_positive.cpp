@@ -925,7 +925,9 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     pr_lib.CreateGraphicsPipeline();
 
     VkPipeline libraries[3] = {
-        vi_lib, pr_lib, fs_lib,
+        vi_lib,
+        pr_lib,
+        fs_lib,
         // fragment output not needed due to rasterization being disabled
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();

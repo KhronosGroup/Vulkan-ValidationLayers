@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -179,7 +179,7 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
     descriptor_set1.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set1.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; };
         // layout(set=1, binding=0) uniform UBO { uint y; };

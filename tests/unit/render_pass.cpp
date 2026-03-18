@@ -26,11 +26,11 @@
 
 class NegativeRenderPass : public VkLayerTest {
   public:
-    void TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR &create_info, const std::vector<const char *> &vuids);
+    void TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info, const std::vector<const char*>& vuids);
 };
 
-void NegativeRenderPass::TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR &create_info,
-                                                  const std::vector<const char *> &vuids) {
+void NegativeRenderPass::TestRenderPass2KHRCreate(const VkRenderPassCreateInfo2KHR& create_info,
+                                                  const std::vector<const char*>& vuids) {
     for (auto vuid : vuids) {
         m_errorMonitor->SetDesiredError(vuid);
     }
@@ -1170,7 +1170,7 @@ TEST_F(NegativeRenderPass, BeginRenderArea) {
     m_renderPassBeginInfo.renderArea.extent.width = 257;
     m_renderPassBeginInfo.renderArea.extent.height = 256;
 
-    const char *vuid = "VUID-VkRenderPassBeginInfo-pNext-02852";
+    const char* vuid = "VUID-VkRenderPassBeginInfo-pNext-02852";
     CreateRenderPassBeginTest(m_command_buffer, &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = 1;
@@ -1314,7 +1314,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, VK_NULL_HANDLE, VK_NULL_HANDLE, VkRect2D{{0, 0}, {128u, 128u}},
                                                            2u, clearValues);
 
-    auto test_layout_helper = [this, &rpci, &rp_begin, rp2Supported, &fbci](const char *rp1_vuid, const char *rp2_vuid) {
+    auto test_layout_helper = [this, &rpci, &rp_begin, rp2Supported, &fbci](const char* rp1_vuid, const char* rp2_vuid) {
         vkt::RenderPass rp_invalid(*m_device, rpci);
         fbci.renderPass = rp_invalid;
         vkt::Framebuffer fb_invalid(*m_device, fbci);
@@ -1406,8 +1406,8 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
     // Closure to create a render pass with just a depth/stencil image used as an input attachment (not a depth attachment!).
     // This image purposely has not VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.
     // The layout of the depth and stencil aspects of this image can be defined separately, allowing to trigger different errors.
-    auto test = [this](VkImageLayout depth_initial_layout, VkImageLayout stencil_initial_layout, const char *rp1_vuid,
-                       const char *rp2_vuid) {
+    auto test = [this](VkImageLayout depth_initial_layout, VkImageLayout stencil_initial_layout, const char* rp1_vuid,
+                       const char* rp2_vuid) {
         // Create an input attachment with a depth stencil format, without VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
         vkt::Image input_image(*m_device, 128, 128, depth_stencil_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -1456,7 +1456,7 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
 
     // Closure to create a render pass with just a depth/stencil image with specified format.
     // The layout is set to have more or less components than what this format has, triggering an error.
-    auto test = [this](VkFormat depth_stencil_format, VkImageLayout depth_stencil_attachment_ref_layout, const char *vuid) {
+    auto test = [this](VkFormat depth_stencil_format, VkImageLayout depth_stencil_attachment_ref_layout, const char* vuid) {
         VkImageFormatProperties imageFormatProperties;
         VkResult res;
         res = vk::GetPhysicalDeviceImageFormatProperties(gpu_, depth_stencil_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
@@ -2507,7 +2507,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0) uniform sampler2D depth;
             void main(){

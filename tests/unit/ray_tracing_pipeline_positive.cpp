@@ -763,8 +763,8 @@ TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptorTem
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     VkDeviceAddress as_address = tlas.GetDstAS()->GetBufferDeviceAddress();
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {{0, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set(
+        m_device, {{0, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
     // Create a descriptor update template for PTLAS
     VkDescriptorUpdateTemplateEntry template_entry = {};

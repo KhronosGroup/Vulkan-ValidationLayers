@@ -120,7 +120,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.minFilter = VK_FILTER_NEAREST;  // Different than chromaFilter
     sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.pNext = (void *)&sampler_ycbcr_info;
+    sampler_info.pNext = (void*)&sampler_ycbcr_info;
     CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-minFilter-01645");
 
     sampler_info.magFilter = VK_FILTER_NEAREST;
@@ -1614,7 +1614,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props);
 
     for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
-        auto &mod = mod_props.pDrmFormatModifierProperties[i];
+        auto& mod = mod_props.pDrmFormatModifierProperties[i];
         if (((mod.drmFormatModifierTilingFeatures &
               (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT)) ==
              (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT))) {
@@ -1775,7 +1775,7 @@ TEST_F(NegativeYcbcr, TexelFetchNonArrayPartiallyBound) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 1;
 
     OneOffDescriptorIndexingSet descriptor_set(
@@ -2086,7 +2086,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexCombinedSampledImage) {
                                        });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_nonuniform_qualifier : require
         layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];
@@ -2174,7 +2174,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexSlang) {
                                        });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"slang(
+    const char* cs_source = R"slang(
         [[vk::binding(0, 0)]]
         uniform Sampler2D ycbcr[4];
 
@@ -2220,7 +2220,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
                                            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_nonuniform_qualifier : require
         layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2026 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ bool PipelineLibraryState::IsIndependentSets() const {
     return false;
 }
 
-VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGraphicsPipelineCreateInfo &create_info)
+VertexInputState::VertexInputState(const vvl::Pipeline& p, const vku::safe_VkGraphicsPipelineCreateInfo& create_info)
     : PipelineLibraryState(p) {
     for (uint32_t i = 0; i < create_info.stageCount; i++) {
         if (create_info.pStages && create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
@@ -45,11 +45,11 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
                  vvl::enumerate(input_state->pVertexBindingDescriptions, input_state->vertexBindingDescriptionCount)) {
                 bindings.emplace(description.binding, VertexBindingState(i, &description));
             }
-            const auto *divisor_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
+            const auto* divisor_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
             if (divisor_info) {
                 for (const auto [i, di] :
                      vvl::enumerate(divisor_info->pVertexBindingDivisors, divisor_info->vertexBindingDivisorCount)) {
-                    if (auto *binding_state = vvl::Find(bindings, di.binding)) {
+                    if (auto* binding_state = vvl::Find(bindings, di.binding)) {
                         binding_state->desc.divisor = di.divisor;
                     }
                 }
@@ -57,7 +57,7 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
         }
         for (const auto [i, description] :
              vvl::enumerate(input_state->pVertexAttributeDescriptions, input_state->vertexAttributeDescriptionCount)) {
-            auto *binding_state = vvl::Find(bindings, description.binding);
+            auto* binding_state = vvl::Find(bindings, description.binding);
             if (!binding_state) {
                 continue;
             }
@@ -66,8 +66,8 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
     }
 }
 
-PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &state_data,
-                               const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
+PreRasterState::PreRasterState(const vvl::Pipeline& p, const vvl::DeviceState& state_data,
+                               const vku::safe_VkGraphicsPipelineCreateInfo& create_info, std::shared_ptr<const vvl::RenderPass> rp,
                                spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages])
     : PipelineLibraryState(p),
       pipeline_layout(state_data.Get<vvl::PipelineLayout>(create_info.layout)),
@@ -79,7 +79,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &s
     VkShaderStageFlags all_stages = 0;
 
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
-        const auto &stage_ci = create_info.pStages[i];
+        const auto& stage_ci = create_info.pStages[i];
         const VkShaderStageFlagBits stage = stage_ci.stage;
         if ((stage & ValidShaderStages()) == 0) {
             continue;
@@ -94,7 +94,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &s
         if (!module_state) {
             // Using VkShaderModuleCreateInfo to inline with VK_KHR_maintenance5
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
-                spirv::StatelessData *stateless_data_stage =
+                spirv::StatelessData* stateless_data_stage =
                     (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                 auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings,
                                                                 stateless_data_stage);
@@ -163,44 +163,44 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &s
 }
 
 std::unique_ptr<const vku::safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
-    const vku::safe_VkPipelineColorBlendStateCreateInfo &cbs) {
+    const vku::safe_VkPipelineColorBlendStateCreateInfo& cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
     return std::make_unique<const vku::safe_VkPipelineColorBlendStateCreateInfo>(cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
-    const VkPipelineColorBlendStateCreateInfo &cbs) {
+    const VkPipelineColorBlendStateCreateInfo& cbs) {
     return std::make_unique<const vku::safe_VkPipelineColorBlendStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ToSafeMultisampleState(
-    const vku::safe_VkPipelineMultisampleStateCreateInfo &cbs) {
+    const vku::safe_VkPipelineMultisampleStateCreateInfo& cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
     return std::make_unique<const vku::safe_VkPipelineMultisampleStateCreateInfo>(cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ToSafeMultisampleState(
-    const VkPipelineMultisampleStateCreateInfo &cbs) {
+    const VkPipelineMultisampleStateCreateInfo& cbs) {
     return std::make_unique<const vku::safe_VkPipelineMultisampleStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthStencilState(
-    const vku::safe_VkPipelineDepthStencilStateCreateInfo &cbs) {
+    const vku::safe_VkPipelineDepthStencilStateCreateInfo& cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
     return std::make_unique<const vku::safe_VkPipelineDepthStencilStateCreateInfo>(cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthStencilState(
-    const VkPipelineDepthStencilStateCreateInfo &cbs) {
+    const VkPipelineDepthStencilStateCreateInfo& cbs) {
     return std::make_unique<const vku::safe_VkPipelineDepthStencilStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(
-    const vku::safe_VkPipelineShaderStageCreateInfo &cbs) {
+    const vku::safe_VkPipelineShaderStageCreateInfo& cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
     return std::make_unique<const vku::safe_VkPipelineShaderStageCreateInfo>(cbs);
 }
-std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs) {
+std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo& cbs) {
     return std::make_unique<const vku::safe_VkPipelineShaderStageCreateInfo>(&cbs);
 }
 
 template <typename CreateInfo>
-void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
-                                  const vvl::DeviceState &state_data, const CreateInfo &create_info,
+void SetFragmentShaderInfoPrivate(const vvl::Pipeline& pipeline_state, FragmentShaderState& fs_state,
+                                  const vvl::DeviceState& state_data, const CreateInfo& create_info,
                                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -214,7 +214,7 @@ void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentS
         if (!module_state) {
             // Using VkShaderModuleCreateInfo to inline with VK_KHR_maintenance5
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext)) {
-                spirv::StatelessData *stateless_data_stage =
+                spirv::StatelessData* stateless_data_stage =
                     (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
                 auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings,
                                                                 stateless_data_stage);
@@ -247,23 +247,23 @@ void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentS
 }
 
 // static
-void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
-                                                const vvl::DeviceState &state_data, const VkGraphicsPipelineCreateInfo &create_info,
+void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline& pipeline_state, FragmentShaderState& fs_state,
+                                                const vvl::DeviceState& state_data, const VkGraphicsPipelineCreateInfo& create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
 // static
-void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
-                                                const vvl::DeviceState &state_data,
-                                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
+void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline& pipeline_state, FragmentShaderState& fs_state,
+                                                const vvl::DeviceState& state_data,
+                                                const vku::safe_VkGraphicsPipelineCreateInfo& create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
-FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const vvl::DeviceState &dev_data,
+FragmentShaderState::FragmentShaderState(const vvl::Pipeline& p, const vvl::DeviceState& dev_data,
                                          std::shared_ptr<const vvl::RenderPass> rp, uint32_t subpass_index, VkPipelineLayout layout)
     : PipelineLibraryState(p), rp_state(rp), subpass(subpass_index), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t subpass_index)
+FragmentOutputState::FragmentOutputState(const vvl::Pipeline& p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t subpass_index)
     : PipelineLibraryState(p), rp_state(rp), subpass(subpass_index) {}

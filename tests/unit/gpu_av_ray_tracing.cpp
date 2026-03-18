@@ -37,7 +37,7 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
-    const char *ray_gen = R"glsl(
+    const char* ray_gen = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
@@ -75,21 +75,21 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
 
     VkTraceRaysIndirectCommandKHR trace_rays_dim{rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1, 1};
 
-    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)trace_rays_big_width.Memory().Map();
+    uint8_t* ray_query_dimensions_buffer_1_ptr = (uint8_t*)trace_rays_big_width.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_1_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
 
     trace_rays_dim = {1, rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1};
 
     vkt::Buffer trace_rays_big_height(*m_device, 4096, buffer_usage, vkt::device_address);
 
-    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)trace_rays_big_height.Memory().Map();
+    uint8_t* ray_query_dimensions_buffer_2_ptr = (uint8_t*)trace_rays_big_height.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_2_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
 
     trace_rays_dim = {1, 1, rt_pipeline_props.maxRayDispatchInvocationCount + 1};
 
     vkt::Buffer trace_ray_big_depth(*m_device, 4096, buffer_usage, vkt::device_address);
 
-    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)trace_ray_big_depth.Memory().Map();
+    uint8_t* ray_query_dimensions_buffer_3_ptr = (uint8_t*)trace_ray_big_depth.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_3_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
 
     m_command_buffer.Begin();
@@ -154,7 +154,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
 
     // Set shaders
 
-    const char *ray_gen = R"glsl(
+    const char* ray_gen = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         #extension GL_EXT_buffer_reference : enable
@@ -178,7 +178,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
 
-    const char *miss = R"glsl(
+    const char* miss = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
 
@@ -190,7 +190,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     )glsl";
     pipeline.AddGlslMissShader(miss);
 
-    const char *closest_hit = R"glsl(
+    const char* closest_hit = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
 
@@ -215,7 +215,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     // Create uniform_buffer
     vkt::Buffer rt_params_buffer(*m_device, 4 * sizeof(float), 0, vkt::device_address);  // missing space for Tmin and Tmax
     vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    auto data = static_cast<VkDeviceAddress*>(uniform_buffer.Memory().Map());
     data[0] = rt_params_buffer.Address();
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, 16, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
@@ -229,7 +229,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
         m_errorMonitor->SetDesiredWarning(
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
-        std::vector<const vkt::DescriptorSetLayout *> desc_set_layouts(max_bound_desc_sets);
+        std::vector<const vkt::DescriptorSetLayout*> desc_set_layouts(max_bound_desc_sets);
         for (uint32_t i = 0; i < max_bound_desc_sets; i++) {
             desc_set_layouts[i] = &pipeline.GetDescriptorSet().layout_;
         }
@@ -238,7 +238,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     }
 
     // Then use the maximum allowed number of sets
-    std::vector<const vkt::DescriptorSetLayout *> des_set_layouts(max_bound_desc_sets - 1);
+    std::vector<const vkt::DescriptorSetLayout*> des_set_layouts(max_bound_desc_sets - 1);
     for (uint32_t i = 0; i < max_bound_desc_sets - 1; i++) {
         des_set_layouts[i] = &pipeline.GetDescriptorSet().layout_;
     }
@@ -301,7 +301,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
     vkt::as::BuildGeometryInfoKHR cubes_tlas =
         vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -389,7 +389,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
 
         {
             uniform_buffer_ptr[0] = 25;
@@ -443,7 +443,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
     vkt::as::BuildGeometryInfoKHR cubes_tlas =
         vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -529,7 +529,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
 
         {
             uniform_buffer_ptr[0] = 25;
@@ -582,7 +582,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
     std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -669,7 +669,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
 
         {
             uniform_buffer_ptr[0] = 25;
@@ -721,7 +721,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
     std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -828,7 +828,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
 
         {
             uniform_buffer_ptr[0] = 25;
@@ -887,7 +887,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShaderGPL) {
     vkt::as::BuildGeometryInfoKHR cubes_tlas =
         vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -969,7 +969,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShaderGPL) {
     }
     vkt::Buffer debug_buffer(*m_device, 16 * sizeof(uint32_t),
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
-    uint32_t *debug_buffer_ptr = (uint32_t *)debug_buffer.Memory().Map();
+    uint32_t* debug_buffer_ptr = (uint32_t*)debug_buffer.Memory().Map();
     memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
     pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(10, debug_buffer, 0, VK_WHOLE_SIZE,
@@ -994,7 +994,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShaderGPL) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
         {
             uniform_buffer_ptr[0] = 42;
             SCOPED_TRACE("Out of Bounds");
@@ -1054,7 +1054,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShaderGPL) {
     vkt::as::BuildGeometryInfoKHR cubes_tlas =
         vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         struct UniformBuffer {
             uint ray_payload_i;
@@ -1137,7 +1137,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShaderGPL) {
     }
     vkt::Buffer debug_buffer(*m_device, 16 * sizeof(uint32_t),
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
-    uint32_t *debug_buffer_ptr = (uint32_t *)debug_buffer.Memory().Map();
+    uint32_t* debug_buffer_ptr = (uint32_t*)debug_buffer.Memory().Map();
     memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
     pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(10, debug_buffer, 0, VK_WHOLE_SIZE,
@@ -1162,7 +1162,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShaderGPL) {
 
         m_command_buffer.End();
 
-        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+        uint32_t* uniform_buffer_ptr = (uint32_t*)uniform_buffer.Memory().Map();
         {
             uniform_buffer_ptr[0] = 42;
             SCOPED_TRACE("Out of Bounds");
@@ -1247,7 +1247,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference1) {
 
     cube_instances[0].AddInstanceDeviceAccelStructRef(*m_device, cube_blas.GetDstAS()->handle(), cube_instance_2);
 
-    cube_instances[0].UpdateAccelerationStructureInstance(0, [](VkAccelerationStructureInstanceKHR &instance) {
+    cube_instances[0].UpdateAccelerationStructureInstance(0, [](VkAccelerationStructureInstanceKHR& instance) {
         instance.accelerationStructureReference = static_cast<uint64_t>(0xbaadbeef);
     });
 
@@ -1269,10 +1269,10 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference1) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -1414,7 +1414,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference2) {
 
     tlas_1[0].AddInstanceDeviceAccelStructRef(*m_device, cube_blas.GetDstAS()->handle(), cube_instance_2);
 
-    tlas_1[0].UpdateAccelerationStructureInstance(0, [](VkAccelerationStructureInstanceKHR &instance) {
+    tlas_1[0].UpdateAccelerationStructureInstance(0, [](VkAccelerationStructureInstanceKHR& instance) {
         instance.accelerationStructureReference = static_cast<uint64_t>(0x10);
     });
 
@@ -1468,10 +1468,10 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference2) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -1658,10 +1658,10 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference3) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -1821,10 +1821,10 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference4) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -1999,10 +1999,10 @@ TEST_F(NegativeGpuAVRayTracing, BLASBuiltAndUsedInTLAS) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -2163,10 +2163,10 @@ TEST_F(NegativeGpuAVRayTracing, BLASUpdatedAndUsedInTLAS) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -2341,10 +2341,10 @@ TEST_F(NegativeGpuAVRayTracing, TLASinBLASlist) {
     // Buffer used to count invocations for the 3 shaders
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    auto debug_buffer_ptr = static_cast<uint32_t *>(debug_buffer.Memory().Map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
 
@@ -2441,8 +2441,8 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex) {
 
     vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
 
-    vkt::Buffer &cube_index_buffer = cube.GetTrianglesDeviceIndexBuffer();
-    auto index_buffer_ptr = static_cast<uint32_t *>(cube_index_buffer.Memory().Map());
+    vkt::Buffer& cube_index_buffer = cube.GetTrianglesDeviceIndexBuffer();
+    auto index_buffer_ptr = static_cast<uint32_t*>(cube_index_buffer.Memory().Map());
     index_buffer_ptr[0] = 30;
     index_buffer_ptr[6] = 42;
     index_buffer_ptr[35] = 666;
@@ -2539,7 +2539,7 @@ TEST_F(NegativeGpuAVRayTracing, OutOfBoundsIndex3) {
 
     vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    auto index_buffer_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.Memory().Unmap();
 
@@ -2704,7 +2704,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate) {
 
     vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    auto index_buffer_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.Memory().Unmap();
 
@@ -2724,7 +2724,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate) {
 
     {
         SCOPED_TRACE("Update index buffer values");
-        index_buffer_ptr = static_cast<uint32_t *>(cube_blas.GetGeometries()[0].GetTrianglesDeviceIndexBuffer().Memory().Map());
+        index_buffer_ptr = static_cast<uint32_t*>(cube_blas.GetGeometries()[0].GetTrianglesDeviceIndexBuffer().Memory().Map());
 
         index_buffer_ptr[0] = 0;
         index_buffer_ptr[5] = 2;
@@ -2752,7 +2752,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate) {
         constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
         vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
                                    kHostVisibleMemProps, &alloc_flags);
-        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        auto index_buffer_2_ptr = static_cast<uint32_t*>(index_buffer_2.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
 
         index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
@@ -2817,7 +2817,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2) {
 
         vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-        auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+        auto index_buffer_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_ptr);
         index_buffer.Memory().Unmap();
 
@@ -2846,8 +2846,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2) {
 
     {
         SCOPED_TRACE("Update index buffer values");
-        auto index_buffer_ptr =
-            static_cast<uint32_t *>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
+        auto index_buffer_ptr = static_cast<uint32_t*>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
         index_buffer_ptr[0] = 0;
         index_buffer_ptr[5] = 2;
         index_buffer_ptr[indices.size() - 1] = 1;
@@ -2873,7 +2872,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2) {
         constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
         vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
                                    kHostVisibleMemProps, &alloc_flags);
-        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        auto index_buffer_2_ptr = static_cast<uint32_t*>(index_buffer_2.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
 
         index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
@@ -2912,7 +2911,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2) {
         constexpr uint32_t index_buffer_2_dword_offset = index_buffer_2_byte_offset / sizeof(uint32_t);
         vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
                                    kHostVisibleMemProps, &alloc_flags);
-        auto index_buffer_2_ptr = static_cast<uint32_t *>(index_buffer_2.Memory().Map());
+        auto index_buffer_2_ptr = static_cast<uint32_t*>(index_buffer_2.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_dword_offset);
 
         index_buffer_2_ptr[0 + index_buffer_2_dword_offset] = 0;
@@ -2972,7 +2971,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2Uint16) {
 
         vkt::Buffer index_buffer(*m_device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-        auto index_buffer_ptr = static_cast<uint16_t *>(index_buffer.Memory().Map());
+        auto index_buffer_ptr = static_cast<uint16_t*>(index_buffer.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_ptr);
         index_buffer.Memory().Unmap();
 
@@ -3001,8 +3000,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2Uint16) {
 
     {
         SCOPED_TRACE("Update index buffer values");
-        auto index_buffer_ptr =
-            static_cast<uint16_t *>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
+        auto index_buffer_ptr = static_cast<uint16_t*>(cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Map());
         index_buffer_ptr[5] = 2;
         index_buffer_ptr[indices.size() - 1] = 1;
         cube_blas.GetGeometries()[1].GetTrianglesDeviceIndexBuffer().Memory().Unmap();
@@ -3025,7 +3023,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2Uint16) {
         constexpr uint32_t index_buffer_2_word_offset = index_buffer_2_byte_offset / sizeof(uint16_t);
         vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
                                    kHostVisibleMemProps, &alloc_flags);
-        auto index_buffer_2_ptr = static_cast<uint16_t *>(index_buffer_2.Memory().Map());
+        auto index_buffer_2_ptr = static_cast<uint16_t*>(index_buffer_2.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_word_offset);
 
         index_buffer_2_ptr[5 + index_buffer_2_word_offset] = 2;
@@ -3061,7 +3059,7 @@ TEST_F(NegativeGpuAVRayTracing, InvalidIndexBufferUpdate2Uint16) {
         constexpr uint32_t index_buffer_2_word_offset = index_buffer_2_byte_offset / sizeof(uint16_t);
         vkt::Buffer index_buffer_2(*m_device, sizeof(indices[0]) * indices.size() + index_buffer_2_byte_offset, buffer_usage,
                                    kHostVisibleMemProps, &alloc_flags);
-        auto index_buffer_2_ptr = static_cast<uint16_t *>(index_buffer_2.Memory().Map());
+        auto index_buffer_2_ptr = static_cast<uint16_t*>(index_buffer_2.Memory().Map());
         std::copy(indices.begin(), indices.end(), index_buffer_2_ptr + index_buffer_2_word_offset);
 
         index_buffer_2_ptr[5 + index_buffer_2_word_offset] = 2;
@@ -3129,7 +3127,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdate) {
 
     vkt::Buffer vertex_buffer(*m_device, sizeof(vertices[0]) * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.Memory().Map());
+    auto vertex_buffer_ptr = static_cast<Vertex*>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
     vertex_buffer.Memory().Unmap();
 
@@ -3160,7 +3158,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdate) {
         vertices_copy[7].x = -42.0f;
         vkt::Buffer vertex_buffer_2(*m_device, sizeof(vertices_copy[0]) * vertices_copy.size(), buffer_usage, kHostVisibleMemProps,
                                     &alloc_flags);
-        auto vertex_buffer_2_ptr = static_cast<Vertex *>(vertex_buffer_2.Memory().Map());
+        auto vertex_buffer_2_ptr = static_cast<Vertex*>(vertex_buffer_2.Memory().Map());
         std::copy(vertices_copy.begin(), vertices_copy.end(), vertex_buffer_2_ptr);
         vertex_buffer_2.Memory().Unmap();
 
@@ -3193,7 +3191,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdate) {
         const uint32_t vertex_buffer_3_sizeof_vertex_offset = vertex_buffer_3_byte_offset / sizeof(Vertex);
         vkt::Buffer vertex_buffer_3(*m_device, sizeof(vertices[0]) * vertices.size() + vertex_buffer_3_byte_offset, buffer_usage,
                                     kHostVisibleMemProps, &alloc_flags);
-        auto vertex_buffer_3_ptr = static_cast<Vertex *>(vertex_buffer_3.Memory().Map());
+        auto vertex_buffer_3_ptr = static_cast<Vertex*>(vertex_buffer_3.Memory().Map());
         std::copy(vertices.begin(), vertices.end(), vertex_buffer_3_ptr + vertex_buffer_3_sizeof_vertex_offset);
         vertex_buffer_3.Memory().Unmap();
 
@@ -3257,7 +3255,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdateStridedVerticesNoIndexBuffer) 
 
     vkt::Buffer vertex_buffer(*m_device, vertex_stride * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<uint8_t *>(vertex_buffer.Memory().Map());
+    auto vertex_buffer_ptr = static_cast<uint8_t*>(vertex_buffer.Memory().Map());
 
     for (uint32_t vertex_i = 0; vertex_i < vertices.size(); ++vertex_i) {
         std::memcpy(vertex_buffer_ptr + vertex_i * vertex_stride, vertices.data() + vertex_i, sizeof(Vertex));
@@ -3292,7 +3290,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdateStridedVerticesNoIndexBuffer) 
         vertices_copy[8].x = NAN;
         vkt::Buffer vertex_buffer_2(*m_device, vertex_stride * vertices_copy.size(), buffer_usage, kHostVisibleMemProps,
                                     &alloc_flags);
-        auto vertex_buffer_2_ptr = static_cast<uint8_t *>(vertex_buffer_2.Memory().Map());
+        auto vertex_buffer_2_ptr = static_cast<uint8_t*>(vertex_buffer_2.Memory().Map());
         for (uint32_t vertex_i = 0; vertex_i < vertices_copy.size(); ++vertex_i) {
             std::memcpy(vertex_buffer_2_ptr + vertex_i * vertex_stride, vertices_copy.data() + vertex_i, sizeof(Vertex));
         }
@@ -3372,7 +3370,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdateStridedVerticesIndexBuffer) {
 
     vkt::Buffer vertex_buffer(*m_device, vertex_stride * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<uint8_t *>(vertex_buffer.Memory().Map());
+    auto vertex_buffer_ptr = static_cast<uint8_t*>(vertex_buffer.Memory().Map());
 
     for (uint32_t vertex_i = 0; vertex_i < vertices.size(); ++vertex_i) {
         std::memcpy(vertex_buffer_ptr + vertex_i * vertex_stride, vertices.data() + vertex_i, sizeof(Vertex));
@@ -3414,7 +3412,7 @@ TEST_F(NegativeGpuAVRayTracing, VertexBufferUpdateStridedVerticesIndexBuffer) {
         vertices_copy[8].x = NAN;
         vkt::Buffer vertex_buffer_2(*m_device, vertex_stride * vertices_copy.size(), buffer_usage, kHostVisibleMemProps,
                                     &alloc_flags);
-        auto vertex_buffer_2_ptr = static_cast<uint8_t *>(vertex_buffer_2.Memory().Map());
+        auto vertex_buffer_2_ptr = static_cast<uint8_t*>(vertex_buffer_2.Memory().Map());
         for (uint32_t vertex_i = 0; vertex_i < vertices_copy.size(); ++vertex_i) {
             std::memcpy(vertex_buffer_2_ptr + vertex_i * vertex_stride, vertices_copy.data() + vertex_i, sizeof(Vertex));
         }

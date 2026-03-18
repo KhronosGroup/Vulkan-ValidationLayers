@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +38,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
                OpCapability StorageImageReadWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
@@ -101,7 +101,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -193,7 +193,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
                OpCapability StorageImageReadWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
@@ -337,7 +337,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -443,7 +443,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -500,7 +500,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
              %1 = OpExtInstImport "GLSL.std.450"
                   OpMemoryModel Logical GLSL450
@@ -547,7 +547,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -597,7 +597,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -652,7 +652,7 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, sc, sc + 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -718,7 +718,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Unknown will become a 4-component but writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability StorageImageWriteWithoutFormat
                OpMemoryModel Logical GLSL450
@@ -797,7 +797,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     // imageStore(storageImage, ivec2(1, 1), vec3(1, 1, 1));
     //
     // only have 3 components
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability StorageImageWriteWithoutFormat
                OpMemoryModel Logical GLSL450

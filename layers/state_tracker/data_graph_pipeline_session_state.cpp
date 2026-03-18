@@ -18,17 +18,17 @@
 
 namespace vvl {
 
-DataGraphPipelineSession::DataGraphPipelineSession(DeviceState &dev_data, VkDataGraphPipelineSessionARM handle,
-                                                   const VkDataGraphPipelineSessionCreateInfoARM *pCreateInfo)
+DataGraphPipelineSession::DataGraphPipelineSession(DeviceState& dev_data, VkDataGraphPipelineSessionARM handle,
+                                                   const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeDataGraphPipelineSessionARM),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       session_(handle),
-      unprotected_((pCreateInfo->flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM) == 0) {
-}
+      unprotected_((pCreateInfo->flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM) == 0) {}
 
-void DataGraphPipelineSession::InitMemoryRequirements(VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementARM *p_bind_point_reqs, uint32_t n_reqs) {
-
+void DataGraphPipelineSession::InitMemoryRequirements(VkDevice device,
+                                                      const VkDataGraphPipelineSessionBindPointRequirementARM* p_bind_point_reqs,
+                                                      uint32_t n_reqs) {
     bind_point_reqs_.resize(n_reqs);
     memcpy(bind_point_reqs_.data(), p_bind_point_reqs, n_reqs * sizeof(VkDataGraphPipelineSessionBindPointRequirementARM));
 
@@ -53,8 +53,9 @@ void DataGraphPipelineSession::AddBoundMemory(VkDataGraphPipelineSessionBindPoin
     bound_memory_map_[bind_point].push_back(binding);
 }
 
-const VkDataGraphPipelineSessionBindPointRequirementARM *DataGraphPipelineSession::FindBindPointRequirement(VkDataGraphPipelineSessionBindPointARM bind_point) const {
-    for (auto &bpr : bind_point_reqs_) {
+const VkDataGraphPipelineSessionBindPointRequirementARM* DataGraphPipelineSession::FindBindPointRequirement(
+    VkDataGraphPipelineSessionBindPointARM bind_point) const {
+    for (auto& bpr : bind_point_reqs_) {
         if (bpr.bindPoint == bind_point) {
             return &bpr;
         }

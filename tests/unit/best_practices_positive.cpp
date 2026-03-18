@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    const char *const vsSource = R"glsl(
+    const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[4]; } constants;
         void main(){
@@ -378,7 +378,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     }
 
     bool fifo_relaxed = false;
-    for (const auto &present_mode : m_surface_present_modes) {
+    for (const auto& present_mode : m_surface_present_modes) {
         if (present_mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             fifo_relaxed = true;
             break;
@@ -497,7 +497,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateDeviceWithFeatures) {
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(gpu_, &features);
 
-    const char *portability_extension = VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME;
+    const char* portability_extension = VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME;
 
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = create_queue_infos.size();

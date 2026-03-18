@@ -2004,11 +2004,12 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
 
     {
         VkSubpassDescription2 subpass = vku::InitStructHelper();
-        auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
+        auto render_pass_create_info =
+            vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
         vkt::RenderPass render_pass(*m_device, render_pass_create_info);
         vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr, ra_extent.width, ra_extent.height);
-        auto rp_begin =
-            vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
+        auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(),
+                                                               render_area, 0u, nullptr);
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(rp_begin);

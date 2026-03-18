@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadMemoryOverLimit) {
 
     VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -96,7 +96,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadSpecConstantSet) {
     const uint32_t max_mesh_payload_and_shared_memory_size = mesh_shader_properties.maxMeshPayloadAndSharedMemorySize;
     const uint32_t max_mesh_payload_and_shared_ints = max_mesh_payload_and_shared_memory_size / 4;
 
-    const char *task_source = R"glsl(
+    const char* task_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(constant_id = 0) const int SIZE = 64;
@@ -110,7 +110,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadSpecConstantSet) {
         }
     )glsl";
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(max_vertices = 3, max_primitives=1) out;
@@ -139,7 +139,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadSpecConstantSet) {
 
     VkShaderObj task(*m_device, task_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj mesh(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);

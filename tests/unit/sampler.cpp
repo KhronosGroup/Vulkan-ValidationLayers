@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -317,7 +317,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
     tests[1].required_format_feature = VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG;
     tests[1].err_msg = "VUID-vkCmdDraw-None-02692";
 
-    for (auto &test_struct : tests) {
+    for (auto& test_struct : tests) {
         for (std::pair<VkFormat, FormatTypes> cur_format_pair : formats_to_check) {
             VkFormatProperties props = {};
             vk::GetPhysicalDeviceFormatProperties(Gpu(), cur_format_pair.first, &props);
@@ -360,7 +360,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
 
     InitRenderTarget();
 
-    for (const auto &test_struct : tests) {
+    for (const auto& test_struct : tests) {
         if (test_struct.format == VK_FORMAT_UNDEFINED) {
             printf("Could not find a testable format for filter %d.  Skipping test for said filter.\n", test_struct.filter);
             continue;
@@ -388,7 +388,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
         vkt::ImageView view = mpimage.CreateView();
 
         CreatePipelineHelper pipe(*this);
-        VkShaderObj *fs = nullptr;
+        VkShaderObj* fs = nullptr;
 
         if (test_struct.format_type == FLOAT) {
             fs = new VkShaderObj(*m_device, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -455,7 +455,7 @@ TEST_F(NegativeSampler, LinearReductionModeMinMax) {
     sampler_ci.compareEnable = VK_FALSE;
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D bad;
         layout(location=0) out vec4 color;
@@ -818,7 +818,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         layout(location=0) out vec4 x;
@@ -871,7 +871,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefinedNonCombined) {
     descriptor_set.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler s;
         layout(set=0, binding=1) uniform texture2D t;
@@ -930,7 +930,7 @@ TEST_F(NegativeSampler, DISABLED_CustomBorderColorFormatUndefinedNonCombinedMult
     descriptor_set1.WriteDescriptorImageInfo(3, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set1.UpdateDescriptorSets();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=2) uniform sampler s;
         layout(set=1, binding=3) uniform texture2D t;
@@ -1374,7 +1374,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     // }
     //
     // but with OpInBoundsAccessChain instead of normal generated OpAccessChain
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -1465,7 +1465,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCopyObject) {
     // void main() {
     //     vec4 x = textureLodOffset(tex, vec2(0), 0, ivec2(0));
     // }
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -1604,7 +1604,7 @@ TEST_F(NegativeSampler, ShareOpSampledImage) {
     //     color = texture(sampler2D(si_good, s1), vec2(0));
     //     color += texture(sampler2D(si_good, s1), vec2(color.x));
     // }
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %color
@@ -1736,8 +1736,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     AddRequiredExtensions(VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping =
-        vku::InitStructHelper();
+    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping = vku::InitStructHelper();
     border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 

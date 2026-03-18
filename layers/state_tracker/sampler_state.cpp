@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include "utils/hash_util.h"
 #include "utils/image_utils.h"
 
-bool DescriptorSlot::operator==(const DescriptorSlot &rhs) const { return set == rhs.set && binding == rhs.binding; }
+bool DescriptorSlot::operator==(const DescriptorSlot& rhs) const { return set == rhs.set && binding == rhs.binding; }
 
 size_t DescriptorSlot::Hash() const {
     hash_util::HashCombiner hc;
@@ -27,7 +27,7 @@ size_t DescriptorSlot::Hash() const {
     return hc.Value();
 }
 
-bool SamplerUsedByImage::operator==(const SamplerUsedByImage &rhs) const {
+bool SamplerUsedByImage::operator==(const SamplerUsedByImage& rhs) const {
     return sampler_slot == rhs.sampler_slot && sampler_index == rhs.sampler_index;
 }
 
@@ -39,7 +39,7 @@ size_t SamplerUsedByImage::Hash() const {
 
 namespace vvl {
 
-Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
+Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeSampler),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
@@ -47,7 +47,7 @@ Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
       customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
 
 SamplerYcbcrConversion::SamplerYcbcrConversion(VkSamplerYcbcrConversion handle,
-                                               const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                               const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                VkFormatFeatureFlags2 features)
     : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
       safe_create_info(pCreateInfo),
@@ -55,7 +55,7 @@ SamplerYcbcrConversion::SamplerYcbcrConversion(VkSamplerYcbcrConversion handle,
       format_features(features),
       external_format(GetExternalFormat(pCreateInfo->pNext)) {}
 
-bool SamplerYcbcrConversion::operator!=(const SamplerYcbcrConversion &rhs) const {
+bool SamplerYcbcrConversion::operator!=(const SamplerYcbcrConversion& rhs) const {
     return (create_info.format != rhs.create_info.format) || (create_info.ycbcrModel != rhs.create_info.ycbcrModel) ||
            (create_info.ycbcrRange != rhs.create_info.ycbcrRange) || (create_info.components.r != rhs.create_info.components.r) ||
            (create_info.components.g != rhs.create_info.components.g) ||

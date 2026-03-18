@@ -29,7 +29,7 @@ TEST_F(UndefinedCore, BindInvalidPipelineLayout) {
     descriptor_set.UpdateDescriptorSets();
 
     // Create PSO to be used for draw-time errors below
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0, binding=1) uniform foo1 { vec4 y; };

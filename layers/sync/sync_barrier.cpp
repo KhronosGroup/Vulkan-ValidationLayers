@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ static VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask) {
 }
 
 template <typename Flags, typename Map>
-static SyncAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
+static SyncAccessFlags AccessScopeImpl(Flags flag_mask, const Map& map) {
     SyncAccessFlags scope;
-    for (const auto &[flag_bits2, sync_access_flags] : map) {
+    for (const auto& [flag_bits2, sync_access_flags] : map) {
         if (flag_mask < flag_bits2) {
             break;
         }
@@ -70,10 +70,10 @@ static SyncAccessFlags AccessScopeByAccess(VkAccessFlags2 accesses) {
 
 static VkPipelineStageFlags2 RelatedPipelineStages(
     VkPipelineStageFlags2 stage_mask,
-    const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2> &earlier_or_later_stages) {
+    const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& earlier_or_later_stages) {
     VkPipelineStageFlags2 unscanned = stage_mask;
     VkPipelineStageFlags2 related = 0;
-    for (const auto &[stage, related_stages] : earlier_or_later_stages) {
+    for (const auto& [stage, related_stages] : earlier_or_later_stages) {
         if (stage & unscanned) {
             related |= related_stages;
             unscanned &= ~stage;
@@ -93,7 +93,7 @@ static VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
 }
 
-static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessFlags2 accesses) {
+static SyncAccessFlags AccessScope(const SyncAccessFlags& stage_scope, VkAccessFlags2 accesses) {
     SyncAccessFlags access_scope = stage_scope & AccessScopeByAccess(accesses);
 
     // Special case. AS copy operations (e.g., vkCmdCopyAccelerationStructureKHR) can be synchronized using
@@ -143,7 +143,7 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
     return result;
 }
 
-bool SyncExecScope::operator==(const SyncExecScope &other) const {
+bool SyncExecScope::operator==(const SyncExecScope& other) const {
     return mask_param == other.mask_param && exec_scope == other.exec_scope && valid_accesses == other.valid_accesses;
 }
 
@@ -155,16 +155,16 @@ size_t SyncExecScope::Hash() const {
     return hc.Value();
 }
 
-SyncBarrier::SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec)
+SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec)
     : src_exec_scope(src_exec), dst_exec_scope(dst_exec) {}
 
-SyncBarrier::SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec, const SyncBarrier::AllAccess &)
+SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, const SyncExecScope& dst_exec, const SyncBarrier::AllAccess&)
     : src_exec_scope(src_exec),
       src_access_scope(src_exec.valid_accesses),
       dst_exec_scope(dst_exec),
       dst_access_scope(dst_exec.valid_accesses) {}
 
-SyncBarrier::SyncBarrier(const SyncExecScope &src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope &dst_exec,
+SyncBarrier::SyncBarrier(const SyncExecScope& src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope& dst_exec,
                          VkAccessFlags2 dst_access_mask)
     : src_exec_scope(src_exec),
       src_access_scope(AccessScope(src_exec.valid_accesses, src_access_mask)),
@@ -173,7 +173,7 @@ SyncBarrier::SyncBarrier(const SyncExecScope &src_exec, VkAccessFlags2 src_acces
       dst_access_scope(AccessScope(dst_exec.valid_accesses, dst_access_mask)),
       original_dst_access(dst_access_mask) {}
 
-SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
+SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2& subpass) {
     const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(subpass.pNext);
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
@@ -198,9 +198,9 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &s
     }
 }
 
-SyncBarrier::SyncBarrier(const std::vector<SyncBarrier> &barriers) {
+SyncBarrier::SyncBarrier(const std::vector<SyncBarrier>& barriers) {
     // Merge each barrier
-    for (const SyncBarrier &barrier : barriers) {
+    for (const SyncBarrier& barrier : barriers) {
         // Note that after merge, only the exec_scope and access_scope fields are fully valid
         // TODO: Do we need to update any of the other fields?  Merging has limited application.
         src_exec_scope.exec_scope |= barrier.src_exec_scope.exec_scope;
@@ -210,7 +210,7 @@ SyncBarrier::SyncBarrier(const std::vector<SyncBarrier> &barriers) {
     }
 }
 
-bool SyncBarrier::operator==(const SyncBarrier &other) const {
+bool SyncBarrier::operator==(const SyncBarrier& other) const {
     return (src_exec_scope == other.src_exec_scope) && (src_access_scope == other.src_access_scope) &&
            (dst_exec_scope == other.dst_exec_scope) && (dst_access_scope == other.dst_access_scope);
 }

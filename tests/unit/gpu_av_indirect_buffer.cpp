@@ -48,16 +48,16 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
     props.limits.maxDrawIndirectCount = 1;
     fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
-    RETURN_IF_SKIP(InitState(nullptr, (features13.dynamicRendering || mesh_shader_enabled) ? (void *)&features13 : nullptr));
+    RETURN_IF_SKIP(InitState(nullptr, (features13.dynamicRendering || mesh_shader_enabled) ? (void*)&features13 : nullptr));
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             kHostVisibleMemProps);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndirectCommand));
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
 
     CreatePipelineHelper pipe(*this);
@@ -91,7 +91,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
     }
 
     if (mesh_shader_enabled) {
-        const char *mesh_shader_source = R"glsl(
+        const char* mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -109,8 +109,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
         vkt::Buffer mesh_draw_buffer(*m_device, 2 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                      kHostVisibleMemProps);
 
-        VkDrawMeshTasksIndirectCommandEXT *mesh_draw_ptr =
-            static_cast<VkDrawMeshTasksIndirectCommandEXT *>(mesh_draw_buffer.Memory().Map());
+        VkDrawMeshTasksIndirectCommandEXT* mesh_draw_ptr =
+            static_cast<VkDrawMeshTasksIndirectCommandEXT*>(mesh_draw_buffer.Memory().Map());
         mesh_draw_ptr->groupCountX = 0;
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
@@ -210,11 +210,11 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimitSubmit2) {
 
     vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             kHostVisibleMemProps);
-    VkDrawIndexedIndirectCommand *draw_ptr = static_cast<VkDrawIndexedIndirectCommand *>(draw_buffer.Memory().Map());
+    VkDrawIndexedIndirectCommand* draw_ptr = static_cast<VkDrawIndexedIndirectCommand*>(draw_buffer.Memory().Map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndexedIndirectCommand));
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -261,7 +261,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     draw_ptr->firstInstance = 0;
     draw_ptr->firstVertex = 0;
     draw_ptr->instanceCount = 1;
@@ -271,7 +271,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 2;
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -306,7 +306,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
 
     vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     kHostVisibleMemProps);
-    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
+    VkDrawIndexedIndirectCommand* indexed_draw_ptr = (VkDrawIndexedIndirectCommand*)indexed_draw_buffer.Memory().Map();
     indexed_draw_ptr->indexCount = 3;
     indexed_draw_ptr->firstIndex = 0;
     indexed_draw_ptr->instanceCount = 1;
@@ -349,7 +349,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
     if (mesh_shader_enabled) {
-        const char *mesh_shader_source = R"glsl(
+        const char* mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -367,8 +367,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         vkt::Buffer mesh_draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        VkDrawMeshTasksIndirectCommandEXT *mesh_draw_ptr =
-            +static_cast<VkDrawMeshTasksIndirectCommandEXT *>(mesh_draw_buffer.Memory().Map());
+        VkDrawMeshTasksIndirectCommandEXT* mesh_draw_ptr =
+            +static_cast<VkDrawMeshTasksIndirectCommandEXT*>(mesh_draw_buffer.Memory().Map());
         mesh_draw_ptr->groupCountX = 0;
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
@@ -431,14 +431,14 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     uint32_t buffer_size = num_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4);  // 4 byte pad between commands
 
     vkt::Buffer draw_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *draw_ptr = static_cast<uint32_t *>(draw_buffer.Memory().Map());
+    uint32_t* draw_ptr = static_cast<uint32_t*>(draw_buffer.Memory().Map());
     // Set all mesh group counts to 1
     for (uint32_t i = 0; i < num_commands * 4; ++i) {
         draw_ptr[i] = 1;
     }
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 3;
 
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
@@ -537,17 +537,17 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     uint32_t buffer_size = num_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4);  // 4 byte pad between commands
 
     vkt::Buffer draw_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *draw_ptr = static_cast<uint32_t *>(draw_buffer.Memory().Map());
+    uint32_t* draw_ptr = static_cast<uint32_t*>(draw_buffer.Memory().Map());
     // Set all mesh group counts to 1
     for (uint32_t i = 0; i < num_commands * 4; ++i) {
         draw_ptr[i] = 1;
     }
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 3;
 
-    const char *mesh_shader_source = R"glsl(
+    const char* mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -561,7 +561,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
         )glsl";
     VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    const char *task_shader_source = R"glsl(
+    const char* task_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
@@ -1006,7 +1006,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
 
     vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 kHostVisibleMemProps);
-    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    VkDispatchIndirectCommand* ptr = static_cast<VkDispatchIndirectCommand*>(indirect_buffer.Memory().Map());
     // VkDispatchIndirectCommand[0]
     ptr->x = 4;  // over
     ptr->y = 2;
@@ -1099,7 +1099,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
 
     vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 kHostVisibleMemProps);
-    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    VkDispatchIndirectCommand* ptr = static_cast<VkDispatchIndirectCommand*>(indirect_buffer.Memory().Map());
     // VkDispatchIndirectCommand[0]
     ptr->x = 4;  // over
     ptr->y = 2;
@@ -1195,7 +1195,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, BufferUsageFlags2) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = sizeof(VkDispatchIndirectCommand);
     vkt::Buffer indirect_buffer(*m_device, buffer_ci, kHostVisibleMemProps);
-    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    VkDispatchIndirectCommand* ptr = static_cast<VkDispatchIndirectCommand*>(indirect_buffer.Memory().Map());
     ptr->x = 4;  // over
     ptr->y = 2;
     ptr->z = 1;

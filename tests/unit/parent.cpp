@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 namespace {
 VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t,
-                                                        int32_t, const char *, const char *, void *) {
+                                                        int32_t, const char*, const char*, void*) {
     return VK_FALSE;
 }
 }  // namespace
@@ -431,7 +431,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     RETURN_IF_SKIP(Init());
     vkt::Instance instance2(GetInstanceCreateInfo());
 
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *) {};
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData*) {};
     DebugUtilsLabelCheckData callback_data{};
     callback_data.callback = empty_callback;
 
@@ -766,10 +766,9 @@ TEST_F(NegativeParent, UpdateDescriptorSetsTensor) {
     // allocate the descriptor set on a different device (m_second_device)
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
-    OneOffDescriptorSet descriptor_set(m_second_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(m_second_device, {
+                                                            {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                        });
     descriptor_set.WriteDescriptorTensorInfo(0, &view.handle(), 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-12324");
@@ -819,7 +818,7 @@ TEST_F(NegativeParent, FlushInvalidateMemory) {
     memory_range.offset = 0;
     memory_range.size = VK_WHOLE_SIZE;
 
-    void *pData;
+    void* pData;
     vk::MapMemory(device(), device_memory, 0, VK_WHOLE_SIZE, 0, &pData);
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkMappedMemoryRange-memory-device");
@@ -941,9 +940,9 @@ TEST_F(NegativeParent, MapMemory2) {
     map_info.offset = 0;
     map_info.size = memory_info.allocationSize;
 
-    uint32_t *pData = nullptr;
+    uint32_t* pData = nullptr;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfo-memory-parent");
-    vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
+    vk::MapMemory2KHR(device(), &map_info, (void**)&pData);
     m_errorMonitor->VerifyFound();
 }
 

@@ -65,13 +65,13 @@ TEST_F(NegativeImage, UsageBits) {
     // equvalent test using using KHR_copy_commands2
     if (copy_commands2) {
         const VkBufferImageCopy2 region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
-                                           NULL,
-                                           region.bufferRowLength,
-                                           region.bufferImageHeight,
-                                           region.bufferImageHeight,
-                                           region.imageSubresource,
-                                           region.imageOffset,
-                                           region.imageExtent};
+                                            NULL,
+                                            region.bufferRowLength,
+                                            region.bufferImageHeight,
+                                            region.bufferImageHeight,
+                                            region.imageSubresource,
+                                            region.imageOffset,
+                                            region.imageExtent};
         VkCopyBufferToImageInfo2 buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2, NULL, buffer,  image,
                                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,          1,    &region2};
         // two separate errors from this call:
@@ -181,7 +181,7 @@ TEST_F(NegativeImage, SampleCounts) {
         vkt::Buffer dst_buffer(*m_device, 128 * 128 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        vkt::Image src_image(*m_device, (const VkImageCreateInfo &)image_create_info, 0);
+        vkt::Image src_image(*m_device, (const VkImageCreateInfo&)image_create_info, 0);
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError(
             "was created with a sample count of VK_SAMPLE_COUNT_4_BIT but must be VK_SAMPLE_COUNT_1_BIT");
@@ -2458,7 +2458,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if (dev_limits.maxFramebufferWidth == vvl::kU32Max) {
         GTEST_SKIP() << "maxFramebufferWidth is already UINT32_MAX";
     }
@@ -2479,7 +2479,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if (dev_limits.maxFramebufferHeight == vvl::kU32Max) {
         GTEST_SKIP() << "maxFramebufferHeight is already UINT32_MAX";
     }
@@ -2595,8 +2595,7 @@ TEST_F(NegativeImage, Stencil) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    VkPhysicalDeviceImageFormatInfo2 image_format_info2 =
-        vku::InitStructHelper(&image_stencil_create_info);
+    VkPhysicalDeviceImageFormatInfo2 image_format_info2 = vku::InitStructHelper(&image_stencil_create_info);
     image_format_info2.format = image_create_info.format;
     image_format_info2.type = image_create_info.imageType;
     image_format_info2.tiling = image_create_info.tiling;
@@ -2658,7 +2657,7 @@ TEST_F(NegativeImage, StencilLimits) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if (dev_limits.maxFramebufferWidth == vvl::kU32Max) {
         GTEST_SKIP() << "maxFramebufferWidth is already UINT32_MAX";
     }
@@ -3056,7 +3055,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = 0;
     create_device_pnext.pPhysicalDevices = nullptr;
-    for (const auto &dg : physical_device_group) {
+    for (const auto& dg : physical_device_group) {
         if (dg.physicalDeviceCount > 1) {
             create_device_pnext.physicalDeviceCount = dg.physicalDeviceCount;
             create_device_pnext.pPhysicalDevices = dg.physicalDevices;
@@ -3215,7 +3214,7 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
     create_device_pnext.physicalDeviceCount = 0;
     create_device_pnext.pPhysicalDevices = nullptr;
-    for (const auto &dg : physical_device_group) {
+    for (const auto& dg : physical_device_group) {
         if (dg.physicalDeviceCount > 1) {
             create_device_pnext.physicalDeviceCount = dg.physicalDeviceCount;
             create_device_pnext.pPhysicalDevices = dg.physicalDevices;
@@ -3412,7 +3411,7 @@ TEST_F(NegativeImage, MultiSampleImageView) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
     }
@@ -3663,7 +3662,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         CreateImageTest(image_create_info, "VUID-VkImageCompressionControlEXT-flags-06748");
     }
 
-    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, vkt::Image &image) -> bool {
+    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, vkt::Image& image) -> bool {
         VkImageCompressionControlEXT compression_control = vku::InitStructHelper();  // specify the desired compression settings
         compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
 
@@ -3805,7 +3804,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
     RETURN_IF_SKIP(Init());
 
     // Image creation lambda
-    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, vkt::Image &image) -> bool {
+    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, vkt::Image& image) -> bool {
         VkImageCompressionControlEXT compression_control = vku::InitStructHelper();  // specify the desired compression settings
         compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
 

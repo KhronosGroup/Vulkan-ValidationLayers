@@ -24,20 +24,20 @@
 #include "state_tracker/pipeline_state.h"
 
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkComputePipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const ErrorObject &error_obj, PipelineStates &pipeline_states,
-                                                       chassis::CreateComputePipelines &chassis_state) const {
+                                                       const VkComputePipelineCreateInfo* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                       const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                       chassis::CreateComputePipelines& chassis_state) const {
     bool skip = false;
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
-        const vvl::Pipeline *pipeline = pipeline_states[i].get();
+        const vvl::Pipeline* pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
 
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const Location stage_info = create_info_loc.dot(Field::stage);
-        const auto &stage_state = pipeline->stage_states[0];
+        const auto& stage_state = pipeline->stage_states[0];
         skip |= ValidateShaderStage(stage_state, pipeline, stage_info);
         if (stage_state.pipeline_create_info) {
             skip |= ValidatePipelineShaderStage(*pipeline, *stage_state.pipeline_create_info, pCreateInfos[i].pNext, stage_info);
@@ -45,7 +45,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
 
         skip |= ValidateComputePipelineDerivatives(pipeline_states, i, create_info_loc);
 
-        if (const auto *pipeline_robustness_info =
+        if (const auto* pipeline_robustness_info =
                 vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pCreateInfos[i].pNext)) {
             skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, create_info_loc);
         }
@@ -65,16 +65,16 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     return skip;
 }
 
-bool CoreChecks::ValidateComputePipelineDerivatives(PipelineStates &pipeline_states, uint32_t pipe_index,
-                                                    const Location &loc) const {
+bool CoreChecks::ValidateComputePipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index,
+                                                    const Location& loc) const {
     bool skip = false;
-    const auto &pipeline = *pipeline_states[pipe_index].get();
+    const auto& pipeline = *pipeline_states[pipe_index].get();
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
     if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT) {
         std::shared_ptr<const vvl::Pipeline> base_pipeline;
-        const auto &pipeline_ci = pipeline.ComputeCreateInfo();
+        const auto& pipeline_ci = pipeline.ComputeCreateInfo();
         const VkPipeline base_handle = pipeline_ci.basePipelineHandle;
         const int32_t base_index = pipeline_ci.basePipelineIndex;
         if (base_index != -1 && base_index < static_cast<int32_t>(pipeline_states.size())) {

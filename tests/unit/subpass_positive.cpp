@@ -223,7 +223,7 @@ TEST_F(PositiveSubpass, InputAttachmentMissingSpecConstant2) {
     rp.AddInputAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 4; // over VkDescriptorSetLayoutBinding::descriptorCount
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];

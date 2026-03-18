@@ -615,8 +615,8 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     }
 
     std::unordered_map<uint32_t, uint32_t> entry_exit_pairs = {
-        { spv::OpFunction, spv::OpFunctionEnd },
-        { spv::OpGraphARM, spv::OpGraphEndARM },
+        {spv::OpFunction, spv::OpFunctionEnd},
+        {spv::OpGraphARM, spv::OpGraphEndARM},
     };
     worklist.insert(entrypoint.id);
     while (!worklist.empty()) {
@@ -713,7 +713,7 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
 
 std::vector<const Instruction*> EntryPoint::GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint,
                                                                   const ParsedInfo& parsed) {
-    std::vector<const Instruction *> constants;
+    std::vector<const Instruction*> constants;
     // Check to skip to not spend time if not using VK_ARM_data_graph
     if (parsed.has_graph_constant_arm) {
         for (const auto& accessible_id : entrypoint.accessible_ids) {

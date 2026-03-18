@@ -41,7 +41,7 @@ TEST_F(PositiveImageLayout, BarriersAndImageUsage) {
         vkt::Image img_sampled(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
         vkt::Image img_input(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         const struct {
-            vkt::Image &image_obj;
+            vkt::Image& image_obj;
             VkImageLayout old_layout;
             VkImageLayout new_layout;
         } buffer_layouts[] = {
@@ -169,7 +169,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
                                                      VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT,
                                                      rp,
                                                      1,
-                                                     reinterpret_cast<const VkImageView *>(1),
+                                                     reinterpret_cast<const VkImageView*>(1),
                                                      attachmentWidth,
                                                      attachmentHeight,
                                                      1};
@@ -528,7 +528,7 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) uniform UBO { uint index; };
@@ -557,7 +557,7 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
+    uint32_t* in_buffer_ptr = (uint32_t*)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1;
 
     vkt::Image bad_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -903,7 +903,7 @@ TEST_F(PositiveImageLayout, DepthSliceTransitionCriteriaNotMet) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout (rgba8, set = 0, binding = 0) uniform image2D verifyImage;
         void main (void) {

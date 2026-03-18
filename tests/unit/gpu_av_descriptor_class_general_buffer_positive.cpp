@@ -18,8 +18,8 @@
 
 class PositiveGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGeneralBuffer {};
 
-void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *shader, int source_type, VkDeviceSize buffer_size,
-                                                                 const char *expected_error, uint32_t error_count) {
+void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char* shader, int source_type, VkDeviceSize buffer_size,
+                                                                 const char* expected_error, uint32_t error_count) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -104,7 +104,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Basic) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)offset_buffer.Memory().Map();
     *data = 1;
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -178,7 +178,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPL) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)offset_buffer.Memory().Map();
     *data = 1;
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -209,7 +209,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    uint32_t *offset_buffer_ptr = (uint32_t *)offset_buffer.Memory().Map();
+    uint32_t* offset_buffer_ptr = (uint32_t*)offset_buffer.Memory().Map();
     *offset_buffer_ptr = 8;
 
     const char vertshader[] = R"glsl(
@@ -308,16 +308,16 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
     fragment_set.UpdateDescriptorSets();
 
     {
-        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.Memory().Map()),
+        vvl::span<uint32_t> vert_data(static_cast<uint32_t*>(vs_buffer.Memory().Map()),
                                       static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
-        for (auto &v : vert_data) {
+        for (auto& v : vert_data) {
             v = 0x01030507;
         }
     }
     {
-        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.Memory().Map()),
+        vvl::span<uint32_t> frag_data(static_cast<uint32_t*>(fs_buffer.Memory().Map()),
                                       static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
-        for (auto &v : frag_data) {
+        for (auto& v : frag_data) {
             v = 0x02040608;
         }
     }
@@ -431,7 +431,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint)
     // void frag_main() {
     //     data[4] = index[0];
     // }
-    const char *shader_source = R"(
+    const char* shader_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %frag_main "frag_main" %c_out
@@ -549,7 +549,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -591,7 +591,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBOUpda
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -633,7 +633,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorBuffer) 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -675,7 +675,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -763,14 +763,14 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)offset_buffer.Memory().Map();
     *data = 8;
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VectorArray) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             uvec4 a[8]; // stride 16
@@ -784,7 +784,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VectorArray) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyGLSL) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             uvec4 a;
@@ -805,7 +805,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
 
     RETURN_IF_SKIP(CheckSlangSupport());
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         struct Bar {
             uint4 a;
             uint b[4];
@@ -833,7 +833,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayStrideEnd) {
     // void main() {
     //     x[3] = 0;
     // }
-    const char *cs_source = R"(
+    const char* cs_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %_
@@ -872,7 +872,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo1 {
             uvec4 a;
@@ -921,7 +921,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         struct Bar1 {
             uint4 a;
             uint b[4];
@@ -968,7 +968,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -991,7 +991,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 32);
 }
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -1013,7 +1013,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
 
         struct Bar2 {
@@ -1043,7 +1043,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopySlang) {
     RETURN_IF_SKIP(CheckSlangSupport());
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         struct Bar {
           uint x;
           uint y;
@@ -1073,7 +1073,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
 
     RETURN_IF_SKIP(CheckSlangSupport());
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         struct Bar {
             uint a;
             uint d[4];
@@ -1091,7 +1091,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Atomics) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -1114,7 +1114,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer SSBO {
@@ -1164,7 +1164,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndexDescript
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer SSBO {
@@ -1207,7 +1207,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndexDescript
 
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, in_buffer, in_buffer.CreateInfo().size);
@@ -1240,7 +1240,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *slang_shader = R"slang(
+    const char* slang_shader = R"slang(
         struct Bar {
           uint4 a;
           uint b[4];
@@ -1282,7 +1282,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -1328,7 +1328,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -1357,7 +1357,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, LoopsEarlyBranch) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -1392,12 +1392,12 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             kHostVisibleMemProps);
-    auto *draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT *>(draw_buffer.Memory().Map());
+    auto* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(draw_buffer.Memory().Map());
     draw_ptr->groupCountX = 1;
     draw_ptr->groupCountY = 1;
     draw_ptr->groupCountZ = 1;
 
-    const char *task_source = R"glsl(
+    const char* task_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         taskPayloadSharedEXT uint payload;
@@ -1415,7 +1415,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -1437,7 +1437,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    const char *frag_source = R"glsl(
+    const char* frag_source = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         layout(set = 0, binding = 2) readonly uniform UBO {

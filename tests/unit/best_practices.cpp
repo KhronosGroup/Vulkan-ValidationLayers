@@ -20,7 +20,7 @@
 #include "../framework/sync_helper.h"
 #include "../framework/thread_helper.h"
 
-void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
+void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
     const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                   &settings};
@@ -619,7 +619,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     }
 
     bool fifo_present = false;
-    for (const auto &present_mode : m_surface_present_modes) {
+    for (const auto& present_mode : m_surface_present_modes) {
         if (present_mode == VK_PRESENT_MODE_FIFO_KHR) {
             fifo_present = true;
             break;
@@ -816,7 +816,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) out float x[2];
         void main(){
@@ -824,7 +824,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
            gl_Position = vec4(1);
         }
     )glsl";
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) in float x[1];
         layout(location=0) out vec4 color;
@@ -836,7 +836,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
@@ -850,7 +850,7 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -1252,9 +1252,9 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
+    vkt::Queue* graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
-    vkt::Queue *compute_queue = nullptr;
+    vkt::Queue* compute_queue = nullptr;
     for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
         auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->family_index != graphics_queue->family_index) {
@@ -1320,7 +1320,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     // Prepare compute
 
-    const char *cs = R"glsl(#version 450
+    const char* cs = R"glsl(#version 450
     layout(local_size_x=1, local_size_y=1) in;
     layout(set=0, binding=0, rgba32f) uniform image2D img;
     void main(){
@@ -1337,7 +1337,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL);
+                                                  VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     vkt::CommandPool compute_pool(*m_device, compute_queue->family_index);
@@ -1665,7 +1665,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *const vsSource = R"glsl(
+    const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[2]; } constants;
         void main(){
@@ -1707,7 +1707,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *const vsSource = R"glsl(
+    const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
             uint a; // set
@@ -1961,7 +1961,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEndCompute) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *const csSource = R"glsl(
+    const char* const csSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[2]; } constants;
         layout(set = 0, binding = 0) buffer bar { vec4 r; } res;

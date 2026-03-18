@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     TEST_DESCRIPTION("Ray query in a compute shader");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     TEST_DESCRIPTION("Ray query in a compute shader, with dynamically set t_min and t_max");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -109,7 +109,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     pipeline.descriptor_set_.UpdateDescriptorSets();
 
     // Ray query with t_min dynamically set to 0
-    auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
+    auto uniform_buffer_ptr = static_cast<float*>(uniform_buffer.Memory().Map());
     {
         uniform_buffer_ptr[0] = 0.0f;   // t_min
         uniform_buffer_ptr[1] = 42.0f;  // t_max
@@ -137,7 +137,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     TEST_DESCRIPTION("Ray query in a compute shader, with dynamically set ray flags");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -171,7 +171,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
 
     // Ray query with t_min dynamically set to 0
     {
-        auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
+        auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 4u | 16u;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsCullBackFacingTrianglesEXT
     }
     m_command_buffer.Begin();
@@ -191,7 +191,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -224,7 +224,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     pipeline.descriptor_set_.UpdateDescriptorSets();
 
     {
-        auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
+        auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 4u | 0x100;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipTrianglesEXT
     }
     m_command_buffer.Begin();
@@ -243,7 +243,7 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     RETURN_IF_SKIP(InitGpuAVRayQuery());
     InitRenderTarget();
 
-    const char *vertex_source = R"glsl(
+    const char* vertex_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -291,7 +291,7 @@ TEST_F(PositiveGpuAVRayQuery, RayTracingBasic) {
 
     // Set ray gen shader
 
-    const char *ray_gen = R"glsl(
+    const char* ray_gen = R"glsl(
     #version 460
 
     #extension GL_EXT_ray_query : require

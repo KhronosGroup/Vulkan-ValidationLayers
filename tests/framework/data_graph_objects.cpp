@@ -30,8 +30,10 @@ void DataGraphPipelineHelper::CreateShaderModule(const char* spirv_source, const
     // TODO - Replace with ASMtoSPV
     std::vector<uint32_t> spirv_binary;
     if (!tools.Assemble(spirv_source, &spirv_binary)) {
-        GTEST_FAIL() << "Failed to compile SPIRV shader module. Error:\n" << error_msg << std::endl
-        << "SpirV:\n" << spirv_source << std::endl;
+        GTEST_FAIL() << "Failed to compile SPIRV shader module. Error:\n"
+                     << error_msg << std::endl
+                     << "SpirV:\n"
+                     << spirv_source << std::endl;
     }
 
     VkShaderModuleCreateInfo shader_module_create_info = vku::InitStructHelper();
@@ -127,7 +129,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const Modifiabl
     ss << R"(
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
-)" << params.capabilities << R"(
+)" << params.capabilities
+       << R"(
                                   OpCapability Int8
                                   OpCapability Shader
                                   OpCapability VulkanMemoryModel
@@ -163,7 +166,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const Modifiabl
           %uchar_1_4_8_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_4_8_4
                  %uint_2_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_2
                  %uint_4_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_4
-)" << params.types << R"(
+)" << params.types
+       << R"(
              %uint_2_tensor_2_2 = OpConstantComposite %uint_2_tensor %uint_2 %uint_2
          %uint_4_tensor_0_0_0_0 = OpConstantComposite %uint_4_tensor %uint_0 %uint_0 %uint_0 %uint_0
      %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
@@ -176,7 +180,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const Modifiabl
                           %in_0 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
                           %op_0 = OpExtInst %uchar_1_4_8_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %in_0
                           %op_1 = OpExtInst %uchar_1_2_4_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %op_0
-)" << params.instructions << R"(
+)" << params.instructions
+       << R"(
                                   OpGraphSetOutputARM %op_1 %uint_0
                                   OpGraphEndARM
 )";
@@ -195,7 +200,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableSh
 ; Bound: 19
 ; Schema: 0
                OpCapability Shader
-)" << params.capabilities << R"(
+)" << params.capabilities
+       << R"(
                OpCapability TensorsARM
                OpExtension "SPV_ARM_tensors"
           %1 = OpExtInstImport "GLSL.std.450"
@@ -219,7 +225,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableSh
      %uint_1 = OpConstant %uint 1
      %uint_2 = OpConstant %uint 2
          %11 = OpTypeTensorARM %int %uint_1
-)" << params.types << R"(
+)" << params.types
+       << R"(
 %_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
        %tens = OpVariable %_ptr_UniformConstant_11 UniformConstant
      %v3uint = OpTypeVector %uint 3
@@ -230,7 +237,8 @@ std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableSh
 %loaded_tens = OpLoad %11 %tens
          %16 = OpTensorQuerySizeARM %uint %loaded_tens %uint_0
                OpStore %size_x %16
-)" << params.instructions << R"(
+)" << params.instructions
+       << R"(
                OpReturn
                OpFunctionEnd
 )";
@@ -243,7 +251,8 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
     ss << R"(
                             OpCapability GraphARM
                             OpCapability TensorsARM
-)" << (is_runtime ? "OpCapability RuntimeDescriptorArray" : "") << R"(
+)" << (is_runtime ? "OpCapability RuntimeDescriptorArray" : "")
+       << R"(
                             OpCapability Int8
                             OpCapability Shader
                             OpCapability VulkanMemoryModel
@@ -268,7 +277,8 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
                %i32_arr_4 = OpTypeArray %i32 %i32_4
             %tensor_shape = OpConstantComposite %i32_arr_4 %i32_1 %i32_4 %i32_4 %i32_2
                   %tensor = OpTypeTensorARM %i32 %i32_4 %tensor_shape
-)" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor" : "%tensor_array = OpTypeArray %tensor %i32_2") << R"(
+)" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor" : "%tensor_array = OpTypeArray %tensor %i32_2")
+       << R"(
         %ptr_tensor_array = OpTypePointer UniformConstant %tensor_array
               %ptr_tensor = OpTypePointer UniformConstant %tensor
               %main_arg_0 = OpVariable %ptr_tensor_array UniformConstant
@@ -302,7 +312,7 @@ const std::vector<int64_t> add_tensor_dims{1, 4, 4, 2};
 // Tensor description for the various spirvs
 VkTensorDescriptionARM DataGraphPipelineHelper::GetTensorDesc(TensorType type) {
     VkFormat format = VK_FORMAT_UNDEFINED;
-    const std::vector<int64_t> *dims = nullptr;
+    const std::vector<int64_t>* dims = nullptr;
     switch (type) {
         case BASIC_SPIRV_IN:
             format = VK_FORMAT_R8_SINT;

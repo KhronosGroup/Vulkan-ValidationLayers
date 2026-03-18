@@ -23,7 +23,7 @@
 class PositiveGpuAVShaderSanitizer : public GpuAVGpuAVShaderSanitizer {};
 
 // Set a single SSBO to all zero
-void GpuAVGpuAVShaderSanitizer::SimpleZeroComputeTest(const char *shader, int source_type, const char *expected_error,
+void GpuAVGpuAVShaderSanitizer::SimpleZeroComputeTest(const char* shader, int source_type, const char* expected_error,
                                                       uint32_t error_count) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -34,7 +34,7 @@ void GpuAVGpuAVShaderSanitizer::SimpleZeroComputeTest(const char *shader, int so
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    void *in_ptr = in_buffer.Memory().Map();
+    void* in_ptr = in_buffer.Memory().Map();
     memset(in_ptr, 0, 256);
 
     pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -53,7 +53,7 @@ void GpuAVGpuAVShaderSanitizer::SimpleZeroComputeTest(const char *shader, int so
 }
 
 TEST_F(PositiveGpuAVShaderSanitizer, DivideByOne) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             uint u_index;
@@ -141,7 +141,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, ImageGather) {
     // if (condition != 0) {
     //     result = textureGather(tex, vec2(0), -1);
     // }
-    const char *cs_source = R"asm(
+    const char* cs_source = R"asm(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %_ %tex
@@ -207,7 +207,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, ImageGather) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    void *in_ptr = buffer.Memory().Map();
+    void* in_ptr = buffer.Memory().Map();
     memset(in_ptr, 0, 64);
 
     vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);

@@ -600,8 +600,7 @@ void BestPractices::UpdateBoundDescriptorSets(bp_state::CommandBufferSubState& c
                         break;
                     }
                     case vvl::DescriptorClass::ImageSampler: {
-                        if (const auto image_sampler_descriptor =
-                                static_cast<const vvl::ImageSamplerDescriptor*>(descriptor)) {
+                        if (const auto image_sampler_descriptor = static_cast<const vvl::ImageSamplerDescriptor*>(descriptor)) {
                             image_view = image_sampler_descriptor->GetImageView();
                         }
                         break;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+ * Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,7 @@ class PositiveLegacy : public LegacyTest {};
 
 TEST_F(PositiveLegacy, SettingExplicitOff) {
     TEST_DESCRIPTION("Turn off setting explicitly");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                             &kVkFalse};
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -60,10 +59,9 @@ TEST_F(PositiveLegacy, SettingDefault) {
 }
 
 TEST_F(PositiveLegacy, MuteMultipleWarnings) {
-    const char *ids[] = {"WARNING-legacy-gpdp2", "WARNING-legacy-renderpass2", "WARNING-legacy-dynamicrendering"};
-    VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
-        {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 3, ids}};
+    const char* ids[] = {"WARNING-legacy-gpdp2", "WARNING-legacy-renderpass2", "WARNING-legacy-dynamicrendering"};
+    VkLayerSettingEXT layer_settings[3] = {{OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+                                           {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 3, ids}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -87,8 +85,7 @@ TEST_F(PositiveLegacy, MuteMultipleWarnings) {
 
 TEST_F(PositiveLegacy, GetPhysicalDeviceProperties2Extension) {
     TEST_DESCRIPTION("Show Instance extensions currently only detected if enabled, not if supported");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                             &kVkTrue};
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));

@@ -15,7 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
-void DescriptorBufferTest::InitBasicDescriptorBuffer(void *instance_pnext) {
+void DescriptorBufferTest::InitBasicDescriptorBuffer(void* instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -186,7 +186,7 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
@@ -201,10 +201,10 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
 
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -266,7 +266,7 @@ TEST_F(PositiveDescriptorBuffer, BasicSampler) {
         *m_device, ds_layout_size,
         VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
         vkt::device_address);
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
 
     vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
     vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize,
@@ -285,7 +285,7 @@ TEST_F(PositiveDescriptorBuffer, BasicSampler) {
     vk::GetDescriptorEXT(device(), get_info_buffer, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(3));
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform sampler s;
         layout(set = 0, binding = 1) uniform texture2D t; // sampled image
@@ -345,7 +345,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
     vkt::Buffer resource_descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                            vkt::device_address);
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)resource_descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)resource_descriptor_buffer.Memory().Map();
     vkt::DescriptorGetInfo get_info_image(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL);
     vk::GetDescriptorEXT(device(), get_info_image, descriptor_buffer_properties.sampledImageDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(0));
@@ -354,11 +354,11 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
     vk::GetDescriptorEXT(device(), get_info_buffer, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(1));
 
-    mapped_descriptor_data = (uint8_t *)sampler_descriptor_buffer.Memory().Map();
+    mapped_descriptor_data = (uint8_t*)sampler_descriptor_buffer.Memory().Map();
     vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
     vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 2) uniform sampler s;
         layout(set = 0, binding = 0) uniform texture2D t;
@@ -411,7 +411,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     const uint32_t offset_1 = alignment / sizeof(uint32_t);
     const uint32_t offset_2 = offset_1 * 2;
     vkt::Buffer buffer_data(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[offset_0] = 8;
     data[offset_1] = 12;
     data[offset_2] = 1;
@@ -424,7 +424,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size * 3, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 4);
     // Sets data_buffer[0] to set 0
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
@@ -439,7 +439,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -493,7 +493,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     const uint32_t offset_1 = alignment / sizeof(uint32_t);
     const uint32_t offset_2 = offset_1 * 2;
     vkt::Buffer buffer_data(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[offset_0] = 8;
     data[offset_1] = 12;
     data[offset_2] = 1;
@@ -509,7 +509,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
                                   vkt::device_address);
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 4);
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     // Sets data_buffer[0] to binding 0
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(0));
@@ -524,7 +524,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(2));
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -578,11 +578,11 @@ TEST_F(PositiveDescriptorBuffer, DescriptorIndexing) {
     vkt::Buffer buffer_0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer buffer_1(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer buffer_2(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_0.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_0.Memory().Map();
     data[0] = 8;
-    data = (uint32_t *)buffer_1.Memory().Map();
+    data = (uint32_t*)buffer_1.Memory().Map();
     data[0] = 12;
-    data = (uint32_t *)buffer_2.Memory().Map();
+    data = (uint32_t*)buffer_2.Memory().Map();
     data[0] = 1;
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3, VK_SHADER_STAGE_ALL, nullptr};
@@ -595,7 +595,7 @@ TEST_F(PositiveDescriptorBuffer, DescriptorIndexing) {
 
     size_t descriptor_size = descriptor_buffer_properties.storageBufferDescriptorSize;
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_0, 16);
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_size, mapped_descriptor_data);
 
     get_info.address_info.address = buffer_1.Address();
@@ -606,7 +606,7 @@ TEST_F(PositiveDescriptorBuffer, DescriptorIndexing) {
     mapped_descriptor_data += descriptor_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_size, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint data;
@@ -699,7 +699,7 @@ TEST_F(PositiveDescriptorBuffer, TexelBuffer) {
     vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, vkt::device_address);
     vkt::BufferView uniform_buffer_view(*m_device, uniform_buffer, VK_FORMAT_R32_UINT);
 
-    uint32_t *data = (uint32_t *)uniform_buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)uniform_buffer.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
@@ -716,7 +716,7 @@ TEST_F(PositiveDescriptorBuffer, TexelBuffer) {
                                   vkt::device_address);
 
     vkt::DescriptorGetInfo get_info_s(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, storage_buffer, 32, VK_FORMAT_R32_UINT);
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageTexelBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(0));
 
@@ -724,7 +724,7 @@ TEST_F(PositiveDescriptorBuffer, TexelBuffer) {
     vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformTexelBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(1));
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, r32ui) uniform uimageBuffer s_buffer;
         layout(set = 0, binding = 1) uniform usamplerBuffer u_buffer;
@@ -760,7 +760,7 @@ TEST_F(PositiveDescriptorBuffer, TexelBuffer) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    data = (uint32_t *)storage_buffer.Memory().Map();
+    data = (uint32_t*)storage_buffer.Memory().Map();
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 8);
         ASSERT_TRUE(data[1] == 12);
@@ -785,7 +785,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
     get_info.address_info.address += 64;
@@ -796,7 +796,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint data;
@@ -839,7 +839,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 42);   // [0]
         ASSERT_TRUE(data[16] == 42);  // [64]
@@ -853,7 +853,7 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
@@ -867,10 +867,10 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
                                   vkt::device_address);
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -931,10 +931,10 @@ TEST_F(PositiveDescriptorBuffer, NotInvalidatedLegacy) {
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
 
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 { uint x; };
         void main() {
@@ -971,7 +971,7 @@ TEST_F(PositiveDescriptorBuffer, MeshShader) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 3, max_primitives=1) out;
@@ -1008,12 +1008,12 @@ TEST_F(PositiveDescriptorBuffer, MeshShader) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     data[0] = 3u;
     data[1] = 1u;
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer, buffer.CreateInfo().size);
@@ -1077,7 +1077,7 @@ TEST_F(PositiveDescriptorBuffer, GraphicsPipelineLibrary) {
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout1.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer, uniform_buffer.CreateInfo().size);
@@ -1177,7 +1177,7 @@ TEST_F(PositiveDescriptorBuffer, GraphicsPipelineLibraryIndependent) {
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout1.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer, uniform_buffer.CreateInfo().size);
@@ -1272,7 +1272,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform sampler samp;
         layout(set = 1, binding = 0) uniform texture2D tex;
@@ -1310,7 +1310,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&sampler_ds_layout, &image_ds_layout});
 
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = image_ds_layout.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo image_get_info(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL);
@@ -1368,7 +1368,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *data = (float *)result_buffer.Memory().Map();
+    float* data = (float*)result_buffer.Memory().Map();
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_NEAR(data[i], clear_color_value.float32[i], 0.0001f);
@@ -1398,7 +1398,7 @@ TEST_F(PositiveDescriptorBuffer, InputAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
             layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
@@ -1430,7 +1430,7 @@ TEST_F(PositiveDescriptorBuffer, InputAttachment) {
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize image_offset = descriptor_set_layout.GetDescriptorBufferBindingOffset(0);
     VkDeviceSize input_attachment_offset =
         descriptor_set_layout2.GetDescriptorBufferBindingOffset(0) + descriptor_buffer_properties.storageImageDescriptorSize;
@@ -1477,7 +1477,7 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
         image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
             layout(set = 0, binding = 0) uniform sampler s;
@@ -1509,7 +1509,7 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
     vkt::Buffer descriptor_buffer(
         *m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
         vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
 
     vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
     vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize,
@@ -1571,11 +1571,13 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics) {
                    (offset2 % descriptor_buffer_properties.descriptorBufferOffsetAlignment);
     }
 
-    uint8_t *mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
-    vk::GetDescriptorEXT(device(), get_info1, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data + offset1);
-    vk::GetDescriptorEXT(device(), get_info2, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data + offset2);
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info1, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_descriptor_data + offset1);
+    vk::GetDescriptorEXT(device(), get_info2, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_descriptor_data + offset2);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             layout (set = 0, binding = 0) buffer Buf {
                 vec4 data;
@@ -1595,7 +1597,7 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics) {
     pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer Buf {
             vec4 data;
@@ -1621,7 +1623,8 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset1);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index,
+                                         &offset1);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
@@ -1632,8 +1635,8 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *data1 = (float *)buffer1.Memory().Map();
-    float *data2 = (float *)buffer2.Memory().Map();
+    float* data1 = (float*)buffer1.Memory().Map();
+    float* data2 = (float*)buffer2.Memory().Map();
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_EQ(data1[i], 1.0f);
@@ -1662,11 +1665,10 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer, 32u);
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
-    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
-                         mapped_descriptor_data);
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             layout (set = 0, binding = 0) buffer Buf {
                 vec4 data[2];
@@ -1686,7 +1688,7 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
     pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 1, binding = 0) buffer Buf {
             vec4 data[2];
@@ -1713,8 +1715,7 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index,
-                                         &offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
@@ -1725,7 +1726,7 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *data = (float *)buffer.Memory().Map();
+    float* data = (float*)buffer.Memory().Map();
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_EQ(data[i], 1.0f);
@@ -1742,7 +1743,7 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
 
     vkt::Buffer buffer_data0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer buffer_data1(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data0.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data0.Memory().Map();
     data[0] = 8;
     data[1] = 12;
 
@@ -1762,10 +1763,10 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, descriptor_buffer_usage, vkt::device_address);
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data0, 16);
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -1821,7 +1822,7 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
-        data = (uint32_t *)buffer_data1.Memory().Map();
+        data = (uint32_t*)buffer_data1.Memory().Map();
         ASSERT_TRUE(data[0] == 20);
     }
 }
@@ -1833,7 +1834,7 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptorOnly) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
@@ -1846,7 +1847,7 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptorOnly) {
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -1915,10 +1916,10 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
 
     const VkDeviceSize offset = 0;
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)src_descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)src_descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             layout (set = 0, binding = 0) buffer Buf {
                 vec4 data;
@@ -1977,7 +1978,7 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *data = (float *)buffer.Memory().Map();
+    float* data = (float*)buffer.Memory().Map();
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_EQ(data[i], 1.0f);
@@ -2003,13 +2004,13 @@ TEST_F(PositiveDescriptorBuffer, DestroyDescriptor) {
 
     const VkDeviceSize offset = 0;
 
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
     buffer.Destroy();
     set_layout.Destroy();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             layout (set = 0, binding = 0) buffer Buf {
                 vec4 data;
@@ -2046,7 +2047,7 @@ TEST_F(PositiveDescriptorBuffer, DestroyDescriptor) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *data = (float *)buffer.Memory().Map();
+    float* data = (float*)buffer.Memory().Map();
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_EQ(data[i], 1.0f);
@@ -2076,17 +2077,17 @@ TEST_F(PositiveDescriptorBuffer, SharedSet) {
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer, buffer.CreateInfo().size);
 
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     data[0] = 5u;
     data[1] = 7u;
 
-    void *mapped_copy_data = copy_buffer.Memory().Map();
+    void* mapped_copy_data = copy_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_copy_data);
 
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     memcpy(mapped_descriptor_data, mapped_copy_data, descriptor_buffer_properties.storageBufferDescriptorSize);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0) buffer SSBO_0 {
                 uint a_0;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
@@ -51,10 +51,10 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
                                   vkt::device_address);
 
     vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -115,9 +115,9 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     vkt::Buffer bda(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ssbo_0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ubo_1(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
-    auto ssbo_ptr = (VkDeviceAddress *)ssbo_0.Memory().Map();
+    auto ssbo_ptr = (VkDeviceAddress*)ssbo_0.Memory().Map();
     ssbo_ptr[0] = bda.Address();  // ptr
-    uint32_t *data = (uint32_t *)ubo_1.Memory().Map();
+    uint32_t* data = (uint32_t*)ubo_1.Memory().Map();
     data[0] = 0;  // index
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -135,7 +135,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
                                   vkt::device_address);
 
     vkt::DescriptorGetInfo get_info_0(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, ssbo_0, 16);
-    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    uint8_t* mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info_0, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(0));
 
@@ -143,7 +143,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     vk::GetDescriptorEXT(device(), get_info_1, descriptor_buffer_properties.uniformBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(1));
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         #extension GL_EXT_nonuniform_qualifier : enable
@@ -190,7 +190,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    data = (uint32_t *)bda.Memory().Map();
+    data = (uint32_t*)bda.Memory().Map();
     ASSERT_TRUE(data[0] == 11);
 }
 
@@ -214,7 +214,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, NoPipelineLayout) {
 
     vkt::Buffer descriptor_buffer(*m_device, 1024, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (constant_id = 0) const uint c = 3;
         #extension GL_EXT_debug_printf : enable

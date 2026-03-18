@@ -29,8 +29,7 @@ namespace object_lifetimes {
 static std::shared_mutex lifetime_set_mutex;
 static vvl::unordered_set<Tracker*> lifetime_set;
 
-Instance::Instance(vvl::dispatch::Instance *dispatch)
-        : BaseClass(dispatch, LayerObjectTypeObjectTracker), tracker(debug_report) {
+Instance::Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
 }
@@ -40,7 +39,7 @@ Instance::~Instance() {
     lifetime_set.erase(&tracker);
 }
 
-Device::Device(vvl::dispatch::Device *dev, Instance *instance)
+Device::Device(vvl::dispatch::Device* dev, Instance* instance)
     : BaseClass(dev, instance, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
@@ -51,7 +50,7 @@ Device::~Device() {
     lifetime_set.erase(&tracker);
 }
 
-VulkanTypedHandle ObjTrackStateTypedHandle(const ObjectState &track_state) {
+VulkanTypedHandle ObjTrackStateTypedHandle(const ObjectState& track_state) {
     // TODO: Unify Typed Handle representation (i.e. VulkanTypedHandle everywhere there are handle/type pairs)
     VulkanTypedHandle typed_handle;
     typed_handle.handle = track_state.handle;
@@ -59,8 +58,8 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjectState &track_state) {
     return typed_handle;
 }
 
-void ObjectState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
-                                const std::vector<VulkanTypedHandle> &parent_poison_chain) {
+void ObjectState::MakePoisonous(Tracker& tracker, VulkanTypedHandle poisoner,
+                                const std::vector<VulkanTypedHandle>& parent_poison_chain) {
     auto lock = WriteLock();
     if ((status_flags & kObjectStatusPoisoned) != 0) {
         return;  // Already poisoned, once is enough
@@ -119,7 +118,7 @@ void Tracker::RegisterPoisonPair(VulkanTypedHandle poisonee, VulkanTypedHandle p
     }
 }
 
-bool Tracker::CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const {
+bool Tracker::CheckPoisoning(const ObjectState& object_state, const char* vuid, const Location& loc) const {
     bool skip = false;
     auto lock = object_state.ReadLock();
     if ((object_state.status_flags & kObjectStatusPoisoned) != 0) {
@@ -131,7 +130,7 @@ bool Tracker::CheckPoisoning(const ObjectState &object_state, const char *vuid, 
     return skip;
 }
 
-std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &poison_chain) const {
+std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle>& poison_chain) const {
     std::ostringstream ss;
     assert(!poison_chain.empty());
     for (size_t i = poison_chain.size() - 1; i > 0; i--) {
@@ -151,8 +150,8 @@ std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &p
     return ss.str();
 }
 
-bool Tracker::CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object_allowed, const char *invalid_handle_vuid,
-                                  const char *wrong_parent_vuid, const Location &loc) const {
+bool Tracker::CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object_allowed, const char* invalid_handle_vuid,
+                                  const char* wrong_parent_vuid, const Location& loc) const {
     bool skip = false;
 
     // Check if this instance of lifetime validation tracks the object
@@ -164,10 +163,10 @@ bool Tracker::CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object
     }
 
     // Object not found, look for it in other device object maps
-    const Tracker *other_lifetimes = nullptr;
+    const Tracker* other_lifetimes = nullptr;
     {
         ReadLockGuard lock(lifetime_set_mutex);
-        for (const auto *lifetimes : lifetime_set) {
+        for (const auto* lifetimes : lifetime_set) {
             if (lifetimes != this && lifetimes->TracksObject(object)) {
                 other_lifetimes = lifetimes;
                 break;
@@ -194,25 +193,25 @@ bool Tracker::CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object
                     FormatHandle(handle_).c_str());
 }
 
-void Tracker::SetDeviceHandle(const Device &device) {
+void Tracker::SetDeviceHandle(const Device& device) {
     handle_ = VulkanTypedHandle(device.device, kVulkanObjectTypeDevice);
     is_device_maintenance4_enabled_ = device.enabled_features.maintenance4;
 }
 
 void Tracker::SetInstanceHandle(VkInstance instance) { handle_ = VulkanTypedHandle(instance, kVulkanObjectTypeInstance); }
 
-void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
     tracker.SetDeviceHandle(*this);
 }
 
-bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const {
+bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char* invalid_handle_vuid, const Location& loc) const {
     bool skip = false;
-    const auto &itr = linked_graphics_pipeline_map.find(object_handle);
+    const auto& itr = linked_graphics_pipeline_map.find(object_handle);
     if (itr == linked_graphics_pipeline_map.end()) {
         return skip;  // no-linked
     }
-    for (const auto &pipeline : itr->second) {
+    for (const auto& pipeline : itr->second) {
         if (!tracker.TracksObject(pipeline->TypedHandle())) {
             skip |= LogError(invalid_handle_vuid, instance, loc,
                              "Invalid VkPipeline Object 0x%" PRIxLEAST64
@@ -229,7 +228,7 @@ bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char *inv
     return skip;
 }
 
-void Tracker::CreateObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator, const Location &loc,
+void Tracker::CreateObject(VulkanTypedHandle object, const VkAllocationCallbacks* pAllocator, const Location& loc,
                            uint64_t parent_handle) {
     if (TracksObject(object)) {
         return;
@@ -258,9 +257,9 @@ void Tracker::CreateObject(VulkanTypedHandle object, const VkAllocationCallbacks
     }
 }
 
-bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator,
-                                    const char *expected_custom_allocator_code, const char *expected_default_allocator_code,
-                                    const Location &loc) const {
+bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocationCallbacks* pAllocator,
+                                    const char* expected_custom_allocator_code, const char* expected_default_allocator_code,
+                                    const Location& loc) const {
     bool skip = false;
 
     const uint64_t object_handle = object.handle;
@@ -290,7 +289,7 @@ bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocation
     return skip;
 }
 
-void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location &loc) {
+void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location& loc) {
     if (auto object_state = GetObjectState(object)) {
         {
             // Lock to iterate over objects_to_poison and poisoners arrays
@@ -320,7 +319,7 @@ void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location &loc)
     }
 }
 
-void Tracker::DestroyObjectSilently(VulkanTypedHandle object, const Location &loc) {
+void Tracker::DestroyObjectSilently(VulkanTypedHandle object, const Location& loc) {
     assert(object.handle);
     auto item = object_map[object.type].pop(object.handle);
     if (item == object_map[object.type].end()) {
@@ -335,18 +334,18 @@ void Tracker::DestroyObjectSilently(VulkanTypedHandle object, const Location &lo
     }
 }
 
-void Tracker::DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc) {
+void Tracker::DestroyUndestroyedObjects(VulkanObjectType object_type, const Location& loc) {
     auto snapshot = object_map[object_type].snapshot();
     VulkanTypedHandle object;
     object.type = object_type;
-    for (const auto &item : snapshot) {
+    for (const auto& item : snapshot) {
         object.handle = item.second->handle;
         DestroyObjectSilently(object, loc);
     }
 }
 
-bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
-                                     const char *wrong_parent_vuid, const Location &loc) const {
+bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char* invalid_handle_vuid,
+                                     const char* wrong_parent_vuid, const Location& loc) const {
     VulkanTypedHandle typed_handle;
     typed_handle.handle = object;
     typed_handle.type = ConvertCoreObjectToVulkanObject(core_object_type);
@@ -354,11 +353,11 @@ bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_t
 }
 
 void Device::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
-                                   VkCommandBufferLevel level, const Location &loc) {
+                                   VkCommandBufferLevel level, const Location& loc) {
     tracker.CreateObject(command_buffer, kVulkanObjectTypeCommandBuffer, nullptr, loc, command_pool);
 }
 
-bool Device::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer, const Location &loc) const {
+bool Device::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer, const Location& loc) const {
     bool skip = false;
     uint64_t object_handle = HandleToUint64(command_buffer);
     auto iter = tracker.object_map[kVulkanObjectTypeCommandBuffer].find(object_handle);
@@ -381,7 +380,7 @@ bool Device::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer c
     return skip;
 }
 
-void Device::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) {
+void Device::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location& loc) {
     tracker.CreateObject(descriptor_set, kVulkanObjectTypeDescriptorSet, nullptr, loc, descriptor_pool);
     auto itr = tracker.object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptor_pool));
     if (itr != tracker.object_map[kVulkanObjectTypeDescriptorPool].end()) {
@@ -389,7 +388,7 @@ void Device::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescripto
     }
 }
 
-bool Device::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const {
+bool Device::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location& loc) const {
     bool skip = false;
     uint64_t object_handle = HandleToUint64(descriptor_set);
     auto ds_item = tracker.object_map[kVulkanObjectTypeDescriptorSet].find(object_handle);
@@ -411,7 +410,7 @@ bool Device::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescripto
     return skip;
 }
 
-bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_push_descriptor, const Location &loc) const {
+bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const* desc, bool is_push_descriptor, const Location& loc) const {
     bool skip = false;
 
     // VkWriteDescriptorSet::dstSet is ignored for push vkCmdPushDescriptorSetKHR, so can be bad handle
@@ -491,7 +490,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
-            if (const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext)) {
+            if (const auto* acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                     skip |= ValidateObject(
                         acc_info->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureKHR, true,
@@ -500,7 +499,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
                         loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, i));
                 }
             }
-            if (const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(desc->pNext)) {
+            if (const auto* acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                     skip |= ValidateObject(
                         acc_info_nv->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureNV, true,
@@ -530,7 +529,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
         }
 
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
-            if (const auto *tensor_info = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(desc->pNext)) {
+            if (const auto* tensor_info = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                     skip |= ValidateObject(tensor_info->pTensorViews[i], kVulkanObjectTypeTensorViewARM, true,
                                            "VUID-VkWriteDescriptorSetTensorARM-pTensorViews-parameter",
@@ -556,8 +555,8 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
 
 bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                  VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                 const VkWriteDescriptorSet *pDescriptorWrites,
-                                                 const ErrorObject &error_obj) const {
+                                                 const VkWriteDescriptorSet* pDescriptorWrites,
+                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet-commandBuffer-parameter"
     skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdPushDescriptorSet-layout-parameter",
@@ -573,15 +572,15 @@ bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                    const VkWriteDescriptorSet *pDescriptorWrites,
-                                                    const ErrorObject &error_obj) const {
+                                                    const VkWriteDescriptorSet* pDescriptorWrites,
+                                                    const ErrorObject& error_obj) const {
     return PreCallValidateCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                pDescriptorWrites, error_obj);
 }
 
 bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                  const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
+                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2-commandBuffer-parameter"
     skip |= ValidateObject(pPushDescriptorSetInfo->layout, kVulkanObjectTypePipelineLayout, true,
@@ -599,16 +598,16 @@ bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                     const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                     const ErrorObject &error_obj) const {
+                                                     const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                                     const ErrorObject& error_obj) const {
     return PreCallValidateCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, error_obj);
 }
 
-void Device::CreateQueue(VkQueue vkObj, const Location &loc) {
+void Device::CreateQueue(VkQueue vkObj, const Location& loc) {
     tracker.CreateObject(vkObj, kVulkanObjectTypeQueue, nullptr, loc, device);
 }
 
-void Device::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location &loc) {
+void Device::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location& loc) {
     tracker.CreateObject(swapchain_image, kVulkanObjectTypeImage, nullptr, loc, swapchain);
 }
 
@@ -621,13 +620,13 @@ void Instance::FindLeakedObjects(VulkanObjectType object_type, std::vector<Vulka
         (object_type == kVulkanObjectTypeImage)
             ? tracker.object_map[object_type].snapshot(
                   [swapchain_snapshot =
-                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState> &pNode) {
-                      return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto &swapchain_item) {
+                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState>& pNode) {
+                      return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto& swapchain_item) {
                                  return pNode->parent_object == swapchain_item.second->handle;
                              }) == swapchain_snapshot.end();
                   })
             : tracker.object_map[object_type].snapshot();
-    for (const auto &item : snapshot) {
+    for (const auto& item : snapshot) {
         const auto object_info = item.second;
         leaked_list.emplace_back(ObjTrackStateTypedHandle(*object_info));
     }
@@ -669,13 +668,13 @@ void Device::FindLeakedObjects(VulkanObjectType object_type, std::vector<VulkanT
         (object_type == kVulkanObjectTypeImage)
             ? tracker.object_map[object_type].snapshot(
                   [swapchain_snapshot =
-                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState> &pNode) {
-                      return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto &swapchain_item) {
+                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState>& pNode) {
+                      return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto& swapchain_item) {
                                  return pNode->parent_object == swapchain_item.second->handle;
                              }) == swapchain_snapshot.end();
                   })
             : tracker.object_map[object_type].snapshot();
-    for (const auto &item : snapshot) {
+    for (const auto& item : snapshot) {
         const auto object_info = item.second;
         leaked_list.emplace_back(ObjTrackStateTypedHandle(*object_info));
     }
@@ -708,14 +707,14 @@ bool Device::ReportLeakedObjects(std::vector<VulkanTypedHandle>& leaked_list, co
     return LogError("VUID-vkDestroyDevice-device-05137", device, loc, "%s", ss.str().c_str());
 }
 
-bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-        const ErrorObject &error_obj) const {
+bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
+                                              const ErrorObject& error_obj) const {
     bool skip = false;
 
     // Checked by chassis: instance: "VUID-vkDestroyInstance-instance-parameter"
 
     auto snapshot = tracker.object_map[kVulkanObjectTypeDevice].snapshot();
-    for (const auto &iit : snapshot) {
+    for (const auto& iit : snapshot) {
         auto node = iit.second;
 
         VkDevice device = reinterpret_cast<VkDevice>(node->handle);
@@ -723,21 +722,19 @@ bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAlloc
 
         skip |=
             LogError("VUID-vkDestroyInstance-instance-00629", instance, error_obj.location, "%s object %s has not been destroyed.",
-                    string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
+                     string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         auto device_data = vvl::dispatch::GetData(device);
-        auto obj_lifetimes_data = static_cast<Device *>(device_data->GetValidationObject(container_type));
+        auto obj_lifetimes_data = static_cast<Device*>(device_data->GetValidationObject(container_type));
         skip |= obj_lifetimes_data->ReportUndestroyedObjects(error_obj.location);
 
-        skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator,
-                "VUID-vkDestroyInstance-instance-00630",
-                "VUID-vkDestroyInstance-instance-00631", error_obj.location);
+        skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                                      "VUID-vkDestroyInstance-instance-00631", error_obj.location);
     }
 
-    skip |= ValidateDestroyObject(instance, kVulkanObjectTypeInstance, pAllocator,
-            "VUID-vkDestroyInstance-instance-00630",
-            "VUID-vkDestroyInstance-instance-00631", error_obj.location);
+    skip |= ValidateDestroyObject(instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                                  "VUID-vkDestroyInstance-instance-00631", error_obj.location);
 
     // Report any remaining instance objects
     skip |= ReportUndestroyedObjects(error_obj.location);
@@ -745,11 +742,11 @@ bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAlloc
     return skip;
 }
 
-void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-                                            const RecordObject &record_obj) {
+void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {
     // Destroy physical devices
     auto snapshot = tracker.object_map[kVulkanObjectTypePhysicalDevice].snapshot();
-    for (const auto &iit : snapshot) {
+    for (const auto& iit : snapshot) {
         auto node = iit.second;
         VkPhysicalDevice physical_device = reinterpret_cast<VkPhysicalDevice>(node->handle);
         RecordDestroyObject(physical_device, kVulkanObjectTypePhysicalDevice, record_obj.location);
@@ -757,7 +754,7 @@ void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocat
 
     // Destroy child devices
     auto snapshot2 = tracker.object_map[kVulkanObjectTypeDevice].snapshot();
-    for (const auto &iit : snapshot2) {
+    for (const auto& iit : snapshot2) {
         auto node = iit.second;
         VkDevice device = reinterpret_cast<VkDevice>(node->handle);
         DestroyLeakedObjects();
@@ -766,13 +763,13 @@ void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocat
     }
 }
 
-void Instance::PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-                                             const RecordObject &record_obj) {
+void Instance::PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
+                                             const RecordObject& record_obj) {
     RecordDestroyObject(instance, kVulkanObjectTypeInstance, record_obj.location);
 }
 
-bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
-                                          const ErrorObject &error_obj) const {
+bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
+                                          const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDestroyDevice-device-parameter"
 
@@ -784,8 +781,8 @@ bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCal
     return skip;
 }
 
-void Device::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto object_lifetimes = static_cast<Instance *>(dispatch_instance_->GetValidationObject(container_type));
+void Device::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    auto object_lifetimes = static_cast<Instance*>(dispatch_instance_->GetValidationObject(container_type));
     // If ObjectTracker was removed (in an early teardown) this might be null, could search in aborted_object_dispatch but if it is
     // there, no need to record anything else
     if (object_lifetimes) {
@@ -797,21 +794,21 @@ void Device::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallb
     tracker.DestroyUndestroyedObjects(kVulkanObjectTypeQueue, record_obj.location);
 }
 
-void Device::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
-                                          const RecordObject &record_obj) {
+void Device::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+                                          const RecordObject& record_obj) {
     auto lock = WriteSharedLock();
     CreateQueue(*pQueue, record_obj.location);
 }
 
-void Device::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
-                                           const RecordObject &record_obj) {
+void Device::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
+                                           const RecordObject& record_obj) {
     auto lock = WriteSharedLock();
     CreateQueue(*pQueue, record_obj.location);
 }
 
 bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                 const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                 const VkCopyDescriptorSet *pDescriptorCopies, const ErrorObject &error_obj) const {
+                                                 const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                                 const VkCopyDescriptorSet* pDescriptorCopies, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkUpdateDescriptorSets-device-parameter"
     if (pDescriptorCopies) {
@@ -839,7 +836,7 @@ bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descr
 }
 
 bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
-                                                const ErrorObject &error_obj) const {
+                                                const ErrorObject& error_obj) const {
     bool skip = false;
     auto lock = ReadSharedLock();
     // Checked by chassis: device: "VUID-vkResetDescriptorPool-device-parameter"
@@ -860,7 +857,7 @@ bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPoo
 }
 
 void Device::PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
-                                              const RecordObject &record_obj) {
+                                              const RecordObject& record_obj) {
     auto lock = WriteSharedLock();
     // A DescriptorPool's descriptor sets are implicitly deleted when the pool is reset. Remove this pool's descriptor sets from
     // our descriptorSet map.
@@ -874,8 +871,8 @@ void Device::PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool 
     }
 }
 
-bool Device::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *begin_info,
-                                               const ErrorObject &error_obj) const {
+bool Device::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* begin_info,
+                                               const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkBeginCommandBuffer-commandBuffer-parameter"
 
@@ -901,8 +898,8 @@ bool Device::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, co
     return skip;
 }
 
-void Device::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                 VkImage *pSwapchainImages, const RecordObject &record_obj) {
+void Device::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                                 VkImage* pSwapchainImages, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     auto lock = WriteSharedLock();
     if (pSwapchainImages != NULL) {
@@ -912,16 +909,16 @@ void Device::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR
     }
 }
 
-bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                                   const Location &create_info_loc) const {
+bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo& create_info,
+                                                   const Location& create_info_loc) const {
     bool skip = false;
     if (create_info.pBindings) {
-        const char *parent_vuid = create_info_loc.function == vvl::Func::vkCreateDescriptorSetLayout
+        const char* parent_vuid = create_info_loc.function == vvl::Func::vkCreateDescriptorSetLayout
                                       ? "UNASSIGNED-vkCreateDescriptorSetLayout-pImmutableSamplers-device"
                                       : "UNASSIGNED-vkGetDescriptorSetLayoutSupport-pImmutableSamplers-device";
         for (uint32_t binding_index = 0; binding_index < create_info.bindingCount; ++binding_index) {
             const Location binding_loc = create_info_loc.dot(Field::pBindings, binding_index);
-            const VkDescriptorSetLayoutBinding &binding = create_info.pBindings[binding_index];
+            const VkDescriptorSetLayoutBinding& binding = create_info.pBindings[binding_index];
             const bool is_sampler_type = binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                                          binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             if (binding.pImmutableSamplers && is_sampler_type) {
@@ -937,23 +934,23 @@ bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCr
     return skip;
 }
 
-bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
-                                                      const ErrorObject &error_obj) const {
+bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateDescriptorSetLayout-device-parameter"
     skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
-void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
-                                                     const RecordObject &record_obj) {
+void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                                     const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator, record_obj.location, device);
 
     // Setup poisoning
-    for (const VkDescriptorSetLayoutBinding &binding : vvl::make_span(pCreateInfo->pBindings, pCreateInfo->bindingCount)) {
+    for (const VkDescriptorSetLayoutBinding& binding : vvl::make_span(pCreateInfo->pBindings, pCreateInfo->bindingCount)) {
         if (binding.descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER &&
             binding.descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
             continue;
@@ -967,18 +964,18 @@ void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDe
     }
 }
 
-bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                          VkDescriptorSetLayoutSupport *pSupport,
-                                                          const ErrorObject &error_obj) const {
+bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                          VkDescriptorSetLayoutSupport* pSupport,
+                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetDescriptorSetLayoutSupport-device-parameter"
     skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
-void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                const RecordObject &record_obj) {
+void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                                const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pPipelineLayout, kVulkanObjectTypePipelineLayout, pAllocator, record_obj.location, device);
 
@@ -989,43 +986,43 @@ void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelin
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                     uint32_t *pQueueFamilyPropertyCount,
-                                                                     VkQueueFamilyProperties *pQueueFamilyProperties,
-                                                                     const ErrorObject &error_obj) const {
+                                                                     uint32_t* pQueueFamilyPropertyCount,
+                                                                     VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                     const ErrorObject& error_obj) const {
     constexpr bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceQueueFamilyProperties-physicalDevice-parameter"
     return skip;
 }
 
 void Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                    uint32_t *pQueueFamilyPropertyCount,
-                                                                    VkQueueFamilyProperties *pQueueFamilyProperties,
-                                                                    const RecordObject &record_obj) {}
+                                                                    uint32_t* pQueueFamilyPropertyCount,
+                                                                    VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                    const RecordObject& record_obj) {}
 
-void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                            VkInstance *pInstance, const RecordObject &record_obj) {
+void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                            VkInstance* pInstance, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator, record_obj.location, *pInstance);
     tracker.SetInstanceHandle(*pInstance);
 }
 
-bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                           const ErrorObject &error_obj) const {
+bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                           const ErrorObject& error_obj) const {
     constexpr bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkCreateDevice-physicalDevice-parameter"
     return skip;
 }
 
-void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                          const RecordObject &record_obj) {
+void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                          const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location, physicalDevice);
 }
 
-bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                                   VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
+bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                   VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkAllocateCommandBuffers-device-parameter"
 
@@ -1035,8 +1032,8 @@ bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkComm
     return skip;
 }
 
-void Device::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                                  VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
+void Device::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                  VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
         AllocateCommandBuffer(pAllocateInfo->commandPool, pCommandBuffers[i], pAllocateInfo->level,
@@ -1044,8 +1041,8 @@ void Device::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkComma
     }
 }
 
-bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                   VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj) const {
+bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                   VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
     bool skip = false;
     auto lock = ReadSharedLock();
     // Checked by chassis: device: "VUID-vkAllocateDescriptorSets-device-parameter"
@@ -1062,8 +1059,8 @@ bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDesc
     return skip;
 }
 
-void Device::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                  VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
+void Device::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                  VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     auto lock = WriteSharedLock();
     for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
@@ -1073,7 +1070,7 @@ void Device::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescr
 }
 
 bool Device::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                               const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
+                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkFreeCommandBuffers-device-parameter"
 
@@ -1091,26 +1088,26 @@ bool Device::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool co
 }
 
 void Device::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                             const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
+                                             const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         RecordDestroyObject(pCommandBuffers[i], kVulkanObjectTypeCommandBuffer, record_obj.location);
     }
 }
 
-void Device::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator,
-                                              const RecordObject &record_obj) {
+void Device::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
+                                              const RecordObject& record_obj) {
     RecordDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR, record_obj.location);
 
-    auto &image_map = tracker.object_map[kVulkanObjectTypeImage];
+    auto& image_map = tracker.object_map[kVulkanObjectTypeImage];
     auto snapshot = image_map.snapshot(
-        [swapchain](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
-    for (const auto &itr : snapshot) {
+        [swapchain](const std::shared_ptr<ObjectState>& pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
+    for (const auto& itr : snapshot) {
         image_map.erase(itr.first);
     }
 }
 
 bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                               const VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj) const {
+                                               const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
     auto lock = ReadSharedLock();
     bool skip = false;
     // Checked by chassis: device: "VUID-vkFreeDescriptorSets-device-parameter"
@@ -1129,7 +1126,7 @@ bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool
     return skip;
 }
 void Device::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                             const VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
+                                             const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     auto lock = WriteSharedLock();
     std::shared_ptr<ObjectState> pool_node = nullptr;
     auto itr = tracker.object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
@@ -1145,7 +1142,7 @@ void Device::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool d
 }
 
 bool Device::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                  const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
+                                                  const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
     auto lock = ReadSharedLock();
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDestroyDescriptorPool-device-parameter"
@@ -1169,7 +1166,7 @@ bool Device::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorP
     return skip;
 }
 void Device::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     auto lock = WriteSharedLock();
     auto itr = tracker.object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
     if (itr != tracker.object_map[kVulkanObjectTypeDescriptorPool].end()) {
@@ -1182,8 +1179,8 @@ void Device::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPoo
     RecordDestroyObject(descriptorPool, kVulkanObjectTypeDescriptorPool, record_obj.location);
 }
 
-bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator,
-                                               const ErrorObject &error_obj) const {
+bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                               const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDestroyCommandPool-device-parameter"
 
@@ -1192,8 +1189,8 @@ bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool co
                            "VUID-vkDestroyCommandPool-commandPool-parent", command_pool_loc);
 
     auto snapshot = tracker.object_map[kVulkanObjectTypeCommandBuffer].snapshot(
-        [commandPool](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
-    for (const auto &itr : snapshot) {
+        [commandPool](const std::shared_ptr<ObjectState>& pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
+    for (const auto& itr : snapshot) {
         auto node = itr.second;
         skip |= ValidateCommandBuffer(commandPool, reinterpret_cast<VkCommandBuffer>(itr.first), command_pool_loc);
         skip |= ValidateDestroyObject(reinterpret_cast<VkCommandBuffer>(itr.first), kVulkanObjectTypeCommandBuffer, nullptr,
@@ -1205,53 +1202,53 @@ bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool co
     return skip;
 }
 
-void Device::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator,
-                                             const RecordObject &record_obj) {
+void Device::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                             const RecordObject& record_obj) {
     auto snapshot = tracker.object_map[kVulkanObjectTypeCommandBuffer].snapshot(
-        [commandPool](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
+        [commandPool](const std::shared_ptr<ObjectState>& pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
     // A CommandPool's cmd buffers are implicitly deleted when pool is deleted. Remove this pool's cmdBuffers from cmd buffer map.
-    for (const auto &itr : snapshot) {
+    for (const auto& itr : snapshot) {
         RecordDestroyObject(reinterpret_cast<VkCommandBuffer>(itr.first), kVulkanObjectTypeCommandBuffer, record_obj.location);
     }
     RecordDestroyObject(commandPool, kVulkanObjectTypeCommandPool, record_obj.location);
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                      uint32_t *pQueueFamilyPropertyCount,
-                                                                      VkQueueFamilyProperties2 *pQueueFamilyProperties,
-                                                                      const ErrorObject &error_obj) const {
+                                                                      uint32_t* pQueueFamilyPropertyCount,
+                                                                      VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                      const ErrorObject& error_obj) const {
     constexpr bool skip = false;
     // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter"
     return skip;
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                         uint32_t *pQueueFamilyPropertyCount,
-                                                                         VkQueueFamilyProperties2 *pQueueFamilyProperties,
-                                                                         const ErrorObject &error_obj) const {
+                                                                         uint32_t* pQueueFamilyPropertyCount,
+                                                                         VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                         const ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
                                                                   error_obj);
 }
 
 void Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                     uint32_t *pQueueFamilyPropertyCount,
-                                                                     VkQueueFamilyProperties2 *pQueueFamilyProperties,
-                                                                     const RecordObject &record_obj) {}
+                                                                     uint32_t* pQueueFamilyPropertyCount,
+                                                                     VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                     const RecordObject& record_obj) {}
 
 void Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                        uint32_t *pQueueFamilyPropertyCount,
-                                                                        VkQueueFamilyProperties2 *pQueueFamilyProperties,
-                                                                        const RecordObject &record_obj) {}
+                                                                        uint32_t* pQueueFamilyPropertyCount,
+                                                                        VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                        const RecordObject& record_obj) {}
 
-void Instance::AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location &loc) {
+void Instance::AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location& loc) {
     // Note - From https://gitlab.khronos.org/vulkan/vulkan/-/issues/4742
     // It is known that the DisplayKHR and DisplayModeKHR handle list might only ever grow
     tracker.CreateObject(display, kVulkanObjectTypeDisplayKHR, nullptr, loc, physical_device);
 }
 
-void Instance::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                   VkDisplayPropertiesKHR *pProperties,
-                                                                   const RecordObject &record_obj) {
+void Instance::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                   VkDisplayPropertiesKHR* pProperties,
+                                                                   const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
@@ -1262,8 +1259,8 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDev
 }
 
 void Instance::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                         uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties,
-                                                         const RecordObject &record_obj) {
+                                                         uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
+                                                         const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
@@ -1273,9 +1270,9 @@ void Instance::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physic
     }
 }
 
-void Instance::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                    VkDisplayProperties2KHR *pProperties,
-                                                                    const RecordObject &record_obj) {
+void Instance::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                    VkDisplayProperties2KHR* pProperties,
+                                                                    const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
@@ -1287,8 +1284,8 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDe
 }
 
 void Instance::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                          uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties,
-                                                          const RecordObject &record_obj) {
+                                                          uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
+                                                          const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
@@ -1300,9 +1297,9 @@ void Instance::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physi
     }
 }
 
-void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                        VkDisplayPlanePropertiesKHR *pProperties,
-                                                                        const RecordObject &record_obj) {
+void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                        VkDisplayPlanePropertiesKHR* pProperties,
+                                                                        const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
@@ -1312,9 +1309,9 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysic
     }
 }
 
-void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                         VkDisplayPlaneProperties2KHR *pProperties,
-                                                                         const RecordObject &record_obj) {
+void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                         VkDisplayPlaneProperties2KHR* pProperties,
+                                                                         const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pProperties) {
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
@@ -1325,9 +1322,9 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysi
     }
 }
 
-bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                              const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
-                                              const ErrorObject &error_obj) const {
+bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
+                                              const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateFramebuffer-device-parameter"
 
@@ -1346,8 +1343,8 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
     return skip;
 }
 
-bool Device::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo,
-                                                       const ErrorObject &error_obj) const {
+bool Device::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
+                                                       const ErrorObject& error_obj) const {
     // Checked by chassis: device: "VUID-vkDebugMarkerSetObjectTagEXT-device-parameter"
     bool skip = false;
     if (pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {
@@ -1369,8 +1366,8 @@ bool Device::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const Vk
     return skip;
 }
 
-bool Device::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo,
-                                                        const ErrorObject &error_obj) const {
+bool Device::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo,
+                                                        const ErrorObject& error_obj) const {
     // Checked by chassis: device: "VUID-vkDebugMarkerSetObjectNameEXT-device-parameter"
     bool skip = false;
     if (pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {
@@ -1392,8 +1389,8 @@ bool Device::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const V
     return skip;
 }
 
-bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
-                                                       const ErrorObject &error_obj) const {
+bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
+                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter"
     const VkObjectType object_type = pNameInfo->objectType;
@@ -1417,8 +1414,8 @@ bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const Vk
     return skip;
 }
 
-bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
-                                                      const ErrorObject &error_obj) const {
+bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo,
+                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter"
 
@@ -1444,10 +1441,10 @@ bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkD
     return skip;
 }
 
-bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                           const VkAllocationCallbacks *pAllocator,
-                                                           VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
-                                                           const ErrorObject &error_obj) const {
+bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                           const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateDescriptorUpdateTemplate-device-parameter"
 
@@ -1469,35 +1466,35 @@ bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, cons
 }
 
 bool Device::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
-                                                              const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
-                                                              const ErrorObject &error_obj) const {
+                                                              const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                              const ErrorObject& error_obj) const {
     return PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, error_obj);
 }
 
-void Device::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator,
-                                                          VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
-                                                          const RecordObject &record_obj) {
+void Device::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                          const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator, record_obj.location,
                          device);
 }
 
 void Device::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
-                                                             const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
-                                                             const RecordObject &record_obj) {
+                                                             const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                             const RecordObject& record_obj) {
     return PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, record_obj);
 }
 
-bool Device::ValidateAccelerationStructures(const char *src_handle_vuid, const char *dst_handle_vuid, uint32_t count,
-                                            const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const {
+bool Device::ValidateAccelerationStructures(const char* src_handle_vuid, const char* dst_handle_vuid, uint32_t count,
+                                            const VkAccelerationStructureBuildGeometryInfoKHR* infos, const Location& loc) const {
     bool skip = false;
     if (infos) {
-        const char *device_vuid = "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent";
+        const char* device_vuid = "VUID-VkAccelerationStructureBuildGeometryInfoKHR-commonparent";
         for (uint32_t i = 0; i < count; ++i) {
             const Location info_loc = loc.dot(Field::pInfos, i);
             skip |= ValidateObject(infos[i].srcAccelerationStructure, kVulkanObjectTypeAccelerationStructureKHR, true,
@@ -1511,8 +1508,8 @@ bool Device::ValidateAccelerationStructures(const char *src_handle_vuid, const c
 }
 
 bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-parameter"
 
@@ -1523,11 +1520,11 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
 }
 
 bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                                      const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-                                                                      const VkDeviceAddress *pIndirectDeviceAddresses,
-                                                                      const uint32_t *pIndirectStrides,
-                                                                      const uint32_t *const *ppMaxPrimitiveCounts,
-                                                                      const ErrorObject &error_obj) const {
+                                                                      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                                      const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                                      const uint32_t* pIndirectStrides,
+                                                                      const uint32_t* const* ppMaxPrimitiveCounts,
+                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-commandBuffer-parameter"
 
@@ -1539,9 +1536,9 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
 
 bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                            uint32_t infoCount,
-                                                           const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-                                                           const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos,
-                                                           const ErrorObject &error_obj) const {
+                                                           const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                           const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkBuildAccelerationStructuresKHR-device-parameter"
 
@@ -1557,9 +1554,9 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
 
 bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                          VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                         const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                         const ErrorObject &error_obj) const {
+                                                         const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateRayTracingPipelinesKHR-device-parameter"
 
@@ -1607,14 +1604,14 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
 
 void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                         VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                        const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
-                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const RecordObject &record_obj, PipelineStates &pipeline_states,
+                                                        const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                        const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                         std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         if (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR) {
-            auto register_fn = [this, pAllocator, record_obj, chassis_state](std::pair<uint32_t, VkPipeline *> pipelines) {
+            auto register_fn = [this, pAllocator, record_obj, chassis_state](std::pair<uint32_t, VkPipeline*> pipelines) {
                 // Just need to capture chassis state to maintain pipeline creations parameters alive, see
                 // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
                 (void)chassis_state;
@@ -1626,7 +1623,7 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
             if (dispatch_device_->wrap_handles) {
                 deferredOperation = dispatch_device_->Unwrap(deferredOperation);
             }
-            std::vector<std::function<void(std::pair<uint32_t, VkPipeline *>)>> cleanup_fn;
+            std::vector<std::function<void(std::pair<uint32_t, VkPipeline*>)>> cleanup_fn;
             auto find_res = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
             if (find_res->first) {
                 cleanup_fn = std::move(find_res->second);
@@ -1647,9 +1644,9 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
 }
 
 void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const RecordObject &record_obj) {
+                                                       const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                       const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
@@ -1663,9 +1660,9 @@ void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipeli
 
 void Device::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                        VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const RecordObject &record_obj) {
+                                                       const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                       const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
@@ -1678,26 +1675,26 @@ void Device::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferr
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
-                                                  const ErrorObject &error_obj) const {
+bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
+                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkExportMetalObjectsEXT-device-parameter"
 
-    const VkBaseOutStructure *metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure *>(pMetalObjectsInfo->pNext);
+    const VkBaseOutStructure* metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure*>(pMetalObjectsInfo->pNext);
     while (metal_objects_info_ptr) {
         switch (metal_objects_info_ptr->sType) {
             case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT: {
-                auto metal_command_queue_ptr = reinterpret_cast<const VkExportMetalCommandQueueInfoEXT *>(metal_objects_info_ptr);
+                auto metal_command_queue_ptr = reinterpret_cast<const VkExportMetalCommandQueueInfoEXT*>(metal_objects_info_ptr);
                 skip |= ValidateObject(metal_command_queue_ptr->queue, kVulkanObjectTypeQueue, false,
                                        "VUID-VkExportMetalCommandQueueInfoEXT-queue-parameter", kVUIDUndefined, error_obj.location);
             } break;
             case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
-                auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT *>(metal_objects_info_ptr);
+                auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT*>(metal_objects_info_ptr);
                 skip |= ValidateObject(metal_buffer_ptr->memory, kVulkanObjectTypeDeviceMemory, false,
                                        "VUID-VkExportMetalBufferInfoEXT-memory-parameter", kVUIDUndefined, error_obj.location);
             } break;
             case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT: {
-                auto metal_texture_ptr = reinterpret_cast<const VkExportMetalTextureInfoEXT *>(metal_objects_info_ptr);
+                auto metal_texture_ptr = reinterpret_cast<const VkExportMetalTextureInfoEXT*>(metal_objects_info_ptr);
                 skip |= ValidateObject(metal_texture_ptr->image, kVulkanObjectTypeImage, true,
                                        "VUID-VkExportMetalTextureInfoEXT-image-parameter",
                                        "VUID-VkExportMetalTextureInfoEXT-commonparent", error_obj.location);
@@ -1709,12 +1706,12 @@ bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetal
                                        "VUID-VkExportMetalTextureInfoEXT-commonparent", error_obj.location);
             } break;
             case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
-                auto metal_iosurface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT *>(metal_objects_info_ptr);
+                auto metal_iosurface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT*>(metal_objects_info_ptr);
                 skip |= ValidateObject(metal_iosurface_ptr->image, kVulkanObjectTypeImage, false,
                                        "VUID-VkExportMetalIOSurfaceInfoEXT-image-parameter", kVUIDUndefined, error_obj.location);
             } break;
             case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT: {
-                auto metal_shared_event_ptr = reinterpret_cast<const VkExportMetalSharedEventInfoEXT *>(metal_objects_info_ptr);
+                auto metal_shared_event_ptr = reinterpret_cast<const VkExportMetalSharedEventInfoEXT*>(metal_objects_info_ptr);
                 skip |= ValidateObject(metal_shared_event_ptr->semaphore, kVulkanObjectTypeSemaphore, true,
                                        "VUID-VkExportMetalSharedEventInfoEXT-semaphore-parameter",
                                        "VUID-VkExportMetalSharedEventInfoEXT-commonparent", error_obj.location);
@@ -1732,8 +1729,8 @@ bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetal
 }
 #endif  //  VK_USE_PLATFORM_METAL_EXT
 
-bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize,
-                                             void *pDescriptor, const ErrorObject &error_obj) const {
+bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                             void* pDescriptor, const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetDescriptorEXT-device-parameter"
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined,
@@ -1744,7 +1741,7 @@ bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptor
 
 // Need to manually check if objectType and objectHandle are valid
 bool Device::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                           VkPrivateDataSlot privateDataSlot, uint64_t data, const ErrorObject &error_obj) const {
+                                           VkPrivateDataSlot privateDataSlot, uint64_t data, const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
@@ -1770,7 +1767,7 @@ bool Device::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectT
 }
 
 bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                           VkPrivateDataSlot privateDataSlot, uint64_t *pData, const ErrorObject &error_obj) const {
+                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData, const ErrorObject& error_obj) const {
     bool skip = false;
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType), "is %s.",
@@ -1795,9 +1792,9 @@ bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectT
 }
 
 void Device::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                  const VkComputePipelineCreateInfo *pCreateInfos,
-                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  const RecordObject &record_obj) {
+                                                  const VkComputePipelineCreateInfo* pCreateInfos,
+                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                  const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
@@ -1810,9 +1807,9 @@ void Device::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCac
 }
 
 void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj) {
+                                                   const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                   const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
@@ -1830,7 +1827,7 @@ void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCa
                     small_vector<std::shared_ptr<ObjectState>, 4> libraries;
                     for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         const uint64_t library_handle = HandleToUint64(pNext->pLibraries[index2]);
-                        const auto &linked_pipeline = tracker.object_map[kVulkanObjectTypePipeline].find(library_handle);
+                        const auto& linked_pipeline = tracker.object_map[kVulkanObjectTypePipeline].find(library_handle);
                         libraries.emplace_back(linked_pipeline->second);
                     }
                     linked_graphics_pipeline_map.insert(linked_handle, libraries);
@@ -1840,17 +1837,17 @@ void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCa
     }
 }
 
-void Device::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
-                                          const RecordObject &record_obj) {
+void Device::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
+                                          const RecordObject& record_obj) {
     RecordDestroyObject(pipeline, kVulkanObjectTypePipeline, record_obj.location);
 
     linked_graphics_pipeline_map.erase(HandleToUint64(pipeline));
 }
 
-bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator,
-                                                          VkIndirectExecutionSetEXT *pIndirectExecutionSet,
-                                                          const ErrorObject &error_obj) const {
+bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateIndirectExecutionSetEXT-device-parameter"
 
@@ -1864,7 +1861,7 @@ bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const
     }
 
     if (pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT && pCreateInfo->info.pShaderInfo) {
-        const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
+        const VkIndirectExecutionSetShaderInfoEXT& shader_info = *pCreateInfo->info.pShaderInfo;
         const Location shader_info_loc = info_loc.dot(Field::pShaderInfo);
         if (shader_info.pSetLayoutInfos && shader_info.pInitialShaders) {
             for (uint32_t i = 0; i < shader_info.shaderCount; ++i) {
@@ -1873,7 +1870,7 @@ bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const
                                        shader_info_loc.dot(Field::pInitialShaders, i));
 
                 const Location set_layout_info_loc = shader_info_loc.dot(Field::pSetLayoutInfos, i);
-                const VkIndirectExecutionSetShaderLayoutInfoEXT &layout_info = shader_info.pSetLayoutInfos[i];
+                const VkIndirectExecutionSetShaderLayoutInfoEXT& layout_info = shader_info.pSetLayoutInfos[i];
                 if ((layout_info.setLayoutCount > 0) && (layout_info.pSetLayouts)) {
                     for (uint32_t layout_index = 0; layout_index < layout_info.setLayoutCount; ++layout_index) {
                         skip |= ValidateObject(layout_info.pSetLayouts[layout_index], kVulkanObjectTypeDescriptorSetLayout, true,
@@ -1889,9 +1886,9 @@ bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const
     return skip;
 }
 
-bool Device::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
-                                                           const VkAllocationCallbacks *pAllocator,
-                                                           const ErrorObject &error_obj) const {
+bool Device::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkReleaseCapturedPipelineDataKHR-device-parameter"
 
@@ -1909,9 +1906,9 @@ bool Device::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, cons
     return skip;
 }
 
-void Device::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator,
-                                                     VkPipelineBinaryHandlesInfoKHR *pBinaries, const RecordObject &record_obj) {
+void Device::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkPipelineBinaryHandlesInfoKHR* pBinaries, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
 
     if (pBinaries->pPipelineBinaries) {

@@ -1096,6 +1096,6 @@ struct DeviceFeatures {
     bool zeroInitializeDeviceMemory;
 };
 
-void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatures *features, const APIVersion &api_version);
+void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatures* features, const APIVersion& api_version);
 
 // NOLINTEND

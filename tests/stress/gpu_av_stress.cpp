@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ TEST_F(StressGpuAV, DescriptorIndexing) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     // send index to select in image array
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 0;  // index
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -109,7 +109,7 @@ TEST_F(StressGpuAV, DescriptorIndexing) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
 
@@ -306,7 +306,7 @@ TEST_F(StressGpuAV, DescriptorIndexingLoop) {
     TEST_DESCRIPTION("Show the GPU overhead of doing redundant checks inside a loop");
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (local_size_x = 256) in;
         layout(set = 0, binding = 0) buffer Data {

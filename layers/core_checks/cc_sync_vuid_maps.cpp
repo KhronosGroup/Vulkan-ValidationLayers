@@ -24,7 +24,7 @@
 namespace vvl {
 
 // IMPORTANT: this map should be in sync with features enumerated in DisabledPipelineStages()
-const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap() {
+const vvl::unordered_map<VkPipelineStageFlags2, std::string>& GetFeatureNameMap() {
     static const vvl::unordered_map<VkPipelineStageFlags2, std::string> feature_name_map{
         {VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT, "geometryShader"},
         {VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT, "tessellationShader"},
@@ -46,7 +46,7 @@ const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap(
 // commonvalidity/pipeline_stage_common.txt
 // commonvalidity/stage_mask_2_common.txt
 // commonvalidity/stage_mask_common.txt
-static const vvl::unordered_map<VkPipelineStageFlags2, std::vector<Entry>> &GetStageMaskErrorsMap() {
+static const vvl::unordered_map<VkPipelineStageFlags2, std::vector<Entry>>& GetStageMaskErrorsMap() {
     static const vvl::unordered_map<VkPipelineStageFlags2, std::vector<Entry>> stage_mask_errors{
         {VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT,
          std::vector<Entry>{
@@ -301,7 +301,7 @@ static const vvl::unordered_map<VkPipelineStageFlags2, std::vector<Entry>> &GetS
     return stage_mask_errors;
 }
 
-const auto &GetStageMaskErrorsNone() {
+const auto& GetStageMaskErrorsNone() {
     static const std::array<Entry, 12> kStageMaskErrorsNone{{
         {Key(Func::vkCmdPipelineBarrier, Field::srcStageMask), "VUID-vkCmdPipelineBarrier-srcStageMask-03937"},
         {Key(Func::vkCmdPipelineBarrier, Field::dstStageMask), "VUID-vkCmdPipelineBarrier-dstStageMask-03937"},
@@ -319,7 +319,7 @@ const auto &GetStageMaskErrorsNone() {
     return kStageMaskErrorsNone;
 }
 
-const auto &GetStageMaskErrorsShadingRate() {
+const auto& GetStageMaskErrorsShadingRate() {
     static const std::array<Entry, 24> kStageMaskErrorsShadingRate{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-07316"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-07316"},
@@ -349,7 +349,7 @@ const auto &GetStageMaskErrorsShadingRate() {
     return kStageMaskErrorsShadingRate;
 }
 
-const auto &GetStageMaskErrorsSubpassShader() {
+const auto& GetStageMaskErrorsSubpassShader() {
     static const std::array<Entry, 12> kStageMaskErrorsSubpassShader{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-04957"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-04957"},
@@ -367,7 +367,7 @@ const auto &GetStageMaskErrorsSubpassShader() {
     return kStageMaskErrorsSubpassShader;
 }
 
-const auto &GetStageMaskErrorsInvocationMask() {
+const auto& GetStageMaskErrorsInvocationMask() {
     static const std::array<Entry, 12> kStageMaskErrorsInvocationMask{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-04995"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-04995"},
@@ -385,7 +385,7 @@ const auto &GetStageMaskErrorsInvocationMask() {
     return kStageMaskErrorsInvocationMask;
 }
 
-const auto &GetStageMaskErrorsAccelerationStructureBuild() {
+const auto& GetStageMaskErrorsAccelerationStructureBuild() {
     static const std::array<Entry, 23> kStageMaskErrorsAccelerationStructureBuild{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10751"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10751"},
@@ -414,7 +414,7 @@ const auto &GetStageMaskErrorsAccelerationStructureBuild() {
     return kStageMaskErrorsAccelerationStructureBuild;
 }
 
-const auto &GetStageMaskErrorsAccelerationStructurCopy() {
+const auto& GetStageMaskErrorsAccelerationStructurCopy() {
     static const std::array<Entry, 12> kStageMaskErrorsAccelerationStructureCopy{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10752"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10752"},
@@ -432,7 +432,7 @@ const auto &GetStageMaskErrorsAccelerationStructurCopy() {
     return kStageMaskErrorsAccelerationStructureCopy;
 }
 
-const auto &GetStageMaskErrorsMicromapBuild() {
+const auto& GetStageMaskErrorsMicromapBuild() {
     static const std::array<Entry, 12> kStageMaskErrorsMicromapBuild{{
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10753"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10753"},
@@ -450,7 +450,7 @@ const auto &GetStageMaskErrorsMicromapBuild() {
     return kStageMaskErrorsMicromapBuild;
 }
 
-const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 bit, const DeviceExtensions &device_extensions) {
+const std::string& GetBadFeatureVUID(const Location& loc, VkPipelineStageFlags2 bit, const DeviceExtensions& device_extensions) {
     // special case for stages that require an extension or feature bit,
     // this is checked in DisabledPipelineStages
     if (bit == VK_PIPELINE_STAGE_2_NONE) {
@@ -469,7 +469,7 @@ const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 
         return FindVUID(loc, GetStageMaskErrorsMicromapBuild());
     }
 
-    const auto &result = FindVUID(bit, loc, GetStageMaskErrorsMap());
+    const auto& result = FindVUID(bit, loc, GetStageMaskErrorsMap());
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandle-pipeline-stage-feature");
@@ -1003,7 +1003,7 @@ static const vvl::unordered_map<VkAccessFlags2, std::array<Entry, 8>>& GetAccess
     return access_mask2_common;
 }
 // commonvalidity/fine_sync_commands_common.txt
-const std::vector<Entry> &GetFineSyncCommon() {
+const std::vector<Entry>& GetFineSyncCommon() {
     static const std::vector<Entry> kFineSyncCommon = {
         {Key(Func::vkCmdPipelineBarrier, Struct::VkMemoryBarrier, Field::srcAccessMask),
          "VUID-vkCmdPipelineBarrier-srcAccessMask-02815"},
@@ -1034,12 +1034,12 @@ const std::vector<Entry> &GetFineSyncCommon() {
     };
     return kFineSyncCommon;
 }
-const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2 bit) {
-    const auto &result = FindVUID(bit, loc, GetAccessMask2CommonMap());
+const std::string& GetBadAccessFlagsVUID(const Location& loc, VkAccessFlags2 bit) {
+    const auto& result = FindVUID(bit, loc, GetAccessMask2CommonMap());
     if (!result.empty()) {
         return result;
     }
-    const auto &result2 = FindVUID(loc, GetFineSyncCommon());
+    const auto& result2 = FindVUID(loc, GetFineSyncCommon());
     assert(!result2.empty());
     if (result2.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-bad-access-flags");
@@ -1049,7 +1049,7 @@ const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2 bit
 }
 
 // commonvalidity/access_mask_common.adoc/access_mask_2_common.adoc
-static const auto &GetLocation2VUIDMap() {
+static const auto& GetLocation2VUIDMap() {
     static const vvl::unordered_map<Key, std::string, Key::hash> Location2VUID{
         // Sync2 barriers. This can match different functions that work with VkDependencyInfo
         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06256"},
@@ -1090,7 +1090,7 @@ static const auto &GetLocation2VUIDMap() {
     return Location2VUID;
 }
 
-const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions) {
+const std::string& GetAccessMaskRayQueryVUIDSelector(const Location& loc, const DeviceExtensions& device_extensions) {
     // At first try exact match: VUID for specific parameter (struct + field) of specific function
     const Key key_full(loc.function, loc.structure, loc.field);
     if (auto it = GetLocation2VUIDMap().find(key_full); it != GetLocation2VUIDMap().end()) {
@@ -1105,7 +1105,7 @@ const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const 
     return unhandled;
 }
 
-const std::vector<Entry> &GetQueueCapErrors() {
+const std::vector<Entry>& GetQueueCapErrors() {
     static const std::vector<Entry> kQueueCapErrors{
         {Key(Struct::VkSubmitInfo, Field::pWaitDstStageMask), "VUID-vkQueueSubmit-pWaitDstStageMask-00066"},
         {Key(Struct::VkSubpassDependency, Field::srcStageMask), "VUID-vkCmdBeginRenderPass-srcStageMask-06451"},
@@ -1143,9 +1143,9 @@ const std::vector<Entry> &GetQueueCapErrors() {
     return kQueueCapErrors;
 }
 
-const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlags2 bit) {
+const std::string& GetStageQueueCapVUID(const Location& loc, VkPipelineStageFlags2 bit) {
     // no per-bit lookups needed
-    const auto &result = FindVUID(loc, GetQueueCapErrors());
+    const auto& result = FindVUID(loc, GetQueueCapErrors());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-queue-capabilities");
         return unhandled;
@@ -1153,7 +1153,7 @@ const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlag
     return result;
 }
 
-static const vvl::unordered_map<QueueError, std::vector<Entry>> &GetBarrierQueueErrors() {
+static const vvl::unordered_map<QueueError, std::vector<Entry>>& GetBarrierQueueErrors() {
     static const vvl::unordered_map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
         {QueueError::kSrcNoExternalExt,
          {
@@ -1237,7 +1237,7 @@ static const vvl::unordered_map<QueueError, std::vector<Entry>> &GetBarrierQueue
     return kBarrierQueueErrors;
 }
 
-const vvl::unordered_map<QueueError, std::string> &GetQueueErrorSummaryMap() {
+const vvl::unordered_map<QueueError, std::string>& GetQueueErrorSummaryMap() {
     static const vvl::unordered_map<QueueError, std::string> kQueueErrorSummary{
         {QueueError::kSrcNoExternalExt, "Source queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
         {QueueError::kDstNoExternalExt, "Destination queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
@@ -1251,8 +1251,8 @@ const vvl::unordered_map<QueueError, std::string> &GetQueueErrorSummaryMap() {
     return kQueueErrorSummary;
 }
 
-const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {
-    const auto &result = FindVUID(error, loc, GetBarrierQueueErrors());
+const std::string& GetBarrierQueueVUID(const Location& loc, QueueError error) {
+    const auto& result = FindVUID(error, loc, GetBarrierQueueErrors());
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-queue-error");
@@ -1261,7 +1261,7 @@ const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {
     return result;
 }
 
-const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> &GetImageLayoutErrorsMap() {
+const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>>& GetImageLayoutErrorsMap() {
     using ValueType = std::array<Entry, 3>;
     static const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> kImageLayoutErrors{
         {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -1412,8 +1412,8 @@ const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> &GetImageLayoutErr
     return kImageLayoutErrors;
 }
 
-const std::string &GetBadImageLayoutVUID(const Location &loc, VkImageLayout layout) {
-    const auto &result = FindVUID(layout, loc, GetImageLayoutErrorsMap());
+const std::string& GetBadImageLayoutVUID(const Location& loc, VkImageLayout layout) {
+    const auto& result = FindVUID(layout, loc, GetImageLayoutErrorsMap());
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-bad-image-layout");
@@ -1422,7 +1422,7 @@ const std::string &GetBadImageLayoutVUID(const Location &loc, VkImageLayout layo
     return result;
 }
 
-static const vvl::unordered_map<BufferError, std::array<Entry, 2>> &GetBufferErrorsMap() {
+static const vvl::unordered_map<BufferError, std::array<Entry, 2>>& GetBufferErrorsMap() {
     static const vvl::unordered_map<BufferError, std::array<Entry, 2>> kBufferErrors{
         {BufferError::kNoMemory,
          {{
@@ -1448,8 +1448,8 @@ static const vvl::unordered_map<BufferError, std::array<Entry, 2>> &GetBufferErr
     return kBufferErrors;
 }
 
-const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error) {
-    const auto &result = FindVUID(error, loc, GetBufferErrorsMap());
+const std::string& GetBufferBarrierVUID(const Location& loc, BufferError error) {
+    const auto& result = FindVUID(error, loc, GetBufferErrorsMap());
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-buffer-barrier-error");
@@ -1458,7 +1458,7 @@ const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error) 
     return result;
 }
 
-const vvl::unordered_map<ImageError, std::vector<Entry>> &GetImageErrorsMap() {
+const vvl::unordered_map<ImageError, std::vector<Entry>>& GetImageErrorsMap() {
     static const vvl::unordered_map<ImageError, std::vector<Entry>> kImageErrors{
         {ImageError::kNoMemory,
          {
@@ -1575,8 +1575,8 @@ const vvl::unordered_map<ImageError, std::vector<Entry>> &GetImageErrorsMap() {
     return kImageErrors;
 }
 
-const std::string &GetImageBarrierVUID(const Location &loc, ImageError error) {
-    const auto &result = FindVUID(error, loc, GetImageErrorsMap());
+const std::string& GetImageBarrierVUID(const Location& loc, ImageError error) {
+    const auto& result = FindVUID(error, loc, GetImageErrorsMap());
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-image-barrier-error");
@@ -1585,7 +1585,7 @@ const std::string &GetImageBarrierVUID(const Location &loc, ImageError error) {
     return result;
 }
 
-static const vvl::unordered_map<SubmitError, std::vector<Entry>> &GetSubmitErrorsMap() {
+static const vvl::unordered_map<SubmitError, std::vector<Entry>>& GetSubmitErrorsMap() {
     static const vvl::unordered_map<SubmitError, std::vector<Entry>> kSubmitErrors{
         {SubmitError::kTimelineSemSmallValue,
          {
@@ -1675,8 +1675,8 @@ static const vvl::unordered_map<SubmitError, std::vector<Entry>> &GetSubmitError
     return kSubmitErrors;
 }
 
-const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
-    const auto &result = FindVUID(error, loc, GetSubmitErrorsMap());
+const std::string& GetQueueSubmitVUID(const Location& loc, SubmitError error) {
+    const auto& result = FindVUID(error, loc, GetSubmitErrorsMap());
     if (result.empty()) {
         // TODO - Handle better way then Key::recursive to find certain VUs
         // Can reproduce with NegativeSyncObject.Sync2QueueSubmitTimelineSemaphoreValue
@@ -1692,7 +1692,7 @@ const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     return result;
 }
 
-const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRenderingBarrierError error) {
+const std::string& GetDynamicRenderingBarrierVUID(const Location& loc, DynamicRenderingBarrierError error) {
     static const vvl::unordered_map<DynamicRenderingBarrierError, std::vector<Entry>> kDynamicRenderingBarrierErrors{
         {DynamicRenderingBarrierError::kFeatureError,
          {
@@ -1721,7 +1721,7 @@ const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRe
          }},
     };
 
-    const auto &result = FindVUID(error, loc, kDynamicRenderingBarrierErrors);
+    const auto& result = FindVUID(error, loc, kDynamicRenderingBarrierErrors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-barrier-error");

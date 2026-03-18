@@ -18,7 +18,7 @@
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 void AndroidExternalResolveTest::InitBasicAndroidExternalResolve() {
-    SetTargetApiVersion(VK_API_VERSION_1_2); // for RenderPass2
+    SetTargetApiVersion(VK_API_VERSION_1_2);  // for RenderPass2
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::externalFormatResolve);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);

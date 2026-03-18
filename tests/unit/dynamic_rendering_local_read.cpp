@@ -289,7 +289,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
-    TEST_DESCRIPTION("Test setting image memory barrier transferring ownership without dynamic rendering local read features enabled.");
+    TEST_DESCRIPTION(
+        "Test setting image memory barrier transferring ownership without dynamic rendering local read features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
@@ -340,7 +341,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
-    TEST_DESCRIPTION("Test setting image memory barrier within BeginRenderning without dynamic rendering local read features enabled.");
+    TEST_DESCRIPTION(
+        "Test setting image memory barrier within BeginRenderning without dynamic rendering local read features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
@@ -1076,7 +1078,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &locations[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, &locations[0], nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, nullptr, &locations[0]}};
-    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09519",
+    const char* vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09519",
                            "VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09520",
                            "VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521"};
 
@@ -1120,7 +1122,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_bad[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_good[0], &locations_bad[0], nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_good[0], nullptr, &locations_bad[0]}};
-    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09522",
+    const char* vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09522",
                            "VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09523",
                            "VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09524"};
 
@@ -1592,7 +1594,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingInputAttachmentIndexInfoMisma
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment_info;
 
-    const auto begin_record_and_verify_cmd_buffers = [&](const VkCommandBufferBeginInfo &commandBufferBeginInfo) {
+    const auto begin_record_and_verify_cmd_buffers = [&](const VkCommandBufferBeginInfo& commandBufferBeginInfo) {
         secondary_cmd_buffer.Begin(&commandBufferBeginInfo);
         secondary_cmd_buffer.End();
 

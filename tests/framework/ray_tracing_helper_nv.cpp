@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 namespace nv {
 namespace rt {
 
-RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) { InitInfo(); }
+RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest& test) : layer_test_(test) { InitInfo(); }
 RayTracingPipelineHelper::~RayTracingPipelineHelper() {
     VkDevice device = layer_test_.device();
     if (pipeline_cache_ != VK_NULL_HANDLE) {
@@ -138,7 +138,7 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
     rp_ci_.pGroups = groups_.data();
 }
 
-void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
+void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper& library) {
     libraries_.emplace_back(library);
     rp_library_ci_ = vku::InitStructHelper();
     rp_library_ci_.libraryCount = size32(libraries_);
@@ -198,11 +198,11 @@ VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool do_late_bind)
     return vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
 }
 
-void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, vkt::Buffer *vbo, vkt::Buffer *ibo,
-                                                    VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
+void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device& device, vkt::Buffer* vbo, vkt::Buffer* ibo,
+                                                    VkGeometryNV* geometry, VkDeviceSize offset, bool buffer_device_address) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    void *alloc_pnext = nullptr;
+    void* alloc_pnext = nullptr;
     if (buffer_device_address) {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
@@ -214,12 +214,12 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
     constexpr std::array<uint32_t, 3> indicies = {{0, 1, 2}};
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo->Memory().Map();
-    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    uint8_t* mapped_vbo_buffer_data = (uint8_t*)vbo->Memory().Map();
+    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t*)vertices.data(), sizeof(float) * vertices.size());
     vbo->Memory().Unmap();
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo->Memory().Map();
-    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    uint8_t* mapped_ibo_buffer_data = (uint8_t*)ibo->Memory().Map();
+    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t*)indicies.data(), sizeof(uint32_t) * indicies.size());
     ibo->Memory().Unmap();
 
     *geometry = vku::InitStructHelper();

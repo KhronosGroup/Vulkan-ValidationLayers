@@ -1,7 +1,7 @@
 ﻿/*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ struct SwapchainBuffers {
 // EX input:
 //  export VK_DRIVER_FILES=/intel.json:/amd.json
 //  set VK_DRIVER_FILES=\nvidia.json;\mesa.json
-static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
+static std::vector<std::string> GetVkEnvironmentVariable(const char* env_var) {
     const std::string str = GetEnvironment(env_var);
     if (str.empty()) {
         return {};
@@ -73,9 +73,9 @@ static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
 }
 
 static void CheckAndSetEnvironmentVariables() {
-    for (const char *env_var : {"VK_DRIVER_FILES", "VK_ICD_FILENAMES"}) {
+    for (const char* env_var : {"VK_DRIVER_FILES", "VK_ICD_FILENAMES"}) {
         const std::vector<std::string> driver_files = GetVkEnvironmentVariable(env_var);
-        for (const std::string &driver_file : driver_files) {
+        for (const std::string& driver_file : driver_files) {
             const std::filesystem::path icd_file(driver_file);
             // TODO: Error check relative paths (platform dependent)
             if (icd_file.is_relative()) {
@@ -92,7 +92,7 @@ static void CheckAndSetEnvironmentVariables() {
                     std::exit(EXIT_FAILURE);
                 }
                 bool contains_json = false;
-                for (auto const &dir_entry : std::filesystem::directory_iterator{icd_file}) {
+                for (auto const& dir_entry : std::filesystem::directory_iterator{icd_file}) {
                     if (dir_entry.path().extension() == ".json") {
                         contains_json = true;
                     }
@@ -120,12 +120,12 @@ static void CheckAndSetEnvironmentVariables() {
     bool found_json = false;
     bool vk_layer_env_vars_present = false;
     std::ostringstream error_log;  // Build up error log in case the validation json cannot be found
-    for (const char *env_var : {"VK_LAYER_PATH", "VK_ADD_LAYER_PATH"}) {
+    for (const char* env_var : {"VK_LAYER_PATH", "VK_ADD_LAYER_PATH"}) {
         const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable(env_var);
         if (!vk_layer_paths.empty()) {
             vk_layer_env_vars_present = true;
         }
-        for (const std::string &vk_layer_path : vk_layer_paths) {
+        for (const std::string& vk_layer_path : vk_layer_paths) {
             const std::filesystem::path layer_path(vk_layer_path);
 
             if (!std::filesystem::exists(layer_path)) {
@@ -134,7 +134,7 @@ static void CheckAndSetEnvironmentVariables() {
             }
 
             if (std::filesystem::is_directory(layer_path)) {
-                for (auto const &dir_entry : std::filesystem::directory_iterator{layer_path}) {
+                for (auto const& dir_entry : std::filesystem::directory_iterator{layer_path}) {
                     if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
                         if (std::filesystem::exists(dir_entry)) {
                             found_json = true;
@@ -180,16 +180,16 @@ bool WaylandContext::Init() {
         return false;
     }
 
-    auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+    auto global = [](void* data, struct wl_registry* registry, uint32_t id, const char* interface, uint32_t version) {
         (void)version;
         const std::string_view interface_str = interface;
         if (interface_str == "wl_compositor") {
-            auto compositor = reinterpret_cast<wl_compositor **>(data);
-            *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
+            auto compositor = reinterpret_cast<wl_compositor**>(data);
+            *compositor = reinterpret_cast<wl_compositor*>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
         }
     };
 
-    auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
+    auto global_remove = [](void* data, struct wl_registry* registry, uint32_t id) {
         (void)data;
         (void)registry;
         (void)id;
@@ -250,7 +250,7 @@ void TestEnvironment::SetUp() {
 
 void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
 
-void VkTestFramework::InitArgs(int *argc, char *argv[]) {
+void VkTestFramework::InitArgs(int* argc, char* argv[]) {
     for (int i = 1; i < *argc; ++i) {
         const std::string_view current_argument = argv[i];
         if (current_argument == "--print-vu") {

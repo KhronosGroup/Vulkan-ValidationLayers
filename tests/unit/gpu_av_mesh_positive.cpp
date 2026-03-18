@@ -80,7 +80,7 @@ TEST_F(PositiveGpuAVMesh, MultipleSetMeshOutput) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 0;
     buffer_ptr[1] = 3;
     buffer_ptr[2] = 1;

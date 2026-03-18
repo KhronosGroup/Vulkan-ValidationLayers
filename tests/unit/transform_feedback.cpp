@@ -16,7 +16,7 @@
 #include "../framework/pipeline_helper.h"
 
 // Basic Vertex shader with Xfb OpExecutionMode added
-static const char *kXfbVsSource = R"asm(
+static const char* kXfbVsSource = R"asm(
                OpCapability Shader
                OpCapability TransformFeedback
                OpMemoryModel Logical GLSL450
@@ -569,7 +569,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
         m_command_buffer.End();
     }
 
-    std::vector<const char *> device_extension_names;
+    std::vector<const char*> device_extension_names;
     device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     vkt::Device test_device(Gpu(), device_extension_names);
     vkt::CommandPool commandPool(test_device, 0);
@@ -738,7 +738,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     if (transform_feedback_props.transformFeedbackStreamsLinesTriangles == VK_FALSE) {
-        const char *gsSource = R"asm(
+        const char* gsSource = R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback
                OpCapability GeometryStreams

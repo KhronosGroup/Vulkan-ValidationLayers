@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,46 +26,46 @@
 
 #if defined(VVL_TRACY_CPU_MEMORY)
 
-void *operator new(std ::size_t size) {
+void* operator new(std ::size_t size) {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete(void *ptr) noexcept {
+void operator delete(void* ptr) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
 
-void *operator new[](std::size_t size) {
+void* operator new[](std::size_t size) {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete[](void *ptr) noexcept {
+void operator delete[](void* ptr) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 };
 
-void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete(void *ptr, const std::nothrow_t &) noexcept {
+void operator delete(void* ptr, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
 
-void *operator new[](std::size_t size, const std::nothrow_t &) noexcept {
+void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete[](void *ptr, const std::nothrow_t &) noexcept {
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
@@ -77,52 +77,52 @@ void operator delete[](void *ptr, const std::nothrow_t &) noexcept {
 #define vvl_aligned_free(ptr) _aligned_free(ptr)
 #else
 // TODO - Need to understand why on Linux sometimes calling aligned_alloc causes corruption
-void *vvl_aligned_malloc(std::size_t size, std::size_t al) {
-    void *mem = malloc(size + al + sizeof(void *));
-    void **ptr = (void **)((uintptr_t)((uintptr_t)mem + al + sizeof(void *)) & ~(al - 1));
+void* vvl_aligned_malloc(std::size_t size, std::size_t al) {
+    void* mem = malloc(size + al + sizeof(void*));
+    void** ptr = (void**)((uintptr_t)((uintptr_t)mem + al + sizeof(void*)) & ~(al - 1));
     ptr[-1] = mem;
     return ptr;
 }
 
-void vvl_aligned_free(void *ptr) { free(((void **)ptr)[-1]); }
+void vvl_aligned_free(void* ptr) { free(((void**)ptr)[-1]); }
 #endif
 
-void *operator new(std::size_t size, std::align_val_t al) noexcept(false) {
+void* operator new(std::size_t size, std::align_val_t al) noexcept(false) {
     auto ptr = vvl_aligned_malloc(size, size_t(al));
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
-void *operator new[](std::size_t size, std::align_val_t al) noexcept(false) {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-
-void *operator new(std::size_t size, std::align_val_t al, const std::nothrow_t &) noexcept {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-void *operator new[](std::size_t size, std::align_val_t al, const std::nothrow_t &) noexcept {
+void* operator new[](std::size_t size, std::align_val_t al) noexcept(false) {
     auto ptr = vvl_aligned_malloc(size, size_t(al));
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete(void *ptr, std::align_val_t al) noexcept {
+void* operator new(std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+void* operator new[](std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+
+void operator delete(void* ptr, std::align_val_t al) noexcept {
     VVL_TracyFree(ptr);
     vvl_aligned_free(ptr);
 }
-void operator delete[](void *ptr, std::align_val_t al) noexcept {
+void operator delete[](void* ptr, std::align_val_t al) noexcept {
     VVL_TracyFree(ptr);
     vvl_aligned_free(ptr);
 }
 
-void operator delete(void *ptr, std::align_val_t al, const std::nothrow_t &) noexcept {
+void operator delete(void* ptr, std::align_val_t al, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     vvl_aligned_free(ptr);
 }
-void operator delete[](void *ptr, std::align_val_t al, const std::nothrow_t &) noexcept {
+void operator delete[](void* ptr, std::align_val_t al, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     vvl_aligned_free(ptr);
 }
@@ -164,7 +164,7 @@ __attribute__((constructor)) static void so_attach(void) { tracy::StartupProfile
 // To do things properly, should be a per device object
 static std::array<TracyVkCtx, 8> tracy_vk_contexts;
 
-TracyVkCtx &GetTracyVkCtx() {
+TracyVkCtx& GetTracyVkCtx() {
     static std::atomic<uint32_t> context_counter = {0};
     uint32_t context_i = context_counter.fetch_add(1, std::memory_order_relaxed);
     context_i = context_i % (uint32_t)tracy_vk_contexts.size();
@@ -211,14 +211,14 @@ struct ZoneProfilingCommandPool {
         return cmd_buffers[cb_i];
     }
 };
-static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool *> &GetQueueToGpuZoneProfilingCommandPoolMap() {
-    static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool *> map;
+static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool*>& GetQueueToGpuZoneProfilingCommandPoolMap() {
+    static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool*> map;
     return map;
 }
 
 void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_family_i) {
     if (std::find_if(queue_to_collector_map.begin(), queue_to_collector_map.end(),
-                     [queue](const std::unique_ptr<TracyVkCollector> &collector) { return collector->queue == queue; }) !=
+                     [queue](const std::unique_ptr<TracyVkCollector>& collector) { return collector->queue == queue; }) !=
         queue_to_collector_map.end()) {
         return;
     }
@@ -255,7 +255,7 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
         assert(result == VK_SUCCESS);
 
         zone_profiling_cmd_pool->fences.resize(cmd_buf_ai.commandBufferCount);
-        for (VkFence &fence : zone_profiling_cmd_pool->fences) {
+        for (VkFence& fence : zone_profiling_cmd_pool->fences) {
             VkFenceCreateInfo fence_ci = vku::InitStructHelper();
             fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
             result = TracyVkCollector::CreateFence(device, &fence_ci, nullptr, &fence);
@@ -323,7 +323,7 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
                 VkCommandBufferBeginInfo cmd_buf_bi = vku::InitStructHelper();
                 cmd_buf_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
                 TracyVkCollector::BeginCommandBuffer(collector_ptr->cmd_buf, &cmd_buf_bi);
-                for (TracyVkCtx &tracy_vk_ctx : tracy_vk_contexts) {
+                for (TracyVkCtx& tracy_vk_ctx : tracy_vk_contexts) {
                     tracy_vk_ctx->Collect(collector_ptr->cmd_buf);
                 }
                 TracyVkCollector::EndCommandBuffer(collector_ptr->cmd_buf);
@@ -344,7 +344,7 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
 #endif
 }
 
-void TracyVkCollector::Destroy(TracyVkCollector &collector) {
+void TracyVkCollector::Destroy(TracyVkCollector& collector) {
 #if defined(TRACY_GPU_PROFILING_DEBUG)
     VVL_TracyMessageStream("[tracyvk] Destroying TracyVkCollector: device: " << collector.device << " queue: " << collector.queue);
 #endif
@@ -396,11 +396,11 @@ std::optional<std::pair<VkCommandBuffer, VkFence>> TracyVkCollector::TryGetColle
 }
 
 // Not thread safe for now, should be fine to profile GFXR traces
-TracyVkCollector &TracyVkCollector::GetTracyVkCollector(VkQueue queue) {
+TracyVkCollector& TracyVkCollector::GetTracyVkCollector(VkQueue queue) {
 #if defined(TRACY_GPU_PROFILING_DEBUG)
     VVL_TracyMessageStream("[tracyvk] Getting TracyVkCollector for queue " << queue);
 #endif
-    for (const std::unique_ptr<TracyVkCollector> &collector : queue_to_collector_map) {
+    for (const std::unique_ptr<TracyVkCollector>& collector : queue_to_collector_map) {
         if (collector->queue == queue) return *collector;
     }
     assert(false);
@@ -409,7 +409,7 @@ TracyVkCollector &TracyVkCollector::GetTracyVkCollector(VkQueue queue) {
 
 void TracyVkCollector::TrySubmitCollectCb(VkQueue queue) {
     VVL_ZoneScoped;
-    TracyVkCollector &collector = GetTracyVkCollector(queue);
+    TracyVkCollector& collector = GetTracyVkCollector(queue);
 
     std::optional<std::pair<VkCommandBuffer, VkFence>> collect_cb = collector.TryGetCollectCb(queue);
     if (collect_cb.has_value()) {
@@ -423,7 +423,7 @@ void TracyVkCollector::TrySubmitCollectCb(VkQueue queue) {
 }
 
 void InitTracyVk(VkInstance instance, VkPhysicalDevice gpu, VkDevice device, PFN_vkGetInstanceProcAddr GetInstanceProcAddr,
-                 PFN_vkGetDeviceProcAddr GetDeviceProcAddr, VkLayerDispatchTable &device_dispatch_table) {
+                 PFN_vkGetDeviceProcAddr GetDeviceProcAddr, VkLayerDispatchTable& device_dispatch_table) {
     VVL_ZoneScoped;
 
     TracyVkCollector::CreateCommandPool = device_dispatch_table.CreateCommandPool;
@@ -440,7 +440,7 @@ void InitTracyVk(VkInstance instance, VkPhysicalDevice gpu, VkDevice device, PFN
     TracyVkCollector::EndCommandBuffer = device_dispatch_table.EndCommandBuffer;
     TracyVkCollector::QueueSubmit = device_dispatch_table.QueueSubmit;
 
-    for (TracyVkCtx &tracy_vk_ctx : tracy_vk_contexts) {
+    for (TracyVkCtx& tracy_vk_ctx : tracy_vk_contexts) {
         tracy_vk_ctx = TracyVkContextHostCalibrated(instance, gpu, device, GetInstanceProcAddr, GetDeviceProcAddr);
         assert(tracy_vk_ctx);
     }
@@ -458,20 +458,20 @@ void CleanupTracyVk(VkDevice device) {
     }
     // Should be per device. Or maybe not, since queue handles are already per device?
     auto queues_to_zpcp = GetQueueToGpuZoneProfilingCommandPoolMap().snapshot();
-    for (auto &[queue, zpcp] : queues_to_zpcp) {
+    for (auto& [queue, zpcp] : queues_to_zpcp) {
         zpcp->Destroy();
         delete zpcp;
     }
     GetQueueToGpuZoneProfilingCommandPoolMap().clear();
 
-    for (TracyVkCtx &tracy_vk_ctx : tracy_vk_contexts) {
+    for (TracyVkCtx& tracy_vk_ctx : tracy_vk_contexts) {
         if (tracy_vk_ctx) {
             TracyVkDestroy(tracy_vk_ctx);
         }
     }
 }
 
-tracy::VkCtxManualScope TracyVkZoneStart(tracy::VkCtx *ctx, const tracy::SourceLocationData *srcloc, VkQueue queue) {
+tracy::VkCtxManualScope TracyVkZoneStart(tracy::VkCtx* ctx, const tracy::SourceLocationData* srcloc, VkQueue queue) {
     VVL_ZoneScoped;
 
     // Get a GPU zone profiling command buffer
@@ -504,7 +504,7 @@ tracy::VkCtxManualScope TracyVkZoneStart(tracy::VkCtx *ctx, const tracy::SourceL
     return ctx_manual_scope;
 }
 
-void TracyVkZoneEnd(tracy::VkCtxManualScope &scope_to_close, VkQueue queue) {
+void TracyVkZoneEnd(tracy::VkCtxManualScope& scope_to_close, VkQueue queue) {
     VVL_ZoneScoped;
 
     // Get a GPU zone profiling command buffer

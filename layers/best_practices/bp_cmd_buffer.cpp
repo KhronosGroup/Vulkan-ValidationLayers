@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -38,7 +38,8 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
     if (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY && (queue_flags & sec_cmd_buf_queue_flags) == 0) {
         skip |= LogWarning("BestPractices-vkAllocateCommandBuffers-unusable-secondary", device, error_obj.location,
                            "Allocating secondary level command buffer from command pool "
-                           "created against queue family %" PRIu32 " (queue flags: %s), but vkCmdExecuteCommands() is only "
+                           "created against queue family %" PRIu32
+                           " (queue flags: %s), but vkCmdExecuteCommands() is only "
                            "supported on queue families supporting VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, or "
                            "VK_QUEUE_TRANSFER_BIT. The allocated command buffer will not be submittable.",
                            cp_state->queueFamilyIndex, string_VkQueueFlags(queue_flags).c_str());

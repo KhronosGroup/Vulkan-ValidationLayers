@@ -56,7 +56,7 @@ TEST_F(PositivePipeline, MissingDescriptorUnused) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -79,7 +79,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -99,7 +99,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform sampler s;
@@ -125,7 +125,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -152,7 +152,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -178,12 +178,12 @@ TEST_F(PositivePipeline, IgnoredMultisampleState) {
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    void *bad_pointer = sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+    void* bad_pointer = sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
 
     CreatePipelineHelper pipe(*this);
     pipe.VertexShaderOnly();
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.gp_ci_.pMultisampleState = reinterpret_cast<const VkPipelineMultisampleStateCreateInfo *>(bad_pointer);
+    pipe.gp_ci_.pMultisampleState = reinterpret_cast<const VkPipelineMultisampleStateCreateInfo*>(bad_pointer);
     pipe.CreateGraphicsPipeline();
 }
 
@@ -192,7 +192,7 @@ TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=2, local_size_y=4) in;
         void main(){
@@ -255,8 +255,8 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    void *hopefully_undereferencable_pointer =
-        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+    void* hopefully_undereferencable_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
 
     VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -338,12 +338,12 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
-            reinterpret_cast<const VkPipelineTessellationStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineViewportStateCreateInfo *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineTessellationStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineViewportStateCreateInfo*>(hopefully_undereferencable_pointer),
             &pipeline_rasterization_state_create_info,
             &pipeline_multisample_state_create_info,
-            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo*>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
             pipeline_layout,
             m_renderPass,
@@ -406,8 +406,8 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             &pipeline_viewport_state_create_info,
             &pipeline_rasterization_state_create_info,
             &pipeline_multisample_state_create_info,
-            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo*>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
             pipeline_layout,
             render_pass,
@@ -429,9 +429,9 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             nullptr,  // pNext
             0,        // flags
             1,
-            reinterpret_cast<const VkViewport *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkViewport*>(hopefully_undereferencable_pointer),
             1,
-            reinterpret_cast<const VkRect2D *>(hopefully_undereferencable_pointer)};
+            reinterpret_cast<const VkRect2D*>(hopefully_undereferencable_pointer)};
 
         const VkPipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -663,7 +663,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         void main(){
@@ -686,7 +686,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachment_descriptions, 1, subpass_descriptions, 0, nullptr};
     vkt::RenderPass render_pass(*m_device, render_pass_info);
 
-    const auto override_info = [&](CreatePipelineHelper &helper) {
+    const auto override_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.gp_ci_.renderPass = render_pass;
     };
@@ -792,7 +792,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                    OpCapability Shader
                    OpMemoryModel Logical GLSL450
                    OpEntryPoint Fragment %main "main"
@@ -1007,7 +1007,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
 
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
                 #version 450
 
                 layout(location = 0) out PerVertex {
@@ -1026,7 +1026,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
                 }
             )glsl";
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
                 #version 450
 
                 #extension GL_NV_fragment_shader_barycentric : enable
@@ -1092,7 +1092,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), image_view_format, fmt_props);
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -1206,7 +1206,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
     cb_ci.pAttachments = &cb_as;
     VkRenderPass render_pass_handle = VK_NULL_HANDLE;
 
-    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass &render_pass) {
+    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass& render_pass) {
         VkAttachmentDescription attachments[2] = {};
         attachments[0].flags = 0;
         attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1252,7 +1252,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         render_pass.Init(*this->m_device, rpci);
     };
 
-    auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+    auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper& helper) {
         helper.gp_ci_.pDepthStencilState = &ds_ci;
         helper.gp_ci_.pColorBlendState = &cb_ci;
         helper.gp_ci_.renderPass = render_pass_handle;
@@ -1316,7 +1316,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location = 0, index = 0) out vec4 c1;
         layout(location = 0, index = 1) out vec4 c2;
@@ -1370,7 +1370,7 @@ TEST_F(PositivePipeline, CreationFeedbackCount0) {
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 0;
 
-    auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
+    auto set_feedback = [&feedback_info](CreatePipelineHelper& helper) { helper.gp_ci_.pNext = &feedback_info; };
 
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit);
 }
@@ -1429,7 +1429,7 @@ TEST_F(PositivePipeline, ViewportSwizzleNV) {
         vp_swizzle_state.viewportCount = size32(viewports);
         vp_swizzle_state.pViewportSwizzles = swizzle.data();
 
-        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper& helper) {
             helper.vp_state_ci_.viewportCount = size32(viewports);
             helper.vp_state_ci_.pViewports = viewports.data();
             helper.vp_state_ci_.scissorCount = size32(scissors);
@@ -1448,7 +1448,7 @@ TEST_F(PositivePipeline, ViewportSwizzleNV) {
         vp_swizzle_state.viewportCount = size32(viewports);
         vp_swizzle_state.pViewportSwizzles = swizzle.data();
 
-        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper& helper) {
             helper.vp_state_ci_.viewportCount = 1;
             helper.vp_state_ci_.pViewports = viewports.data();
             helper.vp_state_ci_.scissorCount = 1;
@@ -1475,7 +1475,7 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
+    const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT& depth_bias_representation) {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
         pipe.rs_state_ci_.pNext = &depth_bias_representation;
@@ -2250,7 +2250,7 @@ TEST_F(PositivePipeline, DisableShaderValidation) {
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation
@@ -2286,7 +2286,7 @@ TEST_F(PositivePipeline, DisableShaderValidationMaintenance5) {
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation
@@ -2337,7 +2337,7 @@ TEST_F(PositivePipeline, DisableShaderValidationGPL) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *frag_shader = R"glsl(
+    const char* frag_shader = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation
@@ -2394,7 +2394,7 @@ TEST_F(PositivePipeline, DisableShaderValidationMesh) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 3, max_primitives=1) out;
@@ -2504,7 +2504,7 @@ TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV)
     uint32_t combination_count = 0u;
     vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu_, &combination_count, nullptr);
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations(combination_count);
-    for (auto &combination : combinations) {
+    for (auto& combination : combinations) {
         combination = vku::InitStructHelper();
     }
     vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu_, &combination_count, combinations.data());
@@ -2515,7 +2515,7 @@ TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV)
     VkSampleCountFlagBits color_samples = VK_SAMPLE_COUNT_1_BIT;
 
     bool found = false;
-    for (const auto &combination : combinations) {
+    for (const auto& combination : combinations) {
         if (combination.coverageReductionMode == coverage_reduction_mode &&
             combination.rasterizationSamples == rasterization_samples &&
             (combination.depthStencilSamples == VK_SAMPLE_COUNT_4_BIT) && (combination.colorSamples == VK_SAMPLE_COUNT_1_BIT)) {
@@ -2549,7 +2549,7 @@ TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV)
     cmi.coverageModulationTableCount = 1;
     cmi.pCoverageModulationTable = &cm_table;
 
-    const auto break_samples = [&cmi, &rp, &ds, &rasterization_samples](CreatePipelineHelper &helper) {
+    const auto break_samples = [&cmi, &rp, &ds, &rasterization_samples](CreatePipelineHelper& helper) {
         helper.ms_ci_.pNext = &cmi;
         helper.ms_ci_.rasterizationSamples = rasterization_samples;
         helper.ms_ci_.sampleShadingEnable = VK_TRUE;
