@@ -319,6 +319,102 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAV, SelectInstrumentedShadersShaderObjectDrawIndexedIndirect2KHR) {
+    TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    OneOffDescriptorSet vert_descriptor_set(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                            });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_});
+
+    const char vert_src[] = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
+        void main() {
+            Data.data[4] = 0xdeadca71;
+        }
+    )glsl";
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_};
+
+    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
+
+    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enabled;
+    vert_create_info.pNext = &features;
+    frag_create_info.pNext = &features;
+
+    const vkt::Shader vert_shader(*m_device, vert_create_info);
+    const vkt::Shader frag_shader(*m_device, frag_create_info);
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vert_descriptor_set.UpdateDescriptorSets();
+
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+    uint32_t *index_data = reinterpret_cast<uint32_t *>(index_buffer.Memory().Map());
+    index_data[0] = 0u;
+    index_data[1] = 1u;
+    index_data[2] = 2u;
+
+    vkt::Buffer indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    VkDrawIndexedIndirectCommand* draw_command = reinterpret_cast<VkDrawIndexedIndirectCommand*>(indirect_buffer.Memory().Map());
+    draw_command->indexCount = 3u;
+    draw_command->instanceCount = 1u;
+    draw_command->firstIndex = 0u;
+    draw_command->vertexOffset = 0u;
+    draw_command->firstInstance = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &vert_descriptor_set.set_,
+                              0u, nullptr);
+
+    VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+    index_buffer_info.addressRange = index_buffer.AddressRange();
+    index_buffer_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &index_buffer_info);
+
+    VkDrawIndirect2InfoKHR draw_indirect_info = vku::InitStructHelper();
+    draw_indirect_info.addressRange = indirect_buffer.StridedAddressRange();
+    draw_indirect_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    draw_indirect_info.drawCount = 1u;
+    vk::CmdDrawIndexedIndirect2KHR(m_command_buffer, &draw_indirect_info);
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    // Should get a warning since shader was instrumented
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect2KHR-None-08613", 3);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     TEST_DESCRIPTION("Don't reserve a descriptor slot and proceed to use them all so GPU-AV can't");
     SetTargetApiVersion(VK_API_VERSION_1_2);
