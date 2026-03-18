@@ -16,7 +16,11 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include <cmath>
+#include <cstdint>
+#include "containers/custom_containers.h"
+#include "error_message/logging.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "containers/range.h"
@@ -1147,6 +1151,28 @@ bool Device::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommand
     skip |= context.ValidateArray(error_obj.location.dot(Field::commandBufferCount), error_obj.location.dot(Field::pCommandBuffers),
                                   commandBufferCount, &pCommandBuffers, true, true, kVUIDUndefined,
                                   "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+
+    if (pCommandBuffers && commandBufferCount > 1) {
+        vvl::unordered_map<VkCommandBuffer, uint32_t> seen_cb;
+        for (uint32_t i = 0; i < commandBufferCount; i++) {
+            const VkCommandBuffer next_cb = pCommandBuffers[i];
+            if (next_cb == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto it = seen_cb.find(next_cb);
+            if (it != seen_cb.end()) {
+                const LogObjectList objlist(commandPool, next_cb);
+                skip |= LogError("VUID-vkFreeCommandBuffers-pCommandBuffers-00048", objlist,
+                                 context.error_obj.location.dot(Field::pCommandBuffers, i),
+                                 "(%s) was already freed in pCommandBuffers[%" PRIu32
+                                 "] and this is trying to do an invalid double free.",
+                                 FormatHandle(next_cb).c_str(), it->second);
+                break;
+            }
+            seen_cb[next_cb] = i;
+        }
+    }
+
     return skip;
 }
 
