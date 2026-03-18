@@ -80,6 +80,8 @@ class SpirvValidator : public Logger {
     bool ValidateMemoryScope(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc) const;
     bool ValidateSubgroupRotateClustered(const spirv::Module& module_state, const spirv::Instruction& insn,
                                          const Location& loc) const;
+    bool ValidateUntypedPointerFeature(const spirv::Module& module_state, const spirv::Instruction& insn, const Location& loc,
+                                       bool& check_untyped_pointers) const;
     bool ValidateShaderStageGroupNonUniform(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                                             const spirv::EntryPoint& entrypoint, const Location& loc) const;
     bool ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,

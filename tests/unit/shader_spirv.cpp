@@ -15,6 +15,7 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_helper.h"
 
 struct icd_spv_header {
     uint32_t magic = 0x07230203;
@@ -3134,5 +3135,38 @@ TEST_F(NegativeShaderSpirv, LongVectorDotProductSpecConstant) {
     // VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849
     m_errorMonitor->SetDesiredError("'Vector 1' is 4 components but 'Vector 2' is 5 components");
     pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, UntypedPointerInHeapsWithNoFeature) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4666");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    const char* source = R"(
+        OpCapability Shader
+        OpCapability DescriptorHeapEXT
+        OpExtension "SPV_EXT_descriptor_heap"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        %void = OpTypeVoid
+        %void_fn = OpTypeFunction %void
+
+        ; An actual use of untyped pointers functionality
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %ptr2 = OpTypeUntypedPointerKHR StorageBuffer
+        %ptr3 = OpTypeUntypedPointerKHR StorageBuffer
+
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+    VkShaderObj const vs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
