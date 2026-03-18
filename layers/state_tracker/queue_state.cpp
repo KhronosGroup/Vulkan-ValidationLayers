@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -296,16 +296,20 @@ vvl::QueueSubmission *vvl::Queue::NextSubmission() {
 
 void vvl::Queue::Retire(QueueSubmission &submission) {
     submission.EndUse();
-    if (dev_data_.is_device_lost) {
-        return;  // the underlying objects might be destroyed/garbage
-    }
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
         timeline_wait_count_ -= (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0;
     }
-    for (auto &item : sub_states_) {
-        item.second->Retire(submission);
+
+    // When device is lost skip updating substates which might access destroyed/garbage objects.
+    // NOTE: we still need to run semaphore/fence retire routines which do not work with Vulkan
+    // handles but ensure correct invariants (for example, Fence::Retire sets its std::promise)
+    if (!dev_data_.is_device_lost) {
+        for (auto &item : sub_states_) {
+            item.second->Retire(submission);
+        }
     }
+
     for (auto &signal : submission.signal_semaphores) {
         signal.semaphore->RetireSignal(signal.payload);
     }
