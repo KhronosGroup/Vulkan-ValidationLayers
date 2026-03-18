@@ -491,6 +491,22 @@ VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const 
 AccelerationStructureKHR::AccelerationStructureKHR(const vkt::Device *device)
     : device_(device), vk_info_(vku::InitStructHelper()), device_buffer_() {}
 
+AccelerationStructureKHR &AccelerationStructureKHR::SetCreateWithVersion2(bool create_with_version_2, bool auto_set_address_range) {
+    create_with_version_2_ = create_with_version_2;
+    auto_set_address_range_ = auto_set_address_range;
+    return *this;
+}
+
+AccelerationStructureKHR &AccelerationStructureKHR::SetAddressRange(VkDeviceAddressRangeKHR address_range) {
+    vk_info_2_.addressRange = address_range;
+    return *this;
+}
+
+AccelerationStructureKHR &AccelerationStructureKHR::SetAddressFlags(VkAddressCommandFlagsKHR address_flags) {
+    vk_info_2_.addressFlags = address_flags;
+    return *this;
+}
+
 AccelerationStructureKHR &AccelerationStructureKHR::SetSize(VkDeviceSize size) {
     vk_info_.size = size;
     return *this;
@@ -503,11 +519,13 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetOffset(VkDeviceSize offse
 
 AccelerationStructureKHR &AccelerationStructureKHR::SetType(VkAccelerationStructureTypeKHR type) {
     vk_info_.type = type;
+    vk_info_2_.type = type;
     return *this;
 }
 
 AccelerationStructureKHR &AccelerationStructureKHR::SetFlags(VkAccelerationStructureCreateFlagsKHR flags) {
     vk_info_.createFlags = flags;
+    vk_info_2_.createFlags = flags;
     return *this;
 }
 
@@ -561,6 +579,10 @@ void AccelerationStructureKHR::Create() {
         alloc_flags.flags = buffer_memory_allocate_flags_;
         VkBufferCreateInfo ci = vku::InitStructHelper();
         ci.size = vk_info_.offset + vk_info_.size;
+        if (create_with_version_2_ && auto_set_address_range_) {
+            // To have room to align buffer address to 256
+            ci.size += 256;
+        }
         ci.usage = buffer_usage_flags_;
         if (buffer_init_no_mem_) {
             device_buffer_.InitNoMemory(*device_, ci);
@@ -571,11 +593,23 @@ void AccelerationStructureKHR::Create() {
     vk_info_.buffer = device_buffer_;
 
     // Create acceleration structure
-    VkAccelerationStructureKHR handle;
-    const VkResult result = vk::CreateAccelerationStructureKHR(device_->handle(), &vk_info_, nullptr, &handle);
-    assert(result == VK_SUCCESS);
-    if (result == VK_SUCCESS) {
-        init(device_->handle(), handle);
+    VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
+    if (create_with_version_2_) {
+        if (auto_set_address_range_) {
+            vk_info_2_.addressRange.address = Align<VkDeviceAddress>(device_buffer_.Address(), 256);
+            vk_info_2_.addressRange.size = vk_info_.size;
+        }
+        const VkResult result = vk::CreateAccelerationStructure2KHR(device_->handle(), &vk_info_2_, nullptr, &handle);
+        assert(result == VK_SUCCESS);
+        if (result == VK_SUCCESS) {
+            init(device_->handle(), handle);
+        }
+    } else {
+        const VkResult result = vk::CreateAccelerationStructureKHR(device_->handle(), &vk_info_, nullptr, &handle);
+        assert(result == VK_SUCCESS);
+        if (result == VK_SUCCESS) {
+            init(device_->handle(), handle);
+        }
     }
 }
 

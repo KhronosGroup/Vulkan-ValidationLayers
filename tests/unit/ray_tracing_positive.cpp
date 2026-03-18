@@ -2270,3 +2270,49 @@ TEST_F(PositiveRayTracing, DescriptorHeap) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(PositiveRayTracing, CreateAccelerationStructure2KHR) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, built with vkCreateAccelerationStructure2KHR, then do an update "
+        "build on that same list");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr size_t blas_count = 10;
+
+    std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+    for (size_t i = 0; i < blas_count; ++i) {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+        // use vkCreateAccelerationStructure2KHR
+        blas.GetDstAS()->SetCreateWithVersion2(true, true);
+        blas.GetDstAS()->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
+        blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+        blas_vec.emplace_back(std::move(blas));
+    }
+
+    m_command_buffer.Begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, blas_vec);
+
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    for (auto& blas : blas_vec) {
+        blas.SetSrcAS(blas.GetDstAS());
+        blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+        blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
+    }
+
+    m_command_buffer.Begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, blas_vec);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}

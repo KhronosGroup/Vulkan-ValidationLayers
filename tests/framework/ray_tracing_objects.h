@@ -181,10 +181,19 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     AccelerationStructureKHR& operator=(AccelerationStructureKHR&&) = default;
     AccelerationStructureKHR& operator=(const AccelerationStructureKHR&) = delete;
 
+    // Common to both create info 1 and 2
     AccelerationStructureKHR& SetSize(VkDeviceSize size);
-    AccelerationStructureKHR& SetOffset(VkDeviceSize offset);
     AccelerationStructureKHR& SetType(VkAccelerationStructureTypeKHR type);
     AccelerationStructureKHR& SetFlags(VkAccelerationStructureCreateFlagsKHR flags);
+
+    // For create info 1
+    AccelerationStructureKHR& SetOffset(VkDeviceSize offset);
+
+    // For create info 2
+    AccelerationStructureKHR& SetCreateWithVersion2(bool create_with_version_2, bool auto_set_address_range);
+    AccelerationStructureKHR& SetAddressRange(VkDeviceAddressRangeKHR address_range);
+    AccelerationStructureKHR& SetAddressFlags(VkAddressCommandFlagsKHR address_flags);
+
     AccelerationStructureKHR& SetDeviceBuffer(vkt::Buffer&& buffer);
     AccelerationStructureKHR& SetDeviceBufferMemoryAllocateFlags(VkMemoryAllocateFlags memory_allocate_flags);
     AccelerationStructureKHR& SetDeviceBufferMemoryPropertyFlags(VkMemoryPropertyFlags memory_property_flags);
@@ -202,12 +211,15 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     bool IsBuilt() const { return initialized(); }
     void Destroy();
 
-    auto& GetBuffer() { return device_buffer_; }
+    vkt::Buffer& GetBuffer() { return device_buffer_; }
 
   private:
+    bool create_with_version_2_ = false;
+    bool auto_set_address_range_ = false;
     const vkt::Device* device_;
     bool is_null_ = false;
-    VkAccelerationStructureCreateInfoKHR vk_info_;
+    VkAccelerationStructureCreateInfoKHR vk_info_ = vku::InitStructHelper();
+    VkAccelerationStructureCreateInfo2KHR vk_info_2_ = vku::InitStructHelper();
     vkt::Buffer device_buffer_;
     VkMemoryAllocateFlags buffer_memory_allocate_flags_{};
     VkMemoryPropertyFlags buffer_memory_property_flags_{};
@@ -264,11 +276,11 @@ class BuildGeometryInfoKHR {
     void VkCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer cmd_buffer);
     void VkBuildAccelerationStructuresKHR();
 
-    auto& GetInfo() { return vk_info_; }
-    auto& GetGeometries() { return geometries_; }
-    auto& GetSrcAS() { return src_as_; }
-    auto& GetDstAS() { return dst_as_; }
-    const auto& GetScratchBuffer() const { return device_scratch_; }
+    VkAccelerationStructureBuildGeometryInfoKHR& GetInfo() { return vk_info_; }
+    std::vector<GeometryKHR>& GetGeometries() { return geometries_; }
+    std::shared_ptr<AccelerationStructureKHR>& GetSrcAS() { return src_as_; }
+    std::shared_ptr<AccelerationStructureKHR>& GetDstAS() { return dst_as_; }
+    const std::shared_ptr<vkt::Buffer>& GetScratchBuffer() const { return device_scratch_; }
     VkAccelerationStructureBuildSizesInfoKHR GetSizeInfo(bool use_ppGeometries = true);
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> GetBuildRangeInfosFromGeometries();
 
@@ -285,7 +297,8 @@ class BuildGeometryInfoKHR {
     VkAccelerationStructureBuildGeometryInfoKHR vk_info_;
     VkAccelerationStructureBuildTypeKHR build_type_;
     std::vector<GeometryKHR> geometries_;
-    std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
+    std::shared_ptr<AccelerationStructureKHR> src_as_;
+    std::shared_ptr<AccelerationStructureKHR> dst_as_;
     bool build_scratch_ = true;
     VkDeviceAddress device_scratch_offset_ = 0;
     VkBufferUsageFlags device_scratch_additional_flags_ = 0;
