@@ -19,6 +19,7 @@
  */
 
 #include "sl_spirv.h"
+#include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "chassis/dispatch_object.h"
 #include "state_tracker/shader_instruction.h"
@@ -26,6 +27,7 @@
 #include <inttypes.h>
 #include <vulkan/vulkan_core.h>
 #include <set>
+#include <spirv/unified1/spirv.hpp>
 
 namespace stateless {
 
@@ -84,6 +86,11 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
         return skip;
     }
 
+    // This is the exceptions, not the normal case
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4666
+    bool check_untyped_pointers = enabled_features.descriptorHeap && !enabled_features.shaderUntypedPointers &&
+                                  module_state.HasCapability(spv::CapabilityDescriptorHeapEXT);
+
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
     skip |= ValidateFma(module_state, stateless_data, loc);
@@ -99,6 +106,7 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
         skip |= ValidateTexelOffsetLimits(module_state, insn, loc);
         skip |= ValidateMemoryScope(module_state, insn, loc);
         skip |= ValidateSubgroupRotateClustered(module_state, insn, loc);
+        skip |= ValidateUntypedPointerFeature(module_state, insn, loc, check_untyped_pointers);
     }
 
     for (const auto& entry_point_ptr : module_state.static_data_.entry_points) {
@@ -946,6 +954,26 @@ bool SpirvValidator::ValidateSubgroupRotateClustered(const spirv::Module &module
         skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566", module_state.handle(), loc,
                          "SPIR-V uses ClusterSize operand, but the shaderSubgroupRotateClustered feature was not enabled.\n%s\n",
                          module_state.DescribeInstruction(insn).c_str());
+    }
+    return skip;
+}
+
+bool SpirvValidator::ValidateUntypedPointerFeature(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                                   const Location& loc, bool& check_untyped_pointers) const {
+    bool skip = false;
+    if (check_untyped_pointers &&
+        IsValueIn((spv::Op)insn.Opcode(),
+                  {spv::OpTypeUntypedPointerKHR, spv::OpUntypedVariableKHR, spv::OpUntypedAccessChainKHR,
+                   spv::OpUntypedInBoundsAccessChainKHR, spv::OpUntypedPtrAccessChainKHR, spv::OpUntypedInBoundsPtrAccessChainKHR,
+                   spv::OpUntypedArrayLengthKHR, spv::OpUntypedPrefetchKHR, spv::OpUntypedGroupAsyncCopyKHR})) {
+        skip |= LogError(
+            "VUID-VkShaderModuleCreateInfo-pCode-08740", module_state.handle(), loc,
+            "%s was used but the VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers feature was not enabled. "
+            "\nThis is a special situation, where even though the Capability DescriptorHeapEXT was declared, which implicity "
+            "declared Capability UntypedPointersKHR, both the shaderUntypedPointers and descriptorHeap feature are needed.",
+            string_SpvOpcode(insn.Opcode()));
+        // We will just be spamming this, so only report once for a single shader module
+        check_untyped_pointers = false;
     }
     return skip;
 }
