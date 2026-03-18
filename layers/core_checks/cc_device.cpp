@@ -577,9 +577,7 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state_ptr) {
-        return skip;
-    }
+
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);

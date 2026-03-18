@@ -179,7 +179,6 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN_SKIP(cb_state);
 
     if (cb_state->InUse()) {
         skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
@@ -472,9 +471,7 @@ bool CoreChecks::ValidateBeginCommandBufferRenderingInheritanceInfo(const vvl::C
 bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state_ptr) {
-        return skip;
-    }
+
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     if (cb_state.IsPrimary() || !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
         skip |= InsideRenderPass(cb_state, error_obj.location);
@@ -508,7 +505,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) return false;
+
     VkCommandPool cmd_pool = cb_state->allocate_info.commandPool;
     const auto *pool = cb_state->command_pool;
 

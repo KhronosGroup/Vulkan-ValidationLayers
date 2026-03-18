@@ -182,7 +182,7 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto src_tensor_state_ptr = Get<vvl::Tensor>(pCopyTensorInfo->srcTensor);
     auto dst_tensor_state_ptr = Get<vvl::Tensor>(pCopyTensorInfo->dstTensor);
-    ASSERT_AND_RETURN_SKIP(cb_state_ptr && src_tensor_state_ptr && dst_tensor_state_ptr);
+    ASSERT_AND_RETURN_SKIP(src_tensor_state_ptr && dst_tensor_state_ptr);
     const auto &src_tensor_state = *src_tensor_state_ptr;
     const auto &dst_tensor_state = *dst_tensor_state_ptr;
     const auto &cb_state = *cb_state_ptr;
