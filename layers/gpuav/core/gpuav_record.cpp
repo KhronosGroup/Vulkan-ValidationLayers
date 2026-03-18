@@ -448,6 +448,62 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
+void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                 const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
+    for (const auto buffer_state : buffer_states) {
+        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+            continue;
+        }
+        const VkBuffer buffer = buffer_state->VkHandle();
+        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
+        const uint32_t draw_count = pInfo->drawCount;
+        auto& sub_state = SubState(*cb_state);
+
+        const LastBound& last_bound = cb_state->GetLastBoundGraphics();
+        valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, draw_count,
+                                                     VK_NULL_HANDLE, 0);
+        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+        return;
+    }
+}
+
+void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                        const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
+    for (const auto buffer_state : buffer_states) {
+        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+            continue;
+        }
+        const VkBuffer buffer = buffer_state->VkHandle();
+        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
+        const uint32_t draw_count = pInfo->drawCount;
+        const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+
+        auto& sub_state = SubState(*cb_state);
+
+        const LastBound& last_bound = cb_state->GetLastBoundGraphics();
+        valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride,
+                                               draw_count, VK_NULL_HANDLE, 0,
+                                               "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+
+        valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
+                                                            draw_count, VK_NULL_HANDLE, 0);
+        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+        return;
+    }
+}
+
 void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                       const RecordObject& record_obj) {
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
