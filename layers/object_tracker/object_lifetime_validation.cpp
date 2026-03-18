@@ -1244,6 +1244,8 @@ void Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysic
                                                                         const RecordObject &record_obj) {}
 
 void Instance::AllocateDisplayKHR(VkPhysicalDevice physical_device, VkDisplayKHR display, const Location &loc) {
+    // Note - From https://gitlab.khronos.org/vulkan/vulkan/-/issues/4742
+    // It is known that the DisplayKHR and DisplayModeKHR handle list might only ever grow
     tracker.CreateObject(display, kVulkanObjectTypeDisplayKHR, nullptr, loc, physical_device);
 }
 
