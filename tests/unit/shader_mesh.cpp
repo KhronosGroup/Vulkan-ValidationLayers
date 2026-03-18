@@ -450,7 +450,7 @@ TEST_F(NegativeShaderMesh, TaskPayloadMemoryOverLimit) {
         )glsl";
 
     VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    if (mesh_shader_properties.maxTaskPayloadSize == mesh_shader_properties.maxTaskPayloadAndSharedMemorySize) {
+    if ((max_payload_ints + 16) * sizeof(uint32_t) > mesh_shader_properties.maxTaskPayloadAndSharedMemorySize) {
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTaskPayloadAndSharedMemorySize-08760");
     }
 
