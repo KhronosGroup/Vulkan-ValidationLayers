@@ -45,6 +45,7 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/feature_requirements_helper.cpp
     ${API_TYPE}/generated/feature_requirements_helper.h
+    ${API_TYPE}/generated/test_icd_helper.h
     ${API_TYPE}/generated/pnext_chain_extraction.cpp
     ${API_TYPE}/generated/pnext_chain_extraction.h
     ${API_TYPE}/generated/vk_function_pointers.cpp
