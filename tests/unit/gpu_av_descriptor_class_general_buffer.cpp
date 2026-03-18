@@ -19,8 +19,9 @@
 class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGeneralBuffer {
   public:
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                              VkDescriptorType descriptor_type, const char *fragment_shader,
-                              std::vector<const char *> expected_errors, bool shader_objects = false);
+                              VkDescriptorType descriptor_type, const char* fragment_shader,
+                              std::vector<const char*> expected_errors, bool shader_objects = false,
+                              bool device_address_commands = false);
 };
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidationLimit) {
@@ -296,12 +297,17 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Basic) {
 
 void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset,
                                                                      VkDeviceSize binding_range, VkDescriptorType descriptor_type,
-                                                                     const char *fragment_shader,
-                                                                     std::vector<const char *> expected_errors,
-                                                                     bool shader_objects) {
+                                                                     const char* fragment_shader,
+                                                                     std::vector<const char*> expected_errors, bool shader_objects,
+                                                                     bool device_address_commands) {
     if (shader_objects) {
         AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    }
+    if (device_address_commands) {
+        AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+        AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+        AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     }
     RETURN_IF_SKIP(InitGpuAvFramework());
 
@@ -337,6 +343,17 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
                               GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl), &ds.layout_.handle());
         fso = new vkt::Shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader),
                               &ds.layout_.handle());
+    }
+    vkt::Buffer* indirect_buffer = nullptr;
+    if (device_address_commands) {
+        indirect_buffer =
+            new vkt::Buffer(*m_device, sizeof(VkDrawIndirectCommand),
+                            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
+        VkDrawIndirectCommand* draw_command = (VkDrawIndirectCommand*)indirect_buffer->Memory().Map();
+        draw_command->vertexCount = 3u;
+        draw_command->instanceCount = 1u;
+        draw_command->firstVertex = 0u;
+        draw_command->firstInstance = 0u;
     }
 
     VkShaderObj vs(*m_device, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -378,7 +395,15 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
     }
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &ds.set_, 0, nullptr);
 
-    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    if (device_address_commands) {
+        VkDrawIndirect2InfoKHR draw_indirect_info = vku::InitStructHelper();
+        draw_indirect_info.addressRange = indirect_buffer->StridedAddressRange();
+        draw_indirect_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+        draw_indirect_info.drawCount = 1u;
+        vk::CmdDrawIndirect2KHR(m_command_buffer, &draw_indirect_info);
+    } else {
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    }
     if (shader_objects) {
         m_command_buffer.EndRendering();
     } else {
@@ -392,6 +417,9 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
     if (shader_objects) {
         delete vso;
         delete fso;
+    }
+    if (device_address_commands) {
+        delete indirect_buffer;
     }
 }
 
@@ -2761,4 +2789,23 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLOneLibraryTwoLinkedPipeline
 
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmallDrawIndirect2KHR) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
+    const char* fsSource = R"glsl(
+        #version 450
+
+        layout(location=0) out vec4 x;
+        layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;
+        void main(){
+           x = vec4(bar.x, bar.y, 0, 1);
+        }
+        )glsl";
+
+    std::vector<const char*> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDrawIndirect2KHR-None-08612");
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors, true, true);
 }
