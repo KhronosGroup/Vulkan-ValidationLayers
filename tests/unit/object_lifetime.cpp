@@ -1156,6 +1156,24 @@ TEST_F(NegativeObjectLifetime, FreeCommandBuffersNull) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeObjectLifetime, FreeSameCommandBuffer) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_);
+
+    VkCommandBuffer command_buffers[2];
+    VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.commandPool = command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 2;
+    vk::AllocateCommandBuffers(device(), &alloc_info, command_buffers);
+
+    VkCommandBuffer new_cb[2] = {command_buffers[0], command_buffers[0]};
+    m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    vk::FreeCommandBuffers(device(), command_pool, 2, new_cb);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeObjectLifetime, FreeDescriptorSetsNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
     RETURN_IF_SKIP(Init());
