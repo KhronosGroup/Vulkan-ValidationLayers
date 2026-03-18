@@ -491,14 +491,13 @@ VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const 
 AccelerationStructureKHR::AccelerationStructureKHR(const vkt::Device *device)
     : device_(device), vk_info_(vku::InitStructHelper()), device_buffer_() {}
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetCreateWithVersion2(bool create_with_version_2, bool auto_set_address_range) {
+AccelerationStructureKHR &AccelerationStructureKHR::SetCreateWithVersion2(bool create_with_version_2) {
     create_with_version_2_ = create_with_version_2;
-    auto_set_address_range_ = auto_set_address_range;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetAddressRange(VkDeviceAddressRangeKHR address_range) {
-    vk_info_2_.addressRange = address_range;
+AccelerationStructureKHR &AccelerationStructureKHR::SetAddressRange(std::optional<VkDeviceAddressRangeKHR> address_range) {
+    address_range_ = address_range;
     return *this;
 }
 
@@ -579,7 +578,7 @@ void AccelerationStructureKHR::Create() {
         alloc_flags.flags = buffer_memory_allocate_flags_;
         VkBufferCreateInfo ci = vku::InitStructHelper();
         ci.size = vk_info_.offset + vk_info_.size;
-        if (create_with_version_2_ && auto_set_address_range_) {
+        if (create_with_version_2_ && !address_range_.has_value()) {
             // To have room to align buffer address to 256
             ci.size += 256;
         }
@@ -595,7 +594,9 @@ void AccelerationStructureKHR::Create() {
     // Create acceleration structure
     VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
     if (create_with_version_2_) {
-        if (auto_set_address_range_) {
+        if (address_range_.has_value()) {
+            vk_info_2_.addressRange = *address_range_;
+        } else {
             vk_info_2_.addressRange.address = Align<VkDeviceAddress>(device_buffer_.Address(), 256);
             vk_info_2_.addressRange.size = vk_info_.size;
         }
