@@ -905,7 +905,7 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
     auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
-    if (!cb_state_ptr || !src_buffer_state || !dst_buffer_state) {
+    if (!src_buffer_state || !dst_buffer_state) {
         return skip;
     }
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
@@ -4053,7 +4053,6 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer command
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN_SKIP(cb_state);
 
     if (!enabled_features.indirectMemoryCopy) {
         skip |= LogError("VUID-vkCmdCopyMemoryIndirectKHR-indirectMemoryCopy-10935", commandBuffer, error_obj.location,
@@ -4216,7 +4215,6 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
     const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN_SKIP(cb_state);
 
     if (!enabled_features.indirectMemoryToImageCopy) {
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectKHR-indirectMemoryToImageCopy-10947", commandBuffer,
