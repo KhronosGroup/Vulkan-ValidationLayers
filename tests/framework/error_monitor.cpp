@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,10 +56,10 @@ static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMess
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
     const auto message_flags = DebugAnnotFlagsToMsgTypeFlags(message_severity, message_type);
-    const char *vuid = callback_data->pMessageIdName;
-    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
+    const char* vuid = callback_data->pMessageIdName;
+    auto* error_monitor = reinterpret_cast<ErrorMonitor*>(user_data);
 
     // mimic CreateDefaultCallbackMessage we do for default callback so
     // (while this is a bad 'copy-and-paste' the format of the default callback *should* not be changing often)
@@ -88,7 +88,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
         if (callback_data->objectCount > 0) {
             oss << "Objects: " << callback_data->objectCount << '\n';
             for (uint32_t i = 0; i < callback_data->objectCount; i++) {
-                const auto &debug_object = callback_data->pObjects[i];
+                const auto& debug_object = callback_data->pObjects[i];
                 oss << "    [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
                 if (debug_object.objectHandle) {
                     oss << " 0x" << std::hex << debug_object.objectHandle;
@@ -161,11 +161,11 @@ void ErrorMonitor::Reset() {
     MonitorReset();
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg) {
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const std::string& msg) {
     SetDesiredFailureMsg(msg_flags, msg.c_str());
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string) {
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char* const msg_string) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
@@ -177,7 +177,7 @@ void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msg_flags, const char *con
     message_flags_ |= msg_flags;
 }
 
-void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str) {
+void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char* vuid, std::string regex_str) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
@@ -190,7 +190,7 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     message_flags_ |= msg_flags;
 }
 
-void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str,
+void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char* vuid, std::string regex_str,
                                              std::string undesired_regex_str) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
@@ -205,43 +205,43 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     message_flags_ |= msg_flags;
 }
 
-void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
+void ErrorMonitor::SetDesiredError(const char* msg, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
         SetDesiredFailureMsg(kErrorBit, msg);
     }
 }
 
-void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
+void ErrorMonitor::SetDesiredErrorRegex(const char* vuid, std::string regex_str, uint32_t count /*= 1*/) {
     for (uint32_t i = 0; i < count; i++) {
         SetDesiredFailureMsgRegex(kErrorBit, vuid, regex_str);
     }
 }
 
-void ErrorMonitor::SetDesiredWarningRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
+void ErrorMonitor::SetDesiredWarningRegex(const char* vuid, std::string regex_str, uint32_t count /*= 1*/) {
     for (uint32_t i = 0; i < count; i++) {
         SetDesiredFailureMsgRegex(kWarningBit, vuid, regex_str);
     }
 }
 
-void ErrorMonitor::SetDesiredWarning(const char *msg, uint32_t count) {
+void ErrorMonitor::SetDesiredWarning(const char* msg, uint32_t count) {
     for (uint32_t i = 0; i < count; ++i) {
         SetDesiredFailureMsg(kWarningBit, msg);
     }
 }
 
-void ErrorMonitor::SetDesiredInfo(const char *msg, uint32_t count /*= 1*/) {
+void ErrorMonitor::SetDesiredInfo(const char* msg, uint32_t count /*= 1*/) {
     for (uint32_t i = 0; i < count; ++i) {
         SetDesiredFailureMsg(kInformationBit, msg);
     }
 }
 
 // If you are using this, please leave a comment why, otherwise its hard to remove these once added
-void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
+void ErrorMonitor::SetAllowedFailureMsg(const char* const msg) {
     auto guard = Lock();
     allowed_message_strings_.emplace_back(msg);
 }
 
-void ErrorMonitor::SetUnexpectedError(const char *const msg) {
+void ErrorMonitor::SetUnexpectedError(const char* const msg) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
@@ -249,7 +249,7 @@ void ErrorMonitor::SetUnexpectedError(const char *const msg) {
     ignore_message_strings_.emplace_back(msg);
 }
 
-VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const msg_string) {
+VkBool32 ErrorMonitor::CheckForDesiredMsg(const char* vuid, const char* const msg_string) {
     VkBool32 result = VK_FALSE;
     auto guard = Lock();
     if (bailout_ != nullptr) {
@@ -270,13 +270,13 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const ms
         return result;
     }
 
-    for (const VuidAndMessage &undesired_message : undesired_messages_) {
+    for (const VuidAndMessage& undesired_message : undesired_messages_) {
         if (undesired_message.Search(vuid, msg_string)) {
         }
     }
 
     for (size_t desired_message_i = 0; desired_message_i < desired_messages_.size(); ++desired_message_i) {
-        VuidAndMessage &desired_message = desired_messages_[desired_message_i];
+        VuidAndMessage& desired_message = desired_messages_[desired_message_i];
         if (desired_message.SearchUndesiredRegex(msg_string)) {
             ADD_FAILURE() << "Received undesired error message " << '"' << desired_message.undesired_msg_regex_string << '"'
                           << " in:\n"
@@ -296,7 +296,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const ms
     }
 
     if (!found_expected) {
-        for (const auto &allowed_msg : allowed_message_strings_) {
+        for (const auto& allowed_msg : allowed_message_strings_) {
             if (error_string.find(allowed_msg) != std::string::npos) {
                 found_expected = true;
                 break;
@@ -316,13 +316,13 @@ VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() { return message_flags_; }
 
 bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
 
-void ErrorMonitor::SetError(const char *const errorString) {
+void ErrorMonitor::SetError(const char* const errorString) {
     auto guard = Lock();
     message_found_ = true;
     failure_message_strings_.emplace_back(errorString);
 }
 
-void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
+void ErrorMonitor::SetBailout(std::atomic<bool>* bailout) {
     auto guard = Lock();
     bailout_ = bailout;
 }
@@ -345,7 +345,7 @@ void ErrorMonitor::VerifyFound() {
         // The lock must be released before the ExpectSuccess call at the end
         auto guard = Lock();
         // Not receiving expected message(s) is a failure.
-        for (const auto &desired_msg : desired_messages_) {
+        for (const auto& desired_msg : desired_messages_) {
             ADD_FAILURE() << "Did not receive expected error '" << desired_msg.Print() << "'";
         }
 
@@ -364,24 +364,24 @@ void ErrorMonitor::VerifyNotFound() {
     auto guard = Lock();
     // ExpectSuccess() configured us to match anything. Any error is a failure.
     if (AnyDesiredMsgFound()) {
-        for (const auto &msg : failure_message_strings_) {
+        for (const auto& msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
     }
     MonitorReset();
 }
 
-bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
+bool ErrorMonitor::IgnoreMessage(std::string const& msg) const {
     if (ignore_message_strings_.empty()) {
         return false;
     }
 
-    return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const &str) {
+    return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const& str) {
                return msg.find(str) != std::string::npos;
            }) != ignore_message_strings_.end();
 }
 
-bool ErrorMonitor::VuidAndMessage::Search(const char *vuid_, std::string_view msg) const {
+bool ErrorMonitor::VuidAndMessage::Search(const char* vuid_, std::string_view msg) const {
     assert(msg_type != VuidAndMessage::Undefined);
     const bool vuid_compare = !vuid.empty() ? (vuid == vuid_) : true;
     switch (msg_type) {

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
- * Copyright (c) 2024 Google, Inc.
+ * Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
+ * Copyright (c) 2024-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 
 class NegativeGpuAVDebugPrintf : public virtual VkLayerTest {
   public:
-    void InitGpuAvDebugPrintfFramework(void *p_next = nullptr);
+    void InitGpuAvDebugPrintfFramework(void* p_next = nullptr);
     void InitWithLayerSettings(bool enable_printf, bool enable_gpuav, bool shader_instrumentation);
 
     VkValidationFeaturesEXT GetGpuAvDebugPrintfValidationFeatures();
@@ -40,7 +40,7 @@ VkValidationFeaturesEXT NegativeGpuAVDebugPrintf::GetGpuAvDebugPrintfValidationF
     return features;
 }
 
-void NegativeGpuAVDebugPrintf::InitGpuAvDebugPrintfFramework(void *p_next) {
+void NegativeGpuAVDebugPrintf::InitGpuAvDebugPrintfFramework(void* p_next) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
@@ -63,7 +63,8 @@ void NegativeGpuAVDebugPrintf::InitWithLayerSettings(bool enable_printf, bool en
     VkLayerSettingEXT gpuav_setting = {OBJECT_LAYER_NAME, "gpuav_enable", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &gpuav_value};
 
     VkBool32 shader_instrumentation_value = shader_instrumentation ? VK_TRUE : VK_FALSE;
-    VkLayerSettingEXT shader_instrumentation_setting = {OBJECT_LAYER_NAME, "gpuav_shader_instrumentation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_instrumentation_value};
+    VkLayerSettingEXT shader_instrumentation_setting = {OBJECT_LAYER_NAME, "gpuav_shader_instrumentation",
+                                                        VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_instrumentation_value};
 
     std::array<VkLayerSettingEXT, 3> layer_settings = {printf_setting, gpuav_setting, shader_instrumentation_setting};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
@@ -76,7 +77,7 @@ void NegativeGpuAVDebugPrintf::InitWithLayerSettings(bool enable_printf, bool en
 }
 
 void NegativeGpuAVDebugPrintf::BasicComputeTest() {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer foo_0 {
@@ -138,7 +139,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoPrintf) {
 }
 
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoGpuAV) {
-    AddRequiredFeature(vkt::Feature::robustBufferAccess); // prevent crashing
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);  // prevent crashing
     RETURN_IF_SKIP(InitWithLayerSettings(true, false, true));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredInfo("b.length == 3");
@@ -146,7 +147,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoGpuAV) {
 }
 
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoShaderInstrumentation) {
-    AddRequiredFeature(vkt::Feature::robustBufferAccess); // prevent crashing
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);  // prevent crashing
     RETURN_IF_SKIP(InitWithLayerSettings(true, true, false));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredInfo("b.length == 3");
@@ -154,7 +155,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoShaderInstrumentation) {
 }
 
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoPrintfOrGpuAV) {
-    AddRequiredFeature(vkt::Feature::robustBufferAccess); // prevent crashing
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);  // prevent crashing
     RETURN_IF_SKIP(InitWithLayerSettings(false, false, true));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
@@ -164,7 +165,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoPrintfOrGpuAV) {
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsPrintfPreset) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::robustBufferAccess); // prevent crashing
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);  // prevent crashing
     VkBool32 value = VK_TRUE;
     VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "printf_only_preset", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
@@ -187,7 +188,7 @@ TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer foo_0 {
@@ -236,7 +237,7 @@ TEST_F(NegativeGpuAVDebugPrintf, GPL) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer foo_0 {
@@ -282,7 +283,7 @@ TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer foo_0 {
@@ -329,7 +330,7 @@ TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer foo_0 {

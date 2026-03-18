@@ -135,9 +135,10 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
         }
         auto insert_ok = sparsity_dimensions.insert(sparsity->dimension).second;
         if (!insert_ok) {
-            skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09870", device,
-                             constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM, Field::dimension),
-                             "(%" PRIu32 ") already has a defined sparsity", sparsity->dimension);
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineConstantARM-pNext-09870", device,
+                constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM, Field::dimension),
+                "(%" PRIu32 ") already has a defined sparsity", sparsity->dimension);
         }
         // We can have multiple Sparsity structures in the pNext chain.
         sparsity = vku::FindStructInPNextChain<VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM>(sparsity->pNext);
@@ -177,30 +178,36 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
 
         if (dg_pipeline_identifier_ci || qcom_model_ci) {
             if (!(create_info.flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
-                skip |= LogError(
-                    "VUID-VkDataGraphPipelineCreateInfoARM-None-11840", device, create_info_loc.dot(Field::flags),
-                    "(%s) does not include VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT, but the pNext chain include one "
-                    "of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
-                    string_VkPipelineCreateFlags2(create_info.flags).c_str(),
-                    PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+                skip |=
+                    LogError("VUID-VkDataGraphPipelineCreateInfoARM-None-11840", device, create_info_loc.dot(Field::flags),
+                             "(%s) does not include VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT, but the pNext "
+                             "chain include one "
+                             "of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                             string_VkPipelineCreateFlags2(create_info.flags).c_str(),
+                             PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
             }
             if (create_info.resourceInfoCount) {
-                skip |= LogError(
-                    "VUID-VkDataGraphPipelineCreateInfoARM-None-12363", device, create_info_loc.dot(Field::resourceInfoCount),
-                    "(%" PRIu32 ") is not zero, but the pNext chain includes one of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
-                    create_info.resourceInfoCount, PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+                skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-None-12363", device,
+                                 create_info_loc.dot(Field::resourceInfoCount),
+                                 "(%" PRIu32
+                                 ") is not zero, but the pNext chain includes one of VkDataGraphPipelineIdentifierCreateInfoARM or "
+                                 "VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                                 create_info.resourceInfoCount,
+                                 PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
             }
         } else if (create_info.resourceInfoCount == 0) {
-            skip |= LogError(
-                "VUID-VkDataGraphPipelineCreateInfoARM-None-12365", device, create_info_loc.dot(Field::resourceInfoCount),
-                "is 0, but the pNext chain doesn't include VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
-                PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+            skip |=
+                LogError("VUID-VkDataGraphPipelineCreateInfoARM-None-12365", device, create_info_loc.dot(Field::resourceInfoCount),
+                         "is 0, but the pNext chain doesn't include VkDataGraphPipelineIdentifierCreateInfoARM or "
+                         "VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                         PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
         }
 
         if (create_info.resourceInfoCount == 0 && create_info.pResourceInfos) {
-            skip |= LogError(
-                "VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-12364", device, create_info_loc.dot(Field::resourceInfoCount),
-                "(%" PRIu32 ") is 0, but pResourceInfos (%p) is not NULL.", create_info.resourceInfoCount, create_info.pResourceInfos);
+            skip |=
+                LogError("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-12364", device,
+                         create_info_loc.dot(Field::resourceInfoCount), "(%" PRIu32 ") is 0, but pResourceInfos (%p) is not NULL.",
+                         create_info.resourceInfoCount, create_info.pResourceInfos);
         }
 
         if (dg_shader_ci) {
@@ -266,11 +273,13 @@ bool CoreChecks::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice devic
     }
     for (uint32_t i = 0; i < propertiesCount; i++) {
         const VkDataGraphPipelinePropertyQueryResultARM& prop1 = pProperties[i];
-        for (uint32_t j = i+1; j < propertiesCount; j++) {
+        for (uint32_t j = i + 1; j < propertiesCount; j++) {
             const VkDataGraphPipelinePropertyQueryResultARM& prop2 = pProperties[j];
             if (prop1.property == prop2.property) {
-                skip |= LogError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09889", device, error_obj.location.dot(Field::pProperties, i).dot(Field::property),
-                                "and pProperties[%" PRIu32 "].property are the same (%s).", j, string_VkDataGraphPipelinePropertyARM(prop1.property));
+                skip |= LogError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09889", device,
+                                 error_obj.location.dot(Field::pProperties, i).dot(Field::property),
+                                 "and pProperties[%" PRIu32 "].property are the same (%s).", j,
+                                 string_VkDataGraphPipelinePropertyARM(prop1.property));
             }
         }
     }
@@ -314,7 +323,7 @@ void CoreChecks::PostCallRecordGetDataGraphPipelineSessionBindPointRequirementsA
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    if (auto session_ptr = Get<vvl::DataGraphPipelineSession>(pInfo->session)){
+    if (auto session_ptr = Get<vvl::DataGraphPipelineSession>(pInfo->session)) {
         if (pBindPointRequirements) {
             session_ptr->InitMemoryRequirements(device, pBindPointRequirements, *pBindPointRequirementCount);
         }
@@ -368,11 +377,12 @@ bool CoreChecks::PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice devi
 }
 
 bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
-                                                        const VkDataGraphPipelineDispatchInfoARM *pInfo, const ErrorObject& error_obj) const {
+                                                        const VkDataGraphPipelineDispatchInfoARM* pInfo,
+                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    const auto &last_bound_state = cb_state.GetLastBoundDataGraph();
-    const vvl::DrawDispatchVuid &dispatch_vuid = GetDrawDispatchVuid(error_obj.location.function);
+    const auto& last_bound_state = cb_state.GetLastBoundDataGraph();
+    const vvl::DrawDispatchVuid& dispatch_vuid = GetDrawDispatchVuid(error_obj.location.function);
     skip |= ValidateActionState(last_bound_state, dispatch_vuid);
 
     const auto session_state_ptr = Get<vvl::DataGraphPipelineSession>(session);
@@ -382,7 +392,8 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     const LogObjectList& objlist = LogObjectList(commandBuffer, session);
     for (const auto& bpr : session_state.BindPointReqs()) {
         /* bpr: requirement; bound_memory_map: actually bound */
-        size_t n_bound = bound_memory_map.find(bpr.bindPoint) == bound_memory_map.end() ? 0 : bound_memory_map.at(bpr.bindPoint).size();
+        size_t n_bound =
+            bound_memory_map.find(bpr.bindPoint) == bound_memory_map.end() ? 0 : bound_memory_map.at(bpr.bindPoint).size();
         if (bpr.numObjects != n_bound) {
             skip |= LogError("VUID-vkCmdDispatchDataGraphARM-session-09796", objlist, error_obj.location,
                              "%zu objects bound at bind point %s, required numObjects %" PRIu32 "; session %s.", n_bound,
@@ -404,9 +415,11 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
 
     const VkPipeline cb_pipeline = last_bound_state.pipeline_state->VkHandle();
     if (session_state.create_info.dataGraphPipeline != cb_pipeline) {
-        skip |= LogError("VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951", LogObjectList(), error_obj.location,
+        skip |= LogError(
+            "VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951", LogObjectList(), error_obj.location,
             "The pipeline bound to the command buffer (%s) is different from the pipeline bound to the session (%s); session %s.",
-            FormatHandle(cb_pipeline).c_str(), FormatHandle(session_state.create_info.dataGraphPipeline).c_str(), FormatHandle(session_state).c_str());
+            FormatHandle(cb_pipeline).c_str(), FormatHandle(session_state.create_info.dataGraphPipeline).c_str(),
+            FormatHandle(session_state).c_str());
     }
 
     skip |=

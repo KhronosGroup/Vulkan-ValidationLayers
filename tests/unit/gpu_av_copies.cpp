@@ -26,7 +26,7 @@ TEST_F(NegativeGpuAVCopies, BufferToImageD32) {
     vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
 
-    float *ptr = static_cast<float *>(copy_src_buffer.Memory().Map());
+    float* ptr = static_cast<float*>(copy_src_buffer.Memory().Map());
     for (size_t i = 0; i < 64 * 64; ++i) {
         ptr[i] = 0.1f;
     }
@@ -126,7 +126,7 @@ TEST_F(NegativeGpuAVCopies, BufferToImageD32Vk13) {
     vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
 
-    float *ptr = static_cast<float *>(copy_src_buffer.Memory().Map());
+    float* ptr = static_cast<float*>(copy_src_buffer.Memory().Map());
     for (size_t i = 0; i < 64 * 64; ++i) {
         ptr[i] = 0.1f;
     }
@@ -180,10 +180,10 @@ TEST_F(NegativeGpuAVCopies, BufferToImageD32U8) {
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 kHostVisibleMemProps);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
+    auto ptr = static_cast<uint8_t*>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
-        auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
+        auto ptr_float = reinterpret_cast<float*>(ptr + 5 * i);
         if (i == 64 * 64 - 1) {
             *ptr_float = 42.0f;
         } else {
@@ -226,10 +226,10 @@ TEST_F(NegativeGpuAVCopies, BufferToImageD32U8Vk13) {
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 kHostVisibleMemProps);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
+    auto ptr = static_cast<uint8_t*>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
-        auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
+        auto ptr_float = reinterpret_cast<float*>(ptr + 5 * i);
         if (i == 64 * 64 - 1) {
             *ptr_float = 42.0f;
         } else {

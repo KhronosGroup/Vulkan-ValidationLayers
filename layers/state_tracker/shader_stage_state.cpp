@@ -25,12 +25,12 @@
 #include "containers/container_utils.h"
 
 // Common for both Pipeline and Shader Object
-void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
+void GetActiveSlots(ActiveSlotMap& active_slots, const std::shared_ptr<const spirv::EntryPoint>& entrypoint) {
     if (!entrypoint) {
         return;
     }
     // Capture descriptor uses for the pipeline
-    for (const auto &variable : entrypoint->resource_interface_variables) {
+    for (const auto& variable : entrypoint->resource_interface_variables) {
         // While validating shaders capture which slots are used by the pipeline
         DescriptorRequirement entry;
         entry.variable = &variable;
@@ -40,30 +40,30 @@ void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spi
 }
 
 // Used by pipeline
-ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states) {
+ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState>& stage_states) {
     ActiveSlotMap active_slots;
-    for (const auto &stage : stage_states) {
+    for (const auto& stage : stage_states) {
         GetActiveSlots(active_slots, stage.entrypoint);
     }
     return active_slots;
 }
 
 // Used by Shader Object
-ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
+ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint>& entrypoint) {
     ActiveSlotMap active_slots;
     GetActiveSlots(active_slots, entrypoint);
     return active_slots;
 }
 
-uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots) {
+uint32_t GetMaxActiveSlot(const ActiveSlotMap& active_slots) {
     uint32_t max_active_slot = 0;
-    for (const auto &entry : active_slots) {
+    for (const auto& entry : active_slots) {
         max_active_slot = std::max(max_active_slot, entry.first);
     }
     return max_active_slot;
 }
 
-const char *ShaderStageState::GetPName() const {
+const char* ShaderStageState::GetPName() const {
     return (pipeline_create_info) ? pipeline_create_info->pName : shader_object_create_info->pName;
 }
 
@@ -71,11 +71,11 @@ VkShaderStageFlagBits ShaderStageState::GetStage() const {
     return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info->stage;
 }
 
-vku::safe_VkSpecializationInfo *ShaderStageState::GetSpecializationInfo() const {
+vku::safe_VkSpecializationInfo* ShaderStageState::GetSpecializationInfo() const {
     return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info->pSpecializationInfo;
 }
 
-const void *ShaderStageState::GetPNext() const {
+const void* ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 

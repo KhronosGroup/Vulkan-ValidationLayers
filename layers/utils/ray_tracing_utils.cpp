@@ -1,5 +1,5 @@
-/* Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ namespace rt {
 
 static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice device,
                                                                   const VkAccelerationStructureBuildTypeKHR build_type,
-                                                                  const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                                                  const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+                                                                  const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                                                  const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     std::vector<uint32_t> primitive_counts(build_info.geometryCount);
     for (const auto [i, build_range] : vvl::enumerate(range_infos, build_info.geometryCount)) {
         primitive_counts[i] = build_range.primitiveCount;
@@ -40,8 +40,8 @@ static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice
 }
 
 VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
-                                const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+                                const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
@@ -60,8 +60,8 @@ VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
 }
 
 VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevice device,
-                                              const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                              const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+                                              const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                              const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR

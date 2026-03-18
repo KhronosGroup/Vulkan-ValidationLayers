@@ -37,7 +37,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -113,7 +113,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -226,7 +226,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -317,7 +317,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -453,7 +453,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -674,7 +674,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
-        for (auto &c : counters) {
+        for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
@@ -2425,7 +2425,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *queue0 = m_default_queue;
+    vkt::Queue* queue0 = m_default_queue;
     auto queue1_family = m_device->ComputeOnlyQueueFamily();
     if (!queue1_family.has_value()) {
         GTEST_SKIP() << "Can't find two different queue families";

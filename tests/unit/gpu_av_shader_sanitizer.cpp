@@ -22,7 +22,7 @@
 class NegativeGpuAVShaderSanitizer : public GpuAVGpuAVShaderSanitizer {};
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivScalar) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             uint index;
@@ -38,7 +38,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivScalar) {
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivScalar) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             int index;
@@ -54,7 +54,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivScalar) {
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             uvec4 index;
@@ -70,7 +70,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector) {
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivVector) {
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             ivec2 index;

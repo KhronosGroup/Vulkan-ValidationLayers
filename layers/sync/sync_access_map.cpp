@@ -19,7 +19,7 @@
 
 namespace syncval {
 
-void AccessMap::Assign(const AccessMap &other) {
+void AccessMap::Assign(const AccessMap& other) {
     auto temp_copy(other.impl_map_);
     impl_map_.swap(temp_copy);
 }
@@ -34,7 +34,7 @@ AccessMap::const_iterator AccessMap::LowerBound(ResourceAddress range_begin) con
     return it;
 }
 
-AccessMap::iterator AccessMap::Erase(const iterator &pos) {
+AccessMap::iterator AccessMap::Erase(const iterator& pos) {
     assert(pos != end());
     return impl_map_.erase(pos);
 }
@@ -47,7 +47,7 @@ void AccessMap::Erase(iterator first, iterator last) {
     }
 }
 
-AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state) {
+AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange& range, const AccessState& access_state) {
     assert(range.non_empty());
     bool hint_open;
     const_iterator impl_next = hint;
@@ -75,7 +75,7 @@ AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &ra
     return iterator(impl_insert);
 }
 
-std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange &range, const AccessState &access_state) {
+std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange& range, const AccessState& access_state) {
     assert(range.non_empty());
 
     // Look for range conflicts (and an insertion point, which makes the lower_bound *not* wasted work)
@@ -89,14 +89,14 @@ std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange &range,
     return {lower, false};
 }
 
-AccessMap::iterator AccessMap::InfillGap(const_iterator range_lower_bound, const AccessRange &range,
-                                         const AccessState &access_state) {
+AccessMap::iterator AccessMap::InfillGap(const_iterator range_lower_bound, const AccessRange& range,
+                                         const AccessState& access_state) {
     assert(LowerBound(range.begin) == range_lower_bound);
     assert(range_lower_bound == end() || range.strictly_less(range_lower_bound->first));
     return impl_map_.insert(range_lower_bound, {range, access_state});
 }
 
-void AccessMap::InfillGaps(const AccessRange &range, const AccessState &access_state) {
+void AccessMap::InfillGaps(const AccessRange& range, const AccessState& access_state) {
     AccessMapLocator pos(*this, range.begin);
     while (range.includes(pos.index)) {
         if (!pos.inside_lower_bound_range) {
@@ -115,7 +115,7 @@ void AccessMap::InfillGaps(const AccessRange &range, const AccessState &access_s
     }
 }
 
-AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type &index) {
+AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type& index) {
     const auto range = split_it->first;
 
     if (!range.includes(index)) {
@@ -149,7 +149,7 @@ AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type &
     return next_it;
 }
 
-AccessMap::iterator Split(AccessMap::iterator in, AccessMap &map, const AccessRange &range) {
+AccessMap::iterator Split(AccessMap::iterator in, AccessMap& map, const AccessRange& range) {
     assert(in != map.end());  // Not designed for use with invalid iterators...
     const AccessRange in_range = in->first;
     const AccessRange split_range = in_range & range;
@@ -168,14 +168,14 @@ AccessMap::iterator Split(AccessMap::iterator in, AccessMap &map, const AccessRa
     return pos;
 }
 
-void Consolidate(AccessMap &map) {
+void Consolidate(AccessMap& map) {
     using It = AccessMap::iterator;
 
     It current = map.begin();
     const It map_end = map.end();
 
     // To be included in a merge range there must be no gap in the AccessRange space, and the mapped_type values must match
-    auto can_merge = [](const It &last, const It &cur) {
+    auto can_merge = [](const It& last, const It& cur) {
         return cur->first.begin == last->first.end && cur->second == last->second;
     };
 
@@ -208,13 +208,13 @@ void Consolidate(AccessMap &map) {
 }
 
 template <typename TAccessMap>
-TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap &map, index_type index) : map_(&map), index(index) {
+TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap& map, index_type index) : map_(&map), index(index) {
     lower_bound = LowerBoundForIndex(index);
     inside_lower_bound_range = InsideLowerBoundRange();
 }
 
 template <typename TAccessMap>
-TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap &map, index_type index, const iterator &index_lower_bound)
+TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap& map, index_type index, const iterator& index_lower_bound)
     : map_(&map), index(index), lower_bound(index_lower_bound) {
     assert(LowerBoundForIndex(index) == index_lower_bound);
     inside_lower_bound_range = InsideLowerBoundRange();
@@ -232,7 +232,7 @@ void TAccessMapLocator<TAccessMap>::Seek(index_type seek_to) {
 
 template <typename TAccessMap>
 bool TAccessMapLocator<TAccessMap>::TrySeekLocal(index_type seek_to) {
-    auto is_lower_than = [this](AccessMap::index_type index, const auto &it) { return it == map_->end() || index < it->first.end; };
+    auto is_lower_than = [this](AccessMap::index_type index, const auto& it) { return it == map_->end() || index < it->first.end; };
 
     // Already here
     if (index == seek_to) {
@@ -274,7 +274,7 @@ AccessMap::index_type TAccessMapLocator<TAccessMap>::DistanceToEdge() const {
 template class TAccessMapLocator<AccessMap>;
 template class TAccessMapLocator<const AccessMap>;
 
-void ParallelIterator::OnCurrentRangeModified(const iterator &new_lower_bound) {
+void ParallelIterator::OnCurrentRangeModified(const iterator& new_lower_bound) {
     // Only map A can be modified, map B is constant
     pos_A = AccessMapLocator(map_A_, range.begin, new_lower_bound);
     range.end = range.begin + ComputeDelta();

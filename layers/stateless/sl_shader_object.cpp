@@ -21,7 +21,7 @@
 
 namespace stateless {
 
-bool Device::ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderStageFlagBits stage, const Location &flag_loc) const {
+bool Device::ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderStageFlagBits stage, const Location& flag_loc) const {
     bool skip = false;
     if ((flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0 &&
         enabled_features.attachmentFragmentShadingRate == VK_FALSE) {
@@ -92,11 +92,11 @@ bool Device::ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderSt
 }
 
 bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                    const VkShaderCreateInfoEXT *pCreateInfos,
-                                                    const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                    const Context &context) const {
+                                                    const VkShaderCreateInfoEXT* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
+                                                    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     uint32_t linked_heap_stage = createInfoCount;
     uint32_t linked_non_heap_stage = createInfoCount;
@@ -117,7 +117,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                                  static_cast<uint64_t>(create_info.codeSize));
             } else {
                 // Can't cast this until we know it is aligned to 4 bytes or USAN will catch it
-                const uint32_t first_dword = ((uint32_t *)create_info.pCode)[0];
+                const uint32_t first_dword = ((uint32_t*)create_info.pCode)[0];
                 if (first_dword != spv::MagicNumber) {
                     skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08738", device, create_info_loc.dot(Field::pCode),
                                      "doesn't point to a SPIR-V module. The first dword (0x%" PRIx32
@@ -260,10 +260,10 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize, void *pData,
-                                                          const Context &context) const {
+bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
+                                                          const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pData) {
         if (!IsPointerAligned(pData, 16)) {

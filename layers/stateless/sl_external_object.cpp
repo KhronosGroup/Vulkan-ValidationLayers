@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,11 +23,11 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                  const Context &context) const {
+bool Device::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
+                                                  const Context& context) const {
     constexpr auto allowed_types = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (0 == (pGetFdInfo->handleType & allowed_types)) {
         skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00672", pGetFdInfo->memory,
                          error_obj.location.dot(Field::pGetFdInfo).dot(Field::handleType),
@@ -39,10 +39,10 @@ bool Device::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemor
 }
 
 bool Device::manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
-                                                            VkMemoryFdPropertiesKHR *pMemoryFdProperties,
-                                                            const Context &context) const {
+                                                            VkMemoryFdPropertiesKHR* pMemoryFdProperties,
+                                                            const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (fd < 0) {
         skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-fd-00673", device, error_obj.location.dot(Field::fd),
                          "handle (%d) is not a valid POSIX file descriptor.", fd);
@@ -54,7 +54,7 @@ bool Device::manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkE
     return skip;
 }
 
-bool Device::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const Location &handle_type_loc,
+bool Device::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char* vuid, const Location& handle_type_loc,
                                                  VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                                  VkExternalSemaphoreHandleTypeFlags allowed_types) const {
     bool skip = false;
@@ -66,7 +66,7 @@ bool Device::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const ch
     return skip;
 }
 
-bool Device::ValidateExternalFenceHandleType(VkFence fence, const char *vuid, const Location &handle_type_loc,
+bool Device::ValidateExternalFenceHandleType(VkFence fence, const char* vuid, const Location& handle_type_loc,
                                              VkExternalFenceHandleTypeFlagBits handle_type,
                                              VkExternalFenceHandleTypeFlags allowed_types) const {
     bool skip = false;
@@ -81,18 +81,18 @@ bool Device::ValidateExternalFenceHandleType(VkFence fence, const char *vuid, co
 static constexpr VkExternalSemaphoreHandleTypeFlags kSemFdHandleTypes =
     VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
 
-bool Device::manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                     const Context &context) const {
-    const auto &error_obj = context.error_obj;
+bool Device::manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
+                                                     const Context& context) const {
+    const auto& error_obj = context.error_obj;
     return ValidateExternalSemaphoreHandleType(pGetFdInfo->semaphore, "VUID-VkSemaphoreGetFdInfoKHR-handleType-01136",
                                                error_obj.location.dot(Field::pGetFdInfo).dot(Field::handleType),
                                                pGetFdInfo->handleType, kSemFdHandleTypes);
 }
 
-bool Device::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
-                                                        const Context &context) const {
+bool Device::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
+                                                        const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location info_loc = error_obj.location.dot(Field::pImportSemaphoreFdInfo);
     skip |=
         ValidateExternalSemaphoreHandleType(pImportSemaphoreFdInfo->semaphore, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143",
@@ -112,17 +112,17 @@ bool Device::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device, const V
 static constexpr VkExternalFenceHandleTypeFlags kFenceFdHandleTypes =
     VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
 
-bool Device::manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                 const Context &context) const {
+bool Device::manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd,
+                                                 const Context& context) const {
     return ValidateExternalFenceHandleType(pGetFdInfo->fence, "VUID-VkFenceGetFdInfoKHR-handleType-01456",
                                            context.error_obj.location.dot(Field::pGetFdInfo).dot(Field::handleType),
                                            pGetFdInfo->handleType, kFenceFdHandleTypes);
 }
 
-bool Device::manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
-                                                    const Context &context) const {
+bool Device::manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,
+                                                    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location info_loc = error_obj.location.dot(Field::pImportFenceFdInfo);
     skip |= ValidateExternalFenceHandleType(pImportFenceFdInfo->fence, "VUID-VkImportFenceFdInfoKHR-handleType-01464",
                                             info_loc.dot(Field::handleType), pImportFenceFdInfo->handleType, kFenceFdHandleTypes);
@@ -138,11 +138,11 @@ bool Device::manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImp
 }
 
 bool Device::manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
-                                                                     const void *pHostPointer,
-                                                                     VkMemoryHostPointerPropertiesEXT *pMemoryHostPointerProperties,
-                                                                     const Context &context) const {
+                                                                     const void* pHostPointer,
+                                                                     VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties,
+                                                                     const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT &&
         handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT) {
         skip |=
@@ -165,8 +165,8 @@ bool Device::manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice de
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Device::manual_PreCallValidateGetMemoryWin32HandleKHR(VkDevice device,
-                                                           const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                           HANDLE *pHandle, const Context &context) const {
+                                                           const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                           HANDLE* pHandle, const Context& context) const {
     constexpr VkExternalMemoryHandleTypeFlags nt_handles =
         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
         VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_HEAP_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
@@ -185,10 +185,10 @@ bool Device::manual_PreCallValidateGetMemoryWin32HandleKHR(VkDevice device,
 
 bool Device::manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                      HANDLE handle,
-                                                                     VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties,
-                                                                     const Context &context) const {
+                                                                     VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties,
+                                                                     const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (handle == NULL || handle == INVALID_HANDLE_VALUE) {
         static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
         skip |= LogError("VUID-vkGetMemoryWin32HandlePropertiesKHR-handle-00665", device, error_obj.location.dot(Field::handle),
@@ -207,10 +207,10 @@ static constexpr VkExternalSemaphoreHandleTypeFlags kSemWin32HandleTypes = VK_EX
                                                                            VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT |
                                                                            VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
 
-bool Device::manual_PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *info,
-                                                                 const Context &context) const {
+bool Device::manual_PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* info,
+                                                                 const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     skip |=
         ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01140",
@@ -222,19 +222,19 @@ bool Device::manual_PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device
     if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
         skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01466", info->semaphore,
                          error_obj.location.dot(Field::pImportSemaphoreWin32HandleInfo).dot(Field::name),
-                         "(%p) must be NULL if handleType is %s", reinterpret_cast<const void *>(info->name),
+                         "(%p) must be NULL if handleType is %s", reinterpret_cast<const void*>(info->name),
                          string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
     }
     if (info->handle && info->name) {
         skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-handle-01469", info->semaphore,
                          error_obj.location.dot(Field::pImportSemaphoreWin32HandleInfo),
-                         "both handle (%p) and name (%p) are non-NULL", info->handle, reinterpret_cast<const void *>(info->name));
+                         "both handle (%p) and name (%p) are non-NULL", info->handle, reinterpret_cast<const void*>(info->name));
     }
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *info,
-                                                              HANDLE *pHandle, const Context &context) const {
+bool Device::manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* info,
+                                                              HANDLE* pHandle, const Context& context) const {
     return ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01131",
                                                context.error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                                                info->handleType, kSemWin32HandleTypes);
@@ -243,10 +243,10 @@ bool Device::manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, c
 static constexpr VkExternalFenceHandleTypeFlags kFenceWin32HandleTypes =
     VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
 
-bool Device::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR *info,
-                                                             const Context &context) const {
+bool Device::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* info,
+                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     skip |= ValidateExternalFenceHandleType(info->fence, "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01457",
                                             error_obj.location.dot(Field::pImportFenceWin32HandleInfo).dot(Field::handleType),
                                             info->handleType, kFenceWin32HandleTypes);
@@ -255,20 +255,20 @@ bool Device::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device, co
     if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
         skip |= LogError("VUID-VkImportFenceWin32HandleInfoKHR-handleType-01459", info->fence,
                          error_obj.location.dot(Field::pImportFenceWin32HandleInfo).dot(Field::name),
-                         "(%p) must be NULL if handleType is %s", reinterpret_cast<const void *>(info->name),
+                         "(%p) must be NULL if handleType is %s", reinterpret_cast<const void*>(info->name),
                          string_VkExternalFenceHandleTypeFlagBits(info->handleType));
     }
     if (info->handle && info->name) {
         skip |= LogError("VUID-VkImportFenceWin32HandleInfoKHR-handle-01462", info->fence,
                          error_obj.location.dot(Field::pImportFenceWin32HandleInfo), "both handle (%p) and name (%p) are non-NULL",
-                         info->handle, reinterpret_cast<const void *>(info->name));
+                         info->handle, reinterpret_cast<const void*>(info->name));
     }
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info,
-                                                          HANDLE *pHandle, const Context &context) const {
-    const auto &error_obj = context.error_obj;
+bool Device::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* info,
+                                                          HANDLE* pHandle, const Context& context) const {
+    const auto& error_obj = context.error_obj;
     return ValidateExternalFenceHandleType(info->fence, "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01452",
                                            error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::handleType),
                                            info->handleType, kFenceWin32HandleTypes);
@@ -276,8 +276,8 @@ bool Device::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const
 #endif
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-bool Device::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
-                                         const char *sType, const void *pNext) const {
+bool Device::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char* vuid, const Location& loc,
+                                         const char* sType, const void* pNext) const {
     bool skip = false;
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pNext);
     while (export_metal_object_info) {
@@ -303,18 +303,18 @@ struct ExternalOperationsInfo {
     bool export_info_win32 = false;
     bool export_info_win32_nv = false;
 
-    const VkImportMemoryFdInfoKHR *import_info_fd = nullptr;
-    const VkImportMemoryHostPointerInfoEXT *import_info_host_pointer = nullptr;
+    const VkImportMemoryFdInfoKHR* import_info_fd = nullptr;
+    const VkImportMemoryHostPointerInfoEXT* import_info_host_pointer = nullptr;
 
-    const VkExportMemoryAllocateInfo *export_info = nullptr;
-    const VkExportMemoryAllocateInfoNV *export_info_nv = nullptr;
+    const VkExportMemoryAllocateInfo* export_info = nullptr;
+    const VkExportMemoryAllocateInfoNV* export_info_nv = nullptr;
 
     uint32_t total_import_ops = 0;
     bool has_export = false;
 };
 
 // vkspec.html#memory-import-operation describes all the various ways for import operations
-ExternalOperationsInfo GetExternalOperationsInfo(const void *pNext) {
+ExternalOperationsInfo GetExternalOperationsInfo(const void* pNext) {
     ExternalOperationsInfo ext = {};
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -376,14 +376,14 @@ ExternalOperationsInfo GetExternalOperationsInfo(const void *pNext) {
     // VK_EXT_external_memory_metal
     auto import_info_metal = vku::FindStructInPNextChain<VkImportMemoryMetalHandleInfoEXT>(pNext);
     ext.total_import_ops += (import_info_metal && import_info_metal->handle);
-#endif // VK_USE_PLATFORM_METAL_EXT
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
     return ext;
 }
 }  // namespace
 
-bool Device::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info, VkMemoryAllocateFlags flags,
-                                            const Location &allocate_info_loc) const {
+bool Device::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo& allocate_info, VkMemoryAllocateFlags flags,
+                                            const Location& allocate_info_loc) const {
     bool skip = false;
 
     // Used to remove platform ifdef logic below

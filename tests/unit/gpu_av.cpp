@@ -121,7 +121,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegex) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char *, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
+    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -190,7 +190,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegexDestroyedShaders) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char *, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
+    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -374,7 +374,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersShaderObjectDrawIndexedIndirect2K
     vert_descriptor_set.UpdateDescriptorSets();
 
     vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
-    uint32_t *index_data = reinterpret_cast<uint32_t *>(index_buffer.Memory().Map());
+    uint32_t* index_data = reinterpret_cast<uint32_t*>(index_buffer.Memory().Map());
     index_data[0] = 0u;
     index_data[1] = 1u;
     index_data[2] = 2u;
@@ -436,7 +436,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
 
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    auto data = static_cast<VkDeviceAddress*>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -450,7 +450,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
         m_errorMonitor->SetDesiredWarning(
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
-        std::vector<const vkt::DescriptorSetLayout *> empty_layouts(set_limit);
+        std::vector<const vkt::DescriptorSetLayout*> empty_layouts(set_limit);
         for (uint32_t i = 0; i < set_limit; i++) {
             empty_layouts[i] = &descriptor_set.layout_;
         }
@@ -459,13 +459,13 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     }
 
     // Reduce by one (so there is room now) and do something invalid. (To make sure things still work as expected)
-    std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
+    std::vector<const vkt::DescriptorSetLayout*> layouts(set_limit - 1);
     for (uint32_t i = 0; i < set_limit - 1; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -509,7 +509,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
 
     vkt::Buffer index_buffer(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    auto data = static_cast<VkDeviceAddress *>(storage_buffer.Memory().Map());
+    auto data = static_cast<VkDeviceAddress*>(storage_buffer.Memory().Map());
     data[0] = index_buffer.Address();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -524,7 +524,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
         m_errorMonitor->SetDesiredWarning(
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
-        std::vector<const vkt::DescriptorSetLayout *> empty_layouts(set_limit);
+        std::vector<const vkt::DescriptorSetLayout*> empty_layouts(set_limit);
         for (uint32_t i = 0; i < set_limit; i++) {
             empty_layouts[i] = &descriptor_set.layout_;
         }
@@ -533,13 +533,13 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     }
 
     // Reduce by one (so there is room now) and do something invalid. (To make sure things still work as expected)
-    std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
+    std::vector<const vkt::DescriptorSetLayout*> layouts(set_limit - 1);
     for (uint32_t i = 0; i < set_limit - 1; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -623,7 +623,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     // Add one to use the descriptor slot we tried to reserve
     const uint32_t set_limit = m_device->Physical().limits_.maxBoundDescriptorSets + 1;
 
-    std::vector<const vkt::DescriptorSetLayout *> empty_layouts(set_limit);
+    std::vector<const vkt::DescriptorSetLayout*> empty_layouts(set_limit);
     for (uint32_t i = 0; i < set_limit; i++) {
         empty_layouts[i] = &descriptor_set.layout_;
     }
@@ -631,7 +631,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     m_errorMonitor->SetAllowedFailureMsg("This Pipeline Layout has too many descriptor sets");
     vkt::PipelineLayout bad_pipe_layout(*m_device, empty_layouts);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             int x;
@@ -741,7 +741,7 @@ TEST_F(NegativeGpuAV, LeakedResource) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) uniform sampler2D samplerColor[2];
         void main() {

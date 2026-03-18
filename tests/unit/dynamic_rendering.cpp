@@ -230,8 +230,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &render_target_ci.format;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info =
-        vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
 
     VkCommandBufferBeginInfo secondary_cmd_buffer_begin_info = vku::InitStructHelper();
     secondary_cmd_buffer_begin_info.flags =
@@ -1504,8 +1503,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     depth_attachment.resolveMode = resolve_mode;
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
-        vku::InitStructHelper();
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
     fragment_density_map.imageView = depth_image_view;
     fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1678,8 +1676,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     if (shading_rate) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06183");
-        VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate =
-            vku::InitStructHelper();
+        VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
         fragment_shading_rate.imageView = depth_image_view;
         fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
         fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
@@ -1712,8 +1709,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     if (fragment_density) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06184");
-        VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
-            vku::InitStructHelper();
+        VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
         fragment_density_map.imageView = depth_image_view;
         fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -2830,7 +2826,9 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
 }
 
 TEST_F(NegativeDynamicRendering, SecondaryCommandBufferContents) {
-    TEST_DESCRIPTION("Execute secondary command buffers within active render pass that was not begun with VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
+    TEST_DESCRIPTION(
+        "Execute secondary command buffers within active render pass that was not begun with "
+        "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
@@ -2864,7 +2862,7 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
 
     InitRenderTarget();
 
-    const char *fs_source = R"(
+    const char* fs_source = R"(
                OpCapability Shader
                OpCapability InputAttachment
           %1 = OpExtInstImport "GLSL.std.450"
@@ -3789,7 +3787,7 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewShadingRateLayout) {
     m_command_buffer.Begin();
 
     // SHADING_RATE_OPTIMAL_NV is aliased FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR so VU depends on which extensions
-    const char *vuid =
+    const char* vuid =
         khr_fragment_shading ? "VUID-VkRenderingAttachmentInfo-imageView-06143" : "VUID-VkRenderingAttachmentInfo-imageView-06138";
     m_errorMonitor->SetDesiredError(vuid);
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -3843,7 +3841,7 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewShadingRateLayout) {
     m_command_buffer.Begin();
 
     // SHADING_RATE_OPTIMAL_NV is aliased FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR so VU depends on which extensions
-    const char *vuid =
+    const char* vuid =
         khr_fragment_shading ? "VUID-VkRenderingAttachmentInfo-imageView-06144" : "VUID-VkRenderingAttachmentInfo-imageView-06139";
     m_errorMonitor->SetDesiredError(vuid);
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -4084,7 +4082,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
 
     const uint32_t max_color_attachments = m_device->Physical().limits_.maxColorAttachments + 1;
     std::vector<VkRenderingAttachmentInfo> color_attachments(max_color_attachments);
-    for (auto &attachment : color_attachments) {
+    for (auto& attachment : color_attachments) {
         attachment = vku::InitStructHelper();
         attachment.imageView = image_view;
         attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -6455,7 +6453,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -6486,7 +6484,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -8229,8 +8227,8 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
     vkt::RenderPass render_pass(*m_device, render_pass_create_info);
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr, ra_extent.width, ra_extent.height);
-    auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
+    auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(),
+                                                           render_area, 0u, nullptr);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
@@ -8240,7 +8238,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         perf_begin_info.counterAddressCount = 2;
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
-                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", nullptr);
+                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", nullptr);
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815");
@@ -8255,7 +8253,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         counter_buffer.Memory().Destroy();
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
-                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816", nullptr);
+                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816", nullptr);
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816");
@@ -8268,11 +8266,12 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     }
 
     {
-        vkt::Buffer counter_buffer_too_small(*m_device, counter_buffer_size - 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+        vkt::Buffer counter_buffer_too_small(*m_device, counter_buffer_size - 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                             vkt::device_address);
         counter_addresses[0] = counter_buffer_too_small.Address();
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
-                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", nullptr);
+                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", nullptr);
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817");
@@ -8298,7 +8297,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         counter_addresses[0] = extended_counter_buffer.Address();
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
-                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", nullptr);
+                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", nullptr);
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818");
@@ -8353,8 +8352,8 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
     auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
     vkt::RenderPass render_pass(*m_device, render_pass_create_info);
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr, ra_extent.width, ra_extent.height);
-    auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
+    auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(),
+                                                           render_area, 0u, nullptr);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
@@ -8364,7 +8363,7 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
         perf_begin_info.counterAddressCount = 2;
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
-                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", nullptr);
+                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", nullptr);
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815");

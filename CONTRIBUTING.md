@@ -10,7 +10,7 @@ We enjoy external contributions, we often see them in the form of:
 
 ## Quick check list for making a change
 
-- Make sure you run `clang-format` on any C++ code.
+- Make sure you run `clang-format` on any C++ code. (We currently use [clang-format 22.1.x](https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.1) for CI)
 - If fixing a bug, we would like a [positive test](./tests/README.md#different-categories-of-tests).
 - If addinga a new VU, we **need** a [negative test](./tests/README.md#different-categories-of-tests).
 - Try to match the code style around the code as best as possible.
@@ -22,7 +22,7 @@ We enjoy external contributions, we often see them in the form of:
 We are reasonable developers, we don't want to bikeshed on code style, but highly encourge to look at the nearby code.
 As maintainer, if we find the style is incredibly different, we will ask you kindly to fix it.
 
-our CI will run **clang-format** (version 14) **FOR EVERY COMMIT**, so make sure your change has been ran with it.
+our CI will run **clang-format** (version 22.1.x) **FOR EVERY COMMIT**, so make sure your change has been ran with it.
 
 ```bash
 # sample git workflow may look like

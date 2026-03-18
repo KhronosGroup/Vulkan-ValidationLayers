@@ -29,11 +29,11 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                               const Context &context) const {
+bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkImage* pImage,
+                                               const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pCreateInfo == nullptr) {
         return skip;
@@ -372,7 +372,7 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     return skip;
 }
 
-bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageSparse(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     const VkImageCreateFlags image_flags = create_info.flags;
     const VkImageCreateFlags sparse_flags =
@@ -460,7 +460,7 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, con
     return skip;
 }
 
-bool Device::ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     // alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV
     if ((create_info.usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0) return skip;
@@ -486,7 +486,7 @@ bool Device::ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &cre
     return skip;
 }
 
-bool Device::ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageCornerSampled(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     if ((create_info.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) == 0) return skip;
 
@@ -520,7 +520,7 @@ bool Device::ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_in
     return skip;
 }
 
-bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(create_info.pNext);
     if (!image_stencil_struct) return skip;
@@ -602,8 +602,8 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_inf
     return skip;
 }
 
-bool Device::ValidateCreateImageCompressionControl(const Context &context, const VkImageCreateInfo &create_info,
-                                                   const Location &create_info_loc) const {
+bool Device::ValidateCreateImageCompressionControl(const Context& context, const VkImageCreateInfo& create_info,
+                                                   const Location& create_info_loc) const {
     bool skip = false;
     const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
     if (!image_compression_control) return skip;
@@ -644,7 +644,7 @@ bool Device::ValidateCreateImageCompressionControl(const Context &context, const
     return skip;
 }
 
-bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext);
     if (!swapchain_create_info || swapchain_create_info->swapchain == VK_NULL_HANDLE) return skip;
@@ -652,7 +652,7 @@ bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, 
     // All the following fall under the same VU that checks that the swapchain image uses parameters listed in the
     // #swapchain-wsi-image-create-info table. Breaking up into multiple checks allows for more useful information
     // to be returned when this error occurs. Check for matching Swapchain flags is done later in state tracking validation
-    const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+    const char* vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
     const Location swapchain_loc = create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain);
 
     if (create_info.imageType != VK_IMAGE_TYPE_2D) {
@@ -689,7 +689,7 @@ bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, 
     return skip;
 }
 
-bool Device::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageFormatList(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
     if (!format_list_info) return skip;
@@ -766,7 +766,7 @@ bool Device::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info,
     return skip;
 }
 
-bool Device::ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageMetalObject(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(create_info.pNext);
@@ -813,8 +813,8 @@ bool Device::ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info
     return skip;
 }
 
-bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
-                                                   std::vector<uint64_t> &image_create_drm_format_modifiers) const {
+bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                                   std::vector<uint64_t>& image_create_drm_format_modifiers) const {
     bool skip = false;
     if (!IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) return skip;
 
@@ -895,7 +895,7 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &crea
     return skip;
 }
 
-bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 
     if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (!enabled_features.imageCubeArray)) {
@@ -964,11 +964,11 @@ bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_inf
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                                   const Context &context) const {
+bool Device::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkImageView* pView,
+                                                   const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pCreateInfo == nullptr) {
         return skip;
@@ -978,16 +978,16 @@ bool Device::manual_PreCallValidateCreateImageView(VkDevice device, const VkImag
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
-                                                                   VkSubresourceLayout2 *pLayout, const Context &context) const {
+bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                                   VkSubresourceLayout2* pLayout, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     const Location create_info_loc = info_loc.dot(Field::pCreateInfo);
     const Location subresource_loc = info_loc.dot(Field::pSubresource);
 
-    const VkImageCreateInfo &create_info = *pInfo->pCreateInfo;
-    const VkImageSubresource &subresource = pInfo->pSubresource->imageSubresource;
+    const VkImageCreateInfo& create_info = *pInfo->pCreateInfo;
+    const VkImageSubresource& subresource = pInfo->pSubresource->imageSubresource;
     const VkImageAspectFlags aspect_mask = subresource.aspectMask;
 
     if (CountSetBits(aspect_mask) != 1) {
@@ -1051,7 +1051,7 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
 
 bool Device::manual_PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                   const VkImageResolve *pRegions, const Context &context) const {
+                                                   const VkImageResolve* pRegions, const Context& context) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -1080,15 +1080,15 @@ bool Device::manual_PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
-                                                    const Context &context) const {
+bool Device::manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
+                                                    const Context& context) const {
     bool skip = false;
     const Location resolve_info_loc = context.error_obj.location.dot(Field::pResolveImageInfo);
     for (uint32_t i = 0; i < pResolveImageInfo->regionCount; i++) {
         const Location region_loc = resolve_info_loc.dot(Field::pRegions, i);
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
-        const VkImageResolve2 &region = pResolveImageInfo->pRegions[i];
+        const VkImageResolve2& region = pResolveImageInfo->pRegions[i];
 
         if (enabled_features.maintenance10) {
             if (region.srcSubresource.aspectMask &
@@ -1124,7 +1124,7 @@ bool Device::manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
         }
     }
 
-    if (const auto *resolve_mode_info = vku::FindStructInPNextChain<VkResolveImageModeInfoKHR>(pResolveImageInfo->pNext)) {
+    if (const auto* resolve_mode_info = vku::FindStructInPNextChain<VkResolveImageModeInfoKHR>(pResolveImageInfo->pNext)) {
         const auto both_skip_and_enable_transfer_flags =
             VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR | VK_RESOLVE_IMAGE_ENABLE_TRANSFER_FUNCTION_BIT_KHR;
         if ((resolve_mode_info->flags & both_skip_and_enable_transfer_flags) == both_skip_and_enable_transfer_flags) {

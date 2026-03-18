@@ -32,7 +32,7 @@ using vvl::DescriptorClass;
 
 namespace gpuav {
 
-DescriptorSetSubState::DescriptorSetSubState(const vvl::DescriptorSet &set, Validator &state_data)
+DescriptorSetSubState::DescriptorSetSubState(const vvl::DescriptorSet& set, Validator& state_data)
     : vvl::DescriptorSetSubState(set), input_buffer_(state_data) {
     BuildBindingLayouts();
 }
@@ -44,7 +44,7 @@ void DescriptorSetSubState::BuildBindingLayouts() {
 
     binding_layouts_.resize(binding_count);
     uint32_t start = 0;
-    for (const auto &binding : base) {
+    for (const auto& binding : base) {
         if (binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
             binding_layouts_[binding->binding] = {start, 1};
             start++;
@@ -56,21 +56,21 @@ void DescriptorSetSubState::BuildBindingLayouts() {
 }
 
 template <typename StateObject>
-DescriptorId GetId(const StateObject *obj, bool allow_null = true) {
+DescriptorId GetId(const StateObject* obj, bool allow_null = true) {
     if (!obj) {
         return allow_null ? glsl::kNullDescriptor : 0;
     }
-    auto &sub_state = SubState(*obj);
+    auto& sub_state = SubState(*obj);
     return sub_state.Id();
 }
 
-static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
+static glsl::DescriptorState GetInData(const vvl::BufferDescriptor& desc) {
     return glsl::DescriptorState(DescriptorClass::GeneralBuffer, GetId(desc.GetBufferState()),
                                  static_cast<uint32_t>(desc.GetEffectiveRange()));
 }
 
-static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
-    auto *buffer_view_state = desc.GetBufferViewState();
+static glsl::DescriptorState GetInData(const vvl::TexelDescriptor& desc) {
+    auto* buffer_view_state = desc.GetBufferViewState();
     uint32_t res_size = vvl::kNoIndex32;
     if (buffer_view_state) {
         auto view_size = buffer_view_state->Size();
@@ -79,31 +79,31 @@ static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
     return glsl::DescriptorState(DescriptorClass::TexelBuffer, GetId(buffer_view_state), res_size);
 }
 
-static glsl::DescriptorState GetInData(const vvl::ImageDescriptor &desc) {
+static glsl::DescriptorState GetInData(const vvl::ImageDescriptor& desc) {
     return glsl::DescriptorState(DescriptorClass::Image, GetId(desc.GetImageViewState()));
 }
 
-static glsl::DescriptorState GetInData(const vvl::TensorDescriptor &desc) {
-    auto tensor_view_state = static_cast<const vvl::TensorView *>(desc.GetTensorViewState());
+static glsl::DescriptorState GetInData(const vvl::TensorDescriptor& desc) {
+    auto tensor_view_state = static_cast<const vvl::TensorView*>(desc.GetTensorViewState());
     return glsl::DescriptorState(DescriptorClass::Tensor, tensor_view_state ? tensor_view_state->GetId() : glsl::kNullDescriptor);
 }
 
-static glsl::DescriptorState GetInData(const vvl::SamplerDescriptor &desc) {
+static glsl::DescriptorState GetInData(const vvl::SamplerDescriptor& desc) {
     return glsl::DescriptorState(DescriptorClass::PlainSampler, GetId(desc.GetSamplerState()));
 }
 
-static glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor &desc) {
+static glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor& desc) {
     // image can be null in some cases, but the sampler can't
     return glsl::DescriptorState(DescriptorClass::ImageSampler, GetId(desc.GetImageViewState()),
                                  GetId(desc.GetSamplerState(), false));
 }
 
-static glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescriptor &ac) {
+static glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescriptor& ac) {
     uint32_t id = ac.IsKHR() ? GetId(ac.GetAccelerationStructureStateKHR()) : GetId(ac.GetAccelerationStructureStateNV());
     return glsl::DescriptorState(DescriptorClass::AccelerationStructure, id);
 }
 
-static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
+static glsl::DescriptorState GetInData(const vvl::MutableDescriptor& desc) {
     auto desc_class = desc.ActiveClass();
     switch (desc_class) {
         case DescriptorClass::GeneralBuffer: {
@@ -151,7 +151,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
 }
 
 template <typename Binding>
-void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint32_t &index) {
+void FillBindingInData(const Binding& binding, glsl::DescriptorState* data, uint32_t& index) {
     for (uint32_t di = 0; di < binding.count; di++) {
         if (!binding.updated[di]) {
             data[index++] = glsl::DescriptorState();
@@ -163,12 +163,12 @@ void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint
 
 // Inline Uniforms are currently treated as a single descriptor. Writes to any offsets cause the whole range to be valid.
 template <>
-void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::DescriptorState *data, uint32_t &index) {
+void FillBindingInData(const vvl::InlineUniformBinding& binding, glsl::DescriptorState* data, uint32_t& index) {
     // While not techincally a "null descriptor" we want to skip it as if it is one
     data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kNoIndex32);
 }
 
-VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {
+VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator& gpuav) {
     std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
 
@@ -202,37 +202,37 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {
         return 0;
     }
 
-    auto data = (glsl::DescriptorState *)input_buffer_.GetMappedPtr();
+    auto data = (glsl::DescriptorState*)input_buffer_.GetMappedPtr();
 
     uint32_t index = 0;
-    for (const auto &binding : base) {
+    for (const auto& binding : base) {
         switch (binding->descriptor_class) {
             case DescriptorClass::InlineUniform:
-                FillBindingInData(static_cast<const vvl::InlineUniformBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::InlineUniformBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::GeneralBuffer:
-                FillBindingInData(static_cast<const vvl::BufferBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::BufferBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::TexelBuffer:
-                FillBindingInData(static_cast<const vvl::TexelBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::TexelBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::Mutable:
-                FillBindingInData(static_cast<const vvl::MutableBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::MutableBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::PlainSampler:
-                FillBindingInData(static_cast<const vvl::SamplerBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::SamplerBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::ImageSampler:
-                FillBindingInData(static_cast<const vvl::ImageSamplerBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::ImageSamplerBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::Image:
-                FillBindingInData(static_cast<const vvl::ImageBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::ImageBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::AccelerationStructure:
-                FillBindingInData(static_cast<const vvl::AccelerationStructureBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::AccelerationStructureBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::Tensor:
-                FillBindingInData(static_cast<const vvl::TensorBinding &>(*binding), data, index);
+                FillBindingInData(static_cast<const vvl::TensorBinding&>(*binding), data, index);
                 break;
             case DescriptorClass::Invalid:
                 gpuav.InternalError(gpuav.device, Location(vvl::Func::Empty), "Unknown DescriptorClass");

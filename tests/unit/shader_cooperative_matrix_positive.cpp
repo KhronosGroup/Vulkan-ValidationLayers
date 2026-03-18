@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +38,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
-    for (const auto &prop : helper.coop_matrix_props) {
+    for (const auto& prop : helper.coop_matrix_props) {
         // We only have the 16-bit features enabled, but 32-bit also works
         if (prop.scope == VK_SCOPE_SUBGROUP_KHR && !helper.Has8BitComponentType(prop) && !helper.Has64BitComponentType(prop)) {
             found_scope_subgroup = true;
@@ -85,7 +85,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
          }
     )glsl";
 
-    auto replace = [](std::string &str, const std::string &from, const std::string &to) {
+    auto replace = [](std::string& str, const std::string& from, const std::string& to) {
         size_t pos;
         while ((pos = str.find(from)) != std::string::npos) str.replace(pos, from.length(), to);
     };
@@ -118,7 +118,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
     const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
          #version 450 core
          #pragma use_vulkan_memory_model
          #extension GL_KHR_shader_subgroup_basic : enable
@@ -173,7 +173,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionPipeline) {
     const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
          #version 450 core
          #pragma use_vulkan_memory_model
          #extension GL_KHR_shader_subgroup_basic : enable
@@ -216,7 +216,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     const vkt::DescriptorSetLayout dsl(*m_device,
                                        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
          #version 450 core
          #pragma use_vulkan_memory_model
          #extension GL_KHR_shader_subgroup_basic : enable
@@ -247,7 +247,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
     AddRequiredFeature(vkt::Feature::shaderBFloat16CooperativeMatrix);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         #extension GL_EXT_bfloat16 : require
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -273,7 +273,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         #extension GL_EXT_float_e4m3 : require
         #extension GL_EXT_shader_explicit_arithmetic_types : enable

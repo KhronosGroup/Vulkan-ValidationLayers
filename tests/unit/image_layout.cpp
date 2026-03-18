@@ -115,7 +115,7 @@ TEST_F(NegativeImageLayout, Compute) {
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs = R"glsl(#version 450
+    const char* cs = R"glsl(#version 450
     layout(local_size_x=1) in;
     layout(set=0, binding=0) uniform sampler2D s;
     void main(){
@@ -176,7 +176,7 @@ TEST_F(NegativeImageLayout, Compute11) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    const char *cs = R"glsl(#version 450
+    const char* cs = R"glsl(#version 450
     layout(local_size_x=1) in;
     layout(set=0, binding=0) uniform sampler2D s;
     void main(){
@@ -218,7 +218,7 @@ TEST_F(NegativeImageLayout, MultipleCommandDispatches) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    const char *cs = R"glsl(
+    const char* cs = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         void main(){
@@ -283,7 +283,7 @@ TEST_F(NegativeImageLayout, DISABLED_Mutable) {
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    const char *cs = R"glsl(
+    const char* cs = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         void main(){
@@ -343,7 +343,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 color;
@@ -813,7 +813,7 @@ TEST_F(NegativeImageLayout, MultiArrayLayers) {
     // Bind view to both layers
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 460
         layout(set=0, binding=0) uniform sampler2DArray s;
         layout(location=0) out vec4 x;
@@ -850,7 +850,7 @@ TEST_F(NegativeImageLayout, DescriptorArrayStaticIndex) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
 
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         // [0] is good layout

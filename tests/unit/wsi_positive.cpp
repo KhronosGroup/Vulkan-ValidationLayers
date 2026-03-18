@@ -21,7 +21,7 @@ std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup(
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_groups(physical_device_group_count,
                                                                         {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_groups.data());
-    for (const auto &physical_device_group : physical_device_groups) {
+    for (const auto& physical_device_group : physical_device_groups) {
         for (uint32_t k = 0; k < physical_device_group.physicalDeviceCount; k++) {
             if (physical_device_group.physicalDevices[k] == Gpu()) {
                 return physical_device_group;
@@ -113,7 +113,7 @@ TEST_F(PositiveWsi, CreateXcbSurface) {
     AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    xcb_connection_t *xcb_connection = xcb_connect(nullptr, nullptr);
+    xcb_connection_t* xcb_connection = xcb_connect(nullptr, nullptr);
     ASSERT_TRUE(xcb_connection);
 
     // NOTE: This is technically an invalid window! (There is no width/height)
@@ -148,7 +148,7 @@ TEST_F(PositiveWsi, CreateX11Surface) {
         GTEST_SKIP() << "Test requires working display\n";
     }
 
-    Display *x11_display = XOpenDisplay(nullptr);
+    Display* x11_display = XOpenDisplay(nullptr);
     ASSERT_TRUE(x11_display != nullptr);
 
     const int screen = DefaultScreen(x11_display);
@@ -1056,7 +1056,7 @@ TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
     std::vector<vkt::Image> images(m_surface_capabilities.minImageCount);
 
     int i = 0;
-    for (auto &image : images) {
+    for (auto& image : images) {
         image.InitNoMemory(*m_device, image_create_info);
         VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
         bind_swapchain_info.swapchain = m_swapchain;
@@ -1463,7 +1463,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
         }
         // Add new frame
         frames.emplace_back(Frame{vkt::Semaphore(*m_device), vkt::Semaphore(*m_device), vkt::Fence(*m_device), i});
-        const Frame &frame = frames.back();
+        const Frame& frame = frames.back();
 
         const uint32_t image_index = m_swapchain.AcquireNextImage(frame.image_acquired, kWaitTimeout);
 
@@ -2300,10 +2300,10 @@ TEST_F(PositiveWsi, ExampleHowToReusePresentSemaphores2) {
 
     int frame_index = 0;
     for (uint32_t i = 0; i < 10; i++) {
-        vkt::Fence &present_fence = present_fences[frame_index];
-        vkt::CommandBuffer &command_buffer = command_buffers[frame_index];
-        vkt::Semaphore &acquire_semaphore = acquire_semaphores[frame_index];
-        vkt::Semaphore &present_semaphore = present_semaphores[frame_index];
+        vkt::Fence& present_fence = present_fences[frame_index];
+        vkt::CommandBuffer& command_buffer = command_buffers[frame_index];
+        vkt::Semaphore& acquire_semaphore = acquire_semaphores[frame_index];
+        vkt::Semaphore& present_semaphore = present_semaphores[frame_index];
 
         present_fence.Wait(kWaitTimeout);
         present_fence.Reset();
@@ -2419,15 +2419,15 @@ TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
     // Increase frame count and observe that the test does not continuously allocate memory.
     const int frame_count = 100;
     for (int i = 0; i < frame_count; i++) {
-        const vkt::Fence &frame_fence = frame_fences[frame_index];
-        const vkt::Semaphore &acquire_semaphore = acquire_semaphores[frame_index];
-        vkt::CommandBuffer &command_buffer = command_buffers[frame_index];
+        const vkt::Fence& frame_fence = frame_fences[frame_index];
+        const vkt::Semaphore& acquire_semaphore = acquire_semaphores[frame_index];
+        vkt::CommandBuffer& command_buffer = command_buffers[frame_index];
 
         frame_fence.Wait(kWaitTimeout);
         frame_fence.Reset();
 
         const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
-        const vkt::Semaphore &present_wait_semaphore = present_wait_semaphores[image_index];
+        const vkt::Semaphore& present_wait_semaphore = present_wait_semaphores[image_index];
 
         command_buffer.Begin();
         command_buffer.End();
@@ -2947,7 +2947,7 @@ TEST_F(PositiveWsi, PresentTimings) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -3199,7 +3199,7 @@ TEST_F(PositiveWsi, PresentTimingsFull) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface, &present_mode_count, present_modes.data());
 
     bool found = false;
-    for (const auto &available_mode : present_modes) {
+    for (const auto& available_mode : present_modes) {
         if (available_mode == present_mode) {
             found = true;
             break;
@@ -3312,7 +3312,7 @@ TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse) {
 
     // Frame 0
     const uint32_t frame0_image_index = m_swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
-    const vkt::Semaphore &frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
+    const vkt::Semaphore& frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_a), vkt::Signal(frame0_submit_done_semaphore));
 
     present_id_value = 1;
@@ -3320,7 +3320,7 @@ TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse) {
 
     // Frame 1
     const uint32_t frame1_image_index = m_swapchain.AcquireNextImage(acquire_semaphore_b, kWaitTimeout);
-    const vkt::Semaphore &frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
+    const vkt::Semaphore& frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_b), vkt::Signal(frame1_submit_done_semaphore));
 
     present_id_value = 2;
@@ -3373,7 +3373,7 @@ TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse2) {
 
     // Frame 0
     const uint32_t frame0_image_index = swapchain.AcquireNextImage(acquire_semaphore_a, kWaitTimeout);
-    const vkt::Semaphore &frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
+    const vkt::Semaphore& frame0_submit_done_semaphore = submit_done_semaphores[frame0_image_index];
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_a), vkt::Signal(frame0_submit_done_semaphore));
 
     present_id_value = 1;
@@ -3381,7 +3381,7 @@ TEST_F(PositiveWsi, PresentIdWaitAndAcquireSemaphoreReuse2) {
 
     // Frame 1
     const uint32_t frame1_image_index = swapchain.AcquireNextImage(acquire_semaphore_b, kWaitTimeout);
-    const vkt::Semaphore &frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
+    const vkt::Semaphore& frame1_submit_done_semaphore = submit_done_semaphores[frame1_image_index];
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore_b), vkt::Signal(frame1_submit_done_semaphore));
 
     present_id_value = 2;

@@ -24,9 +24,9 @@ class NegativeDynamicState : public DynamicStateTest {
     // helper functions for tests in this file
   public:
     // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
-    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
+    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char* vuid);
     // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
-    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
+    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char* vuid);
     // VK_EXT_line_rasterization - Init with LineRasterization features off
     void InitLineRasterizationFeatureDisabled();
 };
@@ -391,7 +391,7 @@ TEST_F(NegativeDynamicState, SetScissorParam) {
                                         {{{0, vvl::kI32Max}, {16, 1}}, "VUID-vkCmdSetScissor-offset-00597"},
                                         {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
 
-    for (const auto &test_case : test_cases) {
+    for (const auto& test_case : test_cases) {
         m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
         vk::CmdSetScissor(m_command_buffer, 0, 1, &test_case.scissor);
         m_errorMonitor->VerifyFound();
@@ -449,7 +449,7 @@ TEST_F(NegativeDynamicState, SetScissorParamMultiviewportLimit) {
 }
 
 template <typename ExtType, typename Parm>
-void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf, ExtType ext_call, const char *vuid, Parm parm) {
+void ExtendedDynStateCalls(ErrorMonitor* error_monitor, VkCommandBuffer cmd_buf, ExtType ext_call, const char* vuid, Parm parm) {
     error_monitor->SetDesiredError(vuid);
     ext_call(cmd_buf, parm);
     error_monitor->VerifyFound();
@@ -704,7 +704,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    AddRequiredFeature(vkt::Feature::multiViewport); // needed to have 2 viewport count
+    AddRequiredFeature(vkt::Feature::multiViewport);  // needed to have 2 viewport count
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -777,7 +777,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     std::vector<VkBuffer> buffers(m_device->Physical().limits_.maxVertexInputBindings + 1ull, buffer);
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         void main(){}
@@ -1163,7 +1163,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
     }
 }
 
-void NegativeDynamicState::ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid) {
+void NegativeDynamicState::ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char* vuid) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2566,8 +2566,8 @@ TEST_F(NegativeDynamicState, RasterizationLineModeDefault) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
-    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR;      // ignored
-    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;                                        // ignored
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR;  // ignored
+    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;                                    // ignored
     pipe.line_state_ci_.lineStippleFactor = 1;
     pipe.CreateGraphicsPipeline();
 
@@ -2720,7 +2720,7 @@ TEST_F(NegativeDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -3501,7 +3501,7 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
         test_cases.push_back({{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, "VUID-VkViewport-height-01773"});
     }
 
-    for (const auto &test_case : test_cases) {
+    for (const auto& test_case : test_cases) {
         m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
         vk::CmdSetViewport(m_command_buffer, 0, 1, &test_case.vp);
         m_errorMonitor->VerifyFound();
@@ -3513,7 +3513,7 @@ TEST_F(NegativeDynamicState, SetViewportParamMaintenance1) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const auto &limits = m_device->Physical().limits_;
+    const auto& limits = m_device->Physical().limits_;
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkViewport-height-01773");
@@ -3841,7 +3841,7 @@ TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayNonDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const auto set_info = [](CreatePipelineHelper &helper) { helper.cb_ci_.pAttachments = nullptr; };
+    const auto set_info = [](CreatePipelineHelper& helper) { helper.cb_ci_.pAttachments = nullptr; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
 }
 
@@ -3855,7 +3855,7 @@ TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayDynamic) {
     InitRenderTarget();
 
     {
-        const auto set_info = [](CreatePipelineHelper &helper) { helper.cb_ci_.pAttachments = nullptr; };
+        const auto set_info = [](CreatePipelineHelper& helper) { helper.cb_ci_.pAttachments = nullptr; };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
                                           "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
     }
@@ -3899,7 +3899,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     m_command_buffer.End();
 }
 
-void NegativeDynamicState::ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid) {
+void NegativeDynamicState::ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char* vuid) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     RETURN_IF_SKIP(Init());
@@ -4113,9 +4113,9 @@ TEST_F(NegativeDynamicState, Viewport) {
     // test viewport and scissor arrays
     struct TestCase {
         uint32_t viewport_count;
-        VkViewport *viewports;
+        VkViewport* viewports;
         uint32_t scissor_count;
-        VkRect2D *scissors;
+        VkRect2D* scissors;
 
         std::vector<std::string> vuids;
     };
@@ -4185,8 +4185,8 @@ TEST_F(NegativeDynamicState, Viewport) {
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
-    for (const auto &test_case : dyn_test_cases) {
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
+    for (const auto& test_case : dyn_test_cases) {
+        const auto break_vp = [&](CreatePipelineHelper& helper) {
             VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
             dyn_state_ci.dynamicStateCount = size32(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
@@ -4218,9 +4218,9 @@ TEST_F(NegativeDynamicState, MultiViewport) {
 
     struct TestCase {
         uint32_t viewport_count;
-        VkViewport *viewports;
+        VkViewport* viewports;
         uint32_t scissor_count;
-        VkRect2D *scissors;
+        VkRect2D* scissors;
 
         std::vector<std::string> vuids;
     };
@@ -4290,8 +4290,8 @@ TEST_F(NegativeDynamicState, MultiViewport) {
               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
     }
 
-    for (const auto &test_case : test_cases) {
-        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
+    for (const auto& test_case : test_cases) {
+        const auto break_vp = [&test_case](CreatePipelineHelper& helper) {
             helper.vp_state_ci_.viewportCount = test_case.viewport_count;
             helper.vp_state_ci_.pViewports = test_case.viewports;
             helper.vp_state_ci_.scissorCount = test_case.scissor_count;
@@ -4352,8 +4352,8 @@ TEST_F(NegativeDynamicState, MultiViewport) {
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
-    for (const auto &test_case : dyn_test_cases) {
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
+    for (const auto& test_case : dyn_test_cases) {
+        const auto break_vp = [&](CreatePipelineHelper& helper) {
             VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
             dyn_state_ci.dynamicStateCount = size32(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
@@ -4488,7 +4488,7 @@ TEST_F(NegativeDynamicState, LineWidth) {
 
     // test VkPipelineRasterizationStateCreateInfo::lineWidth
     for (const auto test_case : test_cases) {
-        const auto set_lineWidth = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_.lineWidth = test_case; };
+        const auto set_lineWidth = [&](CreatePipelineHelper& helper) { helper.rs_state_ci_.lineWidth = test_case; };
         CreatePipelineHelper::OneshotTest(*this, set_lineWidth, kErrorBit,
                                           "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749");
     }
@@ -4687,7 +4687,7 @@ TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec3 x;
         void main(){
@@ -4922,7 +4922,7 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;
@@ -5386,7 +5386,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
     RETURN_IF_SKIP(Init());
 
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    const VkPhysicalDeviceLimits& dev_limits = m_device->Physical().limits_;
     if ((dev_limits.sampledImageColorSampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
     }

@@ -2858,7 +2858,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
 
     m_command_buffer.Begin();
     VkClearValue clear = {};
-    std::array<VkClearValue, 2> clear_values = { {clear, clear} };
+    std::array<VkClearValue, 2> clear_values = {{clear, clear}};
     m_renderPassBeginInfo.pClearValues = clear_values.data();
     m_renderPassBeginInfo.clearValueCount = clear_values.size();
     m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
@@ -4136,7 +4136,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     constexpr size_t kNumDescriptors = 6;
 
     std::array<VkDescriptorBindingFlags, kNumDescriptors> ds_binding_flags;
-    for (auto &elem : ds_binding_flags) {
+    for (auto& elem : ds_binding_flags) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
     }
 

@@ -23,24 +23,24 @@
 #include "generated/dispatch_functions.h"
 #include "state_tracker/state_tracker.h"
 
-static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo *create_info) {
-    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo* create_info) {
+    const auto* external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-static VkMemoryRequirements GetMemoryRequirements(vvl::DeviceState &dev_data, VkBuffer buffer) {
+static VkMemoryRequirements GetMemoryRequirements(vvl::DeviceState& dev_data, VkBuffer buffer) {
     VkMemoryRequirements result{};
     DispatchGetBufferMemoryRequirements(dev_data.device, buffer, &result);
     return result;
 }
 
-static VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo &create_info) {
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
+static VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo& create_info) {
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
+static bool GetMetalExport(const VkBufferViewCreateInfo* info) {
     bool retval = false;
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
@@ -63,7 +63,7 @@ namespace vvl {
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
-Buffer::Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
+Buffer::Buffer(DeviceState& dev_data, VkBuffer handle, const VkBufferCreateInfo* pCreateInfo)
     : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -84,15 +84,15 @@ Buffer::Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo 
 
 void Buffer::Destroy() {
     if (!Destroyed()) {
-        for (auto &item : sub_states_) {
+        for (auto& item : sub_states_) {
             item.second->Destroy();
         }
         Bindable::Destroy();
     }
 }
 
-void Buffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
+void Buffer::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    for (auto& item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     Bindable::NotifyInvalidate(invalid_nodes, unlink);
@@ -102,7 +102,7 @@ void Buffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool u
 #pragma GCC diagnostic pop
 #endif
 
-bool Buffer::CompareCreateInfo(const Buffer &other) const {
+bool Buffer::CompareCreateInfo(const Buffer& other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
@@ -133,7 +133,7 @@ std::string Buffer::Describe(const Logger& dev_data) const {
     return ss.str();
 }
 
-BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
+BufferView::BufferView(const std::shared_ptr<vvl::Buffer>& bf, VkBufferView handle, const VkBufferViewCreateInfo* pCreateInfo,
                        VkFormatFeatureFlags2 format_features)
     : StateObject(handle, kVulkanObjectTypeBufferView),
       safe_create_info(pCreateInfo),
@@ -146,7 +146,7 @@ BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView hand
 }
 
 void BufferView::Destroy() {
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->Destroy();
     }
     if (buffer_state) {
@@ -156,8 +156,8 @@ void BufferView::Destroy() {
     StateObject::Destroy();
 }
 
-void BufferView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
+void BufferView::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    for (auto& item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
@@ -182,7 +182,7 @@ void BufferAddressRange::NotifyInvalidate(const StateObject::NodeList& invalid_n
             continue;
         }
 
-        for (const auto &node : invalid_nodes) {
+        for (const auto& node : invalid_nodes) {
             if (node.get() == buffer_state) {
                 buffer_state->RemoveParent(this);
                 internal_range.invalidated_handles.emplace_back(buffer_state->VkHandle());

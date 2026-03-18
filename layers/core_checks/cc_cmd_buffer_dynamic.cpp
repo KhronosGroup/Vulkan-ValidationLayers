@@ -1542,7 +1542,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     for (uint32_t i = 0; i < viewportCount; ++i) {
-        auto *palette = &pShadingRatePalettes[i];
+        auto* palette = &pShadingRatePalettes[i];
         if (palette->shadingRatePaletteEntryCount == 0 ||
             palette->shadingRatePaletteEntryCount > phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
             skip |=
@@ -1640,7 +1640,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
                          "is %f (not 0.0f), but the depthBiasClamp feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
     }
 
-    if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
+    if (const auto* depth_bias_representation =
+            vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
         skip |= ValidateDepthBiasRepresentationInfo(error_obj.location, error_obj.objlist, *depth_bias_representation);
     }
 
@@ -2210,7 +2211,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
 
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         const Location equation_loc = error_obj.location.dot(Field::pColorBlendEquations, attachment);
-        VkColorBlendEquationEXT const &equation = pColorBlendEquations[attachment];
+        VkColorBlendEquationEXT const& equation = pColorBlendEquations[attachment];
         if (!enabled_features.dualSrcBlend) {
             if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
                 skip |= LogError(
@@ -2382,7 +2383,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
-        VkColorBlendAdvancedEXT const &advanced = pColorBlendAdvanced[attachment];
+        VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
         if (advanced.srcPremultiplied == VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
             skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,

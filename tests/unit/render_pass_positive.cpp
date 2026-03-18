@@ -984,7 +984,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     vkt::Framebuffer framebuffer_separate(*m_device, render_pass_separate, 1, &view.handle(), 1, 1);
     vkt::Framebuffer framebuffer_combined(*m_device, render_pass_combined, 1, &view.handle(), 1, 1);
 
-    for (auto &barrier : barriers) {
+    for (auto& barrier : barriers) {
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &barrier);
     }

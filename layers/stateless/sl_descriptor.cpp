@@ -31,7 +31,7 @@
 #include "utils/vk_api_utils.h"
 
 namespace stateless {
-bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const {
+bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV& order, const Location& order_loc) const {
     bool skip = false;
 
     struct SampleOrderInfo {
@@ -50,7 +50,7 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
         SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
     };
 
-    const SampleOrderInfo *sample_order_info;
+    const SampleOrderInfo* sample_order_info;
     uint32_t info_idx = 0;
     for (sample_order_info = nullptr; info_idx < sample_order_infos.size(); ++info_idx) {
         if (sample_order_infos[info_idx].shadingRate == order.shadingRate) {
@@ -98,7 +98,7 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
     assert(phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples <= 64);
     std::bitset<64> sample_locations_mask = 0;
     for (uint32_t i = 0; i < order.sampleLocationCount; ++i) {
-        const VkCoarseSampleLocationNV *sample_loc = &order.pSampleLocations[i];
+        const VkCoarseSampleLocationNV* sample_loc = &order.pSampleLocations[i];
         if (sample_loc->pixelX >= sample_order_info->width) {
             skip |= LogError("VUID-VkCoarseSampleLocationNV-pixelX-02078", device, order_loc,
                              "pixelX (%" PRIu32 ") must be less than the width (in pixels) of the fragment (%" PRIu32 ").",
@@ -136,9 +136,9 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
 }
 
 // VK_EXT_sampler_filter_minmax
-bool Device::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
-    const auto *sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(create_info.pNext);
+    const auto* sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(create_info.pNext);
     if (!sampler_reduction) return skip;
 
     if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
@@ -190,7 +190,7 @@ bool Device::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info,
 }
 
 // VK_EXT_custom_border_color
-bool Device::ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 
     if (create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT || create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
@@ -242,7 +242,7 @@ bool Device::ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo &create_
 }
 
 // VK_EXT_fragment_density_map
-bool Device::ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateSamplerSubsampled(const VkSamplerCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     if ((create_info.flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT) == 0) return skip;
 
@@ -295,7 +295,7 @@ bool Device::ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, c
 }
 
 // VK_QCOM_image_processing
-bool Device::ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
     if ((create_info.flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) == 0) return skip;
 
@@ -354,8 +354,8 @@ bool Device::ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &creat
     return skip;
 }
 
-bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, const Location &create_info_loc,
-                                       const Context &context) const {
+bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo& create_info, const Location& create_info_loc,
+                                       const Context& context) const {
     bool skip = false;
 
     if (create_info.anisotropyEnable == VK_TRUE) {
@@ -524,19 +524,19 @@ bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, c
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
-                                                 const Context &context) const {
+bool Device::manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
+                                                 const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     skip |= ValidateSamplerCreateInfo(*pCreateInfo, create_info_loc, context);
     return skip;
 }
 
-bool Device::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                                     const VkMutableDescriptorTypeCreateInfoEXT &mutable_create_info,
-                                                     const Location &create_info_loc) const {
+bool Device::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo& create_info,
+                                                     const VkMutableDescriptorTypeCreateInfoEXT& mutable_create_info,
+                                                     const Location& create_info_loc) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
@@ -608,15 +608,15 @@ bool Device::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayout
     return skip;
 }
 
-bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                                   const Location &create_info_loc) const {
+bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo& create_info,
+                                                   const Location& create_info_loc) const {
     bool skip = false;
 
     const bool has_descriptor_buffer_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
     const bool has_push_descriptor_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0;
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (create_info.pBindings != nullptr) {
-        const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
+        const auto* mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
         for (const auto [i, binding] : vvl::enumerate(create_info.pBindings, create_info.bindingCount)) {
             if (binding.descriptorCount == 0) {
                 continue;
@@ -774,28 +774,28 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceDescriptorSizeEXT(VkPhysic
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             VkDescriptorSetLayout *pSetLayout, const Context &context) const {
+bool Device::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             VkDescriptorSetLayout* pSetLayout, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
 bool Device::manual_PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device,
-                                                                 const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                                 VkDescriptorSetLayoutSupport *pSupport,
-                                                                 const Context &context) const {
+                                                                 const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                                 VkDescriptorSetLayoutSupport* pSupport,
+                                                                 const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
 bool Device::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                      const VkDescriptorSet *pDescriptorSets, const Context &context) const {
-    const auto &error_obj = context.error_obj;
+                                                      const VkDescriptorSet* pDescriptorSets, const Context& context) const {
+    const auto& error_obj = context.error_obj;
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
@@ -804,8 +804,8 @@ bool Device::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescrip
                                  "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
 }
 
-bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &loc, const uint32_t descriptorWriteCount,
-                                        const VkWriteDescriptorSet *pDescriptorWrites) const {
+bool Device::ValidateWriteDescriptorSet(const Context& context, const Location& loc, const uint32_t descriptorWriteCount,
+                                        const VkWriteDescriptorSet* pDescriptorWrites) const {
     bool skip = false;
     if (!pDescriptorWrites) {
         return skip;
@@ -815,7 +815,7 @@ bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &
 
     for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
         const Location writes_loc = loc.dot(Field::pDescriptorWrites, i);
-        const auto &descriptor_writes = pDescriptorWrites[i];
+        const auto& descriptor_writes = pDescriptorWrites[i];
 
         // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
         if (!is_push_descriptor) {
@@ -835,7 +835,7 @@ bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &
                 }
             }
         }
-        const auto *tensor_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(descriptor_writes.pNext);
+        const auto* tensor_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(descriptor_writes.pNext);
         if (tensor_struct) {
             for (uint32_t j = 0; j < tensor_struct->tensorViewCount; ++j) {
                 if (!enabled_features.nullDescriptor && tensor_struct->pTensorViews[j] == VK_NULL_HANDLE) {
@@ -850,14 +850,14 @@ bool Device::ValidateWriteDescriptorSet(const Context &context, const Location &
 }
 
 bool Device::manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                        const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                        const VkCopyDescriptorSet *pDescriptorCopies,
-                                                        const Context &context) const {
-    const auto &error_obj = context.error_obj;
+                                                        const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                                        const VkCopyDescriptorSet* pDescriptorCopies,
+                                                        const Context& context) const {
+    const auto& error_obj = context.error_obj;
     return ValidateWriteDescriptorSet(context, error_obj.location, descriptorWriteCount, pDescriptorWrites);
 }
 
-static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
+static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo* pCreateInfo, uint32_t i, uint32_t j) {
     bool partial_overlap = false;
 
     constexpr std::array all_descriptor_types = {
@@ -877,13 +877,13 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
     };
 
-    const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
+    const auto* mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     if (mutable_descriptor_type) {
         vvl::span<const VkDescriptorType> first_types, second_types;
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
             const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
-            auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
+            auto* descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
             first_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
             first_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
@@ -891,7 +891,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
             const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
-            auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
+            auto* descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
             second_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
             second_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
@@ -922,11 +922,11 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
     return partial_overlap;
 }
 
-bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
-                                                        const Context &context) const {
+bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                                        const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     if (pCreateInfo->maxSets == 0 && ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_ALLOW_OVERALLOCATION_SETS_BIT_NV) == 0)) {
@@ -934,7 +934,7 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
                          create_info_loc.dot(Field::maxSets), "is zero.");
     }
 
-    const auto *inline_uniform_info = vku::FindStructInPNextChain<VkDescriptorPoolInlineUniformBlockCreateInfo>(pCreateInfo->pNext);
+    const auto* inline_uniform_info = vku::FindStructInPNextChain<VkDescriptorPoolInlineUniformBlockCreateInfo>(pCreateInfo->pNext);
     const bool non_zero_inline_uniform_count = inline_uniform_info && inline_uniform_info->maxInlineUniformBlockBindings != 0;
 
     if (pCreateInfo->pPoolSizes) {
@@ -992,11 +992,11 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
-                                                   const Context &context) const {
+bool Device::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
+                                                   const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     switch (pCreateInfo->queryType) {
@@ -1058,12 +1058,12 @@ bool Device::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQuer
 }
 
 bool Device::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
-                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator,
-                                                                VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                const Context &context) const {
+                                                                const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                                const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     // Check samplerYcbcrConversion feature is set
     if (!enabled_features.samplerYcbcrConversion) {
@@ -1127,7 +1127,7 @@ bool Device::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
 
     if (pCreateInfo->ycbcrModel != VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY) {
         // This VU covers a lot, could have been multiple VUs, so provide a good error message for all cases.
-        const char *vuid = "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655";
+        const char* vuid = "VUID-VkSamplerYcbcrConversionCreateInfo-ycbcrModel-01655";
         if (components.r == VK_COMPONENT_SWIZZLE_ZERO || components.g == VK_COMPONENT_SWIZZLE_ZERO ||
             components.b == VK_COMPONENT_SWIZZLE_ZERO) {
             skip |= LogError(vuid, device, create_info_loc,
@@ -1202,10 +1202,10 @@ bool Device::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize,
-                                                    void *pDescriptor, const Context &context) const {
+bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
+                                                    void* pDescriptor, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (!enabled_features.descriptorBuffer) {
         skip |=
             LogError("VUID-vkGetDescriptorEXT-None-08015", device, error_obj.location, "descriptorBuffer feature was not enabled.");
@@ -1213,7 +1213,7 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
 
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
     const Location data_loc = descriptor_info_loc.dot(Field::data);
-    const VkDescriptorAddressInfoEXT *address_info = nullptr;
+    const VkDescriptorAddressInfoEXT* address_info = nullptr;
     Field data_field = Field::Empty;
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
@@ -1293,7 +1293,7 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
         }
     }
 
-    const auto *tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);
+    const auto* tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);
     if (tensor_struct) {
         if (!enabled_features.nullDescriptor && tensor_struct->tensorView == VK_NULL_HANDLE) {
             skip |= LogError("VUID-VkDescriptorGetTensorInfoARM-nullDescriptor-09899", device,
@@ -1305,13 +1305,13 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
 }
 
 bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t setCount,
-                                                   const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
-                                                   const Location &loc) const {
+                                                   const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                   const Location& loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
 
     if (!enabled_features.descriptorBuffer) {
-        const char *vuid = is_2 ? "VUID-vkCmdSetDescriptorBufferOffsets2EXT-descriptorBuffer-09470"
+        const char* vuid = is_2 ? "VUID-vkCmdSetDescriptorBufferOffsets2EXT-descriptorBuffer-09470"
                                 : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-None-08060";
         skip |= LogError(vuid, commandBuffer, loc, "descriptorBuffer feature was not enabled.");
     }
@@ -1319,7 +1319,7 @@ bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer
     for (uint32_t i = 0; i < setCount; i++) {
         const uint32_t buffer_index = pBufferIndices[i];
         if (buffer_index >= phys_dev_ext_props.descriptor_buffer_props.maxDescriptorBufferBindings) {
-            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08064"
+            const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08064"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08064";
             const LogObjectList objlist(commandBuffer, layout);
             skip |= LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
@@ -1329,7 +1329,7 @@ bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer
 
         const VkDeviceAddress offset = pOffsets[i];
         if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment)) {
-            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08061"
+            const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08061"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061";
             const LogObjectList objlist(commandBuffer, layout);
             skip |= LogError(vuid, objlist, loc.dot(Field::pOffsets, i),
@@ -1346,17 +1346,17 @@ bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer
 bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
                                                                     VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
                                                                     uint32_t firstSet, uint32_t setCount,
-                                                                    const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
-                                                                    const Context &context) const {
+                                                                    const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                                    const Context& context) const {
     return ValidateCmdSetDescriptorBufferOffsets(commandBuffer, layout, setCount, pBufferIndices, pOffsets,
                                                  context.error_obj.location);
 }
 
 bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
-    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
-    const Context &context) const {
+    VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
+    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     skip |= ValidateCmdSetDescriptorBufferOffsets(
         commandBuffer, pSetDescriptorBufferOffsetsInfo->layout, pSetDescriptorBufferOffsetsInfo->setCount,
         pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
@@ -1377,10 +1377,10 @@ bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
 }
 
 bool Device::manual_PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
-    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
-    const Context &context) const {
+    VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
+    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pBindDescriptorBufferEmbeddedSamplersInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
@@ -1398,10 +1398,10 @@ bool Device::manual_PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 }
 
 bool Device::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo *pPushDescriptorSetWithTemplateInfo,
-    const Context &context) const {
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
+    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
@@ -1418,10 +1418,10 @@ bool Device::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
 }
 
 bool Device::manual_PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
-                                                          const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                          const Context &context) const {
+                                                          const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                                          const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
             skip |= LogError("VUID-VkBindDescriptorSetsInfo-None-09495", commandBuffer,

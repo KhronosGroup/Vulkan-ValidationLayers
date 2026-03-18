@@ -22,7 +22,7 @@
 
 namespace gpuav {
 
-void RegisterSharedMemoryDataRaceValidation(Validator &gpuav, CommandBufferSubState &cb) {
+void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.shared_memory_data_race) {
         return;
     }

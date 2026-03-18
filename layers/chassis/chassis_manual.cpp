@@ -767,8 +767,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDe
         for (const auto& vo : device_dispatch->object_dispatch) {
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                   pCreateInfos, pAllocator, pPipelines, error_obj,
-                                                                   pipeline_states, chassis_state);
+                                                                   pCreateInfos, pAllocator, pPipelines, error_obj, pipeline_states,
+                                                                   chassis_state);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
     }
@@ -779,8 +779,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDe
         for (auto& vo : device_dispatch->object_dispatch) {
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                         pAllocator, pPipelines, record_obj, pipeline_states,
-                                                         chassis_state);
+                                                         pAllocator, pPipelines, record_obj, pipeline_states, chassis_state);
         }
     }
 
@@ -797,8 +796,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDe
         for (auto& vo : device_dispatch->object_dispatch) {
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                          pAllocator, pPipelines, record_obj, pipeline_states,
-                                                          chassis_state);
+                                                          pAllocator, pPipelines, record_obj, pipeline_states, chassis_state);
         }
     }
     return result;

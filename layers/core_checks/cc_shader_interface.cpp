@@ -41,14 +41,14 @@
 #include "utils/vk_api_utils.h"
 #include "utils/image_utils.h"
 
-bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
-                                              const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
+bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
+                                              const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const {
     bool skip = false;
     const Location vi_loc = create_info_loc.dot(Field::pVertexInputState);
 
     struct AttribInputPair {
-        const VkFormat *attribute_input = nullptr;
-        const spirv::Instruction *shader_input = nullptr;
+        const VkFormat* attribute_input = nullptr;
+        const spirv::Instruction* shader_input = nullptr;
         const spirv::StageInterfaceVariable* variable_ptr = nullptr;
         uint32_t attribute_index = 0;
     };
@@ -57,7 +57,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     // or have 2 variables in a location
     std::map<uint32_t, AttribInputPair> location_map;
 
-    vku::safe_VkPipelineVertexInputStateCreateInfo const *input_state = pipeline.InputState();
+    vku::safe_VkPipelineVertexInputStateCreateInfo const* input_state = pipeline.InputState();
     if (!input_state) {
         // if using vertex and mesh, will hit an error, but still might get here
         return skip;
@@ -76,8 +76,8 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
         }
     }
 
-    for (const auto *variable_ptr : entrypoint.user_defined_interface_variables) {
-        const auto &variable = *variable_ptr;
+    for (const auto* variable_ptr : entrypoint.user_defined_interface_variables) {
+        const auto& variable = *variable_ptr;
         if ((variable.storage_class != spv::StorageClassInput)) {
             continue;  // not an input interface
         }
@@ -85,7 +85,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
         // All members of struct must all have Locations or none of them will.
         // If the interface variable doesn't have the Locations, find them inside the struct members
         if (!variable.type_struct_info) {
-            for (const auto &slot : variable.interface_slots) {
+            for (const auto& slot : variable.interface_slots) {
                 const uint32_t location = slot.Location();
                 location_map[location].shader_input = &variable.base_type;
                 location_map[location].variable_ptr = variable_ptr;
@@ -94,7 +94,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             // Variable is decorated with Location
             uint32_t location = variable.decorations.location;
             for (uint32_t i = 0; i < variable.type_struct_info->members.size(); i++) {
-                const auto &member = variable.type_struct_info->members[i];
+                const auto& member = variable.type_struct_info->members[i];
                 // can be 64-bit formats in the struct
                 const spirv::Instruction* member_type = module_state.FindDef(member.id);
                 const uint32_t num_locations = module_state.GetLocationsConsumedByType(member_type);
@@ -106,7 +106,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             }
         } else {
             // Can't be nested so only need to look at first level of members
-            for (const auto &member : variable.type_struct_info->members) {
+            for (const auto& member : variable.type_struct_info->members) {
                 const uint32_t location = member.decorations->location;
                 location_map[location].shader_input = member.insn;
                 location_map[location].variable_ptr = variable_ptr;
@@ -114,7 +114,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
         }
     }
 
-    for (const auto &[location, attribute_info] : location_map) {
+    for (const auto& [location, attribute_info] : location_map) {
         const auto attribute_input = attribute_info.attribute_input;
         const auto shader_input = attribute_info.shader_input;
 
@@ -185,10 +185,10 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
-                                                 const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
+bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
+                                                 const spirv::EntryPoint& entrypoint, const Location& create_info_loc) const {
     bool skip = false;
-    const auto *ms_state = pipeline.MultisampleState();
+    const auto* ms_state = pipeline.MultisampleState();
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
         if (!entrypoint.has_alpha_to_coverage_variable) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", module_state.handle(),
@@ -201,8 +201,8 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltInLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                       const vvl::Pipeline *pipeline, const Location &loc) const {
+bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                       const vvl::Pipeline* pipeline, const Location& loc) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
@@ -210,12 +210,12 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module &module_state, const 
         return skip;
     }
 
-    for (const auto *variable : entrypoint.built_in_variables) {
+    for (const auto* variable : entrypoint.built_in_variables) {
         // Currently don't need to search in structs
         // Handles both the input and output sampleMask
         if (variable->decorations.built_in == spv::BuiltInSampleMask &&
             variable->array_size > phys_dev_props.limits.maxSampleMaskWords) {
-            const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
+            const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
                                         : "VUID-VkShaderCreateInfoEXT-pCode-08451";
             const bool glsl_name = module_state.static_data_.source_language != spv::SourceLanguageHLSL &&
                                    module_state.static_data_.source_language != spv::SourceLanguageSlang;
@@ -232,8 +232,8 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module &module_state, const 
     return skip;
 }
 
-bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                           const vvl::Pipeline &pipeline, const Location &loc) const {
+bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                           const vvl::Pipeline& pipeline, const Location& loc) const {
     bool skip = false;
 
     if (!pipeline.pre_raster_state || !pipeline.InputAssemblyState() || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT ||
@@ -299,18 +299,18 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
     // build up a mapping of which slots are used and then go through it and look for gaps
     struct ComponentInfo {
-        const spirv::StageInterfaceVariable *output = nullptr;
+        const spirv::StageInterfaceVariable* output = nullptr;
         uint32_t output_type = 0;
         uint32_t output_width = 0;
-        const spirv::StageInterfaceVariable *input = nullptr;
+        const spirv::StageInterfaceVariable* input = nullptr;
         uint32_t input_type = 0;
         uint32_t input_width = 0;
     };
     // <Location, Components[4]> (only 4 components in a Location)
     vvl::unordered_map<uint32_t, std::array<ComponentInfo, 4>> slot_map;
 
-    for (const auto &[interface_slot, stage_variable] : producer_entrypoint.output_interface_slots) {
-        auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
+    for (const auto& [interface_slot, stage_variable] : producer_entrypoint.output_interface_slots) {
+        auto& slot = slot_map[interface_slot.Location()][interface_slot.Component()];
         if (stage_variable->nested_struct) {
             return skip;  // TODO workaround
         }
@@ -319,8 +319,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
         slot.output_width = interface_slot.bit_width;
     }
 
-    for (const auto &[interface_slot, stage_variable] : consumer_entrypoint.input_interface_slots) {
-        auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
+    for (const auto& [interface_slot, stage_variable] : consumer_entrypoint.input_interface_slots) {
+        auto& slot = slot_map[interface_slot.Location()][interface_slot.Component()];
         if (stage_variable->nested_struct) {
             return skip;  // TODO workaround
         }
@@ -329,14 +329,14 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
         slot.input_width = interface_slot.bit_width;
     }
 
-    for (const auto &[location, components] : slot_map) {
+    for (const auto& [location, components] : slot_map) {
         // Found that sometimes there is a big mismatch and printing out EVERY slot adds a lot of noise
         if (skip) break;
 
         for (uint32_t component = 0; component < 4; component++) {
-            const auto &component_info = components[component];
-            const auto *input_var = component_info.input;
-            const auto *output_var = component_info.output;
+            const auto& component_info = components[component];
+            const auto* input_var = component_info.input;
+            const auto* output_var = component_info.output;
 
             if ((input_var == nullptr) && (output_var == nullptr)) {
                 continue;  // both empty
@@ -458,13 +458,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
     std::vector<spv::BuiltIn> input_built_in_block;
     std::vector<spv::BuiltIn> output_built_in_block;
-    for (const auto *variable : producer_entrypoint.built_in_variables) {
+    for (const auto* variable : producer_entrypoint.built_in_variables) {
         if (variable->storage_class == spv::StorageClassOutput && !variable->built_in_block.empty()) {
             output_built_in_block = variable->built_in_block;
             break;
         }
     }
-    for (const auto *variable : consumer_entrypoint.built_in_variables) {
+    for (const auto* variable : consumer_entrypoint.built_in_variables) {
         if (variable->storage_class == spv::StorageClassInput && !variable->built_in_block.empty()) {
             input_built_in_block = variable->built_in_block;
             break;
@@ -510,9 +510,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
 // Note - This is missing a variation check for ShaderObjects, but there is one for Dynamic Rendering and likely people using
 // ShaderObject are not using Render Passes
-bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                    const vvl::Pipeline &pipeline, uint32_t subpass_index,
-                                                    const Location &create_info_loc) const {
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                    const vvl::Pipeline& pipeline, uint32_t subpass_index,
+                                                    const Location& create_info_loc) const {
     bool skip = false;
     // To match with the dynamic rendering case
     if (global_settings.only_report_errors) {
@@ -520,20 +520,20 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
     }
 
     struct Attachment {
-        const VkAttachmentReference2 *reference = nullptr;
-        const VkAttachmentDescription2 *attachment = nullptr;
-        const spirv::StageInterfaceVariable *output = nullptr;
+        const VkAttachmentReference2* reference = nullptr;
+        const VkAttachmentDescription2* attachment = nullptr;
+        const spirv::StageInterfaceVariable* output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
-    const auto &rp_state = pipeline.RenderPassState();
+    const auto& rp_state = pipeline.RenderPassState();
     ASSERT_AND_RETURN_SKIP(rp_state);
     const auto rpci = rp_state->create_info.ptr();
     if (subpass_index >= rpci->subpassCount) return skip;
 
     const auto subpass = rpci->pSubpasses[subpass_index];
     for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-        auto const &reference = subpass.pColorAttachments[i];
+        auto const& reference = subpass.pColorAttachments[i];
         location_map[i].reference = &reference;
         if (reference.attachment != VK_ATTACHMENT_UNUSED &&
             rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
@@ -542,7 +542,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
     }
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+    for (const auto* variable : entrypoint.user_defined_interface_variables) {
         if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
             continue;  // not an output interface
         }
@@ -557,17 +557,17 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         location_map[variable->interface_slots[0].Location()].output = variable;
     }
 
-    const auto *ms_state = pipeline.MultisampleState();
+    const auto* ms_state = pipeline.MultisampleState();
     const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
 
-    for (const auto &[location, attachment_info] : location_map) {
+    for (const auto& [location, attachment_info] : location_map) {
         const auto reference = attachment_info.reference;
         if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
             continue;
         }
 
-        const VkAttachmentDescription2 *attachment = attachment_info.attachment;
-        const spirv::StageInterfaceVariable *output = attachment_info.output;
+        const VkAttachmentDescription2* attachment = attachment_info.attachment;
+        const spirv::StageInterfaceVariable* output = attachment_info.output;
         if (attachment && !output) {
             // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
             // If there is no output variable declared, the attachment is unaffected
@@ -625,8 +625,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
 }
 
 // This is validated at draw time unlike the VkRenderPass version
-bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bound_state, const vvl::CommandBuffer &cb_state,
-                                                       const Location &loc) const {
+bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
+                                                       const Location& loc) const {
     bool skip = false;
     // Some apps do 100k draws a frame and found this function is a bottleneck if an app is violating these warnings
     if (global_settings.only_report_errors) {
@@ -635,19 +635,19 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
     if (last_bound_state.IsRasterizationDisabled()) {
         return skip;
     }
-    const spirv::EntryPoint *entrypoint = last_bound_state.GetFragmentEntryPoint();
+    const spirv::EntryPoint* entrypoint = last_bound_state.GetFragmentEntryPoint();
     if (!entrypoint) {
         return skip;
     }
-    const vvl::RenderPass &rp_state = *cb_state.active_render_pass;
+    const vvl::RenderPass& rp_state = *cb_state.active_render_pass;
     if (rp_state.use_dynamic_rendering_inherited) {
         return skip;
     }
-    vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
+    vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
 
     struct Attachment {
-        const VkRenderingAttachmentInfo *rendering_attachment_info = nullptr;
-        const spirv::StageInterfaceVariable *output = nullptr;
+        const VkRenderingAttachmentInfo* rendering_attachment_info = nullptr;
+        const spirv::StageInterfaceVariable* output = nullptr;
         std::optional<uint32_t> mapped_location = std::nullopt;
     };
     std::map<uint32_t, Attachment> location_map;
@@ -656,13 +656,14 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
     for (size_t i = 0; i < color_attachment_count; ++i) {
         uint32_t color_location = cb_state.rendering_attachments.color_locations[i];
         if (color_location != VK_ATTACHMENT_UNUSED) {
-            location_map[color_location].rendering_attachment_info = rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].ptr();
+            location_map[color_location].rendering_attachment_info =
+                rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].ptr();
             location_map[color_location].mapped_location = static_cast<uint32_t>(i);
         }
     }
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    for (const auto *variable : entrypoint->user_defined_interface_variables) {
+    for (const auto* variable : entrypoint->user_defined_interface_variables) {
         if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
             continue;  // not an output interface
         }
@@ -677,10 +678,10 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
         location_map[variable->interface_slots[0].Location()].output = variable;
     }
 
-    for (const auto &[location, attachment_info] : location_map) {
+    for (const auto& [location, attachment_info] : location_map) {
         const bool has_attachment =
             attachment_info.rendering_attachment_info && attachment_info.rendering_attachment_info->imageView != VK_NULL_HANDLE;
-        const spirv::StageInterfaceVariable *output = attachment_info.output;
+        const spirv::StageInterfaceVariable* output = attachment_info.output;
         uint32_t mapped_loc = attachment_info.mapped_location.value_or(location);
 
         if (has_attachment && !output) {
@@ -705,7 +706,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                     }
                 } else {
                     ss << "none of the attachments were mapped to that location (mapping was [";
-                    for (const uint32_t &mapping : cb_state.rendering_attachments.color_locations) {
+                    for (const uint32_t& mapping : cb_state.rendering_attachments.color_locations) {
                         if (&mapping != &cb_state.rendering_attachments.color_locations[0]) {
                             ss << ", ";
                         }
@@ -723,12 +724,12 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
             const auto image_view_state = Get<vvl::ImageView>(attachment_info.rendering_attachment_info->imageView);
 
             // TODO - This create helper to do this via LastBound (and find other places doing similar thing)
-            const spirv::Module *module_state = nullptr;
+            const spirv::Module* module_state = nullptr;
             if (pipeline && pipeline->fragment_shader_state && pipeline->fragment_shader_state->fragment_shader &&
                 pipeline->fragment_shader_state->fragment_shader->spirv) {
                 module_state = pipeline->fragment_shader_state->fragment_shader->spirv.get();
             } else if (!pipeline) {
-                const vvl::ShaderObject *shader_object = last_bound_state.GetShaderObjectStateIfValid(ShaderObjectStage::FRAGMENT);
+                const vvl::ShaderObject* shader_object = last_bound_state.GetShaderObjectStateIfValid(ShaderObjectStage::FRAGMENT);
                 if (shader_object && shader_object->stage.spirv_state) {
                     module_state = shader_object->stage.spirv_state.get();
                 }
@@ -760,7 +761,8 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                                "attachments "
                                "have different colorWriteMask)";
                     }
-                    msg << ".\nIf you have the output variable, but are not using it on purpose, removing it from being declared in the shader will "
+                    msg << ".\nIf you have the output variable, but are not using it on purpose, removing it from being declared "
+                           "in the shader will "
                            "remove the undefined value warning";
                     const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                     skip |= LogUndefinedValue("Undefined-Value-OutputNotWritten-DynamicRendering", objlist, loc, "%s",
@@ -808,7 +810,7 @@ bool CoreChecks::ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bo
     }
 
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-        const auto &attachment_info = cb_state.active_attachments[i];
+        const auto& attachment_info = cb_state.active_attachments[i];
         const auto image_view_state = attachment_info.image_view;
         // Resolve is banned with a separate VU and checked elsewhere
         if (image_view_state && !attachment_info.IsResolve()) {
@@ -863,7 +865,7 @@ bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
     bool skip = false;
 
     if (!(pipeline.pre_raster_state || pipeline.fragment_shader_state)) {
@@ -877,7 +879,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
     const ShaderStageState* fragment_stage = nullptr;
 
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
-        auto &stage_state = pipeline.stage_states[i];
+        auto& stage_state = pipeline.stage_states[i];
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
@@ -962,7 +964,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
 
     // Don't check any color attachments if rasterization is disabled
     if (fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state && !pipeline.RasterizationDisabled()) {
-        const auto &rp_state = pipeline.RenderPassState();
+        const auto& rp_state = pipeline.RenderPassState();
         // Dynamic Rendering is done at draw time incase the user has VK_EXT_dynamic_rendering_unused_attachments we can't do all
         // the checks at this time
         if (rp_state && !rp_state->UsesDynamicRendering()) {

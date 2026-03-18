@@ -228,7 +228,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
     if (nullptr != vkTrimCommandPoolKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
 
-    const char *const extension = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME};
+    const char* const extension = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME};
     const float q_priority[] = {1.0f};
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
@@ -301,7 +301,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
 
     VkInstance test_instance = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &test_instance));
-    for (const char *instance_ext_name : m_instance_extension_names) {
+    for (const char* instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
 
@@ -469,7 +469,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
     std::vector<VkExtensionProperties> properties(propertyCount);
     vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, properties.data());
     bool exclusiveScissor2 = false;
-    for (const auto &prop : properties) {
+    for (const auto& prop : properties) {
         if (strcmp(prop.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
             if (prop.specVersion >= 2) {
                 exclusiveScissor2 = true;

@@ -852,7 +852,7 @@ TEST_F(NegativeAndroidExternalResolve, MissingImageUsage) {
     image_ci.pNext = &external_format;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.format = VK_FORMAT_UNDEFINED;
-    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // missing VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;  // missing VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
     vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
 
     VkSamplerYcbcrConversionCreateInfo sycci = vku::InitStructHelper(&external_format);

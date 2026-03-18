@@ -526,7 +526,7 @@ TEST_F(NegativeSyncObject, Barriers) {
         vkt::Image img_sampled(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
         vkt::Image img_input(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         struct BadBufferTest {
-            vkt::Image &image_obj;
+            vkt::Image& image_obj;
             VkImageLayout bad_layout;
             std::string msg_code;
         };
@@ -633,7 +633,7 @@ TEST_F(NegativeSyncObject, Barriers) {
         }
         // clang-format on
 
-        for (const auto &test : bad_buffer_layouts) {
+        for (const auto& test : bad_buffer_layouts) {
             const VkImageLayout bad_layout = test.bad_layout;
             // Skip layouts that require maintenance2 support
             if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
@@ -958,7 +958,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
         vkt::Image img_sampled(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
         vkt::Image img_input(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         struct BadBufferTest {
-            vkt::Image &image_obj;
+            vkt::Image& image_obj;
             VkImageLayout bad_layout;
             std::string msg_code;
         };
@@ -1065,7 +1065,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
         }
         // clang-format on
 
-        for (const auto &test : bad_buffer_layouts) {
+        for (const auto& test : bad_buffer_layouts) {
             const VkImageLayout bad_layout = test.bad_layout;
             // Skip layouts that require maintenance2 support
             if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
@@ -1253,20 +1253,20 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyOneFamily) {
     conc_test.Init(&families);
     {
         // src
-        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        const char* img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        const char* buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
         conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
     }
     {
         // dst
-        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
-        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
+        const char* img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
+        const char* buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
         conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
     }
     {
         // neither
-        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        const char* img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        const char* buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
         conc_test(img_vuid, buf_vuid, submit_family, submit_family);
     }
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
@@ -1647,8 +1647,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt2) {
     BarrierQueueFamilyTestHelper conc_test(&test_context);
 
     conc_test.Init(&families);
-    const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-    const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+    const char* img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+    const char* buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
     conc_test(img_vuid, buf_vuid, submit_family, submit_family);
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);

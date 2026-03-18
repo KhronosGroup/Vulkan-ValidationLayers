@@ -37,7 +37,7 @@ struct VariableInstInfo {
 };
 
 // easier to use recursion to traverse the OpTypeStruct
-static void GetVariableInfo(const spirv::Module &module_state, const spirv::Instruction *insn, VariableInstInfo &info) {
+static void GetVariableInfo(const spirv::Module& module_state, const spirv::Instruction* insn, VariableInstInfo& info) {
     if (!insn) {
         return;
     } else if (insn->Opcode() == spv::OpTypePointer || insn->Opcode() == spv::OpTypeUntypedPointerKHR) {
@@ -48,18 +48,18 @@ static void GetVariableInfo(const spirv::Module &module_state, const spirv::Inst
         info.has_16bit |= (bit_width == 16);
     } else if (insn->Opcode() == spv::OpTypeStruct) {
         for (uint32_t i = 2; i < insn->Length(); i++) {
-            const spirv::Instruction *member_insn = module_state.FindDef(insn->Word(i));
+            const spirv::Instruction* member_insn = module_state.FindDef(insn->Word(i));
             if (member_insn->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
                 continue;  // a uint8 pointer is not a 8-bit element
             }
             const uint32_t base_insn_id = module_state.GetBaseType(member_insn);
-            const spirv::Instruction *base_insn = module_state.FindDef(base_insn_id);
+            const spirv::Instruction* base_insn = module_state.FindDef(base_insn_id);
             GetVariableInfo(module_state, base_insn, info);
         }
     }
 }
 
-SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDeviceData &stateless_device_data, bool disabled)
+SpirvValidator::SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data, bool disabled)
     : Logger(debug_report),
       disabled(disabled),
       api_version(stateless_device_data.api_version),
@@ -77,8 +77,8 @@ SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDe
 // Originally the goal was to move more validation to vkCreateShaderModule time in case the driver decided to parse an invalid
 // SPIR-V here, while that is likely not the case anymore, a bigger reason for checking here is to save on memory. There is a lot of
 // state saved in the Module that is only checked once later and could be reduced if not saved.
-bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
-                              const Location &loc) const {
+bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                              const Location& loc) const {
     bool skip = false;
     if (!module_state.valid_spirv || disabled) {
         return skip;
@@ -94,7 +94,7 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
 
     // The following tries to limit the number of passes through the shader module.
     // It save a good amount of memory and complex state tracking to just check these in a 2nd pass
-    for (const spirv::Instruction &insn : module_state.GetInstructions()) {
+    for (const spirv::Instruction& insn : module_state.GetInstructions()) {
         skip |= ValidateShaderCapabilitiesAndExtensions(module_state, insn, loc);
         skip |= ValidateTexelOffsetLimits(module_state, insn, loc);
         skip |= ValidateMemoryScope(module_state, insn, loc);
@@ -116,13 +116,13 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderClock(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
-                                         const Location &loc) const {
+bool SpirvValidator::ValidateShaderClock(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                         const Location& loc) const {
     bool skip = false;
 
-    for (const spirv::Instruction *clock_inst : stateless_data.read_clock_inst) {
-        const spirv::Instruction &insn = *clock_inst;
-        const spirv::Instruction *scope_id = module_state.FindDef(insn.Word(3));
+    for (const spirv::Instruction* clock_inst : stateless_data.read_clock_inst) {
+        const spirv::Instruction& insn = *clock_inst;
+        const spirv::Instruction* scope_id = module_state.FindDef(insn.Word(3));
         auto scope_type = scope_id->Word(3);
         // if scope isn't Subgroup or Device, spirv-val will catch
         if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shaderSubgroupClock == VK_FALSE)) {
@@ -138,8 +138,8 @@ bool SpirvValidator::ValidateShaderClock(const spirv::Module &module_state, cons
     return skip;
 }
 
-bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
-                                          const Location &loc) const {
+bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                          const Location& loc) const {
     bool skip = false;
 
     // "If sparseImageInt64Atomics is enabled, shaderImageInt64Atomics must be enabled"
@@ -188,9 +188,9 @@ bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module &module_state, con
     const bool valid_16_float_vector = (enabled_features.shaderFloat16VectorAtomics == VK_TRUE);
     // clang-format on
 
-    for (const spirv::Instruction *atomic_def_ptr : stateless_data.atomic_inst) {
-        const spirv::Instruction &atomic_def = *atomic_def_ptr;
-        const spirv::AtomicInstructionInfo &atomic = module_state.GetAtomicInfo(atomic_def);
+    for (const spirv::Instruction* atomic_def_ptr : stateless_data.atomic_inst) {
+        const spirv::Instruction& atomic_def = *atomic_def_ptr;
+        const spirv::AtomicInstructionInfo& atomic = module_state.GetAtomicInfo(atomic_def);
         const uint32_t opcode = atomic_def.Opcode();
 
         if (atomic.type == spv::OpTypeFloat && (atomic.vector_size == 2 || atomic.vector_size == 4)) {
@@ -368,12 +368,12 @@ bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module &module_state, con
     return skip;
 }
 
-bool SpirvValidator::ValidateFma(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
-                                 const Location &loc) const {
+bool SpirvValidator::ValidateFma(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                 const Location& loc) const {
     bool skip = false;
 
     // spirv-val enforces the Result Type must be a scalar or vector of floats
-    for (const spirv::Instruction *fma_inst : stateless_data.fma_inst) {
+    for (const spirv::Instruction* fma_inst : stateless_data.fma_inst) {
         const spirv::Instruction* type_insn = module_state.FindDef(fma_inst->TypeId());
         const uint32_t bit_width = module_state.GetBaseTypeInstruction(type_insn)->GetBitWidth();
         if (bit_width == 16 && !enabled_features.shaderFmaFloat16) {
@@ -394,10 +394,10 @@ bool SpirvValidator::ValidateFma(const spirv::Module &module_state, const spirv:
     return skip;
 }
 
-bool SpirvValidator::ValidateVariables(const spirv::Module &module_state, const Location &loc) const {
+bool SpirvValidator::ValidateVariables(const spirv::Module& module_state, const Location& loc) const {
     bool skip = false;
 
-    for (const spirv::Instruction *insn : module_state.static_data_.explicit_memory_inst) {
+    for (const spirv::Instruction* insn : module_state.static_data_.explicit_memory_inst) {
         const uint32_t opcode = insn->Opcode();
         if (opcode == spv::OpVariable || opcode == spv::OpUntypedVariableKHR) {
             const uint32_t storage_class = insn->StorageClass();
@@ -434,8 +434,8 @@ bool SpirvValidator::ValidateVariables(const spirv::Module &module_state, const 
 }
 
 // This is to validate the VK_KHR_8bit_storage and VK_KHR_16bit_storage extensions
-bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state, const spirv::Instruction &insn,
-                                              const Location &loc) const {
+bool SpirvValidator::Validate8And16BitStorage(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                              const Location& loc) const {
     bool skip = false;
 
     const bool variable = insn.Opcode() == spv::OpVariable;
@@ -500,14 +500,14 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
             // TODO: This doesn't capture explicitly laid out workgroup variables
             // that use typed pointers.
             const uint32_t ptr_type_id = module_state.GetTypeId(pointer_id);
-            const spirv::Instruction *ptr_insn = module_state.FindDef(ptr_type_id);
+            const spirv::Instruction* ptr_insn = module_state.FindDef(ptr_type_id);
             if (ptr_insn->Opcode() != spv::OpTypeUntypedPointerKHR) {
                 return skip;
             }
         }
 
         uint32_t byte_size = 0;
-        const spirv::Instruction *type_insn = module_state.FindDef(type_id);
+        const spirv::Instruction* type_insn = module_state.FindDef(type_id);
         byte_size = module_state.GetTypeBytesSize(type_insn);
 
         // If 8-bit storage is not enabled, accesses must be at least 16-bit
@@ -518,7 +518,7 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
         untyped_access = true;
     } else if (variable) {
         // type will either be a float, int, or struct and if struct need to traverse it
-        const spirv::Instruction *type = module_state.GetVariablePointerType(insn);
+        const spirv::Instruction* type = module_state.GetVariablePointerType(insn);
         std::shared_ptr<const spirv::TypeStructInfo> struct_info = module_state.GetTypeStructInfo(type);
         // Only check block-deocrated workgroup variables.
         if (storage_class != spv::StorageClassWorkgroup ||
@@ -604,8 +604,8 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Module &module_state, const spirv::Instruction &insn,
-                                                                const Location &loc) const {
+bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                                                const Location& loc) const {
     bool skip = false;
 
     // Go through all variables for images and check decorations
@@ -613,11 +613,11 @@ bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Mod
     // to trigger the error.
     assert(insn.Opcode() == spv::OpVariable || insn.Opcode() == spv::OpUntypedVariableKHR);
     // spirv-val validates this is an OpTypePointer
-    const spirv::Instruction *pointer_def = module_state.FindDef(insn.TypeId());
+    const spirv::Instruction* pointer_def = module_state.FindDef(insn.TypeId());
     if (pointer_def->Word(2) != spv::StorageClassUniformConstant) {
         return skip;  // Vulkan Spec says storage image must be UniformConstant
     }
-    const spirv::Instruction *type_def = module_state.FindDef(pointer_def->Word(3));
+    const spirv::Instruction* type_def = module_state.FindDef(pointer_def->Word(3));
 
     // Unpack an optional level of arraying
     if (type_def && type_def->IsArray()) {
@@ -657,18 +657,18 @@ bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Mod
     return skip;
 }
 
-bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &module_state, const Location &loc) const {
+bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const Location& loc) const {
     bool skip = false;
 
     if (!enabled_features.transformFeedback) {
         return skip;
     }
 
-    std::vector<const spirv::Instruction *> xfb_streams;
-    std::vector<const spirv::Instruction *> xfb_buffers;
-    std::vector<const spirv::Instruction *> xfb_offsets;
+    std::vector<const spirv::Instruction*> xfb_streams;
+    std::vector<const spirv::Instruction*> xfb_buffers;
+    std::vector<const spirv::Instruction*> xfb_offsets;
 
-    for (const spirv::Instruction *op_decorate : module_state.static_data_.decoration_inst) {
+    for (const spirv::Instruction* op_decorate : module_state.static_data_.decoration_inst) {
         uint32_t decoration = op_decorate->Word(2);
         if (decoration == spv::DecorationXfbStride) {
             uint32_t stride = op_decorate->Word(3);
@@ -699,11 +699,11 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
 
     // XfbBuffer, buffer data size
     std::vector<std::pair<uint32_t, uint32_t>> buffer_data_sizes;
-    for (const spirv::Instruction *op_decorate : xfb_offsets) {
-        for (const spirv::Instruction *xfb_buffer : xfb_buffers) {
+    for (const spirv::Instruction* op_decorate : xfb_offsets) {
+        for (const spirv::Instruction* xfb_buffer : xfb_buffers) {
             if (xfb_buffer->Word(1) == op_decorate->Word(1)) {
                 const auto offset = op_decorate->Word(3);
-                const spirv::Instruction *def = module_state.FindDef(xfb_buffer->Word(1));
+                const spirv::Instruction* def = module_state.FindDef(xfb_buffer->Word(1));
                 const auto size = module_state.GetTypeBytesSize(def);
                 const uint32_t buffer_data_size = offset + size;
                 if (buffer_data_size > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataSize) {
@@ -716,7 +716,7 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
                 }
 
                 bool found = false;
-                for (auto &bds : buffer_data_sizes) {
+                for (auto& bds : buffer_data_sizes) {
                     if (bds.first == xfb_buffer->Word(1)) {
                         bds.second = std::max(bds.second, buffer_data_size);
                         found = true;
@@ -733,8 +733,8 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
     }
 
     vvl::unordered_map<uint32_t, uint32_t> stream_data_size;
-    for (const spirv::Instruction *xfb_stream : xfb_streams) {
-        for (const auto &bds : buffer_data_sizes) {
+    for (const spirv::Instruction* xfb_stream : xfb_streams) {
+        for (const auto& bds : buffer_data_sizes) {
             if (xfb_stream->Word(1) == bds.first) {
                 uint32_t stream = xfb_stream->Word(3);
                 const auto itr = stream_data_size.find(stream);
@@ -747,7 +747,7 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
         }
     }
 
-    for (const auto &stream : stream_data_size) {
+    for (const auto& stream : stream_data_size) {
         if (stream.second > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreamDataSize) {
             skip |= LogError(
                 "VUID-RuntimeSpirv-XfbBuffer-06309", module_state.handle(), loc,
@@ -761,15 +761,15 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
     return skip;
 }
 
-bool SpirvValidator::ValidateTransformFeedbackEmitStreams(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                          const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateTransformFeedbackEmitStreams(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                          const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
     if (!enabled_features.transformFeedback || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
         return skip;  // GeometryStreams are only used in Geomtry Shaders
     }
 
     vvl::unordered_set<uint32_t> emitted_streams;
-    for (const spirv::Instruction *insn : stateless_data.transform_feedback_stream_inst) {
+    for (const spirv::Instruction* insn : stateless_data.transform_feedback_stream_inst) {
         const uint32_t opcode = insn->Opcode();
         if (opcode == spv::OpEmitStreamVertex) {
             emitted_streams.emplace(module_state.GetConstantValueById(insn->Word(1)));
@@ -800,8 +800,8 @@ bool SpirvValidator::ValidateTransformFeedbackEmitStreams(const spirv::Module &m
     return skip;
 }
 
-bool SpirvValidator::ValidateRelaxedExtendedInstruction(const spirv::Module &module_state,
-                                                        const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateRelaxedExtendedInstruction(const spirv::Module& module_state,
+                                                        const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
     if (!enabled_features.shaderRelaxedExtendedInstruction && stateless_data.has_ext_inst_with_forward_refs) {
         skip |= LogError("VUID-RuntimeSpirv-shaderRelaxedExtendedInstruction-10773", module_state.handle(), loc,
@@ -813,8 +813,8 @@ bool SpirvValidator::ValidateRelaxedExtendedInstruction(const spirv::Module &mod
 }
 
 // Checks for both TexelOffset and TexelGatherOffset limits
-bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module &module_state, const spirv::Instruction &insn,
-                                               const Location &loc) const {
+bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                               const Location& loc) const {
     bool skip = false;
 
     const uint32_t opcode = insn.Opcode();
@@ -851,13 +851,13 @@ bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module &module_state
         // If the bit is set, consume operand
         if (insn.Length() > index && (i & offset_bits)) {
             uint32_t constant_id = insn.Word(index);
-            const spirv::Instruction *constant = module_state.FindDef(constant_id);
+            const spirv::Instruction* constant = module_state.FindDef(constant_id);
             const bool is_dynamic_offset = constant == nullptr;
             if (!is_dynamic_offset && constant->Opcode() == spv::OpConstantComposite) {
                 for (uint32_t j = 3; j < constant->Length(); ++j) {
                     uint32_t comp_id = constant->Word(j);
-                    const spirv::Instruction *comp = module_state.FindDef(comp_id);
-                    const spirv::Instruction *comp_type = module_state.FindDef(comp->Word(1));
+                    const spirv::Instruction* comp = module_state.FindDef(comp_id);
+                    const spirv::Instruction* comp_type = module_state.FindDef(comp->Word(1));
                     // Get operand value
                     const uint32_t offset = comp->Word(3);
                     // spec requires minTexelGatherOffset/minTexelOffset to be -8 or less so never can compare if
@@ -911,14 +911,14 @@ bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module &module_state
     return skip;
 }
 
-bool SpirvValidator::ValidateMemoryScope(const spirv::Module &module_state, const spirv::Instruction &insn,
-                                         const Location &loc) const {
+bool SpirvValidator::ValidateMemoryScope(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                         const Location& loc) const {
     bool skip = false;
 
-    const auto &entry = OpcodeMemoryScopePosition(insn.Opcode());
+    const auto& entry = OpcodeMemoryScopePosition(insn.Opcode());
     if (entry > 0) {
         const uint32_t scope_id = insn.Word(entry);
-        const spirv::Instruction *scope_def = module_state.GetAnyConstantDef(scope_id);
+        const spirv::Instruction* scope_def = module_state.GetAnyConstantDef(scope_id);
         // Very very low chance using spec constant to set memory scope
         if (scope_def && scope_def->Opcode() == spv::OpConstant) {
             const spv::Scope scope_type = spv::Scope(scope_def->GetConstantValue());
@@ -939,8 +939,8 @@ bool SpirvValidator::ValidateMemoryScope(const spirv::Module &module_state, cons
     return skip;
 }
 
-bool SpirvValidator::ValidateSubgroupRotateClustered(const spirv::Module &module_state, const spirv::Instruction &insn,
-                                                     const Location &loc) const {
+bool SpirvValidator::ValidateSubgroupRotateClustered(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                                     const Location& loc) const {
     bool skip = false;
     if (!enabled_features.shaderSubgroupRotateClustered && insn.Opcode() == spv::OpGroupNonUniformRotateKHR && insn.Length() == 7) {
         skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566", module_state.handle(), loc,
@@ -957,8 +957,8 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module& mod
 
     const VkShaderStageFlagBits stage = entrypoint.stage;
     // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
-    for (const spirv::Instruction *group_inst : stateless_data.group_inst) {
-        const spirv::Instruction &insn = *group_inst;
+    for (const spirv::Instruction* group_inst : stateless_data.group_inst) {
+        const spirv::Instruction& insn = *group_inst;
         // Check the quad operations.
         if ((insn.Opcode() == spv::OpGroupNonUniformQuadBroadcast) || (insn.Opcode() == spv::OpGroupNonUniformQuadSwap)) {
             if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
@@ -977,7 +977,7 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module& mod
             scope_type = spv::ScopeSubgroup;
         } else {
             // "All <id> used for Scope <id> must be of an OpConstant"
-            const spirv::Instruction *scope_id = module_state.FindDef(insn.Word(3));
+            const spirv::Instruction* scope_id = module_state.FindDef(insn.Word(3));
             scope_type = scope_id->Word(3);
         }
 
@@ -993,7 +993,7 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module& mod
         }
 
         if (!enabled_features.shaderSubgroupExtendedTypes) {
-            const spirv::Instruction *type = module_state.FindDef(insn.Word(1));
+            const spirv::Instruction* type = module_state.FindDef(insn.Word(1));
 
             const bool is_vector = type->IsVector();
             if (is_vector) {
@@ -1022,15 +1022,15 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module& mod
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                          const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                          const spirv::StatelessData& stateless_data, const Location& loc) const {
     const VkShaderStageFlagBits stage = entrypoint.stage;
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
 
     bool skip = false;
-    auto const &limits = phys_dev_props.limits;
+    auto const& limits = phys_dev_props.limits;
 
     const uint32_t num_vertices = entrypoint.execution_mode.output_vertices;
     const uint32_t num_primitives = entrypoint.execution_mode.output_primitives;
@@ -1222,7 +1222,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && !IsExtEnabled(extensions.vk_ext_descriptor_indexing)) {
         // Variables can be aliased, so use Location to mark things as unique
         vvl::unordered_set<uint32_t> color_attachments;
-        for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        for (const auto* variable : entrypoint.user_defined_interface_variables) {
             if (variable->storage_class == spv::StorageClassOutput && variable->decorations.location != spirv::kInvalidValue) {
                 // even if using an array of attachments in the shader, each used variable of the array is represented by a single
                 // variable
@@ -1233,7 +1233,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
         // unordered_set requires to define hashing, and these should be very small and cheap as is
         std::set<std::pair<uint32_t, uint32_t>> storage_buffers;
         std::set<std::pair<uint32_t, uint32_t>> storage_images;
-        for (const auto &variable : entrypoint.resource_interface_variables) {
+        for (const auto& variable : entrypoint.resource_interface_variables) {
             if (!variable.IsAccessed()) continue;
             if (variable.is_storage_buffer) {
                 storage_buffers.insert(std::make_pair(variable.decorations.set, variable.decorations.binding));
@@ -1254,8 +1254,8 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderStageInterfaceVariables(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                           const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateShaderStageInterfaceVariables(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                           const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
 
     if (entrypoint.stage == VK_SHADER_STAGE_MESH_BIT_EXT && !enabled_features.primitiveFragmentShadingRateMeshShader &&
@@ -1269,8 +1269,8 @@ bool SpirvValidator::ValidateShaderStageInterfaceVariables(const spirv::Module &
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
 
     // Need to wrap otherwise phys_dev_props_core12 can be junk
@@ -1367,7 +1367,7 @@ bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_stat
     }
 
     auto get_float_width = [&module_state](uint32_t id) {
-        const auto *insn = module_state.FindDef(id);
+        const auto* insn = module_state.FindDef(id);
         if (!insn || insn->Opcode() != spv::OpTypeFloat) {
             return 0u;
         } else {
@@ -1377,14 +1377,14 @@ bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_stat
 
     const uint32_t mask = spv::FPFastMathModeNotNaNMask | spv::FPFastMathModeNotInfMask | spv::FPFastMathModeNSZMask;
     if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::fp_fast_math_default)) {
-        for (const spirv::Instruction *insn : stateless_data.execution_mode_id_inst) {
+        for (const spirv::Instruction* insn : stateless_data.execution_mode_id_inst) {
             const uint32_t mode = insn->Word(2);
             if (mode != spv::ExecutionModeFPFastMathDefault) {
                 continue;
             }
 
             // spirv-val will catch if this is not a constant
-            const auto *fast_math_mode = module_state.FindDef(insn->Word(4));
+            const auto* fast_math_mode = module_state.FindDef(insn->Word(4));
             const bool has_mask = (fast_math_mode->GetConstantValue() & mask) == mask;
             if (has_mask) {
                 continue;  // nothing to validate
@@ -1411,7 +1411,7 @@ bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_stat
         }
     }
 
-    for (const spirv::Instruction *insn : module_state.static_data_.decoration_inst) {
+    for (const spirv::Instruction* insn : module_state.static_data_.decoration_inst) {
         uint32_t decoration = insn->Word(2);
         if (decoration != spv::DecorationFPFastMathMode) {
             continue;
@@ -1428,7 +1428,7 @@ bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_stat
         bool float_64 = false;
         uint32_t operand_index = 2;  // if using OpDecoration, this instruction must have a ResultId
 
-        const auto *target_insn = module_state.FindDef(insn->Word(1));
+        const auto* target_insn = module_state.FindDef(insn->Word(1));
         if (target_insn->TypeId() != 0) {
             operand_index++;
             const uint32_t bit_width = get_float_width(target_insn->TypeId());
@@ -1465,8 +1465,8 @@ bool SpirvValidator::ValidateShaderFloatControl(const spirv::Module &module_stat
     return skip;
 }
 
-bool SpirvValidator::ValidateExecutionModes(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                            const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                            const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
     const VkShaderStageFlagBits stage = entrypoint.stage;
 
@@ -1520,8 +1520,8 @@ bool SpirvValidator::ValidateExecutionModes(const spirv::Module &module_state, c
     return skip;
 }
 
-bool SpirvValidator::ValidateConservativeRasterization(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                       const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateConservativeRasterization(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                       const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
 
     // only new to validate if property is not enabled
@@ -1540,7 +1540,8 @@ bool SpirvValidator::ValidateConservativeRasterization(const spirv::Module &modu
     return skip;
 }
 
-bool SpirvValidator::ValidateShaderTensor(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint, const spirv::StatelessData &stateless_data, const Location &loc) const {
+bool SpirvValidator::ValidateShaderTensor(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                          const spirv::StatelessData& stateless_data, const Location& loc) const {
     bool skip = false;
 
     // check only shaders
@@ -1554,7 +1555,7 @@ bool SpirvValidator::ValidateShaderTensor(const spirv::Module &module_state, con
                          string_VkShaderStageFlagBits(entrypoint.stage));
     }
 
-    for (auto &instruction : stateless_data.tensor_inst) {
+    for (auto& instruction : stateless_data.tensor_inst) {
         if ((entrypoint.stage & phys_dev_ext_props.tensor_properties.shaderTensorSupportedStages) == 0) {
             skip |= LogError("VUID-RuntimeSpirv-shaderTensorSupportedStages-09901", module_state.handle(), loc,
                              "'%s' is a tensor instruction but not supported in %s; supported stages are %s.",
@@ -1577,10 +1578,10 @@ bool SpirvValidator::ValidateShaderTensor(const spirv::Module &module_state, con
         if (instruction->Opcode() == spv::OpTensorReadARM || instruction->Opcode() == spv::OpTensorWriteARM) {
             // for read, the size to copy is defined as a type in the OpTensorReadARM instruction itself;
             // for write it's defined with an object, whose type is defined in a previous instruction
-            const spirv::Instruction *copy_definition_instr =
+            const spirv::Instruction* copy_definition_instr =
                 (instruction->Opcode() == spv::OpTensorReadARM) ? instruction : module_state.FindDef(instruction->Word(3));
-            const spirv::Instruction *copy_object_type = module_state.FindDef(copy_definition_instr->Word(1));
-            const spirv::Instruction *element_type = module_state.FindDef(module_state.GetBaseType(copy_object_type));
+            const spirv::Instruction* copy_object_type = module_state.FindDef(copy_definition_instr->Word(1));
+            const spirv::Instruction* element_type = module_state.FindDef(module_state.GetBaseType(copy_object_type));
             // the type can be an OpTypeArray or a scalar type: computing array_elements this way works for both cases
             uint32_t copy_object_type_bytes = module_state.GetTypeBytesSize(copy_object_type);
             uint32_t element_bytes = module_state.GetTypeBytesSize(element_type);

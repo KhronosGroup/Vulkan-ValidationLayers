@@ -105,7 +105,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex32) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -160,7 +160,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex16) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -218,7 +218,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex8) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -273,7 +273,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -330,7 +330,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32ShaderObject) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -380,7 +380,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawInSecondaryCmdBufferBadVertexIndex
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -416,7 +416,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawInSecondaryCmdBufferBadVertexIndex
 
     constexpr uint32_t secondary_cmd_buffer_executes_count = 2;
     for (uint32_t i = 0; i < secondary_cmd_buffer_executes_count; ++i) {
-        vkt::CommandBuffer &secondary_cmd_buffer =
+        vkt::CommandBuffer& secondary_cmd_buffer =
             secondary_cmd_buffers.emplace_back(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
         secondary_cmd_buffers_handles.push_back(secondary_cmd_buffer);
 
@@ -459,7 +459,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -514,7 +514,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16_2) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -581,7 +581,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex8) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -639,7 +639,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16DebugLabel) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -716,7 +716,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex32DebugLabel
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -789,7 +789,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndex) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -877,7 +877,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndexVertexAttributeDivisor) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -976,7 +976,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndexVertexAttributeDivisorDyn
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -1093,7 +1093,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, CmdSetVertexInputEXT) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
@@ -1184,7 +1184,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, CmdBindVertexBuffers2EXT) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -1271,7 +1271,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32MultiDraw) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {

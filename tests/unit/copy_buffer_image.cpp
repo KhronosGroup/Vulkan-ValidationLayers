@@ -581,7 +581,7 @@ TEST_F(NegativeCopyBufferImage, ImageLayerCountMismatch) {
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {1, 1, 1};
 
-    const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
+    const char* vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
     m_errorMonitor->SetDesiredError(vuid);
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -4514,8 +4514,8 @@ TEST_F(NegativeCopyBufferImage, MemoryIndirect) {
     vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &indirect_info);
     m_errorMonitor->VerifyFound();
 
-    copy_address_range.address = indirect_buffer.Address();                  // Fix address alignment
-    copy_address_range.stride = copy_size + 1;                               // Not aligned
+    copy_address_range.address = indirect_buffer.Address();  // Fix address alignment
+    copy_address_range.stride = copy_size + 1;               // Not aligned
     indirect_info.copyAddressRange = copy_address_range;
     m_errorMonitor->SetDesiredError("VUID-VkStridedDeviceAddressRangeKHR-stride-10957");
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectInfoKHR-copyAddressRange-10943");
@@ -4674,8 +4674,8 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirect) {
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
     m_errorMonitor->VerifyFound();
 
-    copy_address_range.address = indirect_buffer.Address();                         // Fix address alignment
-    copy_address_range.stride = copy_size + 1;                                      // Not aligned
+    copy_address_range.address = indirect_buffer.Address();  // Fix address alignment
+    copy_address_range.stride = copy_size + 1;               // Not aligned
     indirect_info.copyAddressRange = copy_address_range;
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-copyAddressRange-10953");
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
@@ -4687,9 +4687,9 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirect) {
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
     m_errorMonitor->VerifyFound();
 
-    copy_address_range.stride = copy_size;                                      // Fix stride
-    copy_address_range.size = copy_size;                                        // Only enough for one command
-    indirect_info.copyCount = 2;                                                // But trying to use two commands
+    copy_address_range.stride = copy_size;  // Fix stride
+    copy_address_range.size = copy_size;    // Only enough for one command
+    indirect_info.copyCount = 2;            // But trying to use two commands
     indirect_info.copyAddressRange = copy_address_range;
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-copyCount-10951");
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);

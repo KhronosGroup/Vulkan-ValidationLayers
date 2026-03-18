@@ -40,7 +40,7 @@ static constexpr std::string_view kWarningCopyMemoryToImageIndirectCommand =
 
 struct CopyMemoryIndirectValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_copy_memory_indirect_comp_size * sizeof(uint32_t); }
-    static const uint32_t *GetSpirv() { return validation_cmd_copy_memory_indirect_comp; }
+    static const uint32_t* GetSpirv() { return validation_cmd_copy_memory_indirect_comp; }
 
     struct EmptyPushData {
     } push_constants;
@@ -64,8 +64,8 @@ struct CopyMemoryIndirectValidationShader {
     }
 };
 
-void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
-                        const CopyMemoryIndirectCommon &api_copy_info) {
+void CopyMemoryIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
+                        const CopyMemoryIndirectCommon& api_copy_info) {
     if (!gpuav.gpuav_settings.validate_copy_memory_indirect) {
         return;
     }
@@ -74,9 +74,9 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         return;
     }
 
-    ValidationCommandsGpuavState &val_cmd_gpuav_state =
+    ValidationCommandsGpuavState& val_cmd_gpuav_state =
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
-    valpipe::ComputePipeline<CopyMemoryIndirectValidationShader> &validation_pipeline =
+    valpipe::ComputePipeline<CopyMemoryIndirectValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CopyMemoryIndirectValidationShader>>(
             gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
@@ -106,7 +106,7 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         const VkDeviceSize buffer_size = sizeof(CopyMemoryIndirectApiData);
         vko::BufferRange api_input_buffer_range = cb_state.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
-        auto gpu_region_ptr = (CopyMemoryIndirectApiData *)api_input_buffer_range.offset_mapped_ptr;
+        auto gpu_region_ptr = (CopyMemoryIndirectApiData*)api_input_buffer_range.offset_mapped_ptr;
         gpu_region_ptr->range_address = api_copy_info.address_range.address;
         // While these are VkDeviceSize, there is no known way these can be over 4GB
         gpu_region_ptr->range_size = (uint32_t)api_copy_info.address_range.size;
@@ -154,9 +154,9 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         }
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, api_copy_info](const uint32_t *error_record,
-                                                                                  const Location &loc_with_debug_region,
-                                                                                  const LogObjectList &objlist) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, api_copy_info](const uint32_t* error_record,
+                                                                                  const Location& loc_with_debug_region,
+                                                                                  const LogObjectList& objlist) {
         bool skip = false;
         using namespace glsl;
 

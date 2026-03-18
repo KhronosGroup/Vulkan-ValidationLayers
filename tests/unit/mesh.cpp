@@ -110,7 +110,7 @@ TEST_F(NegativeMesh, BasicUsage) {
     // Test pipeline creation
     {
         // can't mix mesh with vertex
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
+        const auto break_vp = [&](CreatePipelineHelper& helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(), ms.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
@@ -118,13 +118,13 @@ TEST_F(NegativeMesh, BasicUsage) {
 
         // vertex or mesh must be present
         // 02096 overlaps with 06896
-        const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
+        const auto break_vp2 = [&](CreatePipelineHelper& helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, kErrorBit,
                                           std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
                                                                     "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
-        const auto break_vp3 = [&](CreatePipelineHelper &helper) {
+        const auto break_vp3 = [&](CreatePipelineHelper& helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pVertexInputState = nullptr;
             helper.gp_ci_.pInputAssemblyState = nullptr;
@@ -132,7 +132,7 @@ TEST_F(NegativeMesh, BasicUsage) {
         CreatePipelineHelper::OneshotTest(*this, break_vp3, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097");
 
         // xfb with mesh shader
-        const auto break_vp4 = [&](CreatePipelineHelper &helper) {
+        const auto break_vp4 = [&](CreatePipelineHelper& helper) {
             helper.shader_stages_ = {ms_xfb.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp4, kErrorBit,
@@ -144,7 +144,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             {VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE}, {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT},
             {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT},
         };
-        const char *err_vuids[] = {
+        const char* err_vuids[] = {
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065",
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066",
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067"};
@@ -153,7 +153,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             dyn_state.dynamicStateCount = dyn_states[i].size();
             dyn_state.pDynamicStates = dyn_states[i].data();
             if (*dyn_state.pDynamicStates == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) continue;
-            const auto break_vp5 = [&](CreatePipelineHelper &helper) {
+            const auto break_vp5 = [&](CreatePipelineHelper& helper) {
                 helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
                 helper.gp_ci_.pDynamicState = &dyn_state;
             };
@@ -194,7 +194,7 @@ TEST_F(NegativeMesh, ExtensionDisabled) {
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // mesh and task shaders not supported
-    const auto break_vp = [&](CreatePipelineHelper &helper) {
+    const auto break_vp = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
@@ -316,7 +316,7 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // mesh and task shaders which exceeds workgroup size limits
-    const auto break_vp = [&](CreatePipelineHelper &helper) {
+    const auto break_vp = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, error_vuids);
@@ -490,7 +490,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     // Test pipeline creation
     {
         // can't mix mesh with vertex
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
+        const auto break_vp = [&](CreatePipelineHelper& helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(), ms.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
@@ -498,13 +498,13 @@ TEST_F(NegativeMesh, BasicUsageNV) {
 
         // vertex or mesh must be present
         // 02096 overlaps with 06896
-        const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
+        const auto break_vp2 = [&](CreatePipelineHelper& helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, kErrorBit,
                                           std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
                                                                     "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
-        const auto break_vp3 = [&](CreatePipelineHelper &helper) {
+        const auto break_vp3 = [&](CreatePipelineHelper& helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pVertexInputState = nullptr;
             helper.gp_ci_.pInputAssemblyState = nullptr;
@@ -628,7 +628,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     // void main() {
     //     OUT.baseID = 1;
     // }
-    const char *task_src = R"(
+    const char* task_src = R"(
                OpCapability MeshShadingNV
                OpExtension "SPV_NV_mesh_shader"
           %1 = OpExtInstImport "GLSL.std.450"
@@ -683,7 +683,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // mesh and task shaders not supported
-    const auto break_vp = [&](CreatePipelineHelper &helper) {
+    const auto break_vp = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
@@ -1048,15 +1048,15 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     VkShaderObj frag_shader(*m_device, frag_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3);
 
     // mesh and task shaders not supported
-    const auto mesh_tasks_x = [&](CreatePipelineHelper &helper) {
+    const auto mesh_tasks_x = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader_x.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
                                  frag_shader.GetStageCreateInfo()};
     };
-    const auto mesh_tasks_y = [&](CreatePipelineHelper &helper) {
+    const auto mesh_tasks_y = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader_y.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
                                  frag_shader.GetStageCreateInfo()};
     };
-    const auto mesh_tasks_z = [&](CreatePipelineHelper &helper) {
+    const auto mesh_tasks_z = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task_shader_z.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(),
                                  frag_shader.GetStageCreateInfo()};
     };
@@ -1161,7 +1161,7 @@ TEST_F(NegativeMesh, DrawIndexMesh) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
-    const char *task_source = R"glsl(
+    const char* task_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         taskPayloadSharedEXT uint mesh_payload[32];
@@ -1171,7 +1171,7 @@ TEST_F(NegativeMesh, DrawIndexMesh) {
         }
     )glsl";
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 32, max_primitives = 32, triangles) out;
@@ -1201,7 +1201,7 @@ TEST_F(NegativeMesh, DrawIndexMeshShaderObject) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
-    const char *mesh_src = R"glsl(
+    const char* mesh_src = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 32, max_primitives = 32, triangles) out;
@@ -1347,7 +1347,7 @@ TEST_F(NegativeMesh, IncompatiblePipelineStatisticsQuery) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 3, max_primitives=1) out;

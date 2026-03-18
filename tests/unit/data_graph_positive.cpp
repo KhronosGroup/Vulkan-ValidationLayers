@@ -26,11 +26,12 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredFeature(vkt::Feature::shaderInt8);
 }
 
-const std::string DataGraphTest::IncorrectSpirvMessage{"test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"};
+const std::string DataGraphTest::IncorrectSpirvMessage{
+    "test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"};
 const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultConstantTensorDesc()};
 
 void DataGraphTest::CheckSessionMemory(const vkt::DataGraphPipelineSession& session) {
-    const auto &mem_reqs = session.MemReqs();
+    const auto& mem_reqs = session.MemReqs();
     if (mem_reqs.empty()) {
         GTEST_FAIL() << "No bind points, " << IncorrectSpirvMessage;
     }
@@ -41,8 +42,9 @@ void DataGraphTest::CheckSessionMemory(const vkt::DataGraphPipelineSession& sess
     }
 }
 
-std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSessionBindInfo(const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem) {
-    const auto &bind_point_reqs = session.BindPointReqs();
+std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSessionBindInfo(
+    const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem) {
+    const auto& bind_point_reqs = session.BindPointReqs();
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos(session.MemReqs().size());
     uint32_t req_i = 0;
     for (uint32_t i = 0; i < bind_point_reqs.size(); i++) {
@@ -112,7 +114,7 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     session.GetMemoryReqs();
     CheckSessionMemory(session);
 
-    auto &bind_point_reqs = session.BindPointReqs();
+    auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
@@ -286,7 +288,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     session.GetMemoryReqs();
     CheckSessionMemory(session);
 
-    auto &bind_point_reqs = session.BindPointReqs();
+    auto& bind_point_reqs = session.BindPointReqs();
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
@@ -307,7 +309,8 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
     uint32_t index = 0;
     VkDeviceSize offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline_layout, 0, 1, &index, &offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline_layout, 0, 1, &index,
+                                         &offset);
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

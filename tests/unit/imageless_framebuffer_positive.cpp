@@ -50,7 +50,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     fb_ci.renderPass = rp;
     fb_ci.attachmentCount = 1;
 
-    fb_ci.pAttachments  = nullptr;
+    fb_ci.pAttachments = nullptr;
     vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
 
     vkt::ImageView rt_view = m_renderTargets[0]->CreateView();

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
     //     int x = gl_SampleMaskIn[3]; // Exceed sample mask input array size
     //     uFragColor = vec4(0,1,0,1) * x;
     // }
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %gl_SampleMaskIn %uFragColor
@@ -72,7 +72,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
     )";
     VkShaderObj fs(*m_device, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    const auto inputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto inputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, inputPipeline, kErrorBit,
@@ -93,7 +93,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
     //    gl_SampleMask[3] = 1; // Exceed sample mask output array size
     //    uFragColor = vec4(0,1,0,1);
     // }
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %gl_SampleMask %uFragColor
@@ -128,7 +128,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
     )";
     VkShaderObj fs(*m_device, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto outputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit,
@@ -144,7 +144,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -213,7 +213,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -286,7 +286,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -432,7 +432,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c0;
         layout(location=1) out vec4 c1;
@@ -459,7 +459,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c[5];
         void main(){
@@ -478,7 +478,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=3) out vec4 c[2];
         void main(){
@@ -504,7 +504,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
     fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     RETURN_IF_SKIP(InitState());
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set = 0, binding=0) buffer SSBO_0 {
             uint a;
@@ -552,7 +552,7 @@ TEST_F(NegativeShaderLimits, MaxLongVectorComponentCount) {
 
     VkShaderObj fs(*m_device, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto outputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit, "VUID-RuntimeSpirv-longVector-12296");
@@ -595,7 +595,7 @@ TEST_F(NegativeShaderLimits, MaxLongVectorIdComponentCount) {
     VkShaderObj fs(*m_device, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL,
                    &specialization_info);
 
-    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto outputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit, "VUID-RuntimeSpirv-longVector-12296");

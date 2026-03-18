@@ -108,8 +108,7 @@ std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext) {
 namespace vvl {
 LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
 
-LocationCapture::LocationCapture(const LocationCapture& other)
-    : capture(other.capture) {
+LocationCapture::LocationCapture(const LocationCapture& other) : capture(other.capture) {
     if (capture.empty()) {
         return;
     }
@@ -119,8 +118,7 @@ LocationCapture::LocationCapture(const LocationCapture& other)
     }
 }
 
-LocationCapture::LocationCapture(LocationCapture&& other)
-    : capture(std::move(other.capture)) {
+LocationCapture::LocationCapture(LocationCapture&& other) : capture(std::move(other.capture)) {
     if (capture.empty()) {
         return;
     }
@@ -209,7 +207,7 @@ bool operator==(const Key& key, const Location& loc) {
         return true;
     }
     if (key.recurse_field) {
-        const Location *prev = loc.prev;
+        const Location* prev = loc.prev;
         while (prev != nullptr) {
             if (key.field == prev->field) {
                 return true;

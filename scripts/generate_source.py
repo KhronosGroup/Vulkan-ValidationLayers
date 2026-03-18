@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2025 The Khronos Group Inc.
-# Copyright (c) 2021-2025 Valve Corporation
-# Copyright (c) 2021-2025 LunarG, Inc.
-# Copyright (c) 2021-2024 Google Inc.
-# Copyright (c) 2023-2024 RasterGrid Kft.
+# Copyright (c) 2021-2026 The Khronos Group Inc.
+# Copyright (c) 2021-2026 Valve Corporation
+# Copyright (c) 2021-2026 LunarG, Inc.
+# Copyright (c) 2021-2026 Google Inc.
+# Copyright (c) 2023-2026 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,9 +32,12 @@ from xml.etree import ElementTree
 from generate_spec_error_message import GenerateSpecErrorMessage
 
 def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFile: str, targetFilter: str, caching: bool):
+    clang_binary = 'clang-format'
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        clang_binary = 'clang-format-22'
 
     try:
-        code = common_ci.RunShellCmd(f'clang-format --version')
+        code = common_ci.RunShellCmd(f'{clang_binary} --version')
         has_clang_format = True
     except:
         has_clang_format = False
@@ -412,7 +415,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
 
         # Run clang-format on the file
         if has_clang_format:
-            common_ci.RunShellCmd(f'clang-format -i --style=file:{styleFile} {os.path.join(directory, target)}')
+            common_ci.RunShellCmd(f'{clang_binary} -i --style=file:{styleFile} {os.path.join(directory, target)}')
 
     if os.path.isfile(cachePath):
         os.remove(cachePath)

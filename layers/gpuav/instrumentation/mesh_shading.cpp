@@ -20,7 +20,7 @@
 
 namespace gpuav {
 
-void RegisterMeshShadingValidation(Validator &gpuav, CommandBufferSubState &cb) {
+void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.mesh_shading) {
         return;
     }

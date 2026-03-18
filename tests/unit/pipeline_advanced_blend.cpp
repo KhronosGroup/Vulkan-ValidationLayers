@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
     memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
 
     // only 1 attachment state, different blend op values
-    const auto set_info_different = [&](CreatePipelineHelper &helper) {
+    const auto set_info_different = [&](CreatePipelineHelper& helper) {
         attachment_states[0].blendEnable = VK_TRUE;
         attachment_states[0].colorBlendOp = VK_BLEND_OP_HSL_COLOR_EXT;
         attachment_states[0].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
@@ -55,7 +55,7 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
 
     // Test is if independent blend is not supported
     if (!blend_operation_advanced.advancedBlendIndependentBlend && blend_operation_advanced.advancedBlendMaxColorAttachments > 1) {
-        const auto set_info_color = [&](CreatePipelineHelper &helper) {
+        const auto set_info_color = [&](CreatePipelineHelper& helper) {
             attachment_states[0].blendEnable = VK_TRUE;
             attachment_states[0].colorBlendOp = VK_BLEND_OP_MIN;
             attachment_states[0].alphaBlendOp = VK_BLEND_OP_MIN;

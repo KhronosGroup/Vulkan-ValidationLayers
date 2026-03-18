@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,8 @@ TEST_F(StressSyncVal, CopyPagesInSmallChunks) {
     VkBufferCopy region = {0 /*src offset*/, 16 /*dst offset*/, 16 /*size*/};
 
     for (uint32_t page = 0; page < page_count; page++) {
-        vkt::CommandBuffer &command_buffer = command_buffers[page % 2];
-        vkt::Fence &fence = fences[page % 2];
+        vkt::CommandBuffer& command_buffer = command_buffers[page % 2];
+        vkt::Fence& fence = fences[page % 2];
         fence.Wait(kWaitTimeout);
         fence.Reset();
         command_buffer.Begin();
@@ -131,7 +131,7 @@ TEST_F(StressSyncVal, CopyPagesInSmallChunksNoQueueSync) {
     VkBufferCopy region = {0 /*src offset*/, 16 /*dst offset*/, 16 /*size*/};
 
     for (uint32_t page = 0; page < page_count; page++) {
-        vkt::CommandBuffer &command_buffer = command_buffers[page];
+        vkt::CommandBuffer& command_buffer = command_buffers[page];
         command_buffer.Begin();
         for (uint32_t copy = (page == 0) ? 1 : 0; copy < copies_per_page; copy++) {
             command_buffer.Barrier(barrier);

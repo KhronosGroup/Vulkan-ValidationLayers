@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectBuffer) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -58,7 +58,7 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectDevice) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 

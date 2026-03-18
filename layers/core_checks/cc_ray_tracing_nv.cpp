@@ -134,7 +134,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     }
 
     if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props_nv.maxGeometryCount) {
-        skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", commandBuffer, error_obj.location.dot(Field::pInfo).dot(Field::geometryCount),
+        skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", commandBuffer,
+                         error_obj.location.dot(Field::pInfo).dot(Field::geometryCount),
                          "geometryCount [%" PRIu32
                          "] must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.",
@@ -579,13 +580,12 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                 const vvl::range<VkDeviceAddress> dst_address_range = dst_buffer_state->DeviceAddressRange();
                 if (src_address_range.intersects(dst_address_range)) {
                     const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle());
-                    skip |=
-                        LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
-                                    error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
-                                    "(%s) address range %s intersects "
-                                    "dstAccelerationStructureData (%s) address range %s",
-                                    FormatHandle(src_buffer_state->Handle()).c_str(), string_range_hex(src_address_range).c_str(),
-                                    FormatHandle(dst_buffer_state->Handle()).c_str(), string_range_hex(dst_address_range).c_str());
+                    skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
+                                     error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
+                                     "(%s) address range %s intersects "
+                                     "dstAccelerationStructureData (%s) address range %s",
+                                     FormatHandle(src_buffer_state->Handle()).c_str(), string_range_hex(src_address_range).c_str(),
+                                     FormatHandle(dst_buffer_state->Handle()).c_str(), string_range_hex(dst_address_range).c_str());
                 }
             }
         }

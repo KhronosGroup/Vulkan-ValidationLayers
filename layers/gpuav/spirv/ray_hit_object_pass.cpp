@@ -28,13 +28,16 @@ const static OfflineModule kOfflineModule = {instrumentation_ray_hit_object_comp
                                              UseErrorPayloadVariable};
 
 const static OfflineFunction kOfflineFunction = {"inst_ray_hit_object", instrumentation_ray_hit_object_comp_function_0_offset};
-const static OfflineFunction kSBTIndexCheckFunction = {"inst_ray_hit_object_sbt_index_check", instrumentation_ray_hit_object_comp_function_1_offset};
+const static OfflineFunction kSBTIndexCheckFunction = {"inst_ray_hit_object_sbt_index_check",
+                                                       instrumentation_ray_hit_object_comp_function_1_offset};
 
 RayHitObjectPass::RayHitObjectPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
 uint32_t RayHitObjectPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-uint32_t RayHitObjectPass::GetSBTIndexCheckFunctionId() { return GetLinkFunction(sbt_index_check_function_id_, kSBTIndexCheckFunction); }
+uint32_t RayHitObjectPass::GetSBTIndexCheckFunctionId() {
+    return GetLinkFunction(sbt_index_check_function_id_, kSBTIndexCheckFunction);
+}
 
 // OpHitObjectTraceRayEXT
 // OpHitObjectTraceRayMotionEXT
@@ -74,8 +77,8 @@ uint32_t RayHitObjectPass::CreateFunctionCall(BasicBlock& block, InstructionIt* 
     }
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_id, opcode_type_id, ray_flags_id, ray_origin_id, ray_tmin_id,
-                             ray_direction_id, ray_tmax_id, pipeline_flags_id, time_id},
+                            {bool_type, function_result, function_def, inst_position_id, opcode_type_id, ray_flags_id,
+                             ray_origin_id, ray_tmin_id, ray_direction_id, ray_tmax_id, pipeline_flags_id, time_id},
                             inst_it);
     module_.need_log_error_ = true;
     return function_result;
@@ -97,8 +100,7 @@ uint32_t RayHitObjectPass::CreateSBTIndexCheckFunctionCall(BasicBlock& block, In
     const uint32_t max_sbt_index_id = type_manager_.CreateConstantUInt32(max_sbt_index).Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_id, sbt_index_id, max_sbt_index_id},
-                            inst_it);
+                            {bool_type, function_result, function_def, inst_position_id, sbt_index_id, max_sbt_index_id}, inst_it);
     module_.need_log_error_ = true;
     return function_result;
 }

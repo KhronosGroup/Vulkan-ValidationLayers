@@ -65,15 +65,15 @@ void GpuAVSettings::SetBufferValidationEnabled(bool enabled) {
     validate_acceleration_structures_builds = enabled;
 }
 
-void GpuAVSettings::SetShaderSelectionRegexes(std::vector<std::string> &&shader_selection_regexes) {
+void GpuAVSettings::SetShaderSelectionRegexes(std::vector<std::string>&& shader_selection_regexes) {
     this->shader_selection_regexes = std::move(shader_selection_regexes);
 }
 
-bool GpuAVSettings::MatchesAnyShaderSelectionRegex(const std::string &debug_name) {
+bool GpuAVSettings::MatchesAnyShaderSelectionRegex(const std::string& debug_name) {
     if (debug_name.empty()) {
         return false;
     }
-    for (const std::string &shader_selection_regex_str : shader_selection_regexes) {
+    for (const std::string& shader_selection_regex_str : shader_selection_regexes) {
         std::regex regex(shader_selection_regex_str, std::regex_constants::ECMAScript);
         if (std::regex_match(debug_name, regex)) {
             return true;

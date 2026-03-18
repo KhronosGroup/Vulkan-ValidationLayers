@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -194,7 +194,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -234,7 +234,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *const vsSource = R"glsl(
+    const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[4]; } constants;
         void main(){
@@ -297,7 +297,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     InitRenderTarget();
 
     // push constant range: 0-99
-    const char *const vsSource = R"glsl(
+    const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            bool b;
@@ -321,7 +321,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     )glsl";
 
     // push constant range: 0 - 95
-    const char *const fsSource = R"glsl(
+    const char* const fsSource = R"glsl(
         #version 450
         struct foo1{
            int i[4];
@@ -410,7 +410,7 @@ TEST_F(NegativeShaderPushConstants, BufferDeviceAddress) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16, std430) buffer BDA {
@@ -457,7 +457,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     // void main(){
     //     uFragColor = vec4(0.0);
     // }
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main_f "main" %4
@@ -540,7 +540,7 @@ TEST_F(NegativeShaderPushConstants, SpecConstantSize) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         layout (constant_id = 0) const int my_array_size = 1;
         layout (push_constant) uniform my_buf {
@@ -585,7 +585,7 @@ TEST_F(NegativeShaderPushConstants, ArrayOf8Bit) {
     // storagePushConstant8 is not enabled
     RETURN_IF_SKIP(Init());
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_8bit_storage: enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -611,7 +611,7 @@ TEST_F(NegativeShaderPushConstants, StructOf8Bit) {
     // storagePushConstant8 is not enabled
     RETURN_IF_SKIP(Init());
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_8bit_storage: enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -644,7 +644,7 @@ TEST_F(NegativeShaderPushConstants, ArrayOfStructOf8Bit) {
     // storagePushConstant8 is not enabled
     RETURN_IF_SKIP(Init());
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_8bit_storage: enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable

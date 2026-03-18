@@ -78,7 +78,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoMappings) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -139,7 +139,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoHeapBound) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -210,7 +210,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -289,7 +289,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -368,7 +368,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -447,7 +447,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     const VkDeviceSize heap_size = descriptor_size + heap_props.minResourceHeapReservedRange;
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    uint8_t *heap_data = static_cast<uint8_t *>(heap.Memory().Map());
+    uint8_t* heap_data = static_cast<uint8_t*>(heap.Memory().Map());
 
     vkt::Buffer buffer1(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer buffer2(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -481,7 +481,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
     host_addresses[2].size = static_cast<size_t>(heap_props.bufferDescriptorSize);
     vk::WriteResourceDescriptorsEXT(*m_device, 3u, resource_infos, host_addresses);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         layout(set=0, binding=0) buffer Buf1 { uint data1[]; } buf1;
@@ -603,7 +603,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DispatchWorkgroupSize) {
 
     vkt::Buffer indirect_buffer(*m_device, 5 * sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 kHostVisibleMemProps);
-    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    VkDispatchIndirectCommand* ptr = static_cast<VkDispatchIndirectCommand*>(indirect_buffer.Memory().Map());
     // VkDispatchIndirectCommand[0]
     ptr->x = 4;  // over
     ptr->y = 2;
@@ -688,7 +688,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
     vkt::Buffer heap1(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
     vkt::Buffer heap2(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {
@@ -769,7 +769,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
 
     vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {

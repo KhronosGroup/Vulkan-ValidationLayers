@@ -833,7 +833,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
         // Create PSO that uses the uniform buffers
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;
@@ -878,7 +878,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         // Create PSO to be used for draw-time errors below
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;
@@ -926,7 +926,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
         // Create PSO to be used for draw-time errors below
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;
@@ -1014,7 +1014,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
     // Create PSO to be used for draw-time errors below
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         layout(location=0) out vec4 x;
@@ -1162,7 +1162,7 @@ TEST_F(NegativeDescriptors, OpArrayLengthStaticallyUsed) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -1241,7 +1241,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     sampler1.Destroy();
 
     // Create PSO to be used for draw-time errors below
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         layout(set=0, binding=1) uniform sampler2D s1;
@@ -1326,7 +1326,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     constexpr std::array external_errors = {"VUID-vkCmdDraw-None-09600"};
 
     // Common steps to create the two classes of errors (or two classes of positives)
-    auto do_test = [&](vkt::Image *image, vkt::ImageView *view, VkImageAspectFlags aspect_mask, VkImageLayout image_layout,
+    auto do_test = [&](vkt::Image* image, vkt::ImageView* view, VkImageAspectFlags aspect_mask, VkImageLayout image_layout,
                        VkImageLayout descriptor_layout, const bool positive_test) {
         // Set up the descriptor
         img_info.imageView = view->handle();
@@ -1357,7 +1357,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             // At draw time the update layout will mis-match the actual layout
             if (positive_test || (test_type == kExternal)) {
             } else {
-                for (const auto &err : internal_errors) {
+                for (const auto& err : internal_errors) {
                     m_errorMonitor->SetDesiredError(err);
                 }
             }
@@ -1373,7 +1373,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             // Submit cmd buffer
             if (positive_test || (test_type == kInternal)) {
             } else {
-                for (const auto &err : external_errors) {
+                for (const auto& err : external_errors) {
                     m_errorMonitor->SetDesiredError(err);
                 }
             }
@@ -1796,7 +1796,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0) layout(binding=0) uniform foo1 { int x; int y; } bar1;
@@ -1985,7 +1985,7 @@ TEST_F(NegativeDescriptors, DISABLED_MutableBufferUpdate) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; };
         void main() {
@@ -2085,7 +2085,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding[0]));
 
     std::vector<VkDescriptorSetLayout> ds_vk_layouts;
-    for (const auto &ds_layout : ds_layouts) {
+    for (const auto& ds_layout : ds_layouts) {
         ds_vk_layouts.push_back(ds_layout);
     }
 
@@ -2215,7 +2215,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityCompute) {
     const vkt::PipelineLayout pipeline_layout_a(*m_device, {&descriptor_set_storage.layout_, &descriptor_set_storage.layout_});
     const vkt::PipelineLayout pipeline_layout_b(*m_device, {&descriptor_set_storage.layout_, &descriptor_set_uniform.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 1, binding = 0) buffer StorageBuffer_1 {
             uint a;
@@ -2271,7 +2271,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     descriptor_set_1.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set_1.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint a;
@@ -2490,7 +2490,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         std::string min_align_vu;
     };
 
-    for (const auto &test_case : {
+    for (const auto& test_case : {
              TestCase({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                        m_device->Physical().limits_.maxUniformBufferRange, "VUID-VkWriteDescriptorSet-descriptorType-00332",
                        m_device->Physical().limits_.minUniformBufferOffsetAlignment,
@@ -3591,7 +3591,7 @@ TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     sampler_descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     sampler_descriptor_set.UpdateDescriptorSets();
     const vkt::PipelineLayout pipeline_layout(*m_device, {&sampler_descriptor_set.layout_});
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 x;
@@ -3648,7 +3648,7 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
     vkt::Framebuffer fb(*m_device, rp, 2u, attachments, 64, 64);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput ia0;
         layout(set=0, binding=1) uniform sampler2D ci1;
@@ -4344,7 +4344,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 x;
             layout(set = 0, binding = 0) writeonly uniform image2D image;
@@ -4419,7 +4419,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     //     x = vec4(1.0f);
     //     foo(image_0);
     // }
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %color_attach
@@ -4521,7 +4521,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
             layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
@@ -4593,7 +4593,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0, rgba8) writeonly uniform image2D image1;
             layout(set = 1, binding = 0, input_attachment_index = 0) uniform subpassInput inputColor;
@@ -5004,7 +5004,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     TEST_DESCRIPTION("Dispatch with unbound descriptor set");
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
         layout(set = 0, binding = 0) uniform sampler2D InputTexture;
@@ -5050,7 +5050,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
 TEST_F(NegativeDescriptors, CompatiblePushConstantRanges) {
     RETURN_IF_SKIP(Init());
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 460
 
         layout(push_constant, std430) uniform PC {
@@ -6188,7 +6188,7 @@ TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefined) {
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -6248,7 +6248,7 @@ TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefinedMaintenance4) {
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -6315,7 +6315,7 @@ TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;

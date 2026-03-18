@@ -476,7 +476,8 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
         GTEST_SKIP() << "Test can only run if video session needs memory bindings";
     }
 
-    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count, vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
+    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
+                                                              vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
     ASSERT_EQ(VK_SUCCESS, vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, mem_reqs.data()));
 
     std::vector<VkDeviceMemory> session_memory;
@@ -2149,7 +2150,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     // Create a buffer to get non-video-related memory requirements
     VkBufferCreateInfo buffer_create_info =
         vku::InitStruct<VkBufferCreateInfo>(nullptr, static_cast<VkBufferCreateFlags>(0), static_cast<VkDeviceSize>(4096),
-                                          static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+                                            static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     vkt::Buffer buffer(*m_device, buffer_create_info);
     VkMemoryRequirements buf_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buf_mem_reqs);

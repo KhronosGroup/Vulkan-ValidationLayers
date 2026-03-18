@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ TEST_F(NegativeImageDrm, Basic) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = vku::InitStructHelper();
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_format_info.pNext = (void *)&drm_format_mod_info;
+    image_format_info.pNext = (void*)&drm_format_mod_info;
     vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
 
     {
@@ -69,7 +69,7 @@ TEST_F(NegativeImageDrm, Basic) {
     fake_plane_layout.arrayPitch = 1;
     fake_plane_layout.depthPitch = 1;
 
-    image_info.pNext = (void *)&drm_format_mod_explicit;
+    image_info.pNext = (void*)&drm_format_mod_explicit;
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
     CreateImageTest(image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
@@ -102,7 +102,7 @@ TEST_F(NegativeImageDrm, Basic2) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = vku::InitStructHelper();
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_format_info.pNext = (void *)&drm_format_mod_info;
+    image_format_info.pNext = (void*)&drm_format_mod_info;
     vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
 
     VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
@@ -115,7 +115,7 @@ TEST_F(NegativeImageDrm, Basic2) {
     drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
     drm_format_mod_explicit.pPlaneLayouts = &fake_plane_layout;
 
-    image_info.pNext = (void *)&drm_format_mod_explicit;
+    image_info.pNext = (void*)&drm_format_mod_explicit;
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.drmFormatModifier = mods[1];
@@ -126,20 +126,20 @@ TEST_F(NegativeImageDrm, Basic2) {
     }
     VkImage image = VK_NULL_HANDLE;
     // Postive check if only 1
-    image_info.pNext = (void *)&drm_format_mod_list;
+    image_info.pNext = (void*)&drm_format_mod_list;
     vk::CreateImage(device(), &image_info, nullptr, &image);
     vk::DestroyImage(device(), image, nullptr);
 
-    image_info.pNext = (void *)&drm_format_mod_explicit;
+    image_info.pNext = (void*)&drm_format_mod_explicit;
     vk::CreateImage(device(), &image_info, nullptr, &image);
     vk::DestroyImage(device(), image, nullptr);
 
     // Having both in pNext
-    drm_format_mod_explicit.pNext = (void *)&drm_format_mod_list;
+    drm_format_mod_explicit.pNext = (void*)&drm_format_mod_list;
     CreateImageTest(image_info, "VUID-VkImageCreateInfo-tiling-02261");
 
     // Only 1 pNext but wrong tiling
-    image_info.pNext = (void *)&drm_format_mod_list;
+    image_info.pNext = (void*)&drm_format_mod_list;
     image_info.tiling = VK_IMAGE_TILING_LINEAR;
     CreateImageTest(image_info, "VUID-VkImageCreateInfo-pNext-02262");
 }

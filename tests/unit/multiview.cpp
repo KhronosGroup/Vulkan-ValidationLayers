@@ -192,7 +192,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     std::vector<VkSubpassDependency> dependencies;
     dependencies.resize(extra_subpass_count);
     for (unsigned i = 0; i < dependencies.size(); ++i) {
-        auto &subpass_dep = dependencies[i];
+        auto& subpass_dep = dependencies[i];
         subpass_dep.srcSubpass = i;
         subpass_dep.dstSubpass = i + 1;
 
@@ -318,7 +318,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Push constants
     {
-        const char *const vsSource = R"glsl(
+        const char* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            mat3 m;
@@ -336,7 +336,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.pushConstantRangeCount = 1;
         pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vkt::DescriptorSetLayout *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vkt::DescriptorSetLayout*>{});
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -393,7 +393,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
 
-        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const*>{});
 
         VkShaderObj const vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj const fs(*m_device, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -457,7 +457,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        const char *const vsSource = R"glsl(
+        const char* const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -532,7 +532,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        const char *const vsSource = R"glsl(
+        const char* const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -652,7 +652,7 @@ TEST_F(NegativeMultiview, Features) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
-    std::vector<const char *> extension_list;
+    std::vector<const char*> extension_list;
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         extension_list.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     }
@@ -1066,7 +1066,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
 
     // tessellationShader
     {
-        const char *tcsSource = R"glsl(
+        const char* tcsSource = R"glsl(
         #version 450
         layout(vertices=3) out;
         void main(){
@@ -1074,7 +1074,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
            gl_TessLevelInner[0] = 1;
         }
         )glsl";
-        const char *tesSource = R"glsl(
+        const char* tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -1106,7 +1106,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     }
     // geometryShader
     {
-        const char *gsSource = R"glsl(
+        const char* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -1191,7 +1191,7 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInRenderPass) {
     AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
     RETURN_IF_SKIP(Init());
 
-    const char *gsSource = R"glsl(
+    const char* gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;
@@ -1250,7 +1250,7 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInDynamicRendering) {
     AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
     RETURN_IF_SKIP(Init());
 
-    const char *gsSource = R"glsl(
+    const char* gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;
@@ -1380,7 +1380,7 @@ TEST_F(NegativeMultiview, MeshShader) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices=81) out;

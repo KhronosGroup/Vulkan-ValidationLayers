@@ -42,7 +42,7 @@
 namespace vvl {
 
 // This seems like it could be useful elsewhere, but until find another spot, just keep here.
-static const char *GetActionType(Func command) {
+static const char* GetActionType(Func command) {
     if (IsCommandDispatch(command)) {
         return "dispatch";
     } else if (IsCommandTraceRays(command)) {
@@ -52,7 +52,7 @@ static const char *GetActionType(Func command) {
     }
 }
 
-std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
+std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, uint32_t index,
                                                     VkDescriptorType type) const {
     std::ostringstream ss;
     switch (type) {
@@ -133,9 +133,9 @@ std::string DescriptorValidator::DescribeInstruction() const {
     return ss.str();
 }
 
-DescriptorValidator::DescriptorValidator(vvl::DeviceProxy &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
-                                         uint32_t set_index, VkFramebuffer framebuffer, const LogObjectList *objlist,
-                                         const Location &loc)
+DescriptorValidator::DescriptorValidator(vvl::DeviceProxy& dev, CommandBuffer& cb_state, DescriptorSet& descriptor_set,
+                                         uint32_t set_index, VkFramebuffer framebuffer, const LogObjectList* objlist,
+                                         const Location& loc)
     : Logger(dev.debug_report),
       dev_proxy(dev),
       is_gpu_av(dev.container_type == LayerObjectTypeGpuAssisted),
@@ -149,14 +149,14 @@ DescriptorValidator::DescriptorValidator(vvl::DeviceProxy &dev, CommandBuffer &c
       set_index(set_index),
       objlist(objlist) {}
 
-void DescriptorValidator::SetLocationForGpuAv(const Location &gpuav_loc) {
+void DescriptorValidator::SetLocationForGpuAv(const Location& gpuav_loc) {
     loc = LocationCapture(gpuav_loc);
     vuids = &GetDrawDispatchVuid(gpuav_loc.function);
 }
 
 template <typename T>
-bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfaceVariable &resource_variable,
-                                                    const T &binding) const {
+bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfaceVariable& resource_variable,
+                                                    const T& binding) const {
     bool skip = false;
 
     // If there is a descriptor array, we care about the size of the array statically used in the shader, not what was declared in
@@ -168,7 +168,7 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
     }
 
     for (uint32_t index = 0; !skip && index < count; index++) {
-        const auto &descriptor = binding.descriptors[index];
+        const auto& descriptor = binding.descriptors[index];
 
         if (!binding.updated[index]) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle());
@@ -184,30 +184,30 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
     return skip;
 }
 
-bool DescriptorValidator::ValidateBindingStatic(const spirv::ResourceInterfaceVariable &resource_variable,
-                                                const DescriptorBinding &binding) const {
+bool DescriptorValidator::ValidateBindingStatic(const spirv::ResourceInterfaceVariable& resource_variable,
+                                                const DescriptorBinding& binding) const {
     bool skip = false;
     switch (binding.descriptor_class) {
         case DescriptorClass::GeneralBuffer:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const BufferBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const BufferBinding&>(binding));
             break;
         case DescriptorClass::ImageSampler:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const ImageSamplerBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const ImageSamplerBinding&>(binding));
             break;
         case DescriptorClass::Image:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const ImageBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const ImageBinding&>(binding));
             break;
         case DescriptorClass::PlainSampler:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const SamplerBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const SamplerBinding&>(binding));
             break;
         case DescriptorClass::TexelBuffer:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const TexelBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const TexelBinding&>(binding));
             break;
         case DescriptorClass::AccelerationStructure:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const AccelerationStructureBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const AccelerationStructureBinding&>(binding));
             break;
         case DescriptorClass::Tensor:
-            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const TensorBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const TensorBinding&>(binding));
             break;
         case DescriptorClass::InlineUniform:
             break;  // Can't validate the descriptor because it may not have been updated.
@@ -221,10 +221,10 @@ bool DescriptorValidator::ValidateBindingStatic(const spirv::ResourceInterfaceVa
 }
 
 template <typename T>
-bool DescriptorValidator::ValidateDescriptorsDynamic(const spirv::ResourceInterfaceVariable &resource_variable, const T &binding,
+bool DescriptorValidator::ValidateDescriptorsDynamic(const spirv::ResourceInterfaceVariable& resource_variable, const T& binding,
                                                      const uint32_t index) {
     bool skip = false;
-    const auto &descriptor = binding.descriptors[index];
+    const auto& descriptor = binding.descriptors[index];
 
     if (!binding.updated[index]) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
@@ -238,44 +238,43 @@ bool DescriptorValidator::ValidateDescriptorsDynamic(const spirv::ResourceInterf
     return skip;
 }
 
-bool DescriptorValidator::ValidateBindingDynamic(const spirv::ResourceInterfaceVariable &resource_variable,
-                                                 DescriptorBinding &binding, const uint32_t index) {
+bool DescriptorValidator::ValidateBindingDynamic(const spirv::ResourceInterfaceVariable& resource_variable,
+                                                 DescriptorBinding& binding, const uint32_t index) {
     bool skip = false;
 
     switch (binding.descriptor_class) {
         case DescriptorClass::GeneralBuffer:
-            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const BufferBinding &>(binding), index);
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const BufferBinding&>(binding), index);
             break;
         case DescriptorClass::ImageSampler: {
-            auto &img_sampler_binding = static_cast<ImageSamplerBinding &>(binding);
+            auto& img_sampler_binding = static_cast<ImageSamplerBinding&>(binding);
             if (dev_proxy.gpuav_settings.validate_image_layout) {
-                auto &descriptor = img_sampler_binding.descriptors[index];
+                auto& descriptor = img_sampler_binding.descriptors[index];
                 descriptor.UpdateImageLayoutDrawState(cb_state);
             }
             skip |= ValidateDescriptorsDynamic(resource_variable, img_sampler_binding, index);
             break;
         }
         case DescriptorClass::Image: {
-            auto &img_binding = static_cast<ImageBinding &>(binding);
+            auto& img_binding = static_cast<ImageBinding&>(binding);
             if (dev_proxy.gpuav_settings.validate_image_layout) {
-                auto &descriptor = img_binding.descriptors[index];
+                auto& descriptor = img_binding.descriptors[index];
                 descriptor.UpdateImageLayoutDrawState(cb_state);
             }
             skip |= ValidateDescriptorsDynamic(resource_variable, img_binding, index);
             break;
         }
         case DescriptorClass::PlainSampler:
-            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const SamplerBinding &>(binding), index);
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const SamplerBinding&>(binding), index);
             break;
         case DescriptorClass::TexelBuffer:
-            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const TexelBinding &>(binding), index);
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const TexelBinding&>(binding), index);
             break;
         case DescriptorClass::AccelerationStructure:
-            skip |=
-                ValidateDescriptorsDynamic(resource_variable, static_cast<const AccelerationStructureBinding &>(binding), index);
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const AccelerationStructureBinding&>(binding), index);
             break;
         case DescriptorClass::Tensor:
-            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const TensorBinding &>(binding), index);
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const TensorBinding&>(binding), index);
             break;
         case DescriptorClass::InlineUniform:
             break;  // TODO - Can give warning if reading uninitialized data
@@ -288,8 +287,8 @@ bool DescriptorValidator::ValidateBindingDynamic(const spirv::ResourceInterfaceV
     return skip;
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
-                                             VkDescriptorType descriptor_type, const BufferDescriptor &descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
+                                             VkDescriptorType descriptor_type, const BufferDescriptor& descriptor) const {
     bool skip = false;
     // Verify that buffers are valid
     const VkBuffer buffer = descriptor.GetBuffer();
@@ -309,7 +308,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         return skip;
     }
     if (buffer_node /* && !buffer_node->sparse*/) {
-        for (const auto &binding : buffer_node->GetInvalidMemory()) {
+        for (const auto& binding : buffer_node->GetInvalidMemory()) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle());
             skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                              "the %s is using buffer %s that references invalid memory %s.%s",
@@ -331,7 +330,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     return skip;
 }
 
-static const char *SuggestImageViewType(spv::Dim dim, bool is_image_array) {
+static const char* SuggestImageViewType(spv::Dim dim, bool is_image_array) {
     VkImageViewType suggest = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     if (dim == spv::Dim1D) {
         suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
@@ -349,30 +348,30 @@ static const char *SuggestImageViewType(spv::Dim dim, bool is_image_array) {
 }
 
 // 'index' is the index into the descriptor
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
-                                             VkDescriptorType descriptor_type, const ImageDescriptor &image_descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
+                                             VkDescriptorType descriptor_type, const ImageDescriptor& image_descriptor) const {
     // We skip various parts of checks for core check to prevent false positive when we don't know the index
     bool skip = false;
-    std::vector<const Sampler *> sampler_states;
+    std::vector<const Sampler*> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
-    const ImageView *image_view_state = image_descriptor.GetImageViewState();
+    const ImageView* image_view_state = image_descriptor.GetImageViewState();
 
     if (image_descriptor.GetClass() == DescriptorClass::ImageSampler) {
-        sampler_states.emplace_back(static_cast<const ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
+        sampler_states.emplace_back(static_cast<const ImageSamplerDescriptor&>(image_descriptor).GetSamplerState());
     } else if (is_gpu_av) {
         // TODO - This will skip for GPU-AV because we don't currently capture array of samplers with array of sampled images
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8922
         // To not give false positve, we will skip all Sampler related checks since sampler_states will be empty
     } else {
         if (index < resource_variable.samplers_used_by_image.size()) {
-            for (const auto &sampler_used : resource_variable.samplers_used_by_image[index]) {
-                const auto *descriptor =
+            for (const auto& sampler_used : resource_variable.samplers_used_by_image[index]) {
+                const auto* descriptor =
                     descriptor_set.GetDescriptorFromBinding(sampler_used.sampler_slot.binding, sampler_used.sampler_index);
                 // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
                 //       shader_validation.cpp. However, without this check some traces still crash.
                 // The issue is we set dynamic image index to zero in samplers_used_by_image so will fail GPU-AV case
                 if (descriptor && (descriptor->GetClass() == DescriptorClass::PlainSampler)) {
-                    const auto *sampler_state = static_cast<const SamplerDescriptor *>(descriptor)->GetSamplerState();
+                    const auto* sampler_state = static_cast<const SamplerDescriptor*>(descriptor)->GetSamplerState();
                     if (sampler_state) sampler_states.emplace_back(sampler_state);
                 }
             }
@@ -400,7 +399,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const auto image_state = image_view_state->image_state.get();
     ASSERT_AND_RETURN_SKIP(image_state);
 
-    const auto &image_view_ci = image_view_state->create_info;
+    const auto& image_view_ci = image_view_state->create_info;
 
     const spv::Dim dim = resource_variable.info.image_dim;
     const bool is_image_array = resource_variable.info.is_image_array;
@@ -494,7 +493,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.vk_format)
                         << " and swizzle the values in the shader to match the desired results.\n";
                 } else {
-                    const char *suggested_format = string_SpirvImageFormat(image_view_ci.format);
+                    const char* suggested_format = string_SpirvImageFormat(image_view_ci.format);
                     if (strncmp(suggested_format, "Unknown", 7) != 0) {
                         msg << "1. Change your shader to use " << suggested_format << " instead as that matches "
                             << string_VkFormat(image_view_ci.format) << "\n";
@@ -639,8 +638,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (!cb_state.active_attachments.empty() && !cb_state.active_subpasses.empty() &&
         (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         for (uint32_t att_index = 0; att_index < cb_state.active_attachments.size(); ++att_index) {
-            const auto &attachment_info = cb_state.active_attachments[att_index];
-            const auto *view_state = attachment_info.image_view;
+            const auto& attachment_info = cb_state.active_attachments[att_index];
+            const auto* view_state = attachment_info.image_view;
             if (!view_state || view_state->Destroyed()) {
                 continue;
             }
@@ -656,7 +655,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 if (!stage.HasSpirv()) {
                     continue;
                 }
-                for (const auto &interface_variable : stage.entrypoint->resource_interface_variables) {
+                for (const auto& interface_variable : stage.entrypoint->resource_interface_variables) {
                     if (interface_variable.decorations.set == set_index &&
                         interface_variable.decorations.binding == binding_index) {
                         descriptor_written_to |= interface_variable.IsWrittenTo();
@@ -665,7 +664,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 }
             }
 
-            const SubpassInfo &subpass = cb_state.active_subpasses[att_index];
+            const SubpassInfo& subpass = cb_state.active_subpasses[att_index];
             const bool layout_read_only = IsImageLayoutReadOnly(attachment_info.layout);
             const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
@@ -729,7 +728,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (skip) return skip;
 
     const VkFormat image_view_format = image_view_state->create_info.format;
-    for (const auto *sampler_state : sampler_states) {
+    for (const auto* sampler_state : sampler_states) {
         if (!sampler_state || sampler_state->Destroyed()) {
             continue;
         }
@@ -900,7 +899,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         // UnnormalizedCoordinates sampler validations
         // only check if sampled as could have a texelFetch on a combined image sampler
         if (sampler_state->create_info.unnormalizedCoordinates && image_insn.is_sampler_sampled) {
-            const auto &subresource_range = image_view_state->normalized_subresource_range;
+            const auto& subresource_range = image_view_state->normalized_subresource_range;
 
             // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
             if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
@@ -978,10 +977,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     return skip;
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
-                                             VkDescriptorType descriptor_type, const ImageSamplerDescriptor &descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
+                                             VkDescriptorType descriptor_type, const ImageSamplerDescriptor& descriptor) const {
     bool skip = false;
-    skip |= ValidateDescriptor(resource_variable, index, descriptor_type, static_cast<const ImageDescriptor &>(descriptor));
+    skip |= ValidateDescriptor(resource_variable, index, descriptor_type, static_cast<const ImageDescriptor&>(descriptor));
     if (skip) {
         return skip;
     }
@@ -990,8 +989,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     return skip;
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
-                                             VkDescriptorType descriptor_type, const TexelDescriptor &texel_descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
+                                             VkDescriptorType descriptor_type, const TexelDescriptor& texel_descriptor) const {
     bool skip = false;
     const VkBufferView buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
@@ -1012,7 +1011,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (!resource_variable.IsAccessed()) return skip;
 
     auto buffer = buffer_view_state->create_info.buffer;
-    const auto *buffer_state = buffer_view_state->buffer_state.get();
+    const auto* buffer_state = buffer_view_state->buffer_state.get();
     if (!buffer_state || buffer_state->Destroyed()) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
@@ -1062,7 +1061,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 msg << "1. Set your BuffereView to " << string_VkFormat(resource_variable.info.vk_format)
                     << " and swizzle the values in the shader to match the desired results.\n";
             } else {
-                const char *suggested_format = string_SpirvImageFormat(buffer_view_format);
+                const char* suggested_format = string_SpirvImageFormat(buffer_view_format);
                 if (strncmp(suggested_format, "Unknown", 7) != 0) {
                     msg << "1. Change your shader to use " << suggested_format << " instead as that matches "
                         << string_VkFormat(buffer_view_format) << "\n";
@@ -1168,9 +1167,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     return skip;
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
                                              VkDescriptorType descriptor_type,
-                                             const AccelerationStructureDescriptor &descriptor) const {
+                                             const AccelerationStructureDescriptor& descriptor) const {
     bool skip = false;
     // Verify that acceleration structures are valid
     if (descriptor.IsKHR()) {
@@ -1186,7 +1185,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  DescribeInstruction().c_str());
             }
         } else if (acc_node->buffer_state) {
-            for (const auto &mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
+            for (const auto& mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",
@@ -1207,7 +1206,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  DescribeInstruction().c_str());
             }
         } else {
-            for (const auto &mem_binding : acc_node->GetInvalidMemory()) {
+            for (const auto& mem_binding : acc_node->GetInvalidMemory()) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",
@@ -1222,8 +1221,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 // If the validation is related to both of image and sampler,
 // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class ==
 // DescriptorClass::Image) Here is to validate for only sampler.
-bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
-                                                    VkSampler sampler, bool is_immutable, const Sampler *sampler_state) const {
+bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, uint32_t index,
+                                                    VkSampler sampler, bool is_immutable, const Sampler* sampler_state) const {
     bool skip = false;
 
     // maintenance4 specifies that pipeline layout and its children (set layout, immutable samplers)
@@ -1249,17 +1248,17 @@ bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfa
     return skip;
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
-                                             VkDescriptorType descriptor_type, const SamplerDescriptor &descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, const uint32_t index,
+                                             VkDescriptorType descriptor_type, const SamplerDescriptor& descriptor) const {
     return ValidateSamplerDescriptor(resource_variable, index, descriptor.GetSampler(), descriptor.IsImmutableSampler(),
                                      descriptor.GetSamplerState());
 }
 
-bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
-                                             VkDescriptorType descriptor_type, const vvl::TensorDescriptor &descriptor) const {
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable& resource_variable, uint32_t index,
+                                             VkDescriptorType descriptor_type, const vvl::TensorDescriptor& descriptor) const {
     bool skip = false;
 
-    const vvl::TensorView *tensor_view_state = descriptor.GetTensorViewState();
+    const vvl::TensorView* tensor_view_state = descriptor.GetTensorViewState();
     ASSERT_AND_RETURN_SKIP(tensor_view_state);
     if (tensor_view_state->Destroyed()) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
@@ -1269,7 +1268,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                          FormatHandle(tensor_view_state->Handle()).c_str(), DescribeInstruction().c_str());
         return skip;
     }
-    const vvl::Tensor *tensor_state = descriptor.GetTensorState();
+    const vvl::Tensor* tensor_state = descriptor.GetTensorState();
     ASSERT_AND_RETURN_SKIP(tensor_state);
     if (tensor_state->Destroyed()) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
@@ -1291,11 +1290,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (loc.Get().function != Func::vkCmdDispatchDataGraphARM) {
         if (resource_variable.info.tensor_rank != tensor_state->create_info.pDescription->dimensionCount) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
-            skip |= LogError(
-                vuids->tensorARM_dimensionCount_09905, objlist, loc.Get(),
-                "the %s is using tensor %s created with dimensionCount %" PRIu32 ", but the corresponding OpTypeTensorARM has rank %" PRIu32 ".%s",
-                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_state->Handle()).c_str(),
-                tensor_state->create_info.pDescription->dimensionCount, resource_variable.info.tensor_rank, DescribeInstruction().c_str());
+            skip |= LogError(vuids->tensorARM_dimensionCount_09905, objlist, loc.Get(),
+                             "the %s is using tensor %s created with dimensionCount %" PRIu32
+                             ", but the corresponding OpTypeTensorARM has rank %" PRIu32 ".%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                             FormatHandle(tensor_state->Handle()).c_str(), tensor_state->create_info.pDescription->dimensionCount,
+                             resource_variable.info.tensor_rank, DescribeInstruction().c_str());
         }
         if (resource_variable.info.vk_format != tensor_view_state->create_info.format) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view_state->Handle());

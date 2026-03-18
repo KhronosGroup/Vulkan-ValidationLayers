@@ -98,7 +98,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryHost) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    void *host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
+    void* host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }

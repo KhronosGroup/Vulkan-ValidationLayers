@@ -16,7 +16,7 @@
 #include "../framework/shader_templates.h"
 #include "utils/math_utils.h"
 
-void ShaderObjectTest::InitBasicShaderObject(void *instance_pnext) {
+void ShaderObjectTest::InitBasicShaderObject(void* instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -620,9 +620,9 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     while (pCode % 16 != 0) {
         pCode += 1;
     }
-    std::memcpy(reinterpret_cast<void *>(pCode), create_infos[fail_index].pCode, create_infos[fail_index].codeSize);
+    std::memcpy(reinterpret_cast<void*>(pCode), create_infos[fail_index].pCode, create_infos[fail_index].codeSize);
     create_infos[fail_index].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
-    create_infos[fail_index].pCode = reinterpret_cast<const void *>(pCode);
+    create_infos[fail_index].pCode = reinterpret_cast<const void*>(pCode);
 
     VkResult res = vk::CreateShadersEXT(*m_device, 20u, create_infos, nullptr, shaders);
     ASSERT_EQ(res, VK_INCOMPATIBLE_SHADER_BINARY_EXT);
@@ -1298,7 +1298,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         // Allocate enough space to guarantee 16 byte alignment
         std::vector<uint8_t> data(data_size + 15);
         // Get 16 byte aligned pointer
-        void *storage_ptr = reinterpret_cast<void *>(Align(reinterpret_cast<uintptr_t>(data.data()), (uintptr_t)16));
+        void* storage_ptr = reinterpret_cast<void*>(Align(reinterpret_cast<uintptr_t>(data.data()), (uintptr_t)16));
 
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, storage_ptr);
 
@@ -1915,11 +1915,11 @@ TEST_F(PositiveShaderObject, IdenticallyDefinedLayouts) {
     InitDynamicRenderTarget();
 
     OneOffDescriptorSet descriptor_set1(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  });
     OneOffDescriptorSet descriptor_set2(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  });
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set1.layout_});
 
     const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, &descriptor_set1.layout_.handle());

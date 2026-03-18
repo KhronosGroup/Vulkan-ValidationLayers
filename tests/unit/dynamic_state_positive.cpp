@@ -570,7 +570,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location = 0) out float x;
         void main(){
@@ -1018,7 +1018,7 @@ TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
     attributes[3].format = VK_FORMAT_R32_SFLOAT;
     attributes[3].offset = offsetof(PerInstance, d);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in int a;
         layout(location = 1) in float b;
@@ -1098,7 +1098,7 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -1576,7 +1576,7 @@ TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;
