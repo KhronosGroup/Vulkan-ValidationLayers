@@ -1299,9 +1299,14 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     const bool image_dedicated_allocation = HandleTypeNeedsDedicatedAllocation(Gpu(), image_info, handle_type);
     VkMemoryDedicatedAllocateInfo image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image_export;
+    VkImageMemoryRequirementsInfo2 image_memory_requirements = vku::InitStructHelper();
+    image_memory_requirements.image = image_export;
+    VkMemoryDedicatedRequirements dedicated_requirements = vku::InitStructHelper();
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&dedicated_requirements);
+    vk::GetImageMemoryRequirements2(*m_device, &image_memory_requirements, &memory_requirements);
 
-    auto export_memory_info =
-        vku::InitStruct<VkExportMemoryAllocateInfo>(image_dedicated_allocation ? &image_dedicated_info : nullptr);
+    auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(
+        (image_dedicated_allocation || dedicated_requirements.requiresDedicatedAllocation) ? &image_dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type;
     image_export.AllocateAndBindMemory(*m_device, mem_flags, &export_memory_info);
 
@@ -1395,7 +1400,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02989");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
-    if (image_dedicated_allocation) {
+    if (image_dedicated_allocation || dedicated_requirements.requiresDedicatedAllocation) {
         m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01445");
     }
     vk::BindImageMemory(device(), image_import, memory_image_import, 0);
@@ -1409,7 +1414,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-memory-02989");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
-    if (image_dedicated_allocation) {
+    if (image_dedicated_allocation || dedicated_requirements.requiresDedicatedAllocation) {
         m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-01445");
     }
     vk::BindImageMemory2(device(), 1, &bind_image_info);
