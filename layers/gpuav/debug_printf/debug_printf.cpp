@@ -408,58 +408,22 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
         return;
     }
 
-    cb_state.on_instrumentation_desc_set_update_functions.emplace_back(
+    cb_state.on_instrumentation_common_desc_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, VkDescriptorBufferInfo& out_buffer_info,
-            uint32_t& out_dst_binding) {
-            vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
-            std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
+            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, CommonDescriptorUpdate& out_update) {
+            vko::BufferRange output_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
+            std::memset(output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
 
-            out_buffer_info.buffer = debug_printf_output_buffer.buffer;
-            out_buffer_info.offset = debug_printf_output_buffer.offset;
-            out_buffer_info.range = debug_printf_output_buffer.size;
+            out_update.buffer = output_buffer.buffer;
+            out_update.offset = output_buffer.offset;
+            out_update.range = output_buffer.size;
+            out_update.address = output_buffer.offset_address;
 
-            out_dst_binding = glsl::kBindingInstDebugPrintf;
+            out_update.binding = glsl::kBindingInstDebugPrintf;
 
             DebugPrintfCbState& debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(
-                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
-        });
-
-    cb_state.on_instrumentation_desc_buffer_update_functions.emplace_back(
-        [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&,
-            VkDescriptorAddressInfoEXT& out_address_info, uint32_t& out_dst_binding) {
-            vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
-            std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
-
-            out_address_info.address = debug_printf_output_buffer.offset_address;
-            out_address_info.range = debug_printf_output_buffer.size;
-
-            out_dst_binding = glsl::kBindingInstDebugPrintf;
-
-            DebugPrintfCbState& debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(
-                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
-        });
-
-    cb_state.on_instrumentation_desc_heap_update_functions.emplace_back(
-        [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, VkDeviceAddress& out_address,
-            uint32_t& out_dst_binding) {
-            vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
-            std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
-
-            out_address = debug_printf_output_buffer.offset_address;
-
-            out_dst_binding = glsl::kBindingInstDebugPrintf;
-
-            DebugPrintfCbState& debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(
-                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
+            debug_printf_cb_state.buffer_infos.emplace_back(output_buffer, bind_point, cb.GetActionCommandIndex(bind_point),
+                                                            cb.base.GetObjectList(bind_point));
         });
 
     cb_state.on_cb_completion_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,

@@ -348,91 +348,36 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
         return vertex_attribute_fetch_limits_buffer_range;
     };
 
-    cb.on_instrumentation_desc_set_update_functions.emplace_back(
+    cb.on_instrumentation_common_desc_update_functions.emplace_back(
         [&gpuav, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState& cb, VkPipelineBindPoint bind_point,
-                                                                 const Location& loc, VkDescriptorBufferInfo& out_buffer_info,
-                                                                 uint32_t& out_dst_binding) {
+                                                                 const Location& loc, CommonDescriptorUpdate& out_update) {
             if (!vvl::IsCommandDrawVertex(loc.function)) {
                 return;
             }
 
             if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-                vko::BufferRange vertex_attribute_fetch_limits_buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
-                if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
+                vko::BufferRange buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
+                if (buffer_range.buffer == VK_NULL_HANDLE) {
                     return;
                 }
 
-                out_buffer_info.buffer = vertex_attribute_fetch_limits_buffer_range.buffer;
-                out_buffer_info.offset = vertex_attribute_fetch_limits_buffer_range.offset;
-                out_buffer_info.range = vertex_attribute_fetch_limits_buffer_range.size;
+                out_update.buffer = buffer_range.buffer;
+                out_update.offset = buffer_range.offset;
+                out_update.range = buffer_range.size;
+                out_update.address = buffer_range.offset_address;
             } else {
                 // Point all non-indexed draws to our global buffer that will bypass the check in shader
-                VertexAttributeFetchOff& resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav, false);
+                VertexAttributeFetchOff& resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav);
                 if (!resource.valid) {
                     return;
                 }
-                out_buffer_info.buffer = resource.buffer.VkHandle();
-                out_buffer_info.offset = 0;
-                out_buffer_info.range = VK_WHOLE_SIZE;
+                out_update.buffer = resource.buffer.VkHandle();
+                out_update.offset = 0;
+                out_update.range = resource.buffer.Size();
+                out_update.address = resource.buffer.Address();
             }
 
-            out_dst_binding = glsl::kBindingInstVertexAttributeFetchLimits;
-        });
-
-    cb.on_instrumentation_desc_buffer_update_functions.emplace_back(
-        [&gpuav, error_info, get_vertex_attribute_fetch_limits_buffer_range](
-            CommandBufferSubState& cb, VkPipelineBindPoint, const Location& loc, VkDescriptorAddressInfoEXT& out_address_info,
-            uint32_t& out_dst_binding) {
-            if (!vvl::IsCommandDrawVertex(loc.function)) {
-                return;
-            }
-
-            if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-                vko::BufferRange vertex_attribute_fetch_limits_buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
-                if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
-                    return;
-                }
-
-                out_address_info.address = vertex_attribute_fetch_limits_buffer_range.offset_address;
-                out_address_info.range = vertex_attribute_fetch_limits_buffer_range.size;
-            } else {
-                // Point all non-indexed draws to our global buffer that will bypass the check in shader
-                VertexAttributeFetchOff& resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav, true);
-                if (!resource.valid) {
-                    return;
-                }
-                out_address_info.address = resource.buffer.Address();
-                out_address_info.range = resource.buffer.Size();
-            }
-
-            out_dst_binding = glsl::kBindingInstVertexAttributeFetchLimits;
-        });
-
-    cb.on_instrumentation_desc_heap_update_functions.emplace_back(
-        [&gpuav, error_info, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState& cb, VkPipelineBindPoint,
-                                                                             const Location& loc, VkDeviceAddress& out_address,
-                                                                             uint32_t& out_dst_binding) {
-            if (!vvl::IsCommandDrawVertex(loc.function)) {
-                return;
-            }
-
-            VkDeviceAddress vertex_attribute_fetch_limits_buffer_address;
-            if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-                vko::BufferRange vertex_attribute_fetch_limits_buffer_range = get_vertex_attribute_fetch_limits_buffer_range(cb);
-                if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
-                    return;
-                }
-
-                vertex_attribute_fetch_limits_buffer_address = vertex_attribute_fetch_limits_buffer_range.offset_address;
-            } else {
-                // Point all non-indexed draws to our global buffer that will bypass the check in shader
-                VertexAttributeFetchOff& resource = gpuav.shared_resources_cache.GetOrCreate<VertexAttributeFetchOff>(gpuav, true);
-                if (!resource.valid) return;
-                vertex_attribute_fetch_limits_buffer_address = resource.buffer.Address();
-            }
-
-            out_address = vertex_attribute_fetch_limits_buffer_address;
-            out_dst_binding = glsl::kBindingInstVertexAttributeFetchLimits;
+            out_update.binding = glsl::kBindingInstVertexAttributeFetchLimits;
         });
 }
 

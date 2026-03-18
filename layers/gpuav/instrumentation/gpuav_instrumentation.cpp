@@ -225,11 +225,18 @@ void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
     }
 
-    for (const auto& func : vvl::make_span(cb_state.on_instrumentation_desc_buffer_update_functions)) {
-        uint32_t binding = 0;
-        func(cb_state, last_bound.bind_point, loc, address_info, binding);
+    for (const auto& func : vvl::make_span(cb_state.on_instrumentation_common_desc_update_functions)) {
+        CommonDescriptorUpdate common_update;
+        func(cb_state, last_bound.bind_point, loc, common_update);
 
-        binding_offset = gpuav.resource_descriptor_buffer_offsets_[binding];
+        if (common_update.address == 0) {
+            continue;  // case like VertexAttributeFetchOff returning without a binding
+        }
+
+        address_info.address = common_update.address;
+        address_info.range = common_update.range;
+
+        binding_offset = gpuav.resource_descriptor_buffer_offsets_[common_update.binding];
         uint8_t* descriptor_offset = (uint8_t*)descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
@@ -253,12 +260,14 @@ void UpdateInstrumentationDescHeap(Validator& gpuav, CommandBufferSubState& cb_s
         indirect_memory[glsl::kBindingInstCmdErrorsCount] = cb_state.cmd_errors_counts_buffer_.Address();
     }
 
-    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_heap_update_functions.size(); ++func_i) {
-        VkDeviceAddress device_address;
-        uint32_t binding = 0;
-        cb_state.on_instrumentation_desc_heap_update_functions[func_i](cb_state, last_bound.bind_point, loc, device_address,
-                                                                       binding);
-        indirect_memory[binding] = device_address;
+    for (const auto& func : vvl::make_span(cb_state.on_instrumentation_common_desc_update_functions)) {
+        CommonDescriptorUpdate common_update;
+        func(cb_state, last_bound.bind_point, loc, common_update);
+        if (common_update.address == 0) {
+            continue;  // case like VertexAttributeFetchOff returning without a binding
+        }
+
+        indirect_memory[common_update.binding] = common_update.address;
     }
 }
 
@@ -329,21 +338,23 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
         }
     }
 
-    std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_desc_set_update_functions.size());
-    for (const auto [func_i, func] : vvl::enumerate(cb_state.on_instrumentation_desc_set_update_functions)) {
+    std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_common_desc_update_functions.size());
+    for (const auto [func_i, func] : vvl::enumerate(cb_state.on_instrumentation_common_desc_update_functions)) {
+        CommonDescriptorUpdate common_update;
+        func(cb_state, bind_point, loc, common_update);
+        if (common_update.buffer == VK_NULL_HANDLE) {
+            continue;  // case like VertexAttributeFetchOff returning without a binding
+        }
+
         VkWriteDescriptorSet wds = vku::InitStructHelper();
         wds.dstSet = instrumentation_desc_set;
-        wds.dstBinding = vvl::kNoIndex32;
+        wds.dstBinding = common_update.binding;
         wds.descriptorCount = 1;
         wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        buffer_infos[func_i] = {common_update.buffer, common_update.offset, common_update.range};
         wds.pBufferInfo = &buffer_infos[func_i];
 
-        func(cb_state, bind_point, loc, buffer_infos[func_i], wds.dstBinding);
-
-        if (buffer_infos[func_i].buffer != VK_NULL_HANDLE) {
-            assert(wds.dstBinding != vvl::kNoIndex32);
-            desc_writes.emplace_back(wds);
-        }
+        desc_writes.emplace_back(wds);
     }
 
     DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
