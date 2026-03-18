@@ -104,9 +104,6 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
     InitRenderTarget();
 
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
-
     vkt::Buffer bda(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ssbo_0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ubo_1(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
@@ -199,9 +196,6 @@ TEST_F(PositiveGpuAVDescriptorBuffer, IndexBuffer) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
     if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
         GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2";
@@ -313,17 +307,10 @@ TEST_F(PositiveGpuAVDescriptorBuffer, IndexBuffer) {
 
 TEST_F(PositiveGpuAVDescriptorBuffer, PostProcessAliasImageBindingPartiallyBound) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7677");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
-    AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     const char* csSource = R"glsl(
         #version 460
@@ -439,4 +426,75 @@ TEST_F(PositiveGpuAVDescriptorBuffer, PostProcessAliasImageBindingPartiallyBound
     for (uint32_t i = 0; i < 4; ++i) {
         EXPECT_FLOAT_EQ(float_clear.float32[i], payload->data[i]);
     }
+}
+
+TEST_F(PositiveGpuAVDescriptorBuffer, MultipleAccessChainsBDA) {
+    TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
+    RETURN_IF_SKIP(CheckSlangSupport());
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    const char* slang_shader = R"slang(
+        struct Data {
+            uint x;
+            uint payload[16]; // last item is OOB
+        }
+        uniform Data* bda;
+        [numthreads(1,1,1)]
+        void main() {
+           uint a = bda->payload[0] * bda->payload[14];
+           bda->x = a;
+        }
+    )slang";
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer ubo_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+
+    auto ubo_buffer_ptr = static_cast<VkDeviceAddress*>(ubo_buffer.Memory().Map());
+    ubo_buffer_ptr[0] = bda_buffer.Address();
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+
+    const VkDescriptorBindingFlags ds_binding_flags = 0;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1u;
+    flags_create_info.pBindingFlags = &ds_binding_flags;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    ds_layout_ci.bindingCount = 1u;
+    ds_layout_ci.pBindings = &binding;
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
+    VkDeviceSize buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
+
+    vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubo_buffer, ubo_buffer.CreateInfo().size);
+    vk::GetDescriptorEXT(*m_device, buffer_get_info, descriptor_buffer_properties.uniformBufferDescriptorSize,
+                         descriptor_data + buffer_offset);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    uint32_t buffer_index = 0u;
+    VkDeviceSize offset = 0u;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &buffer_index,
+                                         &offset);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

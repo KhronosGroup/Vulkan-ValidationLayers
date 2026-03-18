@@ -49,65 +49,33 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 pp_cb_state.last_desc_set_binding_to_post_process_buffers_lut;
         });
 
-    cb.on_instrumentation_desc_set_update_functions.emplace_back(
+    cb.on_instrumentation_common_desc_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
-                                                  VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
+                                                  CommonDescriptorUpdate& out_update) mutable {
             PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
             if (pp_cb_state) {
-                out_buffer_info.buffer = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.buffer;
-                out_buffer_info.offset = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset;
-                out_buffer_info.range = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.size;
+                const vko::BufferRange& buffer_range = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut;
+                out_update.buffer = buffer_range.buffer;
+                out_update.offset = buffer_range.offset;
+                out_update.range = buffer_range.size;
+                out_update.address = buffer_range.offset_address;
             } else {
-                // Eventually, no descriptor set was bound in command buffer.
-                // Instrumenation descriptor set is already defined at this point and needs a binding,
-                // so just provide a dummy buffer
+                // TODO - This will always hit the case for Buffer/Heap mode, this is wrong and just an issue with the fact
+                // on_update_bound_descriptor_sets is never called
+
+                // [For Classic mode] If no descriptor set was bound in command buffer, we still need "something" to be in the slot
+                // or else it will be marked as invalid for not being updated
                 if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
+                    // Caputre the dummy_buffer_range so if found multiple time, only allocate it once
                     dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
                 }
-                out_buffer_info.buffer = dummy_buffer_range.buffer;
-                out_buffer_info.offset = dummy_buffer_range.offset;
-                out_buffer_info.range = dummy_buffer_range.size;
+                out_update.buffer = dummy_buffer_range.buffer;
+                out_update.offset = dummy_buffer_range.offset;
+                out_update.range = dummy_buffer_range.size;
+                out_update.address = dummy_buffer_range.offset_address;
             }
 
-            out_dst_binding = glsl::kBindingInstPostProcess;
-        });
-
-    cb.on_instrumentation_desc_buffer_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&,
-                                                  VkDescriptorAddressInfoEXT& out_address_info, uint32_t& out_dst_binding) mutable {
-            PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
-            if (pp_cb_state) {
-                out_address_info.address = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset_address;
-                out_address_info.range = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.size;
-            } else {
-                // Eventually, no descriptor set was bound in command buffer.
-                // Instrumenation descriptor set is already defined at this point and needs a binding,
-                // so just provide a dummy buffer
-                if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
-                    dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
-                }
-                out_address_info.address = dummy_buffer_range.offset_address;
-                out_address_info.range = dummy_buffer_range.size;
-            }
-            out_dst_binding = glsl::kBindingInstPostProcess;
-        });
-
-    cb.on_instrumentation_desc_heap_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
-                                                  VkDeviceAddress& out_address, uint32_t& out_dst_binding) mutable {
-            PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
-            if (pp_cb_state) {
-                out_address = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset_address;
-            } else {
-                // Eventually, no descriptor set was bound in command buffer.
-                // Instrumenation descriptor set is already defined at this point and needs a binding,
-                // so just provide a dummy address range
-                if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
-                    dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
-                }
-                out_address = dummy_buffer_range.offset_address;
-            }
-            out_dst_binding = glsl::kBindingInstPostProcess;
+            out_update.binding = glsl::kBindingInstPostProcess;
         });
 
     auto bound_desc_sets_to_pp_buffer_map =

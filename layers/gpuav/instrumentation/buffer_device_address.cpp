@@ -95,36 +95,16 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
         return inst_error_logger;
     });
 
-    cb.on_instrumentation_desc_set_update_functions.emplace_back([](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
-                                                                    VkDescriptorBufferInfo& out_buffer_info,
-                                                                    uint32_t& out_dst_binding) {
-        BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
-        out_buffer_info.buffer = bda_cb_state.bda_ranges_snapshot_ptr.buffer;
-        out_buffer_info.offset = bda_cb_state.bda_ranges_snapshot_ptr.offset;
-        out_buffer_info.range = bda_cb_state.bda_ranges_snapshot_ptr.size;
-
-        out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
-    });
-
-    cb.on_instrumentation_desc_buffer_update_functions.emplace_back(
-        [](CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, VkDescriptorAddressInfoEXT& out_address_info,
-           uint32_t& out_dst_binding) {
+    cb.on_instrumentation_common_desc_update_functions.emplace_back(
+        [](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&, CommonDescriptorUpdate& out_update) {
             BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
-
-            out_address_info.address = bda_cb_state.bda_ranges_snapshot_ptr.offset_address;
-            out_address_info.range = bda_cb_state.bda_ranges_snapshot_ptr.size;
-
-            out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
+            const vko::BufferRange& buffer_range = bda_cb_state.bda_ranges_snapshot_ptr;
+            out_update.buffer = buffer_range.buffer;
+            out_update.offset = buffer_range.offset;
+            out_update.range = buffer_range.size;
+            out_update.address = buffer_range.offset_address;
+            out_update.binding = glsl::kBindingInstBufferDeviceAddress;
         });
-
-    cb.on_instrumentation_desc_heap_update_functions.emplace_back([](CommandBufferSubState& cb, VkPipelineBindPoint,
-                                                                     const Location&, VkDeviceAddress& out_address,
-                                                                     uint32_t& out_dst_binding) {
-        BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
-        out_address = bda_cb_state.bda_ranges_snapshot_ptr.offset_address;
-
-        out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
-    });
 
     cb.on_pre_cb_submission_functions.emplace_back(
         [](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {

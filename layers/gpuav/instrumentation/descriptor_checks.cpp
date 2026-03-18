@@ -366,27 +366,33 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             desc_binding_cmd.descritpor_state_ssbo = dc_cb_state.last_bound_desc_sets_state_ssbo;
         });
 
-    cb.on_instrumentation_desc_set_update_functions.emplace_back(
+    cb.on_instrumentation_common_desc_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
-                                                  VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
+                                                  CommonDescriptorUpdate& out_update) mutable {
             DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
             if (dc_cb_state) {
-                out_buffer_info.buffer = dc_cb_state->last_bound_desc_sets_state_ssbo.buffer;
-                out_buffer_info.offset = dc_cb_state->last_bound_desc_sets_state_ssbo.offset;
-                out_buffer_info.range = dc_cb_state->last_bound_desc_sets_state_ssbo.size;
+                const vko::BufferRange& buffer_range = dc_cb_state->last_bound_desc_sets_state_ssbo;
+                out_update.buffer = buffer_range.buffer;
+                out_update.offset = buffer_range.offset;
+                out_update.range = buffer_range.size;
+                out_update.address = buffer_range.offset_address;
             } else {
-                // Eventually, no descriptor set was bound in command buffer.
-                // Instrumenation descriptor set is already defined at this point and needs a binding,
-                // so just provide a dummy buffer
+                // TODO - This will always hit the case for Buffer/Heap mode, this is wrong and just an issue with the fact
+                // on_update_bound_descriptor_sets is never called
+
+                // [For Classic mode] If no descriptor set was bound in command buffer, we still need "something" to be in the slot
+                // or else it will be marked as invalid for not being updated
                 if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
+                    // Caputre the dummy_buffer_range so if found multiple time, only allocate it once
                     dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
                 }
-                out_buffer_info.buffer = dummy_buffer_range.buffer;
-                out_buffer_info.offset = dummy_buffer_range.offset;
-                out_buffer_info.range = dummy_buffer_range.size;
+                out_update.buffer = dummy_buffer_range.buffer;
+                out_update.offset = dummy_buffer_range.offset;
+                out_update.range = dummy_buffer_range.size;
+                out_update.address = dummy_buffer_range.offset_address;
             }
 
-            out_dst_binding = glsl::kBindingInstDescriptorIndexingOOB;
+            out_update.binding = glsl::kBindingInstDescriptorIndexingOOB;
         });
 
     // For every descriptor binding command, update a GPU buffer holding the type of each bound descriptor set
