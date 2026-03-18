@@ -335,6 +335,147 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertexDrawIndexedIndirectCount2KHR) {
+    TEST_DESCRIPTION(
+        "Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors - vertex shader.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+                      {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr,
+                       VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
+                  });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    VkDescriptorBufferInfo buffer_info[1] = {};
+    buffer_info[0].buffer = buffer0;
+    buffer_info[0].offset = 0;
+    buffer_info[0].range = sizeof(uint32_t);
+
+    VkDescriptorImageInfo image_info[6] = {};
+    for (int i = 0; i < 6; i++) {
+        image_info[i] = {sampler, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    }
+
+    VkWriteDescriptorSet descriptor_writes[2] = {};
+    descriptor_writes[0] = vku::InitStructHelper();
+    descriptor_writes[0].dstSet = descriptor_set.set_;  // descriptor_set;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].pBufferInfo = buffer_info;
+    descriptor_writes[1] = vku::InitStructHelper();
+    descriptor_writes[1].dstSet = descriptor_set.set_;  // descriptor_set;
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_writes[1].pImageInfo = image_info;
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
+
+    const char *vs_source = R"glsl(
+        #version 450
+
+        layout(std140, set = 0, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        vec2 vertices[3];
+        void main(){
+              vertices[0] = vec2(-1.0, -1.0);
+              vertices[1] = vec2( 1.0, -1.0);
+              vertices[2] = vec2( 0.0,  1.0);
+           gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+           gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));
+        }
+        )glsl";
+    const char *fs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 1) uniform sampler2D tex[6];
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = texture(tex[0], vec2(0, 0));
+        }
+        )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_.clear();
+    pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
+    pipe.shader_stages_.push_back(fs.GetStageCreateInfo());
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t) * 6, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+    uint32_t *index_data = (uint32_t *)index_buffer.Memory().Map();
+    for (uint32_t i = 0; i < 6; i++) {
+        index_data[i] = i;
+    }
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand) * 3, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                vkt::device_address);
+    VkDrawIndexedIndirectCommand *draw_commands = (VkDrawIndexedIndirectCommand *)indirect_buffer.Memory().Map();
+    draw_commands[0].indexCount = 3u;
+    draw_commands[0].instanceCount = 1u;
+    draw_commands[0].firstIndex = 0u;
+    draw_commands[0].vertexOffset = 0u;
+    draw_commands[0].firstInstance = 0u;
+    draw_commands[1].indexCount = 3u;
+    draw_commands[1].instanceCount = 1u;
+    draw_commands[1].firstIndex = 3u;
+    draw_commands[1].vertexOffset = 0u;
+    draw_commands[1].firstInstance = 0u;
+
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    uint32_t *count_data = (uint32_t *)count_buffer.Memory().Map();
+    *count_data = 2;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+
+    VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+    index_buffer_info.addressRange = index_buffer.AddressRange();
+    index_buffer_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &index_buffer_info);
+
+    VkDrawIndirectCount2InfoKHR draw_info = vku::InitStructHelper();
+    draw_info.addressRange = indirect_buffer.StridedAddressRange(sizeof(VkDrawIndexedIndirectCommand));
+    draw_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    draw_info.countAddressRange = count_buffer.AddressRange();
+    draw_info.countAddressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    draw_info.maxDrawCount = 3;
+    vk::CmdDrawIndexedIndirectCount2KHR(m_command_buffer, &draw_info);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
+    buffer_ptr[0] = 25;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount2KHR-None-10068", 2 * 3);
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     TEST_DESCRIPTION(
         "Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors - Fragment shader.");
