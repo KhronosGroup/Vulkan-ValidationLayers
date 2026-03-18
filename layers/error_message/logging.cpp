@@ -34,10 +34,10 @@
 #include "utils/text_utils.h"
 #include "error_message/log_message_type.h"
 
-[[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
+[[maybe_unused]] const char* kVUIDUndefined = "VUID_Undefined";
 
-static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
-                                                VkDebugUtilsMessageTypeFlagsEXT *da_type) {
+static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, VkDebugUtilsMessageSeverityFlagsEXT* da_severity,
+                                                VkDebugUtilsMessageTypeFlagsEXT* da_type) {
     *da_severity = 0;
     *da_type = 0;
     // If it's explicitly listed as a performance warning, treat it as a performance message. Otherwise, treat it as a validation
@@ -64,9 +64,9 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
     }
 }
 
-void DebugReport::SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks) {
+void DebugReport::SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState>& callbacks) {
     // For all callback in list, return their complete set of severities and modes
-    for (const auto &item : callbacks) {
+    for (const auto& item : callbacks) {
         if (item.IsUtils()) {
             active_msg_severities |= item.debug_utils_msg_flags;
             active_msg_types |= item.debug_utils_msg_type;
@@ -81,7 +81,7 @@ void DebugReport::SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState
 }
 
 void DebugReport::RemoveDebugUtilsCallback(uint64_t callback) {
-    std::vector<VkLayerDbgFunctionState> &callbacks = debug_callback_list;
+    std::vector<VkLayerDbgFunctionState>& callbacks = debug_callback_list;
     auto item = callbacks.begin();
     for (item = callbacks.begin(); item != callbacks.end(); item++) {
         if (item->IsUtils()) {
@@ -97,8 +97,8 @@ void DebugReport::RemoveDebugUtilsCallback(uint64_t callback) {
 }
 
 // We try to return as early as we can if we know we don't need to spend time logging the message
-bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
-                             const std::string &main_message) {
+bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList& objects, const Location& loc,
+                             const std::string& main_message) {
     // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
     VkDebugUtilsMessageTypeFlagsEXT msg_type;
@@ -155,7 +155,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_infos;
     object_name_infos.reserve(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
-        const VulkanTypedHandle &current_object = objects.object_list[i];
+        const VulkanTypedHandle& current_object = objects.object_list[i];
         // If only one VkDevice was created, it is just noise to print it out in the error message.
         // Also avoid printing unknown objects, likely if new function is calling error with null LogObjectList
         if ((current_object.type == kVulkanObjectTypeDevice && device_created <= 1) ||
@@ -217,7 +217,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     const auto callback_list = &debug_callback_list;
     // We only output to default callbacks if there are no non-default callbacks
     bool use_default_callbacks = true;
-    for (const auto &current_callback : *callback_list) {
+    for (const auto& current_callback : *callback_list) {
         use_default_callbacks &= current_callback.IsDefault();
     }
 
@@ -227,9 +227,9 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     }
 #endif
 
-    const char *layer_prefix = "Validation";
+    const char* layer_prefix = "Validation";
     bool bail = false;
-    for (const auto &current_callback : *callback_list) {
+    for (const auto& current_callback : *callback_list) {
         // Skip callback if it's a default callback and there are non-default callbacks present
         if (current_callback.IsDefault() && !use_default_callbacks) continue;
 
@@ -261,7 +261,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     return bail;
 }
 
-std::string DebugReport::CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message,
+std::string DebugReport::CreateMessageText(const Location& loc, std::string_view vuid_text, const std::string& main_message,
                                            bool at_message_limit) {
     std::ostringstream oss;
 
@@ -282,9 +282,9 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
 
     // Append the spec error text to the error message, unless it contains a word treated as special
     if ((vuid_text.find("VUID-") != std::string::npos)) {
-        const char *spec_text = nullptr;
+        const char* spec_text = nullptr;
         // Only the Antora site will make use of the sections
-        const char *spec_url_section = nullptr;
+        const char* spec_url_section = nullptr;
         const auto found_vuid = GetVuidMap().find(vuid_text);
         if (found_vuid != GetVuidMap().end()) {
             spec_text = found_vuid->second.spec_text.data();
@@ -294,9 +294,9 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
         // Construct and append the specification text and link to the appropriate version of the spec
         if (spec_text && spec_url_section) {
 #ifdef ANNOTATED_SPEC_LINK
-            const char *spec_url_base = ANNOTATED_SPEC_LINK;
+            const char* spec_url_base = ANNOTATED_SPEC_LINK;
 #else
-            const char *spec_url_base = "https://docs.vulkan.org/spec/latest/";
+            const char* spec_url_base = "https://docs.vulkan.org/spec/latest/";
 #endif
 
             const auto last_char = main_message.back();
@@ -319,9 +319,9 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
     return oss.str();
 }
 
-std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &loc,
-                                           const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos,
-                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string &main_message,
+std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location& loc,
+                                           const std::vector<VkDebugUtilsObjectNameInfoEXT>& object_name_infos,
+                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string& main_message,
                                            bool at_message_limit) {
     std::ostringstream oss;
     // For now we just list each JSON field as a new line as it is "pretty-print enough".
@@ -356,12 +356,14 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
         oss << "\"," << new_line;
     }
 
-    { oss << line_start << "\"VUID\" : \"" << vuid_text << "\"," << new_line; }
+    {
+        oss << line_start << "\"VUID\" : \"" << vuid_text << "\"," << new_line;
+    }
 
     {
         oss << line_start << "\"Objects\" : [" << new_line;
         for (uint32_t i = 0; i < object_name_infos.size(); i++) {
-            const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
+            const VkDebugUtilsObjectNameInfoEXT& src_object = object_name_infos[i];
 
             oss << line_start << line_start;
             oss << "{\"type\" : \"" << string_VkObjectTypeHandleName(src_object.objectType) << "\", \"handle\" : \"";
@@ -383,9 +385,15 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
         oss << line_start << "]," << new_line;
     }
 
-    { oss << line_start << "\"MessageID\" : \"0x" << std::hex << vuid_hash << "\"," << new_line; }
-    { oss << line_start << "\"Function\" : \"" << loc.StringFunc() << "\"," << new_line; }
-    { oss << line_start << "\"Location\" : \"" << loc.Fields() << "\"," << new_line; }
+    {
+        oss << line_start << "\"MessageID\" : \"0x" << std::hex << vuid_hash << "\"," << new_line;
+    }
+    {
+        oss << line_start << "\"Function\" : \"" << loc.StringFunc() << "\"," << new_line;
+    }
+    {
+        oss << line_start << "\"Location\" : \"" << loc.Fields() << "\"," << new_line;
+    }
     {
         oss << line_start << "\"MainMessage\" : \"";
 
@@ -414,9 +422,9 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
     }
 
     if ((vuid_text.find("VUID-") != std::string::npos)) {
-        const char *spec_text = nullptr;
+        const char* spec_text = nullptr;
         // Only the Antora site will make use of the sections
-        const char *spec_url_section = nullptr;
+        const char* spec_url_section = nullptr;
         const auto found_vuid = GetVuidMap().find(vuid_text);
         if (found_vuid != GetVuidMap().end()) {
             spec_text = found_vuid->second.spec_text.data();
@@ -448,7 +456,7 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
     return oss.str();
 }
 
-void DebugReport::SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+void DebugReport::SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (pNameInfo->pObjectName) {
         debug_utils_object_name_map[pNameInfo->objectHandle] = pNameInfo->pObjectName;
@@ -457,7 +465,7 @@ void DebugReport::SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameI
     }
 }
 
-void DebugReport::SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+void DebugReport::SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (pNameInfo->pObjectName) {
         debug_object_name_map[pNameInfo->object] = pNameInfo->pObjectName;
@@ -488,7 +496,7 @@ std::string DebugReport::GetMarkerObjectNameNoLock(const uint64_t object) const 
     return label;
 }
 
-std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t handle) const {
+std::string DebugReport::FormatHandle(const char* handle_type_name, uint64_t handle) const {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     std::string handle_name = GetUtilsObjectNameNoLock(handle);
     if (handle_name.empty()) {
@@ -513,9 +521,9 @@ LoggingLabel::LoggingLabel(const VkDebugUtilsLabelEXT* label_info) {
 }
 
 template <typename Map>
-static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type key, bool insert) {
+static LoggingLabelState* GetLoggingLabelState(Map* map, typename Map::key_type key, bool insert) {
     auto iter = map->find(key);
-    LoggingLabelState *label_state = nullptr;
+    LoggingLabelState* label_state = nullptr;
     if (iter == map->end()) {
         if (insert) {
             // Add a label state if not present
@@ -530,10 +538,10 @@ static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type 
     return label_state;
 }
 
-void DebugReport::BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info) {
+void DebugReport::BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT* label_info) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto *label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ true);
+        auto* label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ true);
         assert(label_state);
         label_state->labels.push_back(label_info);
 
@@ -544,7 +552,7 @@ void DebugReport::BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLab
 
 void DebugReport::EndQueueDebugUtilsLabel(VkQueue queue) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
-    auto *label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ false);
+    auto* label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ false);
     if (label_state) {
         // Pop the normal item
         if (!label_state->labels.empty()) {
@@ -556,18 +564,18 @@ void DebugReport::EndQueueDebugUtilsLabel(VkQueue queue) {
     }
 }
 
-void DebugReport::InsertQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info) {
+void DebugReport::InsertQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT* label_info) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
-    auto *label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ true);
+    auto* label_state = GetLoggingLabelState(&debug_utils_queue_labels, queue, /* insert */ true);
 
     // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
     label_state->insert_label = LoggingLabel(label_info);
 }
 
-void DebugReport::BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT *label_info) {
+void DebugReport::BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT* label_info) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto *label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ true);
+        auto* label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ true);
         assert(label_state);
         label_state->labels.push_back(label_info);
 
@@ -578,7 +586,7 @@ void DebugReport::BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const 
 
 void DebugReport::EndCmdDebugUtilsLabel(VkCommandBuffer command_buffer) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
-    auto *label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ false);
+    auto* label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ false);
     if (label_state) {
         // Pop the normal item
         if (!label_state->labels.empty()) {
@@ -590,9 +598,9 @@ void DebugReport::EndCmdDebugUtilsLabel(VkCommandBuffer command_buffer) {
     }
 }
 
-void DebugReport::InsertCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT *label_info) {
+void DebugReport::InsertCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT* label_info) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
-    auto *label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ true);
+    auto* label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ true);
     assert(label_state);
 
     // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
@@ -602,7 +610,7 @@ void DebugReport::InsertCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const
 // Current tracking beyond a single command buffer scope is incorrect, and even when it is we need to be able to clean up
 void DebugReport::ResetCmdDebugUtilsLabel(VkCommandBuffer command_buffer) {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
-    auto *label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ false);
+    auto* label_state = GetLoggingLabelState(&debug_utils_cmd_buffer_labels, command_buffer, /* insert */ false);
     if (label_state) {
         label_state->labels.clear();
         label_state->insert_label.Reset();
@@ -615,18 +623,18 @@ void DebugReport::EraseCmdDebugUtilsLabel(VkCommandBuffer command_buffer) {
 }
 
 template <typename TCreateInfo, typename TCallback>
-static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, DebugReport *debug_report, const TCreateInfo *create_info,
-                                TCallback *callback) {
+static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, DebugReport* debug_report, const TCreateInfo* create_info,
+                                TCallback* callback) {
     std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
 
     debug_report->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
-    auto &callback_state = debug_report->debug_callback_list.back();
+    auto& callback_state = debug_report->debug_callback_list.back();
     callback_state.callback_status = callback_status;
     callback_state.pUserData = create_info->pUserData;
 
     if (callback_state.IsUtils()) {
-        auto utils_create_info = reinterpret_cast<const VkDebugUtilsMessengerCreateInfoEXT *>(create_info);
-        auto utils_callback = reinterpret_cast<VkDebugUtilsMessengerEXT *>(callback);
+        auto utils_create_info = reinterpret_cast<const VkDebugUtilsMessengerCreateInfoEXT*>(create_info);
+        auto utils_callback = reinterpret_cast<VkDebugUtilsMessengerEXT*>(callback);
         if (!(*utils_callback)) {
             // callback constructed default callbacks have no handle -- so use struct address as unique handle
             *utils_callback = reinterpret_cast<VkDebugUtilsMessengerEXT>(&callback_state);
@@ -636,8 +644,8 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, DebugR
         callback_state.debug_utils_msg_flags = utils_create_info->messageSeverity;
         callback_state.debug_utils_msg_type = utils_create_info->messageType;
     } else {  // Debug report callback
-        auto report_create_info = reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(create_info);
-        auto report_callback = reinterpret_cast<VkDebugReportCallbackEXT *>(callback);
+        auto report_create_info = reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*>(create_info);
+        auto report_callback = reinterpret_cast<VkDebugReportCallbackEXT*>(callback);
         if (!(*report_callback)) {
             // Internally constructed default callbacks have no handle -- so use struct address as unique handle
             *report_callback = reinterpret_cast<VkDebugReportCallbackEXT>(&callback_state);
@@ -659,22 +667,22 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, DebugR
     debug_report->SetDebugUtilsSeverityFlags(debug_report->debug_callback_list);
 }
 
-VKAPI_ATTR VkResult LayerCreateMessengerCallback(DebugReport *debug_report, bool default_callback,
-                                                 const VkDebugUtilsMessengerCreateInfoEXT *create_info,
-                                                 VkDebugUtilsMessengerEXT *messenger) {
+VKAPI_ATTR VkResult LayerCreateMessengerCallback(DebugReport* debug_report, bool default_callback,
+                                                 const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+                                                 VkDebugUtilsMessengerEXT* messenger) {
     LayerCreateCallback((DEBUG_CALLBACK_UTILS | (default_callback ? DEBUG_CALLBACK_DEFAULT : 0)), debug_report, create_info,
                         messenger);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult LayerCreateReportCallback(DebugReport *debug_report, bool default_callback,
-                                              const VkDebugReportCallbackCreateInfoEXT *create_info,
-                                              VkDebugReportCallbackEXT *callback) {
+VKAPI_ATTR VkResult LayerCreateReportCallback(DebugReport* debug_report, bool default_callback,
+                                              const VkDebugReportCallbackCreateInfoEXT* create_info,
+                                              VkDebugReportCallbackEXT* callback) {
     LayerCreateCallback((default_callback ? DEBUG_CALLBACK_DEFAULT : 0), debug_report, create_info, callback);
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport *debug_report) {
+VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport* debug_report) {
     auto current = debug_report->instance_pnext_chain;
     for (;;) {
         auto create_info = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(current);
@@ -692,13 +700,13 @@ VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport *debug_report) {
     }
 }
 
-VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report) {
+VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport* debug_report) {
     if (!vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_report->instance_pnext_chain) &&
         !vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(debug_report->instance_pnext_chain))
         return;
     std::vector<VkDebugUtilsMessengerEXT> instance_utils_callback_handles{};
     std::vector<VkDebugReportCallbackEXT> instance_report_callback_handles{};
-    for (const auto &item : debug_report->debug_callback_list) {
+    for (const auto& item : debug_report->debug_callback_list) {
         if (item.IsInstance()) {
             if (item.IsUtils()) {
                 instance_utils_callback_handles.push_back(item.debug_utils_callback_object);
@@ -707,24 +715,24 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report) {
             }
         }
     }
-    for (const auto &item : instance_utils_callback_handles) {
+    for (const auto& item : instance_utils_callback_handles) {
         LayerDestroyCallback(debug_report, item);
     }
-    for (const auto &item : instance_report_callback_handles) {
+    for (const auto& item : instance_report_callback_handles) {
         LayerDestroyCallback(debug_report, item);
     }
 }
 
-bool DebugReport::LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
-                                   const char *format, va_list argptr) {
+bool DebugReport::LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList& objects, const Location& loc,
+                                   const char* format, va_list argptr) {
     const std::string main_message = text::VFormat(format, argptr);
     return LogMessage(msg_flags, vuid_text, objects, loc, main_message);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                       [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                      [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                      [[maybe_unused]] void *user_data) {
+                                                      [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                      [[maybe_unused]] void* user_data) {
     // TODO: Consider to use https://github.com/scottt/debugbreak
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     DebugBreak();
@@ -737,7 +745,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUt
 
 static std::string CreateDefaultCallbackMessage(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                const VkDebugUtilsMessengerCallbackDataEXT &callback_data) {
+                                                const VkDebugUtilsMessengerCallbackDataEXT& callback_data) {
     std::ostringstream oss;
 
     // The callback is in JSON (this is the only way the first char is '{')
@@ -768,7 +776,7 @@ static std::string CreateDefaultCallbackMessage(VkDebugUtilsMessageSeverityFlagB
     if (callback_data.objectCount > 0) {
         oss << "Objects: " << callback_data.objectCount << '\n';
         for (uint32_t i = 0; i < callback_data.objectCount; i++) {
-            const auto &debug_object = callback_data.pObjects[i];
+            const auto& debug_object = callback_data.pObjects[i];
             oss << "    [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
             if (debug_object.objectHandle) {
                 oss << " 0x" << std::hex << debug_object.objectHandle;
@@ -791,14 +799,14 @@ static std::string CreateDefaultCallbackMessage(VkDebugUtilsMessageSeverityFlagB
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
     const std::string msg_buffer_str = CreateDefaultCallbackMessage(message_severity, message_type, *callback_data);
 
     // By default we are really just printing to stdout
     // Even if this is stdout, we still want to print for android
     // VVL testing (and probably other systems now) call freopen() to map stdout to dedicated file
-    fprintf((FILE *)user_data, "%s", msg_buffer_str.c_str());
-    fflush((FILE *)user_data);
+    fprintf((FILE*)user_data, "%s", msg_buffer_str.c_str());
+    fflush((FILE*)user_data);
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     // If the user uses there own callback, we can let them fix the formatting, but as a default, some error messages will be way to
@@ -820,10 +828,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                            [[maybe_unused]] void *user_data) {
+                                                            const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                            [[maybe_unused]] void* user_data) {
     const std::string msg_buffer_str = CreateDefaultCallbackMessage(message_severity, message_type, *callback_data);
-    const char *cstr = msg_buffer_str.c_str();
+    const char* cstr = msg_buffer_str.c_str();
     OutputDebugStringA(cstr);
     return false;
 }

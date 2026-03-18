@@ -321,20 +321,20 @@ TEST_F(PositiveSyncValWsi, RecreateBuffer) {
         current_fence.Wait(kWaitTimeout);
         current_fence.Reset();
 
-        auto &src_buffer = src_buffers[image_index];
+        auto& src_buffer = src_buffers[image_index];
         src_buffer.Destroy();
         src_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-        auto &dst_buffer = dst_buffers[image_index];
+        auto& dst_buffer = dst_buffers[image_index];
         dst_buffer.Destroy();
         dst_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-        auto &command_buffer = command_buffers[image_index];
+        auto& command_buffer = command_buffers[image_index];
         command_buffer.Begin();
         command_buffer.Copy(src_buffer, dst_buffer);
         command_buffer.End();
 
-        auto &submit_semaphore = submit_semaphores[image_index];
+        auto& submit_semaphore = submit_semaphores[image_index];
         m_default_queue->Submit(command_buffer, vkt::Signal(submit_semaphore));
         m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
         std::swap(acquire_fences[image_index], current_fence);
@@ -383,7 +383,7 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
         current_fence.Wait(kWaitTimeout);
         current_fence.Reset();
 
-        auto &dst_image = dst_images[image_index];
+        auto& dst_image = dst_images[image_index];
         dst_image.Destroy();
         dst_image = vkt::Image(*m_device, width, height, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
@@ -401,13 +401,13 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
         layout_transition.image = dst_image;
         layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-        auto &command_buffer = command_buffers[image_index];
+        auto& command_buffer = command_buffers[image_index];
         command_buffer.Begin();
         command_buffer.Barrier(layout_transition);
         vk::CmdCopyBufferToImage(command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         command_buffer.End();
 
-        auto &submit_semaphore = submit_semaphores[image_index];
+        auto& submit_semaphore = submit_semaphores[image_index];
         m_default_queue->Submit(command_buffer, vkt::Signal(submit_semaphore));
         m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
         std::swap(acquire_fences[image_index], current_fence);

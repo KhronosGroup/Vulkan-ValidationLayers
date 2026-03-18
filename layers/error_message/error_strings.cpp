@@ -24,7 +24,7 @@
 
 #include <sstream>
 
-constexpr const char *indent = "    ";
+constexpr const char* indent = "    ";
 
 std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_dependency_info, VkDependencyInfo dependency_info) {
     std::ostringstream set;
@@ -220,10 +220,10 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
     return "event was set with " + set.str() + " and is being waited on with " + wait.str();
 }
 
-static std::string BuffersFromAddressStr(const vvl::DeviceProxy &validator, VkDeviceAddress address) {
+static std::string BuffersFromAddressStr(const vvl::DeviceProxy& validator, VkDeviceAddress address) {
     std::string buffers_str;
-    vvl::span<vvl::Buffer *const> buffers = validator.GetBuffersByAddress(address);
-    for (vvl::Buffer *const buffer : buffers) {
+    vvl::span<vvl::Buffer* const> buffers = validator.GetBuffersByAddress(address);
+    for (vvl::Buffer* const buffer : buffers) {
         if (!buffers_str.empty()) {
             buffers_str += '\n';
         }
@@ -234,8 +234,8 @@ static std::string BuffersFromAddressStr(const vvl::DeviceProxy &validator, VkDe
     return buffers_str;
 }
 
-std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger &logger,
-                                                               const VkAccelerationStructureBuildGeometryInfoKHR &info) {
+std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger& logger,
+                                                               const VkAccelerationStructureBuildGeometryInfoKHR& info) {
     std::stringstream ss;
 
     ss << indent << "type: " << string_VkAccelerationStructureTypeKHR(info.type) << '\n';
@@ -253,7 +253,7 @@ std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger &log
 }
 
 std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
-    const vvl::DeviceProxy &validator, const VkAccelerationStructureGeometryTrianglesDataKHR &triangles) {
+    const vvl::DeviceProxy& validator, const VkAccelerationStructureGeometryTrianglesDataKHR& triangles) {
     std::string pertains = indent;
     pertains += indent;
     pertains += "Pertains to the following buffer(s):\n";
@@ -293,7 +293,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     return ss_str;
 }
 
-std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceProxy &validator,
+std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceProxy& validator,
                                                                const VkAccelerationStructureGeometryAabbsDataKHR aabb) {
     std::string pertains = indent;
     pertains += indent;
@@ -314,7 +314,7 @@ std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::Device
     return ss_str;
 }
 
-std::string string_VkAccelerationStructureBuildRangeInfoKHR(const VkAccelerationStructureBuildRangeInfoKHR &bri) {
+std::string string_VkAccelerationStructureBuildRangeInfoKHR(const VkAccelerationStructureBuildRangeInfoKHR& bri) {
     std::stringstream ss;
     ss << indent << "primitiveCount: " << bri.primitiveCount << '\n';
     ss << indent << "primitiveOffset: " << bri.primitiveOffset << '\n';

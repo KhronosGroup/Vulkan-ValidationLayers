@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,7 +139,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -235,8 +235,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     command_label.color[2] = 2.;
     command_label.color[3] = 3.0;
     bool command_label_test = false;
-    auto command_label_callback = [command_label, &command_label_test](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                                       DebugUtilsLabelCheckData *data) {
+    auto command_label_callback = [command_label, &command_label_test](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                                       DebugUtilsLabelCheckData* data) {
         data->count++;
         command_label_test = false;
         if (pCallbackData->cmdBufLabelCount == 1) {
@@ -306,7 +306,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
     RETURN_IF_SKIP(Init());
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -322,8 +322,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
 }
 
 struct LayerStatusCheckData {
-    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *)> callback;
-    ErrorMonitor *error_monitor;
+    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, LayerStatusCheckData*)> callback;
+    ErrorMonitor* error_monitor;
 };
 
 TEST_F(NegativeDebugExtensions, LayerInfoMessages) {
@@ -331,7 +331,7 @@ TEST_F(NegativeDebugExtensions, LayerInfoMessages) {
 
     auto ici = GetInstanceCreateInfo();
     LayerStatusCheckData callback_data;
-    auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *data) {
+    auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, LayerStatusCheckData* data) {
         std::string message(pCallbackData->pMessage);
         if ((data->error_monitor->GetMessageFlags() & kInformationBit) &&
             (message.find("UNASSIGNED-khronos-validation-createinstance-status-message") == std::string::npos)) {
@@ -379,7 +379,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     vkt::Device second_device(gpu_, m_device_extension_names, &features);
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -392,7 +392,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
-    const char *object_name = "device_object";
+    const char* object_name = "device_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
@@ -415,7 +415,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT*, DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -431,7 +431,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     uint64_t bad_handle = (uint64_t)sampler.handle();
     sampler.Destroy();
-    const char *object_name = "sampler_object";
+    const char* object_name = "sampler_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_SAMPLER;
@@ -630,8 +630,8 @@ TEST_F(NegativeDebugExtensions, SetDeviceHandle) {
     VkDevice second_device;
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &second_device));
 
-    const char *device_1_name = "device_1";
-    const char *device_2_name = "device_2";
+    const char* device_1_name = "device_1";
+    const char* device_2_name = "device_2";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
     name_info.pObjectName = device_1_name;

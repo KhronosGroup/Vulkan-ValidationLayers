@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ namespace gpuav {
 namespace valpipe {
 namespace internal {
 
-bool CreateComputePipelineHelper(Validator &gpuav, const Location &loc,
+bool CreateComputePipelineHelper(Validator& gpuav, const Location& loc,
                                  const std::vector<VkDescriptorSetLayoutBinding> specific_bindings,
                                  VkDescriptorSetLayout additional_desc_set_layout, uint32_t push_constants_byte_size,
-                                 uint32_t spirv_size, const uint32_t *spirv, VkDevice &out_device,
-                                 VkDescriptorSetLayout &out_specific_descriptor_set_layout, VkPipelineLayout &out_pipeline_layout,
-                                 VkShaderModule &out_shader_module, VkPipeline &out_pipeline) {
+                                 uint32_t spirv_size, const uint32_t* spirv, VkDevice& out_device,
+                                 VkDescriptorSetLayout& out_specific_descriptor_set_layout, VkPipelineLayout& out_pipeline_layout,
+                                 VkShaderModule& out_shader_module, VkPipeline& out_pipeline) {
     out_device = gpuav.device;
     VkPushConstantRange push_constant_range = {};
     push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -113,13 +113,13 @@ void DestroyComputePipelineHelper(VkDevice device, VkDescriptorSetLayout specifi
     }
 }
 
-VkDescriptorSet GetDescriptorSetHelper(CommandBufferSubState &cb_state, VkDescriptorSetLayout desc_set_layout) {
+VkDescriptorSet GetDescriptorSetHelper(CommandBufferSubState& cb_state, VkDescriptorSetLayout desc_set_layout) {
     return cb_state.gpu_resources_manager.GetManagedDescriptorSet(desc_set_layout);
 }
 
-void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineLayout pipeline_layout,
-                               VkDescriptorSet desc_set, const std::vector<VkWriteDescriptorSet> &descriptor_writes,
-                               const uint32_t push_constants_byte_size, const void *push_constants) {
+void BindShaderResourcesHelper(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineLayout pipeline_layout,
+                               VkDescriptorSet desc_set, const std::vector<VkWriteDescriptorSet>& descriptor_writes,
+                               const uint32_t push_constants_byte_size, const void* push_constants) {
     // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
     if (push_constants_byte_size >= 4) {
         DispatchCmdPushConstants(cb_state.VkHandle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants_byte_size,
@@ -137,11 +137,11 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
 
 }  // namespace internal
 
-void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point) {
+void RestorablePipelineState::Create(CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point_ = bind_point;
     const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(bind_point);
 
-    LastBound &last_bound = cb_state.base.lastBound[vvl_bind_point];
+    LastBound& last_bound = cb_state.base.lastBound[vvl_bind_point];
     if (last_bound.pipeline_state) {
         pipeline_ = last_bound.pipeline_state->VkHandle();
 
@@ -164,7 +164,7 @@ void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipeline
 
     descriptor_sets_.reserve(last_bound.ds_slots.size());
     for (std::size_t set_i = 0; set_i < last_bound.ds_slots.size(); set_i++) {
-        const auto &bound_descriptor_set = last_bound.ds_slots[set_i].ds_state;
+        const auto& bound_descriptor_set = last_bound.ds_slots[set_i].ds_state;
         if (bound_descriptor_set) {
             descriptor_sets_.emplace_back(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(set_i));
             if (bound_descriptor_set->IsPushDescriptor()) {
@@ -205,7 +205,7 @@ void RestorablePipelineState::Restore() const {
     if (!shader_objects_.empty()) {
         std::vector<VkShaderStageFlagBits> stages;
         std::vector<VkShaderEXT> shaders;
-        for (const vvl::ShaderObject *shader_obj : shader_objects_) {
+        for (const vvl::ShaderObject* shader_obj : shader_objects_) {
             stages.emplace_back(shader_obj->create_info.stage);
             shaders.emplace_back(shader_obj->VkHandle());
         }
@@ -225,10 +225,10 @@ void RestorablePipelineState::Restore() const {
     if (!push_descriptor_set_writes_.empty()) {
         DispatchCmdPushDescriptorSetKHR(cb_state_.VkHandle(), pipeline_bind_point_, desc_set_pipeline_layout_,
                                         push_descriptor_set_index_, static_cast<uint32_t>(push_descriptor_set_writes_.size()),
-                                        reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes_.data()));
+                                        reinterpret_cast<const VkWriteDescriptorSet*>(push_descriptor_set_writes_.data()));
     }
 
-    for (const auto &push_constant_range : push_constants_data_) {
+    for (const auto& push_constant_range : push_constants_data_) {
         DispatchCmdPushConstants(cb_state_.VkHandle(), push_constant_range.layout, push_constant_range.stage_flags,
                                  push_constant_range.offset, static_cast<uint32_t>(push_constant_range.values.size()),
                                  push_constant_range.values.data());

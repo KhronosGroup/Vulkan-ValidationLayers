@@ -25,7 +25,7 @@
 
 namespace vvl {
 
-const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError error) {
+const std::string& GetCopyBufferImageDeviceVUID(const Location& loc, CopyError error) {
     static const std::map<CopyError, std::array<Entry, 5>> errors{
         {CopyError::TexelBlockSize_07975,
          {{
@@ -152,7 +152,7 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
     }
     const Location updated_loc(f, s, loc.field, loc.index);
 
-    const auto &result = FindVUID(error, updated_loc, errors);
+    const auto& result = FindVUID(error, updated_loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-copy-buffer");
@@ -161,7 +161,7 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
     return result;
 }
 
-const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) {
+const std::string& GetCopyBufferImageVUID(const Location& loc, CopyError error) {
     static const std::map<CopyError, std::array<Entry, 8>> errors{
         {CopyError::ImageOffset_07971,
          {{
@@ -367,7 +367,7 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
     }
     const Location updated_loc(f, s, loc.field, loc.index);
 
-    const auto &result = FindVUID(error, updated_loc, errors);
+    const auto& result = FindVUID(error, updated_loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-copy-buffer-image");
@@ -376,7 +376,7 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
     return result;
 }
 
-const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
+const std::string& GetCopyImageVUID(const Location& loc, CopyError error) {
     static const std::map<CopyError, std::array<Entry, 3>> errors{
         {CopyError::SrcImage1D_00146,
          {{
@@ -554,7 +554,7 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
          }}},
     };
 
-    const auto &result = FindVUID(error, loc, errors);
+    const auto& result = FindVUID(error, loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-copy-buffer");
@@ -563,7 +563,7 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
     return result;
 }
 
-const std::string &GetImageMipLevelVUID(const Location &loc) {
+const std::string& GetImageMipLevelVUID(const Location& loc) {
     static const std::array<Entry, 22> errors{{
         {Key(Func::vkCmdCopyImage, Field::srcSubresource), "VUID-vkCmdCopyImage-srcSubresource-07967"},
         {Key(Func::vkCmdCopyImage, Field::dstSubresource), "VUID-vkCmdCopyImage-dstSubresource-07967"},
@@ -589,7 +589,7 @@ const std::string &GetImageMipLevelVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImageToMemoryKHR), "VUID-VkCopyDeviceMemoryImageInfoKHR-imageSubresource-07967"},
     }};
 
-    const auto &result = FindVUID(loc, errors);
+    const auto& result = FindVUID(loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-mip-level");
@@ -598,7 +598,7 @@ const std::string &GetImageMipLevelVUID(const Location &loc) {
     return result;
 }
 
-const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
+const std::string& GetImageArrayLayerRangeVUID(const Location& loc) {
     static const std::array<Entry, 22> errors{{
         {Key(Func::vkCmdCopyImage, Field::srcSubresource), "VUID-vkCmdCopyImage-srcSubresource-07968"},
         {Key(Func::vkCmdCopyImage, Field::dstSubresource), "VUID-vkCmdCopyImage-dstSubresource-07968"},
@@ -624,7 +624,7 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImageToMemoryKHR), "VUID-VkCopyDeviceMemoryImageInfoKHR-imageSubresource-07968"},
     }};
 
-    const auto &result = FindVUID(loc, errors);
+    const auto& result = FindVUID(loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-array-layer-range");
@@ -633,7 +633,7 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
     return result;
 }
 
-const std::string &GetImageImageLayoutVUID(const Location &loc) {
+const std::string& GetImageImageLayoutVUID(const Location& loc) {
     static const std::array<Entry, 5> errors{{
         {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-09229"},
         {Key(Func::vkCopyImageToMemory, Field::srcImageLayout), "VUID-VkCopyImageToMemoryInfo-srcImageLayout-09064"},
@@ -642,7 +642,7 @@ const std::string &GetImageImageLayoutVUID(const Location &loc) {
         {Key(Func::vkCopyImageToImage, Field::dstImageLayout), "VUID-VkCopyImageToImageInfo-dstImageLayout-09071"},
     }};
 
-    const auto &result = FindVUID(loc, errors);
+    const auto& result = FindVUID(loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-image-layout");
@@ -839,7 +839,7 @@ const char* GetBuildASVUID(const Location& loc, BuildASError error) {
     // clang-format on
 }
 
-const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error) {
+const std::string& GetSubresourceRangeVUID(const Location& loc, SubresourceRangeError error) {
     static const std::map<SubresourceRangeError, std::array<Entry, 6>> errors{
         {SubresourceRangeError::BaseMip_01486,
          {{
@@ -906,7 +906,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
          }}},
     };
 
-    const auto &result = FindVUID(error, loc, errors);
+    const auto& result = FindVUID(error, loc, errors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-subresource-range");
@@ -915,7 +915,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
     return result;
 }
 
-const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVariableError error) {
+const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVariableError error) {
     // clang-format off
     switch (error) {
         case SpirvInterfaceVariableError::ShaderStage_07988:

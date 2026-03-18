@@ -41,8 +41,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
 
     CreatePipelineHelper pipe1(*this);
     CreatePipelineHelper pipe2(*this);
-    for (uint32_t i = 0; i < 2; i++)
-    {
+    for (uint32_t i = 0; i < 2; i++) {
         CreatePipelineHelper* pipe = (i == 0) ? &pipe1 : &pipe2;
         VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
 

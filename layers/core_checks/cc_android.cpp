@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -67,7 +67,7 @@ static VkFormat GetAhbToVkFormat(uint32_t ahb_format) {
 }
 
 // Only designed to print a single usage
-static inline const char *string_AHardwareBufferGpuUsage(uint64_t usage) {
+static inline const char* string_AHardwareBufferGpuUsage(uint64_t usage) {
     if (usage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE) {
         return "AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE";
     } else if (usage & AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER) {
@@ -85,7 +85,7 @@ static inline const char *string_AHardwareBufferGpuUsage(uint64_t usage) {
     }
 }
 
-static inline const char *string_AHardwareBufferFormat(uint32_t format) {
+static inline const char* string_AHardwareBufferFormat(uint32_t format) {
     switch (format) {
         case (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM:
             return "AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM";
@@ -133,9 +133,9 @@ static uint32_t FullMipChainLevels(VkExtent3D extent) {
 //
 // AHB-extension new APIs
 //
-bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
-                                                                          VkAndroidHardwareBufferPropertiesANDROID *pProperties,
-                                                                          const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                                          VkAndroidHardwareBufferPropertiesANDROID* pProperties,
+                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
@@ -153,9 +153,9 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevi
 }
 
 bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
-                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
-                                                                      struct AHardwareBuffer **pBuffer,
-                                                                      const ErrorObject &error_obj) const {
+                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
+                                                                      struct AHardwareBuffer** pBuffer,
+                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory);
     ASSERT_AND_RETURN_SKIP(mem_info);
@@ -193,7 +193,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 //
 // AHB-specific validation within non-AHB APIs
 //
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &allocate_info, const Location &allocate_info_loc) const {
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& allocate_info, const Location& allocate_info_loc) const {
     bool skip = false;
     auto import_ahb_info = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(allocate_info.pNext);
     auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
@@ -309,8 +309,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
             ASSERT_AND_RETURN_SKIP(image_state);
-            const auto *ici = &image_state->create_info;
-            const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
+            const auto* ici = &image_state->create_info;
+            const Location& dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
             dedicated_image_usage = ici->usage;
 
@@ -383,7 +383,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
                 {VK_IMAGE_USAGE_STORAGE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER},
             };
 
-            for (const auto &[vk_usage, ahb_usage] : ahb_usage_map_v2a) {
+            for (const auto& [vk_usage, ahb_usage] : ahb_usage_map_v2a) {
                 if (ici->usage & vk_usage) {
                     if (0 == (ahb_usage & ahb_desc.usage)) {
                         skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
@@ -449,11 +449,11 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const {
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const {
     bool skip = false;
     if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->IsExternalBuffer() && (0 == image_state->GetBoundMemoryStates().size())) {
-            const char *vuid = loc.function == Func::vkGetImageMemoryRequirements
+            const char* vuid = loc.function == Func::vkGetImageMemoryRequirements
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
                                    : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
             skip |= LogError(vuid, image, loc,
@@ -466,12 +466,12 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 }
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+    const VkImageFormatProperties2* pImageFormatProperties, const ErrorObject& error_obj) const {
     bool skip = false;
-    const auto *ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
+    const auto* ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
-        const auto *pdeifi = vku::FindStructInPNextChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
+        const auto* pdeifi = vku::FindStructInPNextChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
         if ((!pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868", physical_device,
                              error_obj.location.dot(Field::pImageFormatProperties),
@@ -485,10 +485,10 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
 }
 
 bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                     VkBuffer buffer, const Location &loc) const {
+                                                     VkBuffer buffer, const Location& loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
-        const char *vuid = loc.function == Func::vkBindBufferMemory ? "VUID-vkBindBufferMemory-memory-02986"
+        const char* vuid = loc.function == Func::vkBindBufferMemory ? "VUID-vkBindBufferMemory-memory-02986"
                                                                     : "VUID-VkBindBufferMemoryInfo-memory-02986";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
@@ -502,10 +502,10 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeF
 }
 
 bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                    VkImage image, const Location &loc) const {
+                                                    VkImage image, const Location& loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
-        const char *vuid = loc.function == Func::vkBindImageMemory ? "VUID-vkBindImageMemory-memory-02990"
+        const char* vuid = loc.function == Func::vkBindImageMemory ? "VUID-vkBindImageMemory-memory-02990"
                                                                    : "VUID-VkBindImageMemoryInfo-memory-02990";
         const LogObjectList objlist(image, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
@@ -519,7 +519,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
 }
 
 bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                     VkTensorARM tensor, const Location &loc) const {
+                                                     VkTensorARM tensor, const Location& loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const LogObjectList objlist(tensor, memory);
@@ -534,10 +534,10 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
 }
 
 // Validate creating an image with an external format
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 
-    const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info.pNext);
+    const VkExternalFormatANDROID* ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info.pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         if (VK_FORMAT_UNDEFINED != create_info.format) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-01974", device,
@@ -595,7 +595,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
         }
     }
 
-    const VkExternalMemoryImageCreateInfo *emici = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext);
+    const VkExternalMemoryImageCreateInfo* emici = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         if (create_info.imageType != VK_IMAGE_TYPE_2D) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02393", device,
@@ -617,8 +617,8 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
 }
 
 // Validate creating an image view with an AHB format
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const vvl::Image &image_state,
-                                                const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
+                                                const Location& create_info_loc) const {
     bool skip = false;
 
     if (image_state.HasAHBFormat()) {
@@ -632,7 +632,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
         // Chain must include a compatible ycbcr conversion
         bool conv_found = false;
         uint64_t external_format = 0;
-        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info =
+        const VkSamplerYcbcrConversionInfo* ycbcr_conv_info =
             vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
         if (ycbcr_conv_info != nullptr) {
             if (auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conv_info->conversion)) {
@@ -668,39 +668,39 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
 
 #else  // !defined(VK_USE_PLATFORM_ANDROID_KHR)
 
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &allocate_info, const Location &allocate_info_loc) const {
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& allocate_info, const Location& allocate_info_loc) const {
     return false;
 }
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+    const VkImageFormatProperties2* pImageFormatProperties, const ErrorObject& error_obj) const {
     return false;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const { return false; }
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const { return false; }
 
 bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                     VkBuffer buffer, const Location &loc) const {
+                                                     VkBuffer buffer, const Location& loc) const {
     return false;
 }
 
 bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                    VkImage image, const Location &loc) const {
+                                                    VkImage image, const Location& loc) const {
     return false;
 }
 
 bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
-                                                     VkTensorARM tensor, const Location &loc) const {
+                                                     VkTensorARM tensor, const Location& loc) const {
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const vvl::Image &image_state,
-                                                const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
+                                                const Location& create_info_loc) const {
     return false;
 }
 

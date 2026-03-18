@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -440,8 +440,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, FrameSynchronization2) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     for (int i = 1; i <= N; i++) {
         m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, i));
-        while (semaphore.GetCounterValue() != i)
-            ;
+        while (semaphore.GetCounterValue() != i);
     }
     m_device->Wait();
 }

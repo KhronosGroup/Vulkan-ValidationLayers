@@ -158,7 +158,7 @@ TEST_F(PositiveMultiview, MeshShader) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices=81) out;

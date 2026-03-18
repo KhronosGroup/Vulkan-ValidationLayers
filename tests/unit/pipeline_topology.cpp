@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
-    auto set_polygonMode = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_ = rs_ci; };
+    auto set_polygonMode = [&](CreatePipelineHelper& helper) { helper.rs_state_ci_ = rs_ci; };
 
     // Set polygonMode to POINT while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
@@ -51,7 +51,7 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
 }
 
 // Create VS declaring PointSize but not writing to it
-static const char *NoPointSizeVertShader = R"glsl(
+static const char* NoPointSizeVertShader = R"glsl(
     #version 450
     vec2 vertices[3];
     out gl_PerVertex
@@ -75,7 +75,7 @@ TEST_F(NegativePipelineTopology, PointSize) {
 
     VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
@@ -99,7 +99,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
 
     VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
@@ -123,7 +123,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
 
     VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
@@ -154,7 +154,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.dyn_state_ci_ = dyn_state_ci;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -175,7 +175,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
 
     VkPrimitiveTopology topology;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = topology;
         helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -232,10 +232,10 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     VkPrimitiveTopology topology;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = topology;
         helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
-        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
 
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -257,8 +257,8 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    auto set_info = [&](CreatePipelineHelper &helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
-    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+    auto set_info = [&](CreatePipelineHelper& helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
+    const char* vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
                            ? "VUID-VkGraphicsPipelineCreateInfo-topology-08889"
                            : "VUID-VkGraphicsPipelineCreateInfo-topology-08889";
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
@@ -275,7 +275,7 @@ TEST_F(NegativePipelineTopology, FillRectangleNV) {
 
     VkPolygonMode polygon_mode = VK_POLYGON_MODE_LINE;
 
-    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper &helper) { helper.rs_state_ci_.polygonMode = polygon_mode; };
+    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper& helper) { helper.rs_state_ci_.polygonMode = polygon_mode; };
 
     // Set unsupported polygon mode VK_POLYGON_MODE_LINE
     CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit,

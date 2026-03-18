@@ -754,8 +754,8 @@ TEST_F(NegativeTensor, BindTensorIncompatibleExportHandleType) {
     req_info.tensor = tensor;
     VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
     vk::GetTensorMemoryRequirementsARM(device(), &req_info, &mem_reqs);
-    const auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                                    &export_memory_info);
+    const auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs.memoryRequirements,
+                                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
@@ -799,7 +799,7 @@ TEST_F(NegativeTensor, BindTensorImportMemoryHandleType) {
     GetPhysicalDeviceProperties2(memory_host_props);
     auto alignment = memory_host_props.minImportedHostPointerAlignment;
     auto alloc_size = ((tensor_mem_reqs.size + alignment - 1) / alignment) * alignment;
-    void *host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alignment));
+    void* host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alignment));
     if (!host_memory) {
         GTEST_SKIP() << "Failed to allocate host memory";
     }
@@ -812,7 +812,7 @@ TEST_F(NegativeTensor, BindTensorImportMemoryHandleType) {
     alloc_info.pNext = &import_info;
     alloc_info.allocationSize = alloc_size;
     m_device->Physical().SetMemoryType(tensor_mem_reqs.memoryTypeBits, &alloc_info,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT|VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     // Bind tensor (with handle_type1) and memory (with handle_type2)
@@ -1493,7 +1493,7 @@ TEST_F(NegativeTensor, CopyTensorRegionDimensionCountZero) {
 
     // in turn, set each one of the 3 relevant vectors to point to some dummy data
     // NOTE: the only reason we use the tensor pDimensions is to avoid VU 09689 on pExtent
-    const int64_t *dimensions = src_tensor.Description().pDimensions;
+    const int64_t* dimensions = src_tensor.Description().pDimensions;
     const std::vector<uint64_t> udims(dimensions, dimensions + src_tensor.Description().dimensionCount);
     for (int i = 0; i < 3; i++) {
         regions[0].pSrcOffset = nullptr;
@@ -1645,8 +1645,8 @@ TEST_F(NegativeTensor, DestroyTensorViewInUse) {
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -2435,7 +2435,7 @@ TEST_F(NegativeTensor, DispatchShaderSpirvWrongFormat) {
 
         m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                                &pipe.descriptor_set_.set_, 0, nullptr);
+                                  &pipe.descriptor_set_.set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeTensorARM-09906");
@@ -2454,7 +2454,7 @@ TEST_F(NegativeTensor, WrongStageInShader) {
     RETURN_IF_SKIP(InitBasicTensor());
 
     // trivial geometry shader with a dummy OpTypeTensorARM instruction thrown in
-    const char *spirv_string = R"(
+    const char* spirv_string = R"(
                OpCapability TensorsARM
                OpCapability Shader
                OpCapability Geometry

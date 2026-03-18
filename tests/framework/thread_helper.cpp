@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ void ThreadTimeoutHelper::OnThreadDone() {
 }
 
 #if GTEST_IS_THREADSAFE
-void AddToCommandBuffer(ThreadTestData *data) {
+void AddToCommandBuffer(ThreadTestData* data) {
     for (int i = 0; i < 80000; i++) {
         vk::CmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         if (*data->bailout) {
@@ -45,7 +45,7 @@ void AddToCommandBuffer(ThreadTestData *data) {
     }
 }
 
-void UpdateDescriptor(ThreadTestData *data) {
+void UpdateDescriptor(ThreadTestData* data) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = data->buffer;
     buffer_info.offset = 0;
@@ -68,7 +68,7 @@ void UpdateDescriptor(ThreadTestData *data) {
 
 #endif  // GTEST_IS_THREADSAFE
 
-void ReleaseNullFence(ThreadTestData *data) {
+void ReleaseNullFence(ThreadTestData* data) {
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
         if (*data->bailout) {

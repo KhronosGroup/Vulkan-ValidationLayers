@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;
@@ -205,7 +205,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         const VkWriteDescriptorSet descriptor_write =
             vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;
@@ -236,9 +236,9 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
     RETURN_IF_SKIP(Init());
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    const void *fake_pointer =
-        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
-    const VkSampler *hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler *>(fake_pointer);
+    const void* fake_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
+    const VkSampler* hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler*>(fake_pointer);
 
     // regular descriptors
     {

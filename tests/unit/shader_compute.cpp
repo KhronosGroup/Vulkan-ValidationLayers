@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -188,7 +188,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     const VkPhysicalDeviceLimits limits = m_device->Physical().limits_;
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x_id = 3, local_size_y_id = 4) in;
         void main(){}
@@ -455,7 +455,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
 
     // WorkgroupMemoryExplicitLayoutKHR
     {
-        const char *spv_source = R"(
+        const char* spv_source = R"(
                OpCapability Shader
                OpCapability WorkgroupMemoryExplicitLayoutKHR
                OpExtension "SPV_KHR_workgroup_memory_explicit_layout"
@@ -489,7 +489,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
 
     // WorkgroupMemoryExplicitLayout8BitAccessKHR (shaderInt8)
     {
-        const char *spv_source = R"(
+        const char* spv_source = R"(
                OpCapability Shader
                OpCapability Int8
                OpCapability WorkgroupMemoryExplicitLayout8BitAccessKHR
@@ -524,7 +524,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
 
     // WorkgroupMemoryExplicitLayout16BitAccessKHR (shaderInt16)
     {
-        const char *spv_source = R"(
+        const char* spv_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpCapability Int16
@@ -568,7 +568,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     // workgroupMemoryExplicitLayoutScalarBlockLayout feature
     // will fail from not passing --workgroup-scalar-block-layout in spirv-val
     {
-        const char *spv_source = R"(
+        const char* spv_source = R"(
                OpCapability Shader
                OpCapability WorkgroupMemoryExplicitLayoutKHR
                OpExtension "SPV_KHR_workgroup_memory_explicit_layout"
@@ -604,7 +604,7 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
     RETURN_IF_SKIP(Init());
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -636,7 +636,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -665,7 +665,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionModeMaintenance5) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450

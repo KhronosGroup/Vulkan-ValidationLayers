@@ -482,8 +482,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
          std::vector<VkDescriptorType>{// checked in separate test VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
                                        // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER}},
-        {"VUID-VkResourceDescriptorInfoEXT-None-11457",
-         std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_TENSOR_ARM}},
+        {"VUID-VkResourceDescriptorInfoEXT-None-11457", std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_TENSOR_ARM}},
     };
     for (const auto& s : subtests) {
         for (auto type : s.types) {

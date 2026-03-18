@@ -35,8 +35,8 @@ permissions:
   contents: read
 
 jobs:
-  code-format:
-    runs-on: ubuntu-24.04
+  check_vvl:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,10 +44,33 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
+      - name: install python packages
+        run: python3 -m pip install pyparsing
+      - name: Install clang-format 22
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get install -y clang-format-22
+          sudo ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
+      - name: Alias clang-format
+        run: |
+          mkdir -p bin
+          ln -s /usr/bin/clang-format-22 ./bin/clang-format
+          echo "$(pwd)/bin" >> $GITHUB_PATH
       - name: clang-format version
         run: clang-format --version
       - name: Execute Source Code Format Checking Script
         run: python3 scripts/check_code_format.py --fetch-main --target-refspec=FETCH_HEAD
+      # This saves about 20 seconds for every run
+      - name: Create subset so we only clone what we need
+        run: |
+          jq '.repos |= map(select(.name == "Vulkan-Headers" or .name == "SPIRV-Headers"))' \
+          scripts/known_good.json > $RUNNER_TEMP/known_good.json
+      - name: Clone in Vulkan/SPIR-V headers
+        run: scripts/update_deps.py --dir ext --no-build --known_good_dir $RUNNER_TEMP
+      - name: Run the script to generate the code and compare it with what is checked in
+        run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/ ext/SPIRV-Headers/include/spirv/unified1/
 
   linux:
     needs: check_vvl
@@ -449,19 +472,6 @@ jobs:
       - uses: actions/checkout@v6
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - run: python scripts/gn/gn.py --args='${{ matrix.args }}'
-
-  check_vvl:
-    needs: code-format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.10'
-      - run: python3 -m pip install pyparsing
-      - run: scripts/update_deps.py --dir ext --no-build
-      - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/ ext/SPIRV-Headers/include/spirv/unified1/
-      - run: scripts/vk_validation_stats.py ext/Vulkan-Headers/registry/validusage.json -summary -c
 
   # "Collector Job" to funnel the requirements to a single action
   # This allows branches with SKIP-CI to skip down here, and still "pass"

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
- * Copyright (c) 2023-2025 Google, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Copyright (c) 2023-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 #include "../framework/layer_validation_tests.h"
 #include <algorithm>
 
-bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &src_layouts,
-                                            const std::vector<VkImageLayout> &dst_layouts, VkImageLayout layout) {
+bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout>& src_layouts,
+                                            const std::vector<VkImageLayout>& dst_layouts, VkImageLayout layout) {
     return ((std::find(src_layouts.begin(), src_layouts.end(), layout) != src_layouts.end()) &&
             (std::find(dst_layouts.begin(), dst_layouts.end(), layout) != dst_layouts.end()));
 }
@@ -62,7 +62,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
 
     std::vector<uint8_t> pixels(width * height * 4);
     // Fill image with random values
-    for (auto &channel : pixels) {
+    for (auto& channel : pixels) {
         const uint32_t r = static_cast<uint32_t>(std::rand());
         channel = static_cast<uint8_t>((r & 0xffu) | ((r >> 8) & 0xff) | ((r >> 16) & 0xff) | (r >> 24));
     }
@@ -200,7 +200,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
 
     std::vector<uint8_t> pixels(width * height * 4);
     // Fill image with random values
-    for (auto &channel : pixels) {
+    for (auto& channel : pixels) {
         const uint32_t r = static_cast<uint32_t>(std::rand());
         channel = static_cast<uint8_t>((r & 0xffu) | ((r >> 8) & 0xff) | ((r >> 16) & 0xff) | (r >> 24));
     }

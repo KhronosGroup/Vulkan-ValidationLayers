@@ -386,7 +386,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
             }
 
             if (vkuFormatHasStencil(attachment.format) && (attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
-                                                        attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+                                                           attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
                 bandwidth_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
 

@@ -18,7 +18,7 @@ class NegativeDeviceFeatureProperty : public VkLayerTest {
   public:
     VkDevice m_second_device = VK_NULL_HANDLE;
     VkDeviceCreateInfo m_second_device_ci = vku::InitStructHelper();
-    vkt::QueueCreateInfoArray *m_queue_info = nullptr;
+    vkt::QueueCreateInfoArray* m_queue_info = nullptr;
     void InitDeviceFeatureProperty();
 
     ~NegativeDeviceFeatureProperty() {
@@ -169,7 +169,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions11) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> extension_list;
+    std::vector<const char*> extension_list;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME)) {
         extension_list.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
     }
@@ -191,7 +191,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> extension_list;
+    std::vector<const char*> extension_list;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
         extension_list.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02831");
@@ -242,7 +242,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions14) {
     features14.pushDescriptor = VK_FALSE;
     m_second_device_ci.pNext = &features14;
 
-    std::array<const char *, 1> extension_list = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
+    std::array<const char*, 1> extension_list = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
     m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
     m_second_device_ci.enabledExtensionCount = extension_list.size();
 
@@ -354,7 +354,7 @@ TEST_F(NegativeDeviceFeatureProperty, NegativeViewportHeight11) {
         GTEST_SKIP() << "AMD_negative viewport height extensions not supported";
     }
 
-    const char *extension_names = VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME;
+    const char* extension_names = VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME;
     m_second_device_ci.enabledExtensionCount = 1;
     m_second_device_ci.ppEnabledExtensionNames = &extension_names;
 
@@ -376,7 +376,7 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddress) {
     features12.bufferDeviceAddress = VK_TRUE;
     m_second_device_ci.pNext = &features12;
 
-    const char *extension_names = VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
+    const char* extension_names = VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
     m_second_device_ci.enabledExtensionCount = 1;
     m_second_device_ci.ppEnabledExtensionNames = &extension_names;
 

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
     InitRenderTarget();
 
     // Valid input of sample mask
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -33,7 +33,7 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
     )glsl";
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto validPipeline = [&](CreatePipelineHelper &helper) {
+    const auto validPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit);
@@ -154,7 +154,7 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
 
     VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -192,7 +192,7 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj mesh(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -211,7 +211,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -257,7 +257,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -298,7 +298,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c0;
         layout(location=1) out vec4 c1;
@@ -326,7 +326,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c[4];
         void main(){
@@ -348,7 +348,7 @@ TEST_F(PositiveShaderLimits, MaxLongVectorComponentCount) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         #extension GL_EXT_long_vector : enable
         vector<float, 1024> v;
@@ -358,7 +358,7 @@ TEST_F(PositiveShaderLimits, MaxLongVectorComponentCount) {
 
     VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto outputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit);
@@ -372,7 +372,7 @@ TEST_F(PositiveShaderLimits, MaxLongVectorIdComponentCount) {
     InitRenderTarget();
 
     // the spec constant is initialized to an invalid value but overridden to a supported value
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         #extension GL_EXT_long_vector : enable
         layout(constant_id = 0) const uint Count = 999999999;
@@ -396,7 +396,7 @@ TEST_F(PositiveShaderLimits, MaxLongVectorIdComponentCount) {
 
     VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specialization_info);
 
-    const auto outputPipeline = [&](CreatePipelineHelper &helper) {
+    const auto outputPipeline = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit);

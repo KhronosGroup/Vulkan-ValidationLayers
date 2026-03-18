@@ -216,7 +216,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteCommandsTo) {
 TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseTwoExecutes) {
     RETURN_IF_SKIP(Init());
 
-    const char *simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00092";
+    const char* simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00092";
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -240,7 +240,7 @@ TEST_F(NegativeSecondaryCommandBuffer, SimultaneousUseSingleExecute) {
     // variation on previous test executing the same CB twice in the same
     // CmdExecuteCommands call
 
-    const char *simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00093";
+    const char* simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00093";
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -339,7 +339,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatch) {
     VkImageMemoryBarrier image_barrier =
         image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
-    auto pipeline = [&image_barrier](const vkt::CommandBuffer &cb, VkImageLayout old_layout, VkImageLayout new_layout) {
+    auto pipeline = [&image_barrier](const vkt::CommandBuffer& cb, VkImageLayout old_layout, VkImageLayout new_layout) {
         image_barrier.oldLayout = old_layout;
         image_barrier.newLayout = new_layout;
         vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
@@ -396,7 +396,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatchUseGenericLayout
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D color_image;
         void main() {

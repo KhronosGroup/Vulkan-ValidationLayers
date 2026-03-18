@@ -909,7 +909,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAccelerationStructureHostAddress) {
     blas->Create();
 
     VkDeviceOrHostAddressConstKHR output_data;
-    output_data.hostAddress = reinterpret_cast<void *>(0x00000021);
+    output_data.hostAddress = reinterpret_cast<void*>(0x00000021);
 
     VkCopyMemoryToAccelerationStructureInfoKHR info = vku::InitStructHelper();
     info.dst = blas->handle();
@@ -949,7 +949,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     blas->Create();
 
     uint8_t output[4096];
-    uint8_t *aligned_output = reinterpret_cast<uint8_t *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
+    uint8_t* aligned_output = reinterpret_cast<uint8_t*>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
     VkDeviceOrHostAddressConstKHR output_data;
     output_data.hostAddress = aligned_output;
 
@@ -1805,7 +1805,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
         std::vector<VkAccelerationStructureGeometryKHR> geometries;
-        for (const auto &geometry : blas.GetGeometries()) {
+        for (const auto& geometry : blas.GetGeometries()) {
             geometries.emplace_back(geometry.GetVkObj());
         }
         blas.GetInfo().pGeometries = geometries.data();  // .ppGeometries is set in .BuildCmdBuffer()
@@ -1902,7 +1902,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     {
         std::vector<vkt::Buffer> dst_blas_buffers(build_info_count);
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
-        for (auto &dst_blas_buffer : dst_blas_buffers) {
+        for (auto& dst_blas_buffer : dst_blas_buffers) {
             dst_blas_buffer.InitNoMemory(*m_device, dst_blas_buffer_ci);
             vk::BindBufferMemory(device(), dst_blas_buffer, buffer_memory, 0);
 
@@ -2015,7 +2015,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
 
         VkDeviceAddress ref_address = 0;
-        for (auto &scratch_buffer : scratch_buffers) {
+        for (auto& scratch_buffer : scratch_buffers) {
             scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
             vk::BindBufferMemory(device(), scratch_buffer->handle(), buffer_memory, 0);
 
@@ -2219,7 +2219,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
 
     std::vector<uint8_t> data(4096, 0);
     VkDeviceOrHostAddressKHR output_data;
-    output_data.hostAddress = reinterpret_cast<void *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(data.data()), 16));
+    output_data.hostAddress = reinterpret_cast<void*>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(data.data()), 16));
     VkCopyAccelerationStructureToMemoryInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src = blas->handle();
     copy_info.dst = output_data;
@@ -4152,7 +4152,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
                              vkt::device_address);
 
     int input = instance_count;
-    auto *data = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    auto* data = static_cast<uint32_t*>(count_buffer.Memory().Map());
     memcpy(data, &input, sizeof(input));
     VkDeviceAddress count_buffer_address = count_buffer.Address();
 
@@ -4312,8 +4312,8 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
         writePartitionArgs.push_back(writePartition);
     }
 
-    auto *write_partition_data =
-        static_cast<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV *>(write_partition_buffer.Memory().Map());
+    auto* write_partition_data =
+        static_cast<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV*>(write_partition_buffer.Memory().Map());
     memcpy(write_partition_data, writePartitionArgs.data(),
            partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV));
     VkDeviceAddress write_partition_buffer_address = write_partition_buffer.Address();
@@ -4330,7 +4330,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                 vkt::device_address);
-    auto *src_info_data = static_cast<VkBuildPartitionedAccelerationStructureIndirectCommandNV *>(src_info_buffer.Memory().Map());
+    auto* src_info_data = static_cast<VkBuildPartitionedAccelerationStructureIndirectCommandNV*>(src_info_buffer.Memory().Map());
     memcpy(src_info_data, ptlas_ops.data(), sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
     VkDeviceAddress src_info_buffer_address = src_info_buffer.Address();
 
@@ -4406,7 +4406,7 @@ TEST_F(NegativeRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructures) {
         vkt::device_address);
     // store the value into count buffer
     int input = instance_count;
-    auto *data = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    auto* data = static_cast<uint32_t*>(count_buffer.Memory().Map());
     memcpy(data, &input, sizeof(input));
     VkDeviceAddress count_buffer_address = count_buffer.Address();
     // constant size here is irrelevant, this test just check the feature enabled
@@ -4519,7 +4519,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirect) {
         *m_device, sizeof(uint32_t),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         vkt::device_address);
-    auto *count_data = static_cast<uint32_t *>(src_count_buffer.Memory().Map());
+    auto* count_data = static_cast<uint32_t*>(src_count_buffer.Memory().Map());
     memcpy(count_data, &input_num, sizeof(input_num));
 
     VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
@@ -4598,7 +4598,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectBadMemory
         *m_device, 10 * sizeof(uint32_t),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         vkt::device_address);
-    auto *index_data = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    auto* index_data = static_cast<uint32_t*>(index_buffer.Memory().Map());
     memcpy(index_data, index_data_f, sizeof(index_data_f));
 
     vkt::Buffer src_info_buffer(
@@ -4628,8 +4628,8 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectBadMemory
     triClusterTemplateArg.opacityMicromapIndexBuffer = 0;
     triClusterTemplateArg.instantiationBoundingBoxLimit = 0;
 
-    auto *src_info_data =
-        static_cast<VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV *>(src_info_buffer.Memory().Map());
+    auto* src_info_data =
+        static_cast<VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV*>(src_info_buffer.Memory().Map());
     memcpy(src_info_data, &triClusterTemplateArg, sizeof(triClusterTemplateArg));
 
     vkt::Buffer src_count_buffer(
@@ -4637,7 +4637,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectBadMemory
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         vkt::device_address);
     uint32_t input_num = 1;
-    auto *count_data = static_cast<uint32_t *>(src_count_buffer.Memory().Map());
+    auto* count_data = static_cast<uint32_t*>(src_count_buffer.Memory().Map());
     memcpy(count_data, &input_num, sizeof(input_num));
 
     VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
@@ -4777,7 +4777,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
         *m_device, sizeof(uint32_t),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         vkt::device_address);
-    auto *count_data = static_cast<uint32_t *>(src_count_buffer.Memory().Map());
+    auto* count_data = static_cast<uint32_t*>(src_count_buffer.Memory().Map());
     memcpy(count_data, &input_num, sizeof(input_num));
 
     VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
@@ -5015,7 +5015,7 @@ TEST_F(NegativeRayTracing, ClusterAccelerationStructureTriangleClusterInput) {
         *m_device, sizeof(uint32_t),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         vkt::device_address);
-    auto *count_data = static_cast<uint32_t *>(src_count_buffer.Memory().Map());
+    auto* count_data = static_cast<uint32_t*>(src_count_buffer.Memory().Map());
     memcpy(count_data, &input_num, sizeof(input_num));
 
     vkt::Buffer implicit_buffer(*m_device, clas_size_info.accelerationStructureSize + 256,
@@ -5423,7 +5423,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                                 vkt::device_address);
 
-    auto *data = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    auto* data = static_cast<uint32_t*>(count_buffer.Memory().Map());
     memcpy(data, &total_triangles, sizeof(total_triangles));
     VkDeviceAddress count_buffer_address = count_buffer.Address();
 
@@ -5452,7 +5452,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
     vkt::Buffer count_buffer_wrong_usage(*m_device, sizeof(uint32_t),
                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                          vkt::device_address);
-    auto *data_wrong = static_cast<uint32_t *>(count_buffer_wrong_usage.Memory().Map());
+    auto* data_wrong = static_cast<uint32_t*>(count_buffer_wrong_usage.Memory().Map());
     memcpy(data_wrong, &total_triangles, sizeof(total_triangles));
     command_info.dstImplicitData = implicit_buffer.Address();
     command_info.srcInfosCount = count_buffer_wrong_usage.Address();
@@ -5560,7 +5560,7 @@ TEST_F(NegativeRayTracing, DescriptorBuffers) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    uint8_t buffer[256]; // (max accelerationStructureDescriptorSize)
+    uint8_t buffer[256];  // (max accelerationStructureDescriptorSize)
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
     dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     dgi.data.accelerationStructure = 0xbaadbeef;
@@ -5750,7 +5750,6 @@ TEST_F(NegativeRayTracing, MisalignedPrimitiveOffset5) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
 
 TEST_F(NegativeRayTracing, DestroyedDeviceAddressRange) {
     SetTargetApiVersion(VK_API_VERSION_1_2);

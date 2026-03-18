@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025 The Khronos Group Inc.
- * Copyright (c) 2024-2025 Valve Corporation
- * Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 The Khronos Group Inc.
+ * Copyright (c) 2024-2026 Valve Corporation
+ * Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     // The issue is the OpPhi inside the loop header, it needs to be
     // in the OpLoopMerge block for the back edge (%19) to be valid.
     // This means doing a if/else like normal breaks this.
-    const char *cs_source = R"(
+    const char* cs_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %data
@@ -95,7 +95,7 @@ TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     // Will get to data[4] in loop and can crash
     data[0] = 32;  // data[0]
     data[1] = 32;  // data[1]

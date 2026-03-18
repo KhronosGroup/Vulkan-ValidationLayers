@@ -21,12 +21,12 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/wsi_state.h"
 
-static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
+static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo* info) {
     auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
     return export_info ? export_info->handleTypes : 0;
 }
 
-vvl::Fence::Fence(Logger &logger, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+vvl::Fence::Fence(Logger& logger, VkFence handle, const VkFenceCreateInfo* pCreateInfo)
     : RefcountedStateObject(handle, kVulkanObjectTypeFence),
       flags(pCreateInfo->flags),
       export_handle_types(GetExportHandleTypes(pCreateInfo)),
@@ -35,7 +35,7 @@ vvl::Fence::Fence(Logger &logger, VkFence handle, const VkFenceCreateInfo *pCrea
       waiter_(completed_.get_future()),
       logger_(logger) {}
 
-const VulkanTypedHandle *vvl::Fence::InUse() const {
+const VulkanTypedHandle* vvl::Fence::InUse() const {
     auto guard = ReadLock();
     // Fence does not have a parent (in the sense of a VVL state object), and the value returned
     // by the base class InUse is not useful for reporting (it is the fence's own handle)
@@ -53,7 +53,7 @@ const VulkanTypedHandle *vvl::Fence::InUse() const {
     return &empty;
 }
 
-bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
+bool vvl::Fence::EnqueueSignal(vvl::Queue* queue_state, uint64_t next_seq) {
     auto guard = WriteLock();
     if (scope_ != kInternal) {
         return true;
@@ -73,7 +73,7 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
 }
 
 // Called from a non-queue operation, such as vkWaitForFences()|
-void vvl::Fence::NotifyAndWait(const Location &loc) {
+void vvl::Fence::NotifyAndWait(const Location& loc) {
     std::shared_future<void> waiter;
     std::optional<SubmissionReference> present_submission_ref;
     {
@@ -104,7 +104,7 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
         // NOTE: Functions like QueueWaitIdle put fence in the retired state, still it can have
         // the list of present semaphores, which are not cleared by QueueWaitIdle when swapchain
         // maintenance extension is enabled. That's the reason this code is not under kInflight condition.
-        for (auto &semaphore : present_wait_semaphores_) {
+        for (auto& semaphore : present_wait_semaphores_) {
             semaphore->ClearSwapchainWaitInfo();
         }
         present_wait_semaphores_.clear();
@@ -190,13 +190,13 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
     return imported_handle_type_;
 }
 
-void vvl::Fence::SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index) {
+void vvl::Fence::SetAcquiredImage(const std::shared_ptr<vvl::Swapchain>& swapchain, uint32_t image_index) {
     auto guard = WriteLock();
     acquired_image_swapchain_ = swapchain;
     acquired_image_index_ = image_index;
 }
 
-void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_submission_ref) {
+void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference& present_submission_ref) {
     auto guard = WriteLock();
     // At this point, in an error-free scenario, "present_submission_ref_" member has no value
     // (as an optional). If the fence is reused without being waited on (which causes a validation
@@ -216,7 +216,7 @@ void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_subm
 
 void vvl::Fence::SetPresentWaitSemaphores(vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores) {
     present_wait_semaphores_.clear();
-    for (const auto &semaphore : present_wait_semaphores) {
+    for (const auto& semaphore : present_wait_semaphores) {
         present_wait_semaphores_.emplace_back(semaphore);
     }
 }

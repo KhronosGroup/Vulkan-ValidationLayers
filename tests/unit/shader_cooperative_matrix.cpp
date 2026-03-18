@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     // https://godbolt.org/z/Ys7faYaav but now validated at GLSL level, so have SPIR-V
-    const char *cs_source = R"asm(
+    const char* cs_source = R"asm(
             OpCapability Shader
             OpCapability Float16
             OpCapability VulkanMemoryModel
@@ -119,7 +119,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfoNV) {
     RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
 
     // https://godbolt.org/z/Kbx1PsraY but now validated at GLSL level, so have SPIR-V
-    const char *cs_source = R"asm(
+    const char* cs_source = R"asm(
                OpCapability Shader
                OpCapability Float16
                OpCapability VulkanMemoryModel
@@ -201,7 +201,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageUint32) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -242,7 +242,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -280,7 +280,7 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     }
 
     // Tests are assume that Float16 3*5 is not available
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -312,7 +312,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -367,7 +367,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -421,7 +421,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -483,7 +483,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -522,7 +522,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -583,7 +583,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -646,7 +646,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
         GTEST_SKIP() << "Valid Property found, need invalid to test";
     }
 
-    const char *source = R"glsl(
+    const char* source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -723,7 +723,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         OpFunctionEnd
     )glsl";
 
-    const auto remove_str = [](const std::string &shader_template, const std::string &removestr) {
+    const auto remove_str = [](const std::string& shader_template, const std::string& removestr) {
         std::string result = shader_template;
         auto position = result.find(removestr);
         assert(position != std::string::npos);
@@ -731,8 +731,8 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         return result;
     };
     const struct {
-        const char *remove;
-        const char *expect;
+        const char* remove;
+        const char* expect;
     } subtests[] = {
         {"MatrixASignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
         {"MatrixBSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
@@ -740,14 +740,14 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         {"|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
     };
 
-    for (const auto &x: subtests) {
+    for (const auto& x : subtests) {
         const std::string cs_source_str = remove_str(cs_source_template, std::string(x.remove));
-        const char *css = cs_source_str.c_str();
+        const char* css = cs_source_str.c_str();
         CreateComputePipelineHelper pipe(*this);
 
         pipe.cs_ = VkShaderObj(*m_device, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
 
-        for (const auto &y : subtests) {
+        for (const auto& y : subtests) {
             if (x.remove == y.remove) {
                 // Set expected message
                 m_errorMonitor->SetDesiredError(y.expect);
@@ -787,7 +787,7 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionPipeline) {
     const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
          #version 450 core
          #pragma use_vulkan_memory_model
          #extension GL_KHR_shader_subgroup_basic : enable
@@ -830,7 +830,7 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
 
     const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
          #version 450 core
          #pragma use_vulkan_memory_model
          #extension GL_KHR_shader_subgroup_basic : enable

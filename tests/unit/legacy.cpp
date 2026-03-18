@@ -13,10 +13,10 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
-static const VkLayerSettingEXT kLegacySetting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
-                                                      1, &kVkTrue};
+static const VkLayerSettingEXT kLegacySetting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                 &kVkTrue};
 static VkLayerSettingsCreateInfoEXT kLegacySettingCreateInfo = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                                     &kLegacySetting};
+                                                                &kLegacySetting};
 
 class NegativeLegacy : public LegacyTest {};
 
@@ -63,7 +63,7 @@ TEST_F(NegativeLegacy, MultipleDifferentWarnings) {
 TEST_F(NegativeLegacy, MuteSingleWarning) {
     TEST_DESCRIPTION("Only mute of the two warnings to make sure mutting works");
 
-    const char *ids[] = {"WARNING-legacy-renderpass2"};
+    const char* ids[] = {"WARNING-legacy-renderpass2"};
     VkLayerSettingEXT layer_settings[2] = {kLegacySetting,
                                            {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids}};
 
@@ -155,7 +155,7 @@ TEST_F(NegativeLegacy, UseDeprecatedInstanceExtensions) {
 
     auto ici = GetInstanceCreateInfo();
     auto debug_info = Monitor().GetDebugCreateInfo();
-    const_cast<VkDebugUtilsMessengerCreateInfoEXT *>(debug_info)->pNext = &kLegacySettingCreateInfo;
+    const_cast<VkDebugUtilsMessengerCreateInfoEXT*>(debug_info)->pNext = &kLegacySettingCreateInfo;
     ici.pNext = debug_info;
 
     Monitor().SetDesiredWarning("WARNING-legacy-extension");
@@ -204,7 +204,7 @@ TEST_F(NegativeLegacy, LoadDeprecatedExtension) {
     RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     RETURN_IF_SKIP(InitState());
 
-    const char *extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
+    const char* extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
 
     if (!DeviceExtensionSupported(extension)) {
         GTEST_SKIP() << extension << " not supported.";

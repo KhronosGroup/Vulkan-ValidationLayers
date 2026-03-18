@@ -128,9 +128,9 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard,
 }
 
 std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                      vvl::Func command, const std::string& resource_description,
-                                                      uint32_t subresource_range_index,
-                                                      const VkImageSubresourceRange& subresource_range) const {
+                                           vvl::Func command, const std::string& resource_description,
+                                           uint32_t subresource_range_index,
+                                           const VkImageSubresourceRange& subresource_range) const {
     std::ostringstream ss;
     ss << "\nImage clear subresource range " << subresource_range_index << ": {\n";
     ss << "  " << string_VkImageSubresourceRange(subresource_range) << "\n";

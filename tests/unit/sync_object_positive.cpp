@@ -31,7 +31,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->NonGraphicsQueue();
+    vkt::Queue* no_gfx_queue = m_device->NonGraphicsQueue();
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     }
@@ -81,7 +81,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->NonGraphicsQueue();
+    vkt::Queue* no_gfx_queue = m_device->NonGraphicsQueue();
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     }
@@ -1322,13 +1322,13 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
 struct FenceSemRaceData {
     VkDevice device{VK_NULL_HANDLE};
     VkSemaphore sem{VK_NULL_HANDLE};
-    std::atomic<bool> *bailout{nullptr};
+    std::atomic<bool>* bailout{nullptr};
     uint64_t wait_value{0};
     uint64_t timeout{kWaitTimeout};
     uint32_t iterations{100000};
 };
 
-void WaitTimelineSem(FenceSemRaceData *data) {
+void WaitTimelineSem(FenceSemRaceData* data) {
     uint64_t wait_value = data->wait_value;
     VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphoreCount = 1;
@@ -1432,9 +1432,9 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
 }
 
 struct SemBufferRaceData {
-    SemBufferRaceData(vkt::Device &dev_) : dev(dev_), sem(dev_, VK_SEMAPHORE_TYPE_TIMELINE) {}
+    SemBufferRaceData(vkt::Device& dev_) : dev(dev_), sem(dev_, VK_SEMAPHORE_TYPE_TIMELINE) {}
 
-    vkt::Device &dev;
+    vkt::Device& dev;
     vkt::Semaphore sem;
     uint64_t start_wait_value{0};
     uint64_t timeout_ns{kWaitTimeout};
@@ -1463,7 +1463,7 @@ struct SemBufferRaceData {
         }
     }
 
-    void Run(vkt::CommandPool &command_pool, ErrorMonitor &error_mon) {
+    void Run(vkt::CommandPool& command_pool, ErrorMonitor& error_mon) {
         uint64_t gpu_wait_value, gpu_signal_value;
         VkResult err;
         start_wait_value = 2;
@@ -2044,7 +2044,7 @@ TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalizeSubresourceRange) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
         GTEST_SKIP() << "Transfer-only queue is not present";
     }

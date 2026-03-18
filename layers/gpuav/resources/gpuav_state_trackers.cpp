@@ -31,7 +31,7 @@
 
 namespace gpuav {
 
-CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
+CommandBufferSubState::CommandBufferSubState(Validator& gpuav, vvl::CommandBuffer& cb)
     : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav, false), cmd_errors_counts_buffer_(gpuav), gpuav_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
@@ -39,7 +39,7 @@ CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffe
 
 CommandBufferSubState::~CommandBufferSubState() {}
 
-void CommandBufferSubState::AllocateResources(const Location &loc) {
+void CommandBufferSubState::AllocateResources(const Location& loc) {
     VkResult result = VK_SUCCESS;
 
     // Instrumentation descriptor set layout
@@ -65,7 +65,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 
         memset(error_output_buffer_range_.offset_mapped_ptr, 0, (size_t)error_output_buffer_range_.size);
         if (gpuav_.gpuav_settings.shader_instrumentation.descriptor_checks) {
-            ((uint32_t *)error_output_buffer_range_.offset_mapped_ptr)[cst::stream_output_flags_offset] =
+            ((uint32_t*)error_output_buffer_range_.offset_mapped_ptr)[cst::stream_output_flags_offset] =
                 cst::inst_buffer_oob_enabled;
         }
     }
@@ -93,18 +93,18 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 }
 
 // Common logic after any draw/dispatch/traceRays
-void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Location &) {
+void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location&) {
     PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound);
     IncrementActionCommandCount(last_bound.bind_point);
 }
 
-void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {
+void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location& loc) {
     descriptor::UpdateBoundDescriptors(gpuav_, *this, bind_point, loc);
 }
 
 void CommandBufferSubState::Destroy() { ResetCBState(true); }
 
-void CommandBufferSubState::Reset(const Location &loc) {
+void CommandBufferSubState::Reset(const Location& loc) {
     ResetCBState(false);
     // TODO: Calling AllocateResources in Reset like so is a kind of a hack,
     // relying on CommandBuffer internal logic to work.
@@ -113,7 +113,7 @@ void CommandBufferSubState::Reset(const Location &loc) {
 }
 
 void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset,
-                                                uint32_t size, const void *values) {
+                                                uint32_t size, const void* values) {
     if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         push_constant_latest_used_layout[vvl::BindPointGraphics] = layout;
     } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
@@ -130,7 +130,7 @@ void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShade
     push_constant_data.stage_flags = stage_flags;
     push_constant_data.offset = offset;
     push_constant_data.values.resize(size);
-    auto byte_values = static_cast<const std::byte *>(values);
+    auto byte_values = static_cast<const std::byte*>(values);
     std::copy(byte_values, byte_values + size, push_constant_data.values.data());
     // Always add submitted push constant values, even if the same data is already stored.
     // Storing duplicated data, or data submitted by one vkCmdPushConstants call
@@ -146,14 +146,14 @@ void CommandBufferSubState::ClearPushConstants() {
     push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
 }
 
-void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT *) { valcmd::FlushValidationCmds(gpuav_, *this); }
+void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) { valcmd::FlushValidationCmds(gpuav_, *this); }
 
-void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *, const Location &) {
+void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {
     valcmd::FlushValidationCmds(gpuav_, *this);
 }
 
 // For things like vkCmdCopyImage there is no "last bound" as not shaders are attached to it
-void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const LastBound *last_bound,
+void CommandBufferSubState::AddCommandErrorLogger(const Location& loc, const LastBound* last_bound,
                                                   ErrorLoggerFunc error_logger_func) {
     if (command_error_loggers_.size() == gpuav_.gpuav_settings.invalid_index_command) {
         return;
@@ -231,7 +231,7 @@ uint32_t CommandBufferSubState::GetActionCommandIndex(VkPipelineBindPoint bind_p
 }
 
 std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
-                                                       const std::vector<std::string> &initial_label_stack) const {
+                                                       const std::vector<std::string>& initial_label_stack) const {
     std::string debug_region_name;
     if (label_command_i != vvl::kNoIndex32) {
         debug_region_name = base.GetDebugRegionName(base.GetLabelCommands(), label_command_i, initial_label_stack);
@@ -240,7 +240,7 @@ std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
         // no debug label region was yet opened in the corresponding command buffer,
         // but still a region might have been started in another previously submitted
         // command buffer. So just compute region name from initial_label_stack.
-        for (const std::string &label_name : initial_label_stack) {
+        for (const std::string& label_name : initial_label_stack) {
             if (!debug_region_name.empty()) {
                 debug_region_name += "::";
             }
@@ -254,10 +254,10 @@ struct FenceWaiter {
     std::vector<VkFence> fences;
 };
 
-bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc) {
+bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc) {
     VVL_ZoneScoped;
     if (!on_pre_cb_submission_functions.empty()) {
-        vko::CommandPool &cb_pool =
+        vko::CommandPool& cb_pool =
             queue.shared_resources_cache.GetOrCreate<vko::CommandPool>(gpuav_, queue.base.queue_family_index, loc);
         auto [per_pre_submission_cb, fence] = cb_pool.GetCommandBuffer();
         if (per_pre_submission_cb == VK_NULL_HANDLE) {
@@ -267,7 +267,7 @@ bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc)
         VkCommandBufferBeginInfo cb_bi = vku::InitStructHelper();
         cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         DispatchBeginCommandBuffer(per_pre_submission_cb, &cb_bi);
-        for (auto &pre_submission_func : on_pre_cb_submission_functions) {
+        for (auto& pre_submission_func : on_pre_cb_submission_functions) {
             pre_submission_func(gpuav_, *this, per_pre_submission_cb);
         }
         DispatchEndCommandBuffer(per_pre_submission_cb);
@@ -284,10 +284,10 @@ bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc)
     return true;
 }
 
-bool CommandBufferSubState::PostSubmit(QueueSubState &queue, const Location &loc) {
+bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc) {
     VVL_ZoneScoped;
     if (!on_post_cb_submission_functions.empty()) {
-        vko::CommandPool &cb_pool =
+        vko::CommandPool& cb_pool =
             queue.shared_resources_cache.GetOrCreate<vko::CommandPool>(gpuav_, queue.base.queue_family_index, loc);
         auto [per_post_submission_cb, fence] = cb_pool.GetCommandBuffer();
         if (per_post_submission_cb == VK_NULL_HANDLE) {
@@ -297,7 +297,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState &queue, const Location &loc
         VkCommandBufferBeginInfo cb_bi = vku::InitStructHelper();
         cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         DispatchBeginCommandBuffer(per_post_submission_cb, &cb_bi);
-        for (auto &post_submission_func : on_post_cb_submission_functions) {
+        for (auto& post_submission_func : on_post_cb_submission_functions) {
             post_submission_func(gpuav_, *this, per_post_submission_cb);
         }
         DispatchEndCommandBuffer(per_post_submission_cb);
@@ -310,7 +310,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState &queue, const Location &loc
             gpuav_.InternalError(queue.Handle(), loc, "Failed to submit per post submission command buffer");
         }
 
-        FenceWaiter &fence_waiter = queue.shared_resources_cache.GetOrCreate<FenceWaiter>();
+        FenceWaiter& fence_waiter = queue.shared_resources_cache.GetOrCreate<FenceWaiter>();
         fence_waiter.fences.emplace_back(fence);
     }
 
@@ -320,7 +320,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState &queue, const Location &loc
 bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_range_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
+void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::string>& initial_label_stack, const Location& loc) {
     VVL_ZoneScoped;
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -331,7 +331,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
     }
 
     {
-        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_range_.offset_mapped_ptr;
+        auto error_output_buffer_ptr = (uint32_t*)error_output_buffer_range_.offset_mapped_ptr;
 
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.
@@ -342,12 +342,12 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
 
         // A zero here means that the shader instrumentation didn't write anything.
         if (total_words != 0) {
-            uint32_t *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
+            uint32_t* const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
             assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
-            uint32_t *const error_records_end =
+            uint32_t* const error_records_end =
                 error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
 
-            uint32_t *error_record_ptr = error_records_start;
+            uint32_t* error_record_ptr = error_records_start;
             uint32_t record_size = error_record_ptr[glsl::kHeader_ErrorRecordSizeOffset];
             assert(record_size == glsl::kErrorRecordSize);
 
@@ -367,7 +367,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                     break;  // only report once
                 } else {
                     // normal case
-                    const CommandErrorLogger &error_logger = GetErrorLogger(error_logger_i);
+                    const CommandErrorLogger& error_logger = GetErrorLogger(error_logger_i);
                     const LogObjectList objlist(queue, error_logger.objlist);
 
                     std::string debug_region_name = GetDebugLabelRegion(error_logger.label_cmd_i, initial_label_stack);
@@ -397,7 +397,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
 
     bool success = true;
     LabelLogging label_logging = {initial_label_stack};
-    for (auto &on_cb_completion_func : on_cb_completion_functions) {
+    for (auto& on_cb_completion_func : on_cb_completion_functions) {
         success = on_cb_completion_func(gpuav_, *this, label_logging, loc);
         if (!success) {
             break;
@@ -405,7 +405,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
     }
 }
 
-QueueSubState::QueueSubState(Validator &gpuav, vvl::Queue &q) : vvl::QueueSubState(q), gpuav_(gpuav), timeline_khr_(false) {}
+QueueSubState::QueueSubState(Validator& gpuav, vvl::Queue& q) : vvl::QueueSubState(q), gpuav_(gpuav), timeline_khr_(false) {}
 
 QueueSubState::~QueueSubState() {
     shared_resources_cache.Clear();
@@ -427,7 +427,7 @@ QueueSubState::~QueueSubState() {
 // #ARNO_TODO do we still need that?
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void QueueSubState::SubmitBarrier(const Location &loc, uint64_t seq) {
+void QueueSubState::SubmitBarrier(const Location& loc, uint64_t seq) {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
@@ -501,20 +501,20 @@ void QueueSubState::SubmitBarrier(const Location &loc, uint64_t seq) {
     }
 }
 
-void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
+void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     bool success = true;
-    for (const auto &submission : submissions) {
+    for (const auto& submission : submissions) {
         auto loc = submission.loc.Get();
-        for (auto &cb_submission : submission.cb_submissions) {
+        for (auto& cb_submission : submission.cb_submissions) {
             auto guard = cb_submission.cb->ReadLock();
-            auto &gpu_cb = SubState(*cb_submission.cb);
+            auto& gpu_cb = SubState(*cb_submission.cb);
             success = gpu_cb.PreSubmit(*this, loc);
             if (!success) {
                 return;
             }
-            for (auto *secondary_cb : gpu_cb.base.linked_command_buffers) {
+            for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
-                auto &secondary_gpu_cb = SubState(*secondary_cb);
+                auto& secondary_gpu_cb = SubState(*secondary_cb);
                 success = secondary_gpu_cb.PreSubmit(*this, loc);
                 if (!success) {
                     return;
@@ -524,20 +524,20 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
     }
 }
 
-void QueueSubState::PostSubmit(std::deque<vvl::QueueSubmission> &submissions) {
+void QueueSubState::PostSubmit(std::deque<vvl::QueueSubmission>& submissions) {
     bool success = true;
-    for (const auto &submission : submissions) {
+    for (const auto& submission : submissions) {
         auto loc = submission.loc.Get();
-        for (auto &cb_submission : submission.cb_submissions) {
+        for (auto& cb_submission : submission.cb_submissions) {
             auto guard = cb_submission.cb->ReadLock();
-            auto &gpu_cb = SubState(*cb_submission.cb);
+            auto& gpu_cb = SubState(*cb_submission.cb);
             success = gpu_cb.PostSubmit(*this, loc);
             if (!success) {
                 return;
             }
-            for (auto *secondary_cb : gpu_cb.base.linked_command_buffers) {
+            for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
-                auto &secondary_gpu_cb = SubState(*secondary_cb);
+                auto& secondary_gpu_cb = SubState(*secondary_cb);
                 success = secondary_gpu_cb.PostSubmit(*this, loc);
                 if (!success) {
                     return;
@@ -552,7 +552,7 @@ void QueueSubState::PostSubmit(std::deque<vvl::QueueSubmission> &submissions) {
     }
 }
 
-void QueueSubState::Retire(vvl::QueueSubmission &submission) {
+void QueueSubState::Retire(vvl::QueueSubmission& submission) {
     VVL_ZoneScoped;
     if (submission.loc.Get().function == vvl::Func::vkQueuePresentKHR) {
         // Present batch does not have any GPU-AV work to post process, skip it.
@@ -573,22 +573,22 @@ void QueueSubState::Retire(vvl::QueueSubmission &submission) {
             DispatchWaitSemaphores(gpuav_.device, &wait_info, 1'000'000'000);
         }
 
-        FenceWaiter *fence_waiter = shared_resources_cache.TryGet<FenceWaiter>();
+        FenceWaiter* fence_waiter = shared_resources_cache.TryGet<FenceWaiter>();
         if (fence_waiter && !fence_waiter->fences.empty()) {
             DispatchWaitForFences(gpuav_.device, uint32_t(fence_waiter->fences.size()), fence_waiter->fences.data(), VK_TRUE,
                                   UINT64_MAX);
             fence_waiter->fences.clear();
         }
 
-        for (std::vector<vvl::CommandBufferSubmission> &cb_submissions : retiring_) {
-            for (vvl::CommandBufferSubmission &cb_submission : cb_submissions) {
+        for (std::vector<vvl::CommandBufferSubmission>& cb_submissions : retiring_) {
+            for (vvl::CommandBufferSubmission& cb_submission : cb_submissions) {
                 auto guard = cb_submission.cb->WriteLock();
-                auto &gpu_cb = SubState(*cb_submission.cb);
+                auto& gpu_cb = SubState(*cb_submission.cb);
                 auto loc = submission.loc.Get();
                 gpu_cb.OnCompletion(VkHandle(), cb_submission.initial_label_stack, loc);
-                for (vvl::CommandBuffer *secondary_cb : gpu_cb.base.linked_command_buffers) {
+                for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
-                    auto &secondary_gpu_cb = SubState(*secondary_cb);
+                    auto& secondary_gpu_cb = SubState(*secondary_cb);
                     secondary_gpu_cb.OnCompletion(VkHandle(), cb_submission.initial_label_stack, loc);
                 }
             }
@@ -597,78 +597,78 @@ void QueueSubState::Retire(vvl::QueueSubmission &submission) {
     }
 }
 
-ImageSubState::ImageSubState(vvl::Image &obj, DescriptorHeap &heap)
+ImageSubState::ImageSubState(vvl::Image& obj, DescriptorHeap& heap)
     : vvl::ImageSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void ImageSubState::Destroy() { id_tracker.reset(); }
 
-void ImageSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void ImageSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-ImageViewSubState::ImageViewSubState(vvl::ImageView &obj, DescriptorHeap &heap)
+ImageViewSubState::ImageViewSubState(vvl::ImageView& obj, DescriptorHeap& heap)
     : vvl::ImageViewSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void ImageViewSubState::Destroy() { id_tracker.reset(); }
 
-void ImageViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void ImageViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-BufferSubState::BufferSubState(vvl::Buffer &obj, DescriptorHeap &heap)
+BufferSubState::BufferSubState(vvl::Buffer& obj, DescriptorHeap& heap)
     : vvl::BufferSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void BufferSubState::Destroy() { id_tracker.reset(); }
 
-void BufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void BufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-BufferViewSubState::BufferViewSubState(vvl::BufferView &obj, DescriptorHeap &heap)
+BufferViewSubState::BufferViewSubState(vvl::BufferView& obj, DescriptorHeap& heap)
     : vvl::BufferViewSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void BufferViewSubState::Destroy() { id_tracker.reset(); }
 
-void BufferViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void BufferViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-SamplerSubState::SamplerSubState(vvl::Sampler &obj, DescriptorHeap &heap)
+SamplerSubState::SamplerSubState(vvl::Sampler& obj, DescriptorHeap& heap)
     : vvl::SamplerSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void SamplerSubState::Destroy() { id_tracker.reset(); }
 
-void SamplerSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void SamplerSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-AccelerationStructureNVSubState::AccelerationStructureNVSubState(vvl::AccelerationStructureNV &obj, DescriptorHeap &heap)
+AccelerationStructureNVSubState::AccelerationStructureNVSubState(vvl::AccelerationStructureNV& obj, DescriptorHeap& heap)
     : vvl::AccelerationStructureNVSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void AccelerationStructureNVSubState::Destroy() { id_tracker.reset(); }
 
-void AccelerationStructureNVSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
+void AccelerationStructureNVSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) {
     id_tracker.reset();
 }
 
-AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(vvl::AccelerationStructureKHR &obj, DescriptorHeap &heap)
+AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(vvl::AccelerationStructureKHR& obj, DescriptorHeap& heap)
     : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void AccelerationStructureKHRSubState::Destroy() { id_tracker.reset(); }
 
-void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
+void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) {
     id_tracker.reset();
 }
 
-TensorSubState::TensorSubState(vvl::Tensor &obj, DescriptorHeap &heap)
+TensorSubState::TensorSubState(vvl::Tensor& obj, DescriptorHeap& heap)
     : vvl::TensorSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void TensorSubState::Destroy() { id_tracker.reset(); }
 
-void TensorSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void TensorSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-TensorViewSubState::TensorViewSubState(vvl::TensorView &obj, DescriptorHeap &heap)
+TensorViewSubState::TensorViewSubState(vvl::TensorView& obj, DescriptorHeap& heap)
     : vvl::TensorViewSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
 
 void TensorViewSubState::Destroy() { id_tracker.reset(); }
 
-void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::ShaderObjectSubState(obj) {}
+ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject& obj) : vvl::ShaderObjectSubState(obj) {}
 
-PipelineSubState::PipelineSubState(Validator &gpuav, vvl::Pipeline &pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
+PipelineSubState::PipelineSubState(Validator& gpuav, vvl::Pipeline& pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
-VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const {
+VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, vvl::DescriptorMode mode) const {
     std::unique_lock<std::mutex> recreated_layout_lock(recreated_layout_mutex);
     if (recreated_layout != VK_NULL_HANDLE) {
         return recreated_layout;
@@ -687,7 +687,7 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc, v
     std::vector<size_t> recreated_desc_set_layouts_indices;
 
     for (size_t set_layout_i = 0; set_layout_i < pipeline_layout_state->set_layouts.list.size(); ++set_layout_i) {
-        const auto &set_layout = pipeline_layout_state->set_layouts.list[set_layout_i];
+        const auto& set_layout = pipeline_layout_state->set_layouts.list[set_layout_i];
         if (!set_layout) {
             set_layout_handles.emplace_back(VK_NULL_HANDLE);
         } else {

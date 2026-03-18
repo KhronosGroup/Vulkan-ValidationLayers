@@ -346,9 +346,12 @@ TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
     AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                        VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    std::vector<VkDescriptorType> types{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                        VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                         VK_DESCRIPTOR_TYPE_TENSOR_ARM};
     for (auto type : types) {
         const VkDeviceSize size = vk::GetPhysicalDeviceDescriptorSizeEXT(Gpu(), type);
@@ -1457,8 +1460,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     const int32_t read_push_offset = 8;
     const uint32_t read_push_data_offset = 48u;
     const uint32_t read_offset = read_heap_offset + read_push_offset;
-    const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
+    const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
     CreateResourceHeap(write_offset + resource_stride);
@@ -1561,8 +1563,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
     vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     const uint32_t read_offset = 48u;
-    const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
+    const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
     CreateResourceHeap(write_offset + resource_stride);
@@ -1669,8 +1670,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
     vkt::Buffer write_buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     const uint32_t read_offset = 48u;
-    const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
+    const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(write_offset + resource_stride);
 
@@ -1779,8 +1779,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
     VkDeviceAddress* indirect_data_address = reinterpret_cast<VkDeviceAddress*>(indirect_data + indirect_offset);
     *indirect_data_address = read_buffer.Address();
 
-    const VkDeviceSize write_offset =
-        Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
+    const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     CreateResourceHeap(write_offset + resource_stride);
 
@@ -3684,7 +3683,7 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
 
     // buffer
     descriptor_ranges[1] = {resource_heap_data_ + buffer_desc_offset, static_cast<size_t>(buffer_desc_size)};
-    VkDeviceAddressRangeEXT buffer_address_range = { buffer.Address(), buffer.CreateInfo().size };
+    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), buffer.CreateInfo().size};
     descriptor_infos[1] = vku::InitStructHelper();
     descriptor_infos[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_infos[1].data.pAddressRange = &buffer_address_range;

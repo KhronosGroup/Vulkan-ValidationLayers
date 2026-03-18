@@ -29,11 +29,11 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                      const Context &context) const {
+bool Device::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
+                                                      const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
                                             VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT,
@@ -46,11 +46,11 @@ bool Device::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkS
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                        const Context &context) const {
+bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                                        const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     if (pCreateInfo->setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, create_info_loc.dot(Field::setLayoutCount),
@@ -74,8 +74,8 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
     return skip;
 }
 
-bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
-                                       const Location &loc) const {
+bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange* push_constant_ranges,
+                                       const Location& loc) const {
     bool skip = false;
 
     if (!push_constant_ranges) {
@@ -117,7 +117,7 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
     for (uint32_t i = 0; i < push_constant_range_count; ++i) {
         for (uint32_t j = i + 1; j < push_constant_range_count; ++j) {
             if (0 != (push_constant_ranges[i].stageFlags & push_constant_ranges[j].stageFlags)) {
-                const char *vuid = loc.function == Func::vkCreatePipelineLayout
+                const char* vuid = loc.function == Func::vkCreatePipelineLayout
                                        ? "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292"
                                        : "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063";
                 skip |= LogError(vuid, device, loc,
@@ -493,8 +493,8 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
 }
 
 // Called from graphics, compute, raytracing, etc
-bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context &context, const VkPipelineShaderStageCreateInfo &create_info,
-                                                         const Location &loc) const {
+bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context& context, const VkPipelineShaderStageCreateInfo& create_info,
+                                                         const Location& loc) const {
     bool skip = false;
 
     if (create_info.pName) {
@@ -523,7 +523,7 @@ bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context &context,
 bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
                                         VkPipelineLayout layout, const Location& loc) const {
     bool skip = false;
-    const auto *temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
+    const auto* temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
     const VkPipelineCreateFlags2 create_flags_2 = temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2>(flags);
     const Location flag_loc =
         temp_flags_2 ? loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags) : loc.dot(Field::flags);
@@ -594,8 +594,8 @@ bool Device::ValidatePipelineBinaryInfo(const void* next, VkPipelineCreateFlags 
     return skip;
 }
 
-bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const VkPipelineRenderingCreateInfo &rendering_struct,
-                                                 const Location &loc) const {
+bool Device::ValidatePipelineRenderingCreateInfo(const Context& context, const VkPipelineRenderingCreateInfo& rendering_struct,
+                                                 const Location& loc) const {
     bool skip = false;
 
     if ((rendering_struct.depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
@@ -649,7 +649,7 @@ bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const V
 }
 
 bool Device::ValidateCreatePipelinesFlags2(const VkPipelineCreateFlags flags1, const VkPipelineCreateFlags2 flags2,
-                                           const Location &flags1_loc) const {
+                                           const Location& flags1_loc) const {
     bool skip = false;
     // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7607
     // Some wrappers include empty pNext structs which might be undesired here
@@ -662,7 +662,7 @@ bool Device::ValidateCreatePipelinesFlags2(const VkPipelineCreateFlags flags1, c
     return skip;
 }
 
-bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
+bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location& flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0 &&
         (flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -756,7 +756,7 @@ bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 f
     return skip;
 }
 
-bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
+bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, const Location& flags_loc) const {
     bool skip = false;
 
     if (flags_loc.function == Func::vkCreateGraphicsPipelines) {
@@ -806,11 +806,11 @@ bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, co
 }
 
 bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                           const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                           const Context &context) const {
+                                                           const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                           const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (!pCreateInfos) {
         return skip;
@@ -822,7 +822,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         // Create a copy of create_info and set non-included sub-state to null
         VkGraphicsPipelineCreateInfo create_info = pCreateInfos[i];
 
-        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
+        const auto* create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
         const VkPipelineCreateFlags2 flags =
             create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
@@ -835,7 +835,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         }
         skip |= ValidateCreatePipelinesFlagsCommon(flags, flags_loc);
 
-        const auto *graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (graphics_lib_info) {
             if (!(graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT)) {
                 create_info.pVertexInputState = nullptr;
@@ -923,7 +923,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         vvl::unordered_map<VkDynamicState, uint32_t, vvl::hash<int>> dynamic_state_map;
         // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"
         if (create_info.pDynamicState != nullptr) {
-            const auto &dynamic_state_info = *create_info.pDynamicState;
+            const auto& dynamic_state_info = *create_info.pDynamicState;
             for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
                 const VkDynamicState dynamic_state = dynamic_state_info.pDynamicStates[state_index];
 
@@ -1053,7 +1053,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         const bool has_dynamic_vertex_input = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
         if (!has_dynamic_vertex_input && !(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) &&
             (create_info.pVertexInputState != nullptr)) {
-            auto const &vertex_input_state = create_info.pVertexInputState;
+            auto const& vertex_input_state = create_info.pVertexInputState;
             const Location vertex_loc = create_info_loc.dot(Field::pVertexInputState);
             skip |= ValidatePipelineVertexInputStateCreateInfo(context, *vertex_input_state, vertex_loc);
 
@@ -1076,8 +1076,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             vvl::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
             for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
                 const Location binding_loc = vertex_loc.dot(Field::pVertexBindingDescriptions);
-                auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
-                auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
+                auto const& vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
+                auto const& binding_it = vertex_bindings.find(vertex_bind_desc.binding);
                 if (binding_it != vertex_bindings.cend()) {
                     skip |= LogError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616", device,
                                      binding_loc.dot(Field::binding),
@@ -1105,8 +1105,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             vvl::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
             for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
                 const Location attribute_loc = vertex_loc.dot(Field::pVertexAttributeDescriptions);
-                auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
-                auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);
+                auto const& vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
+                auto const& location_it = attribute_locations.find(vertex_attrib_desc.location);
                 if (location_it != attribute_locations.cend()) {
                     skip |= LogError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617", device,
                                      attribute_loc.dot(Field::location),
@@ -1115,7 +1115,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
                 attribute_locations.insert(vertex_attrib_desc.location);
 
-                auto const &binding_it = vertex_bindings.find(vertex_attrib_desc.binding);
+                auto const& binding_it = vertex_bindings.find(vertex_attrib_desc.binding);
                 if (binding_it == vertex_bindings.cend()) {
                     skip |= LogError("VUID-VkPipelineVertexInputStateCreateInfo-binding-00615", device,
                                      attribute_loc.dot(Field::binding),
@@ -1171,23 +1171,23 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
             // Everything in here has a pre-rasterization shader state
             if (create_info.pViewportState) {
-                const auto &viewport_state = *create_info.pViewportState;
+                const auto& viewport_state = *create_info.pViewportState;
                 const Location viewport_loc = create_info_loc.dot(Field::pViewportState);
                 skip |= ValidatePipelineViewportStateCreateInfo(context, *create_info.pViewportState, viewport_loc);
 
-                const auto *exclusive_scissor_struct =
+                const auto* exclusive_scissor_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(viewport_state.pNext);
-                const auto *shading_rate_image_struct =
+                const auto* shading_rate_image_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state.pNext);
-                const auto *coarse_sample_order_struct =
+                const auto* coarse_sample_order_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(viewport_state.pNext);
-                const auto *vp_swizzle_struct =
+                const auto* vp_swizzle_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state.pNext);
-                const auto *vp_w_scaling_struct =
+                const auto* vp_w_scaling_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state.pNext);
-                const auto *depth_clip_control_struct =
+                const auto* depth_clip_control_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
-                const auto *depth_clamp_control_struct =
+                const auto* depth_clamp_control_struct =
                     vku::FindStructInPNextChain<VkPipelineViewportDepthClampControlCreateInfoEXT>(viewport_state.pNext);
 
                 if (!enabled_features.multiViewport) {
@@ -1268,8 +1268,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
                 if (!has_dynamic_scissor && viewport_state.pScissors) {
                     for (uint32_t scissor_i = 0; scissor_i < viewport_state.scissorCount; ++scissor_i) {
-                        const Location &scissor_loc = create_info_loc.dot(Field::pScissors, scissor_i);
-                        const auto &scissor = viewport_state.pScissors[scissor_i];
+                        const Location& scissor_loc = create_info_loc.dot(Field::pScissors, scissor_i);
+                        const auto& scissor = viewport_state.pScissors[scissor_i];
 
                         if (scissor.offset.x < 0) {
                             skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-x-02821", device,
@@ -1392,7 +1392,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 // validate the VkViewports
                 if (!has_dynamic_viewport && viewport_state.pViewports) {
                     for (uint32_t viewport_i = 0; viewport_i < viewport_state.viewportCount; ++viewport_i) {
-                        const auto &viewport = viewport_state.pViewports[viewport_i];  // will crash on invalid ptr
+                        const auto& viewport = viewport_state.pViewports[viewport_i];  // will crash on invalid ptr
                         skip |= ValidateViewport(viewport, VkCommandBuffer(0), viewport_loc.dot(Field::pViewports, viewport_i));
                     }
                 }
@@ -1497,7 +1497,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 std::unique_lock<std::mutex> lock(renderpass_map_mutex);
                 const auto subpasses_uses_it = renderpasses_states.find(create_info.renderPass);
                 if (subpasses_uses_it != renderpasses_states.end()) {
-                    const auto &subpasses_uses = subpasses_uses_it->second;
+                    const auto& subpasses_uses = subpasses_uses_it->second;
                     if (subpasses_uses.subpasses_using_color_attachment.count(create_info.subpass)) {
                         uses_color_attachment = true;
                     }
@@ -1510,13 +1510,13 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
             if (create_info.pDepthStencilState != nullptr && uses_depthstencil_attachment) {
                 const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
-                auto const &ds_state = *create_info.pDepthStencilState;
+                auto const& ds_state = *create_info.pDepthStencilState;
                 skip |= ValidatePipelineDepthStencilStateCreateInfo(context, ds_state, ds_loc);
             }
 
             if (create_info.pColorBlendState != nullptr && uses_color_attachment) {
                 const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
-                auto const &color_blend_state = *create_info.pColorBlendState;
+                auto const& color_blend_state = *create_info.pColorBlendState;
                 skip |= ValidatePipelineColorBlendStateCreateInfo(context, color_blend_state, color_loc);
 
                 // If logicOpEnable is VK_TRUE, logicOp must be a valid VkLogicOp value
@@ -1579,7 +1579,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                  create_info.pRasterizationState->lineWidth, i);
             }
 
-            const auto *line_state =
+            const auto* line_state =
                 vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfo>(create_info.pRasterizationState->pNext);
             const bool dynamic_line_raster_mode = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
             const bool dynamic_line_stipple_enable = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
@@ -1705,7 +1705,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     return skip;
 }
 
-bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
+bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 flags, const Location& flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
         if (!enabled_features.shaderEnqueue) {
@@ -1784,15 +1784,15 @@ bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 fl
 }
 
 bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                          const VkComputePipelineCreateInfo *pCreateInfos,
-                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                          const Context &context) const {
+                                                          const VkComputePipelineCreateInfo* pCreateInfos,
+                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                          const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const VkComputePipelineCreateInfo &create_info = pCreateInfos[i];
+        const VkComputePipelineCreateInfo& create_info = pCreateInfos[i];
 
         auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext);
         if (feedback_struct) {
@@ -1805,7 +1805,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             }
         }
 
-        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
+        const auto* create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
         const VkPipelineCreateFlags2 flags =
             create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
@@ -1850,7 +1850,7 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
     return skip;
 }
 
-bool Device::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_range, const Location &loc) const {
+bool Device::ValidateDepthClampRange(const VkDepthClampRangeEXT& depth_clamp_range, const Location& loc) const {
     bool skip = false;
     if (depth_clamp_range.minDepthClamp > depth_clamp_range.maxDepthClamp) {
         skip |=
@@ -1873,11 +1873,11 @@ bool Device::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_ran
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
-                                                       const Context &context) const {
+bool Device::manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
+                                                       const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const bool has_externally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT) != 0;
     const bool has_internally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_INTERNALLY_SYNCHRONIZED_MERGE_BIT_KHR) != 0;
 
@@ -1904,9 +1904,9 @@ bool Device::manual_PreCallValidateCreatePipelineCache(VkDevice device, const Vk
 }
 
 bool Device::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
-                                                       const VkPipelineCache *pSrcCaches, const Context &context) const {
+                                                       const VkPipelineCache* pSrcCaches, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pSrcCaches) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             if (pSrcCaches[index0] == dstCache) {
@@ -1919,17 +1919,17 @@ bool Device::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipeli
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,
-                                                            VkBaseOutStructure *pPipelineProperties, const Context &context) const {
+bool Device::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+                                                            VkBaseOutStructure* pPipelineProperties, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (!enabled_features.pipelinePropertiesIdentifier) {
         skip |= LogError("VUID-vkGetPipelinePropertiesEXT-None-06766", device, error_obj.location,
                          "the pipelinePropertiesIdentifier feature was not enabled.");
     }
 
-    const Location &pipeline_properties_loc = error_obj.location.dot(Field::pPipelineProperties);
+    const Location& pipeline_properties_loc = error_obj.location.dot(Field::pPipelineProperties);
     if (pPipelineProperties) {
         if (pPipelineProperties->sType != VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT) {
             skip |=

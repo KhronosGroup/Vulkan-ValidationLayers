@@ -27,10 +27,10 @@
 
 namespace stateless {
 bool Device::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                       VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                                       const Context &context) const {
+                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
+                                                       const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (semaphore == VK_NULL_HANDLE && fence == VK_NULL_HANDLE) {
         skip |= LogError("VUID-vkAcquireNextImageKHR-semaphore-01780", swapchain, error_obj.location,
@@ -40,10 +40,10 @@ bool Device::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
     return skip;
 }
 
-bool Device::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                        uint32_t *pImageIndex, const Context &context) const {
+bool Device::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
+                                                        uint32_t* pImageIndex, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pAcquireInfo->semaphore == VK_NULL_HANDLE && pAcquireInfo->fence == VK_NULL_HANDLE) {
         skip |= LogError("VUID-VkAcquireNextImageInfoKHR-semaphore-01782", pAcquireInfo->swapchain,
@@ -53,7 +53,7 @@ bool Device::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const V
     return skip;
 }
 
-bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const {
+bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR& create_info, const Location& loc) const {
     bool skip = false;
 
     if (enabled_features.swapchainMaintenance1) {
@@ -65,7 +65,7 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
                          "contains VkSwapchainPresentModesCreateInfoKHR, but swapchainMaintenance1 is not enabled");
     }
 
-    if (const auto *present_scaling_create_info =
+    if (const auto* present_scaling_create_info =
             vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoKHR>(create_info.pNext)) {
         if (present_scaling_create_info->scalingBehavior != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
@@ -94,8 +94,8 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
     return skip;
 }
 
-bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
-                                         const Location &loc) const {
+bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapchainCreateInfoKHR& create_info,
+                                         const Location& loc) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -172,14 +172,14 @@ bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapcha
     }
 
     if (create_info.presentMode == VK_PRESENT_MODE_FIFO_LATEST_READY_KHR && !enabled_features.presentModeFifoLatestReady) {
-        skip |=
-            LogError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161", device, loc.dot(Field::presentMode),
-                     "is %s, but feature presentModeFifoLatestReady is not enabled", string_VkPresentModeKHR(create_info.presentMode));
+        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161", device, loc.dot(Field::presentMode),
+                         "is %s, but feature presentModeFifoLatestReady is not enabled",
+                         string_VkPresentModeKHR(create_info.presentMode));
     }
 
     if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
-        auto stateless_instance = static_cast<Instance *>(dispatch_instance_->GetValidationObject(container_type));
-        const auto &physdev_extensions = stateless_instance->physical_device_extensions.at(physical_device);
+        auto stateless_instance = static_cast<Instance*>(dispatch_instance_->GetValidationObject(container_type));
+        const auto& physdev_extensions = stateless_instance->physical_device_extensions.at(physical_device);
         const bool is_required_ext_supported = IsExtEnabled(physdev_extensions.vk_khr_surface_protected_capabilities);
         const bool is_required_ext_enabled = IsExtEnabled(extensions.vk_khr_surface_protected_capabilities);
 
@@ -217,8 +217,8 @@ bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapcha
     return skip;
 }
 
-bool Device::manual_PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR *pReleaseInfo,
-                                                     const Context &context) const {
+bool Device::manual_PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                             const Context& context) const {
     bool skip = false;
 
     if (!enabled_features.swapchainMaintenance1) {
@@ -229,27 +229,27 @@ bool Device::manual_PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, co
     return skip;
 }
 
-bool Device::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
-                                                             const Context &context) const {
+bool Device::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+                                                             const Context& context) const {
     return manual_PreCallValidateReleaseSwapchainImagesKHR(device, pReleaseInfo, context);
 }
 
-bool Device::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
-                                                      const Context &context) const {
+bool Device::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
+                                                      const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     skip |= ValidateSwapchainCreateInfo(context, *pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
 bool Device::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
-                                                             const VkSwapchainCreateInfoKHR *pCreateInfos,
-                                                             const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
-                                                             const Context &context) const {
+                                                             const VkSwapchainCreateInfoKHR* pCreateInfos,
+                                                             const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
+                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             skip |= ValidateSwapchainCreateInfo(context, pCreateInfos[i], error_obj.location.dot(Field::pCreateInfos, i));
@@ -258,10 +258,10 @@ bool Device::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
     return skip;
 }
 
-bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
-                                                   const Context &context) const {
+bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
+                                                   const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     ASSERT_AND_RETURN_SKIP(pPresentInfo);
 
     const Location present_info_loc = error_obj.location.dot(Field::pPresentInfo);
@@ -298,8 +298,8 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 }
 
 bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
-    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT *pSwapchainTimeDomainProperties,
-    uint64_t *pTimeDomainsCounter, const Context &context) const {
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter, const Context& context) const {
     bool skip = false;
 
     const bool time_domains = pSwapchainTimeDomainProperties->pTimeDomains != nullptr;
@@ -310,7 +310,7 @@ bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
                              "pTimeDomains and pTimeDomainIds are not null, but timeDomainCount is 0.");
         }
     } else if (time_domains || time_domain_ids) {
-        const char *msg = time_domains ? "pTimeDomains is not null, but pTimeDomainIds is null"
+        const char* msg = time_domains ? "pTimeDomains is not null, but pTimeDomainIds is null"
                                        : "pTimeDomainIds is not null, but pTimeDomains is null";
         skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12370", swapchain, context.error_obj.location, "%s",
                          msg);
@@ -320,11 +320,11 @@ bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
 }
 
 bool Instance::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                          const VkDisplayModeCreateInfoKHR *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
-                                                          const Context &context) const {
+                                                          const VkDisplayModeCreateInfoKHR* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode,
+                                                          const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const VkDisplayModeParametersKHR display_mode_parameters = pCreateInfo->parameters;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -342,11 +342,11 @@ bool Instance::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physi
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                        uint32_t *pSurfaceFormatCount,
-                                                                        VkSurfaceFormatKHR *pSurfaceFormats,
-                                                                        const Context &context) const {
+                                                                        uint32_t* pSurfaceFormatCount,
+                                                                        VkSurfaceFormatKHR* pSurfaceFormats,
+                                                                        const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         skip |=
             LogError("VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06524", physicalDevice,
@@ -356,11 +356,11 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysic
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                             uint32_t *pPresentModeCount,
-                                                                             VkPresentModeKHR *pPresentModes,
-                                                                             const Context &context) const {
+                                                                             uint32_t* pPresentModeCount,
+                                                                             VkPresentModeKHR* pPresentModes,
+                                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         skip |=
             LogError("VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06524", physicalDevice,
@@ -370,21 +370,21 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkP
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                              const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                              VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
-                                                                              const Context &context) const {
+                                                                              const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                              VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
+                                                                              const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    const auto *capabilities_full_screen_exclusive =
+    const auto* capabilities_full_screen_exclusive =
         vku::FindStructInPNextChain<VkSurfaceCapabilitiesFullScreenExclusiveEXT>(pSurfaceCapabilities->pNext);
     if (capabilities_full_screen_exclusive) {
-        const auto *full_screen_exclusive_win32_info =
+        const auto* full_screen_exclusive_win32_info =
             vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
         if (!full_screen_exclusive_win32_info) {
             skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671", physicalDevice,
@@ -396,9 +396,9 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
     }
 #endif
 
-    const auto *surface_present_mode_compatibility =
+    const auto* surface_present_mode_compatibility =
         vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityKHR>(pSurfaceCapabilities->pNext);
-    const auto *surface_present_scaling_compatibilities =
+    const auto* surface_present_scaling_compatibilities =
         vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesKHR>(pSurfaceCapabilities->pNext);
 
     if (!(vku::FindStructInPNextChain<VkSurfacePresentModeKHR>(pSurfaceInfo->pNext))) {
@@ -440,12 +440,12 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
 }
 
 bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                         uint32_t *pSurfaceFormatCount,
-                                                                         VkSurfaceFormat2KHR *pSurfaceFormats,
-                                                                         const Context &context) const {
+                                                                         const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                         uint32_t* pSurfaceFormatCount,
+                                                                         VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                                         const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
@@ -453,7 +453,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
     }
     if (pSurfaceFormats) {
         if (vku::FindStructInPNextChain<VkImageCompressionPropertiesEXT>(pSurfaceFormats->pNext)) {
-            const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
+            const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
             if (!IsExtEnabled(physdev_extensions.vk_ext_image_compression_control_swapchain)) {
                 skip |= LogError("VUID-VkSurfaceFormat2KHR-pNext-06750", physicalDevice,
                                  error_obj.location.dot(Field::pSurfaceFormats).dot(Field::pNext),
@@ -467,12 +467,12 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                                              const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                              uint32_t *pPresentModeCount,
-                                                                              VkPresentModeKHR *pPresentModes,
-                                                                              const Context &context) const {
+                                                                              const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                              uint32_t* pPresentModeCount,
+                                                                              VkPresentModeKHR* pPresentModes,
+                                                                              const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", physicalDevice,
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
@@ -481,11 +481,11 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(Vk
     return skip;
 }
 
-bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                           const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                           const Context &context) const {
+bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                           const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (pCreateInfo->hwnd == nullptr) {
         skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", instance, error_obj.location, "pCreateInfo->hwnd is NULL.");
@@ -495,9 +495,9 @@ bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, 
 }
 
 bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
-                                                                  const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                  VkDeviceGroupPresentModeFlagsKHR *pModes,
-                                                                  const ErrorObject &error_obj) const {
+                                                                  const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                  VkDeviceGroupPresentModeFlagsKHR* pModes,
+                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     if (!IsExtEnabled(extensions.vk_khr_swapchain))
@@ -542,11 +542,11 @@ bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice devic
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-bool Instance::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                             const Context &context) const {
+bool Instance::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const auto display = pCreateInfo->display;
     const auto surface = pCreateInfo->surface;
@@ -566,11 +566,11 @@ bool Instance::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-bool Instance::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                         const Context &context) const {
+bool Instance::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                         const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const auto connection = pCreateInfo->connection;
     const auto window = pCreateInfo->window;
@@ -588,11 +588,11 @@ bool Instance::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, co
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-bool Instance::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
-                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                          const Context &context) const {
+bool Instance::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                          const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const auto display = pCreateInfo->dpy;
     const auto window = pCreateInfo->window;
@@ -610,11 +610,11 @@ bool Instance::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, c
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                             const Context &context) const {
+bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                             const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (pCreateInfo->window == nullptr) {
         skip |= LogError("VUID-VkAndroidSurfaceCreateInfoKHR-window-01248", instance,
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::window), "is NULL.");
@@ -642,15 +642,15 @@ bool Device::manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance,
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
 bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
-                                                              const VkCalibratedTimestampInfoKHR *pTimestampInfos,
-                                                              uint64_t *pTimestamps, uint64_t *pMaxDeviation,
-                                                              const Context &context) const {
+                                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                              uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                              const Context& context) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < timestampCount; ++i) {
         if (pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT ||
             pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT) {
-            const auto *swapchain_calibrated_timestamp_info =
+            const auto* swapchain_calibrated_timestamp_info =
                 vku::FindStructInPNextChain<VkSwapchainCalibratedTimestampInfoEXT>(pTimestampInfos[i].pNext);
             if (!swapchain_calibrated_timestamp_info) {
                 skip |= LogError("VUID-VkCalibratedTimestampInfoKHR-timeDomain-12227", device,
@@ -676,9 +676,9 @@ bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, u
 }
 
 bool Device::manual_PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                                              const VkCalibratedTimestampInfoKHR *pTimestampInfos,
-                                                              uint64_t *pTimestamps, uint64_t *pMaxDeviation,
-                                                              const Context &context) const {
+                                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos,
+                                                              uint64_t* pTimestamps, uint64_t* pMaxDeviation,
+                                                              const Context& context) const {
     return manual_PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                             context);
 }

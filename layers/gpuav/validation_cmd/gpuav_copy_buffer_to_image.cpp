@@ -31,7 +31,7 @@ namespace valcmd {
 
 struct CopyBufferToImageValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_copy_buffer_to_image_comp_size * sizeof(uint32_t); }
-    static const uint32_t *GetSpirv() { return validation_cmd_copy_buffer_to_image_comp; }
+    static const uint32_t* GetSpirv() { return validation_cmd_copy_buffer_to_image_comp; }
 
     struct EmptyPushData {
     } push_constants;
@@ -66,8 +66,8 @@ struct CopyBufferToImageValidationShader {
     }
 };
 
-void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
-                       const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
+void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
+                       const VkCopyBufferToImageInfo2* copy_buffer_to_img_info) {
     if (!gpuav.gpuav_settings.validate_buffer_copies) {
         return;
     }
@@ -89,9 +89,9 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return;
     }
 
-    ValidationCommandsGpuavState &val_cmd_gpuav_state =
+    ValidationCommandsGpuavState& val_cmd_gpuav_state =
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
-    valpipe::ComputePipeline<CopyBufferToImageValidationShader> &validation_pipeline =
+    valpipe::ComputePipeline<CopyBufferToImageValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CopyBufferToImageValidationShader>>(
             gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
@@ -136,13 +136,13 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
             uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
         vko::BufferRange copy_src_regions_mem_buffer_range = cb_state.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
-        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
+        auto gpu_regions_u32_ptr = (uint32_t*)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
-        BufferImageCopy *gpu_regions_ptr =
-            reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_buffer_constants_byte_size / sizeof(uint32_t)]);
-        for (const auto &cpu_region : vvl::make_span(copy_buffer_to_img_info->pRegions, copy_buffer_to_img_info->regionCount)) {
+        BufferImageCopy* gpu_regions_ptr =
+            reinterpret_cast<BufferImageCopy*>(&gpu_regions_u32_ptr[uniform_buffer_constants_byte_size / sizeof(uint32_t)]);
+        for (const auto& cpu_region : vvl::make_span(copy_buffer_to_img_info->pRegions, copy_buffer_to_img_info->regionCount)) {
             if (cpu_region.imageSubresource.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT) {
                 continue;
             }
@@ -155,7 +155,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                 continue;
             }
 
-            BufferImageCopy &gpu_region = gpu_regions_ptr[gpu_regions_count];
+            BufferImageCopy& gpu_region = gpu_regions_ptr[gpu_regions_count];
             gpu_region.src_buffer_byte_offset = static_cast<uint32_t>(cpu_region.bufferOffset);
             gpu_region.start_layer = cpu_region.imageSubresource.baseArrayLayer;
             gpu_region.layer_count = cpu_region.imageSubresource.layerCount;
@@ -214,8 +214,8 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                              const uint32_t *error_record, const Location &loc_with_debug_region,
-                                                              const LogObjectList &objlist) {
+                                                              const uint32_t* error_record, const Location& loc_with_debug_region,
+                                                              const LogObjectList& objlist) {
         bool skip = false;
         using namespace glsl;
 

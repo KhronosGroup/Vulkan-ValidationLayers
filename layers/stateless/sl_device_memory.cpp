@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,11 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                  const Context &context) const {
+bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                  const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     if (!pAllocateInfo) {
         return skip;
@@ -61,11 +61,11 @@ bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     return skip;
 }
 
-bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements &memory_requirements,
-                                                   const Location &loc) const {
+bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements& memory_requirements,
+                                                   const Location& loc) const {
     bool skip = false;
 
-    const auto &create_info = *(memory_requirements.pCreateInfo);
+    const auto& create_info = *(memory_requirements.pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
         skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device,
                          loc.dot(Field::pCreateInfo).dot(Field::pNext), "chain contains VkImageSwapchainCreateInfoKHR.\n%s",
@@ -98,11 +98,11 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
-                                                                    VkMemoryRequirements2 *pMemoryRequirements,
-                                                                    const Context &context) const {
+bool Device::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                                    VkMemoryRequirements2* pMemoryRequirements,
+                                                                    const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
@@ -110,10 +110,10 @@ bool Device::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice dev
 }
 
 bool Device::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
-    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const Context &context) const {
+    VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
@@ -247,17 +247,17 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(
     return skip;
 }
 
-bool Device::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                   VkFence fence, const Context &context) const {
+bool Device::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                   VkFence fence, const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     for (uint32_t bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
-        const VkBindSparseInfo &bind_info = pBindInfo[bind_info_i];
+        const VkBindSparseInfo& bind_info = pBindInfo[bind_info_i];
         for (uint32_t image_bind_i = 0; image_bind_i < bind_info.imageBindCount; ++image_bind_i) {
-            const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_bind_i];
+            const VkSparseImageMemoryBindInfo& image_bind = bind_info.pImageBinds[image_bind_i];
             for (uint32_t bind_i = 0; bind_i < image_bind.bindCount; ++bind_i) {
-                const VkSparseImageMemoryBind &bind = image_bind.pBinds[bind_i];
+                const VkSparseImageMemoryBind& bind = image_bind.pBinds[bind_i];
                 if (bind.extent.width == 0) {
                     const LogObjectList objlist(queue, image_bind.image);
                     skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09388", objlist,
@@ -298,9 +298,9 @@ bool Device::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
 }
 
 bool Device::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                              const Context &context) const {
+                                                              const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
         skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", device, error_obj.location.dot(Field::priority),
                          "is %f.", priority);
@@ -308,18 +308,18 @@ bool Device::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, V
     return skip;
 }
 
-bool Device::manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo *pRenderingInfo,
-                                                                         VkTilePropertiesQCOM *pProperties,
-                                                                         const Context &context) const {
+bool Device::manual_PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                                         VkTilePropertiesQCOM* pProperties,
+                                                                         const Context& context) const {
     bool skip = false;
     if (const auto tile_memory_size = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(pRenderingInfo->pNext)) {
-        const auto &error_obj = context.error_obj;
+        const auto& error_obj = context.error_obj;
         skip |= ValidateTileMemorySizeInfo(*tile_memory_size, error_obj.location);
     }
     return skip;
 }
 
-bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM &tile_memory_size_info, const Location &loc) const {
+bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& tile_memory_size_info, const Location& loc) const {
     bool skip = false;
     uint64_t largest_heap_size = 0;
     uint32_t heap_index = 0;
@@ -333,8 +333,8 @@ bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM &tile_mem
     }
     if (tile_memory_size_info.size > largest_heap_size) {
         skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
-                         "(%" PRIu64
-                         ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32 "],"
+                         "(%" PRIu64 ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32
+                         "],"
                          " the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
                          tile_memory_size_info.size, largest_heap_size, heap_index);
     }

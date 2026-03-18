@@ -29,7 +29,7 @@ namespace valcmd {
 
 struct DispatchValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_dispatch_comp_size * sizeof(uint32_t); }
-    static const uint32_t *GetSpirv() { return validation_cmd_dispatch_comp; }
+    static const uint32_t* GetSpirv() { return validation_cmd_dispatch_comp; }
 
     glsl::DispatchPushData push_constants{};
     valpipe::BoundStorageBuffer indirect_buffer_binding = {glsl::kPreDispatchBinding_DispatchIndirectBuffer};
@@ -53,15 +53,15 @@ struct DispatchValidationShader {
     }
 };
 
-void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound,
+void DispatchIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state, const LastBound& last_bound,
                       VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
     if (!gpuav.gpuav_settings.validate_indirect_dispatches_buffers) {
         return;
     }
 
-    ValidationCommandsGpuavState &val_cmd_gpuav_state =
+    ValidationCommandsGpuavState& val_cmd_gpuav_state =
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
-    valpipe::ComputePipeline<DispatchValidationShader> &validation_pipeline =
+    valpipe::ComputePipeline<DispatchValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(
             gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
@@ -98,7 +98,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger =
-        [&gpuav](const uint32_t *error_record, const Location &loc_with_debug_region, const LogObjectList &objlist) {
+        [&gpuav](const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
             bool skip = false;
             using namespace glsl;
 

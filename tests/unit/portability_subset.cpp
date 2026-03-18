@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -494,7 +494,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use isolines in the TES shader when not available
     {
-        const char *tes_source = R"glsl(
+        const char* tes_source = R"glsl(
             #version 450
             layout(isolines, equal_spacing, cw) in;
             void main() {
@@ -510,7 +510,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use point_mode in the TES shader when not available
     {
-        const char *tes_source = R"glsl(
+        const char* tes_source = R"glsl(
             #version 450
             layout(triangles, point_mode) in;
             void main() {
@@ -531,7 +531,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use interpolation functions when not supported
     {
-        const char *vs_source = R"glsl(
+        const char* vs_source = R"glsl(
             #version 450
             layout(location = 0) out vec4 c;
             void main() {
@@ -541,7 +541,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         )glsl";
         VkShaderObj vs_obj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-        const char *fs_source = R"glsl(
+        const char* fs_source = R"glsl(
             #version 450
             layout(location = 0) in vec4 c;
             layout(location = 0) out vec4 frag_out;
@@ -594,8 +594,8 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
 
 TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
     TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
-    std::vector<const char *> enabled_extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-                                                    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
+    std::vector<const char*> enabled_extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+                                                   VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     GTEST_SKIP() << "Android doesn't support Debug Utils";

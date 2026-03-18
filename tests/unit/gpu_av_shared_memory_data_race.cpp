@@ -57,7 +57,7 @@ void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, in
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleScalar) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -71,7 +71,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleScalar) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleElementArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 3) in;
@@ -85,7 +85,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SingleElementArray) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -100,7 +100,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoThreadsShareValuesThroughArray) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 3) in;
@@ -115,7 +115,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoDimensionalArray) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStruct) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -139,7 +139,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, BasicStruct) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalar) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -160,7 +160,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, StructVsScalar) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalar) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -179,7 +179,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorVsScalar) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariables) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -202,7 +202,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVariables) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectors) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -225,7 +225,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, TwoVectors) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 4) in;
@@ -245,7 +245,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, VectorArray) {
 TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
 
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
 
@@ -264,7 +264,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, ShortIndex) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArray) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -280,7 +280,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SpecConstantArray) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, VariableName) {
-    const char *shader_source = R"glsl(
+    const char* shader_source = R"glsl(
         #version 450
 
         layout(local_size_x = 2) in;
@@ -547,7 +547,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangNestedStruct) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
-    const char *shader_source = R"slang(
+    const char* shader_source = R"slang(
         RWStructuredBuffer<uint4> outputBuffer;
         groupshared uint4 a;
         groupshared uint4 b;
@@ -582,7 +582,6 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SlangMultiEntryPoint) {
 
     TestHelper(shader_source, SPV_SOURCE_SLANG, 1);
 }
-
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, NoOpName) {
     const char* shader_source = R"(

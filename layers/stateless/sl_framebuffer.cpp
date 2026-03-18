@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,12 +20,12 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
-                                                     const Context &context) const {
+bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
+                                                     const Context& context) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
@@ -48,7 +48,7 @@ bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
                              "includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT, but the imagelessFramebuffer feature is not enabled.");
         }
 
-        const auto *framebuffer_attachments_create_info =
+        const auto* framebuffer_attachments_create_info =
             vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
         if (framebuffer_attachments_create_info == nullptr) {
             skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03190", device, create_info_loc.dot(Field::flags),

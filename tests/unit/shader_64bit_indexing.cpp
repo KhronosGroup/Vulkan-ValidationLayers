@@ -21,7 +21,7 @@ TEST_F(NegativeShader64BitIndexing, Length64) {
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;
@@ -47,7 +47,7 @@ TEST_F(NegativeShader64BitIndexing, ShaderObjectLength64) {
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;
@@ -77,7 +77,7 @@ TEST_F(NegativeShader64BitIndexing, UntypedPointerLength64) {
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"(
+    const char* cs_source = R"(
                OpCapability Shader
                OpCapability UntypedPointersKHR
                OpCapability Int64
@@ -128,7 +128,7 @@ TEST_F(NegativeShader64BitIndexing, CoopVecMul) {
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -161,7 +161,7 @@ TEST_F(NegativeShader64BitIndexing, CoopVecLoad) {
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -189,7 +189,7 @@ TEST_F(NegativeShader64BitIndexing, PipelineMissingEnable) {
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;
@@ -219,7 +219,7 @@ TEST_F(NegativeShader64BitIndexing, ShaderMissingEnable) {
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;

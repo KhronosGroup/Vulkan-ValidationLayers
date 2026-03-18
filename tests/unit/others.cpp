@@ -11,7 +11,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-//stype-check off
+// stype-check off
 
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
@@ -71,7 +71,7 @@ TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
 
     std::vector<uint32_t> hashes;
     hashes.reserve(GetVuidMap().size());
-    for (const auto &vuid_spec_text_pair : GetVuidMap()) {
+    for (const auto& vuid_spec_text_pair : GetVuidMap()) {
         const uint32_t hash = hash_util::VuidHash(vuid_spec_text_pair.first);
         hashes.push_back(hash);
     }
@@ -528,11 +528,11 @@ TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
     VkCommandPool cmdPool;
 
     struct Alloc {
-        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
-        static VKAPI_ATTR void *VKAPI_CALL realloc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
-        static VKAPI_ATTR void VKAPI_CALL free(void *, void *){};
-        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
-        static VKAPI_ATTR void VKAPI_CALL internalFree(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+        static VKAPI_ATTR void* VKAPI_CALL alloc(void*, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void* VKAPI_CALL realloc(void*, void*, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void VKAPI_CALL free(void*, void*) {};
+        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void*, size_t, VkInternalAllocationType, VkSystemAllocationScope) {};
+        static VKAPI_ATTR void VKAPI_CALL internalFree(void*, size_t, VkInternalAllocationType, VkSystemAllocationScope) {};
     };
 
     {
@@ -854,16 +854,13 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-sType-unique");
     // in VkPhysicalDeviceProperties2 create a chain of pNext of type A -> B -> A
     // Also using different instance of struct to not trip the cycle checkings
-    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_0 =
-        vku::InitStructHelper();
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_0 = vku::InitStructHelper();
 
     VkPhysicalDeviceIDProperties id_properties = vku::InitStructHelper(&protected_memory_properties_0);
 
-    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_1 =
-        vku::InitStructHelper(&id_properties);
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_1 = vku::InitStructHelper(&id_properties);
 
-    VkPhysicalDeviceProperties2 physical_device_properties2 =
-        vku::InitStructHelper(&protected_memory_properties_1);
+    VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&protected_memory_properties_1);
 
     vk::GetPhysicalDeviceProperties2(Gpu(), &physical_device_properties2);
     m_errorMonitor->VerifyFound();
@@ -1267,11 +1264,11 @@ TEST_F(VkLayerTest, GetDeviceProcAddrInstance) {
 // but need to unset variable and make sure works on Android before having CI run this
 TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
     TEST_DESCRIPTION("Test message_format_display_application_name");
-    const char *name_0 = "first instance";
+    const char* name_0 = "first instance";
     app_info_.pApplicationName = name_0;
     RETURN_IF_SKIP(Init());
 
-    const char *name_1 = "second instance";
+    const char* name_1 = "second instance";
     app_info_.pApplicationName = name_1;
     const auto instance_create_info = GetInstanceCreateInfo();
     VkInstance instance2;

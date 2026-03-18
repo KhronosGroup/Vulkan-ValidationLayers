@@ -21,7 +21,7 @@
 
 namespace gpuav {
 
-void RegisterRayHitObjectValidation(Validator &gpuav, CommandBufferSubState &cb) {
+void RegisterRayHitObjectValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.ray_hit_object) {
         return;
     }
@@ -126,7 +126,8 @@ void RegisterRayHitObjectValidation(Validator &gpuav, CommandBufferSubState &cb)
                     const uint32_t sbt_index = error_record[kInst_LogError_ParameterOffset_0];
                     const uint32_t max_sbt_index = error_record[kInst_LogError_ParameterOffset_1];
                     strm << "OpHitObjectSetShaderBindingTableRecordIndexEXT SBT index (" << std::dec << sbt_index
-                         << ") exceeds VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT::maxShaderBindingTableRecordIndex (" << max_sbt_index << "). ";
+                         << ") exceeds VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT::maxShaderBindingTableRecordIndex ("
+                         << max_sbt_index << "). ";
                     out_vuid_msg = "VUID-RuntimeSpirv-maxShaderBindingTableRecordIndex-11888";
                 } break;
                 default:

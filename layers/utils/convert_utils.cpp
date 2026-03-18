@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,9 +53,9 @@ static vku::safe_VkAttachmentReference2 ToV2KHR(const VkAttachmentReference& in_
 }
 
 static vku::safe_VkSubpassDescription2 ToV2KHR(const VkSubpassDescription& in_struct, const uint32_t viewMask,
-                                              const VkImageAspectFlags* color_attachment_aspect_masks,
-                                              const VkImageAspectFlags ds_attachment_aspect_mask,
-                                              const VkImageAspectFlags* input_attachment_aspect_masks) {
+                                               const VkImageAspectFlags* color_attachment_aspect_masks,
+                                               const VkImageAspectFlags ds_attachment_aspect_mask,
+                                               const VkImageAspectFlags* input_attachment_aspect_masks) {
     vku::safe_VkSubpassDescription2 v2;
     v2.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
     v2.pNext = nullptr;
@@ -123,8 +123,10 @@ static vku::safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_stru
 vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
     vku::safe_VkRenderPassCreateInfo2 out_struct;
     const auto multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
-    const auto* input_attachment_aspect_info = vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
-    const auto fragment_density_map_info = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
+    const auto* input_attachment_aspect_info =
+        vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
+    const auto fragment_density_map_info =
+        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
     const auto tile_memory_size_info = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(create_info.pNext);
 
     out_struct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
@@ -273,8 +275,8 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
 }
 
 vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier,
-                                                               VkPipelineStageFlags2 srcStageMask,
-                                                               VkPipelineStageFlags2 dstStageMask) {
+                                                                VkPipelineStageFlags2 srcStageMask,
+                                                                VkPipelineStageFlags2 dstStageMask) {
     VkImageMemoryBarrier2 barrier2 = vku::InitStructHelper();
 
     // As of Vulkan 1.3.153, the VkImageMemoryBarrier2 supports the same pNext structs as VkImageMemoryBarrier

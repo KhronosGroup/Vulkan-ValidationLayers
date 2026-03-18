@@ -320,7 +320,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
     constexpr int wait_time = 60;
     if (!timeout_helper.WaitForThreads(wait_time))
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
-    for (auto &worker : workers) worker.join();
+    for (auto& worker : workers) worker.join();
 }
 
 TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
@@ -531,7 +531,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    const char *csSource = R"(
+    const char* csSource = R"(
                      OpCapability Shader
                      OpCapability StorageImageExtendedFormats
                      OpMemoryModel Logical GLSL450
@@ -574,7 +574,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL);
+                                                  VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -597,7 +597,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    const char *csSource = R"(
+    const char* csSource = R"(
                      OpCapability Shader
                      OpCapability StorageImageExtendedFormats
                      OpMemoryModel Logical GLSL450
@@ -642,7 +642,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL);
+                                                  VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -738,11 +738,11 @@ TEST_F(PositiveCommand, CommandBufferInheritanceInfoIgnoredPointer) {
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    const void *undereferencable_pointer =
-        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+    const void* undereferencable_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    begin_info.pInheritanceInfo = reinterpret_cast<const VkCommandBufferInheritanceInfo *>(undereferencable_pointer);
+    begin_info.pInheritanceInfo = reinterpret_cast<const VkCommandBufferInheritanceInfo*>(undereferencable_pointer);
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.End();
 }

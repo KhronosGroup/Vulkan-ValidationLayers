@@ -26,11 +26,11 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                                const stateless::Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     skip |= context.ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
@@ -48,7 +48,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         }
     }
 
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext);
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext);
     if (!usage_flags2) {
         skip |= context.ValidateFlags(create_info_loc.dot(Field::usage), vvl::FlagBitmask::VkBufferUsageFlagBits,
                                       AllVkBufferUsageFlagBits, pCreateInfo->usage, kRequiredFlags,
@@ -110,9 +110,9 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
-                                                    const Context &context) const {
+bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkBufferView* pBufferView,
+                                                    const Context& context) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT,
@@ -122,7 +122,7 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
 
     const Location create_info_loc = context.error_obj.location.dot(Field::pCreateInfo);
 
-    const VkDeviceSize &range = pCreateInfo->range;
+    const VkDeviceSize& range = pCreateInfo->range;
     const VkFormat format = pCreateInfo->format;
 
     if (vkuFormatIsDepthOrStencil(format)) {
@@ -176,7 +176,7 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
     return skip;
 }
 
-bool Device::ValidateCreateBufferFlags(const VkBufferCreateFlags flags, const Location &flag_loc) const {
+bool Device::ValidateCreateBufferFlags(const VkBufferCreateFlags flags, const Location& flag_loc) const {
     bool skip = false;
 
     if ((flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!enabled_features.sparseBinding)) {
@@ -216,7 +216,7 @@ bool Device::ValidateCreateBufferFlags(const VkBufferCreateFlags flags, const Lo
     return skip;
 }
 
-bool Device::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 
     if (auto chained_devaddr_struct = vku::FindStructInPNextChain<VkBufferDeviceAddressCreateInfoEXT>(create_info.pNext)) {
@@ -249,11 +249,11 @@ bool Device::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo &c
     return skip;
 }
 
-bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo& create_info, const Location& create_info_loc) const {
     bool skip = false;
 
     const VkBufferCreateFlags flags = create_info.flags;
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     const VkBufferUsageFlags2 usage = usage_flags2 ? usage_flags2->usage : create_info.usage;
 
     if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {

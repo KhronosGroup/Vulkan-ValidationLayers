@@ -18,15 +18,16 @@
 #include "state_object.h"
 #include "state_tracker/state_tracker.h"
 
-static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkTensorCreateInfoARM *create_info) {
-    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(create_info->pNext);
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkTensorCreateInfoARM* create_info) {
+    const auto* external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(create_info->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
 namespace vvl {
 
-Tensor::Tensor(DeviceState &dev_data, VkTensorARM handle, const VkTensorCreateInfoARM *pCreateInfo)
-    : Bindable(handle, kVulkanObjectTypeTensorARM, false, (pCreateInfo->flags & VK_TENSOR_CREATE_PROTECTED_BIT_ARM) == 0, GetExternalHandleTypes(pCreateInfo)),
+Tensor::Tensor(DeviceState& dev_data, VkTensorARM handle, const VkTensorCreateInfoARM* pCreateInfo)
+    : Bindable(handle, kVulkanObjectTypeTensorARM, false, (pCreateInfo->flags & VK_TENSOR_CREATE_PROTECTED_BIT_ARM) == 0,
+               GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       safe_description(pCreateInfo->pDescription),
@@ -37,7 +38,7 @@ Tensor::Tensor(DeviceState &dev_data, VkTensorARM handle, const VkTensorCreateIn
     SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));
 }
 
-bool Tensor::CompareCreateInfo(const Tensor &other) const {
+bool Tensor::CompareCreateInfo(const Tensor& other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
@@ -81,14 +82,14 @@ bool Tensor::CompareCreateInfo(const Tensor &other) const {
            valid_queue_family && valid_external && valid_dimensions && valid_strides;
 }
 
-TensorView::TensorView(const std::shared_ptr<Tensor> &tensor, VkTensorViewARM handle, const VkTensorViewCreateInfoARM *pCreateInfo)
+TensorView::TensorView(const std::shared_ptr<Tensor>& tensor, VkTensorViewARM handle, const VkTensorViewCreateInfoARM* pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeTensorViewARM),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       tensor_state(tensor) {}
 
 void TensorView::Destroy() {
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->Destroy();
     }
     if (tensor_state) {
@@ -98,8 +99,8 @@ void TensorView::Destroy() {
     StateObject::Destroy();
 }
 
-void TensorView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
+void TensorView::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    for (auto& item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     StateObject::NotifyInvalidate(invalid_nodes, unlink);

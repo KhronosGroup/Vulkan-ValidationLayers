@@ -1,6 +1,6 @@
 /* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 #include <cstring>
 #include "vk_layer_extension_utils.h"
 
-VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions, uint32_t *pCount,
-                                     VkExtensionProperties *pProperties) {
+VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties* layer_extensions, uint32_t* pCount,
+                                     VkExtensionProperties* pProperties) {
     if (pProperties == nullptr || layer_extensions == nullptr) {
         *pCount = count;
         return VK_SUCCESS;
@@ -35,8 +35,8 @@ VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProp
     return VK_SUCCESS;
 }
 
-VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
-                                 VkLayerProperties *pProperties) {
+VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties* layer_properties, uint32_t* pCount,
+                                 VkLayerProperties* pProperties) {
     if (pProperties == nullptr || layer_properties == nullptr) {
         *pCount = count;
         return VK_SUCCESS;

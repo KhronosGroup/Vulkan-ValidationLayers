@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -250,7 +250,7 @@ TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
         GTEST_SKIP() << "Supported compute shader shared memory size is too small";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -275,7 +275,7 @@ TEST_F(PositiveShaderCompute, SharedMemory) {
     RETURN_IF_SKIP(Init());
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         shared uint a;
         shared float b;
@@ -304,7 +304,7 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
     AddRequiredFeature(vkt::Feature::shaderZeroInitializeWorkgroupMemory);
     RETURN_IF_SKIP(Init());
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -326,6 +326,6 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
         )";
 
     auto cs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
+    const auto set_info = [&cs](CreateComputePipelineHelper& helper) { helper.cs_ = std::move(cs); };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }

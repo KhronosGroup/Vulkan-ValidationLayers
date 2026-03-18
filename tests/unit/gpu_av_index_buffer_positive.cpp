@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2020-2025 Valve Corporation
- * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2025 Google, Inc.
+ * Copyright (c) 2020-2026 The Khronos Group Inc.
+ * Copyright (c) 2020-2026 Valve Corporation
+ * Copyright (c) 2020-2026 LunarG, Inc.
+ * Copyright (c) 2020-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -207,7 +207,7 @@ TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         void main() {
@@ -272,7 +272,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexShaderUnusedLocations) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -364,7 +364,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndex) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -452,7 +452,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -544,7 +544,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -631,7 +631,7 @@ TEST_F(PositiveGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -692,7 +692,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex32MultiDraw) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -761,7 +761,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -862,7 +862,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
         std::array<float, 3> normal;
     };
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -975,9 +975,9 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     const uint32_t size = sizeof(VkDrawIndexedIndirectCommand) + offset;
 
     vkt::Buffer draw_params_buffer(*m_device, size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint8_t *data = (uint8_t *)draw_params_buffer.Memory().Map();
+    uint8_t* data = (uint8_t*)draw_params_buffer.Memory().Map();
     memset(data, 255, size);
-    auto indirect_command = reinterpret_cast<VkDrawIndexedIndirectCommand *>(data + offset);
+    auto indirect_command = reinterpret_cast<VkDrawIndexedIndirectCommand*>(data + offset);
     indirect_command->indexCount = 3u;
     indirect_command->instanceCount = 1u;
     indirect_command->firstIndex = 0u;
@@ -1003,7 +1003,7 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(set=0, binding=0) buffer InData {
@@ -1032,7 +1032,7 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_1.layout_, &descriptor_set_2.layout_});
 
     vkt::Buffer in_buffer(*m_device, sizeof(float) * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    float *in_buffer_ptr = (float *)in_buffer.Memory().Map();
+    float* in_buffer_ptr = (float*)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1.0f;
     in_buffer_ptr[1] = 2.0f;
     in_buffer_ptr[2] = 3.0f;
@@ -1073,7 +1073,7 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *out_buffer_ptr = (float *)out_buffer.Memory().Map();
+    float* out_buffer_ptr = (float*)out_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; ++i) {
         ASSERT_EQ(in_buffer_ptr[i], out_buffer_ptr[i]);
     }
@@ -1097,7 +1097,7 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
         GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
 
         layout(set=0, binding=0) buffer InData {
@@ -1132,7 +1132,7 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &ds_layout});
 
     vkt::Buffer in_buffer(*m_device, sizeof(float) * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    float *in_buffer_ptr = (float *)in_buffer.Memory().Map();
+    float* in_buffer_ptr = (float*)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1.0f;
     in_buffer_ptr[1] = 2.0f;
     in_buffer_ptr[2] = 3.0f;
@@ -1147,8 +1147,8 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
 
     vkt::Buffer in_descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
     vkt::Buffer out_descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *in_descriptor_data = reinterpret_cast<uint8_t *>(in_descriptor_buffer.Memory().Map());
-    uint8_t *out_descriptor_data = reinterpret_cast<uint8_t *>(out_descriptor_buffer.Memory().Map());
+    uint8_t* in_descriptor_data = reinterpret_cast<uint8_t*>(in_descriptor_buffer.Memory().Map());
+    uint8_t* out_descriptor_data = reinterpret_cast<uint8_t*>(out_descriptor_buffer.Memory().Map());
 
     VkDeviceSize in_buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
     VkDeviceSize out_buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
@@ -1195,7 +1195,7 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    float *out_buffer_ptr = (float *)out_buffer.Memory().Map();
+    float* out_buffer_ptr = (float*)out_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; ++i) {
         ASSERT_EQ(in_buffer_ptr[i], out_buffer_ptr[i]);
     }

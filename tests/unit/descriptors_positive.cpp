@@ -127,8 +127,8 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         // This will most likely produce a crash if the parameter_validation
         // layer
         // does not correctly ignore pBufferInfo.
-        descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
-        descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
+        descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(invalid_ptr);
+        descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView*>(invalid_ptr);
 
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
@@ -155,8 +155,8 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         // This will most likely produce a crash if the parameter_validation
         // layer
         // does not correctly ignore pImageInfo.
-        descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
-        descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
+        descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(invalid_ptr);
+        descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView*>(invalid_ptr);
 
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
@@ -184,8 +184,8 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         // This will most likely produce a crash if the parameter_validation
         // layer
         // does not correctly ignore pImageInfo and pBufferInfo.
-        descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo *>(invalid_ptr);
-        descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo *>(invalid_ptr);
+        descriptor_write.pImageInfo = reinterpret_cast<const VkDescriptorImageInfo*>(invalid_ptr);
+        descriptor_write.pBufferInfo = reinterpret_cast<const VkDescriptorBufferInfo*>(invalid_ptr);
 
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     }
@@ -216,7 +216,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0, binding=0) uniform sampler immutableSampler;
@@ -308,7 +308,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0) layout(binding=0) uniform foo1 { int x; int y; } bar1;
@@ -444,7 +444,7 @@ TEST_F(PositiveDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     descriptor_set_1.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set_1.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint a;
@@ -643,7 +643,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
             layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
@@ -732,7 +732,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT, nullptr,
                                        VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT);
 
-    const auto &testing_thread1 = [&]() {
+    const auto& testing_thread1 = [&]() {
         VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, view1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_set.set_;
@@ -743,7 +743,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
 
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     };
-    const auto &testing_thread2 = [&]() {
+    const auto& testing_thread2 = [&]() {
         VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, view2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_set.set_;
@@ -757,7 +757,7 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     };
 
     std::array<std::thread, 2> threads = {std::thread(testing_thread1), std::thread(testing_thread2)};
-    for (auto &t : threads) t.join();
+    for (auto& t : threads) t.join();
 }
 
 TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
@@ -796,7 +796,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
 
     vkt::Framebuffer fb(*m_device, rp, 1, &view_input.handle(), width, height);
 
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         void main() {
@@ -905,7 +905,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
 
         // Bind set A to a command buffer and submit the command buffer;
         {
-            auto &cb = use_single_command_buffer ? m_command_buffer : cb0;
+            auto& cb = use_single_command_buffer ? m_command_buffer : cb0;
             cb.Begin();
             vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set_A, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -921,7 +921,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
 
         // Bind set B to a command buffer and submit the command buffer;
         {
-            auto &cb = use_single_command_buffer ? m_command_buffer : cb1;
+            auto& cb = use_single_command_buffer ? m_command_buffer : cb1;
             cb.Begin();
             vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set_B, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -1027,7 +1027,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
                                             VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *frag_src = R"glsl(
+    const char* frag_src = R"glsl(
         #version 450
         layout(set=0) layout(binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 color;
@@ -1153,7 +1153,7 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     //     x = vec4(1.0f);
     //     foo(image_1);
     // }
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %color_attach
@@ -1927,7 +1927,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefined) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -1985,7 +1985,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedMaintenance4) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -2046,7 +2046,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedMaintenance4_2) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -2113,7 +2113,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -2226,7 +2226,7 @@ TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers2) {
         descriptor_write.pImageInfo = &image_info;
         vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
 
-        const char *fsSource = R"glsl(
+        const char* fsSource = R"glsl(
             #version 440
 
             layout(set = 0, binding = 0) uniform sampler2DMS u_ms_image_sampler;
@@ -2317,7 +2317,7 @@ TEST_F(PositiveDescriptors, DummySecondDevice) {
     OneOffDescriptorSet ds_0(m_device, {binding_def});
     const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint x; };
         void main() {
@@ -2359,7 +2359,7 @@ TEST_F(PositiveDescriptors, DummySecondInstance) {
     OneOffDescriptorSet ds_0(m_device, {binding_def});
     const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint x; };
         void main() {

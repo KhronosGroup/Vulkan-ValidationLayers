@@ -22,7 +22,7 @@
 #include "utils/shader_utils.h"
 
 namespace vvl {
-static DescriptorSetLayoutList GetSetLayouts(DeviceState &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+static DescriptorSetLayoutList GetSetLayouts(DeviceState& dev_data, const VkShaderCreateInfoEXT& pCreateInfo) {
     DescriptorSetLayoutList set_layouts(pCreateInfo.setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
         set_layouts.list[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);

@@ -28,8 +28,8 @@
 #include <sstream>
 #include <string>
 
-void ValidationCache::GetUUID(uint8_t *uuid) {
-    const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
+void ValidationCache::GetUUID(uint8_t* uuid) {
+    const char* sha1_str = SPIRV_TOOLS_COMMIT_ID;
     // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
     // output, so pad with zeroes if the input string is shorter than that, and truncate
     // if it's longer.
@@ -51,19 +51,19 @@ void ValidationCache::GetUUID(uint8_t *uuid) {
     std::memcpy(uuid + (VK_UUID_SIZE - sizeof(uint32_t)), &spirv_val_option_hash_, sizeof(uint32_t));
 }
 
-void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
+void ValidationCache::Load(VkValidationCacheCreateInfoEXT const* pCreateInfo) {
     const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;
     auto size = headerSize;
     if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) return;
 
-    uint32_t const *data = (uint32_t const *)pCreateInfo->pInitialData;
+    uint32_t const* data = (uint32_t const*)pCreateInfo->pInitialData;
     if (data[0] != size) return;
     if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
     uint8_t expected_uuid[VK_UUID_SIZE];
     GetUUID(expected_uuid);
     if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
 
-    data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
+    data = (uint32_t const*)(reinterpret_cast<uint8_t const*>(data) + headerSize);
 
     auto guard = WriteLock();
     for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(uint32_t)) {
@@ -71,7 +71,7 @@ void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
     }
 }
 
-void ValidationCache::Write(size_t *pDataSize, void *pData) {
+void ValidationCache::Write(size_t* pDataSize, void* pData) {
     const auto header_size = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
     if (!pData) {
         *pDataSize = header_size + good_shader_hashes_.size() * sizeof(uint32_t);
@@ -83,14 +83,14 @@ void ValidationCache::Write(size_t *pDataSize, void *pData) {
         return;  // Too small for even the header!
     }
 
-    uint32_t *out = (uint32_t *)pData;
+    uint32_t* out = (uint32_t*)pData;
     size_t actual_size = header_size;
 
     // Write the header
     *out++ = header_size;
     *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
-    GetUUID(reinterpret_cast<uint8_t *>(out));
-    out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
+    GetUUID(reinterpret_cast<uint8_t*>(out));
+    out = (uint32_t*)(reinterpret_cast<uint8_t*>(out) + VK_UUID_SIZE);
 
     {
         auto guard = ReadLock();
@@ -103,7 +103,7 @@ void ValidationCache::Write(size_t *pDataSize, void *pData) {
     *pDataSize = actual_size;
 }
 
-void ValidationCache::Merge(ValidationCache const *other) {
+void ValidationCache::Merge(ValidationCache const* other) {
     // self-merging is invalid, but avoid deadlock below just in case.
     if (other == this) {
         return;
@@ -156,9 +156,9 @@ VkShaderStageFlagBits ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 }
 
 // This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
-void DumpSpirvToFile(const std::string &file_path, const uint32_t *spirv, size_t spirv_dwords_count) {
+void DumpSpirvToFile(const std::string& file_path, const uint32_t* spirv, size_t spirv_dwords_count) {
     std::ofstream debug_file(file_path, std::ios::out | std::ios::binary);
-    debug_file.write(reinterpret_cast<const char *>(spirv), spirv_dwords_count * sizeof(uint32_t));
+    debug_file.write(reinterpret_cast<const char*>(spirv), spirv_dwords_count * sizeof(uint32_t));
 }
 
 bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,

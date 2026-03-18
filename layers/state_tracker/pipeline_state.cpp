@@ -29,9 +29,9 @@
 
 namespace vvl {
 
-static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGraphicsPipelineCreateInfo &ci,
+static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGraphicsPipelineCreateInfo& ci,
                                                                      std::shared_ptr<const vvl::RenderPass> rpstate,
-                                                                     const DeviceState &state_data) {
+                                                                     const DeviceState& state_data) {
     bool use_color = false;
     bool use_depth_stencil = false;
 
@@ -51,15 +51,15 @@ static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGra
     }
 
     vku::PNextCopyState copy_state = {
-        [&state_data, &ci](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+        [&state_data, &ci](VkBaseOutStructure* safe_struct, const VkBaseOutStructure* in_struct) -> bool {
             return Pipeline::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
         }};
     return vku::safe_VkGraphicsPipelineCreateInfo(&ci, use_color, use_depth_stencil, &copy_state);
 }
 
 static std::shared_ptr<vvl::ShaderModule> GetShaderModuleFromInlinedSpirv(
-    const DeviceState &state_data, const vku::safe_VkPipelineShaderStageCreateInfo &shader_stage_ci,
-    spirv::StatelessData *stateless_data) {
+    const DeviceState& state_data, const vku::safe_VkPipelineShaderStageCreateInfo& shader_stage_ci,
+    spirv::StatelessData* stateless_data) {
     // Using VkShaderModuleCreateInfo to inline SPIR-V with VK_KHR_maintenance5
     if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(shader_stage_ci.pNext)) {
         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10029
@@ -90,8 +90,8 @@ uint32_t Pipeline::CountDescriptorHeapEmbeddedSamplers(const Pipeline& pipe_stat
     return count;
 }
 
-std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
-                                                       VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data) {
+std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState& state_data, const Pipeline& pipe_state,
+                                                       VkPipelineLayout pipeline_layout, spirv::StatelessData* stateless_data) {
     std::vector<ShaderStageState> stage_states;
 
     std::vector<VkShaderStageFlagBits> lookup_in_library_stages = {VK_SHADER_STAGE_VERTEX_BIT,
@@ -103,7 +103,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
                                                                    VK_SHADER_STAGE_MESH_BIT_EXT};
 
     // Because GPL, we can't just "know our pipeline layout" here and have to do a state lookup to get it
-    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    const DescriptorSetLayoutList* descriptor_set_layouts = nullptr;
     if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
         descriptor_set_layouts = &pipeline_layout_state->set_layouts;
     }
@@ -114,7 +114,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             continue;  // pStages are ignored if not using one of these libraries
         }
 
-        const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
+        const auto& stage_ci = pipe_state.shader_stages_ci[stage_index];
         auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
         if (!module_state && pipe_state.pipeline_cache) {
             // Attempt to look up the pipeline cache for shader module data
@@ -146,10 +146,10 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
         }
     }
 
-    for (const auto &stage_flag : lookup_in_library_stages) {
+    for (const auto& stage_flag : lookup_in_library_stages) {
         // Check if stage has been supplied by a library
         std::shared_ptr<const vvl::ShaderModule> module_state = nullptr;
-        const vku::safe_VkPipelineShaderStageCreateInfo *stage_ci = nullptr;
+        const vku::safe_VkPipelineShaderStageCreateInfo* stage_ci = nullptr;
         switch (stage_flag) {
             case VK_SHADER_STAGE_VERTEX_BIT:
                 if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->vertex_shader) {
@@ -208,36 +208,38 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
     return stage_states;
 }
 
-std::vector<ShaderStageState> Pipeline::GetDataGraphStageStates(const DeviceState &state_data, Pipeline &pipe_state, VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data) {
-
+std::vector<ShaderStageState> Pipeline::GetDataGraphStageStates(const DeviceState& state_data, Pipeline& pipe_state,
+                                                                VkPipelineLayout pipeline_layout,
+                                                                spirv::StatelessData* stateless_data) {
     assert(VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType());
 
     std::vector<ShaderStageState> stage_states;
 
     auto create_info = pipe_state.DataGraphCreateInfo();
 
-    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    const DescriptorSetLayoutList* descriptor_set_layouts = nullptr;
     if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
         descriptor_set_layouts = &pipeline_layout_state->set_layouts;
     }
 
     // The ShaderModule for a datagraph can be defined in 2 ways (but not both, see VU 9873):
     // - as the 'module' member of the VkDataGraphPipelineShaderModuleCreateInfoARM structure
-    auto *dg_shader_ci = vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
+    auto* dg_shader_ci = vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
     // - or with a VkShaderModuleCreateInfo
-    auto *shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext);
+    auto* shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext);
 
     std::shared_ptr<const vvl::ShaderModule> module_state = nullptr;
     if (dg_shader_ci && dg_shader_ci->module != VK_NULL_HANDLE) {
         module_state = state_data.Get<vvl::ShaderModule>(dg_shader_ci->module);
     } else if (shader_ci && shader_ci->pCode && shader_ci->codeSize > 0) {
-        auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
+        auto spirv_module =
+            vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
         module_state = std::make_shared<const vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
     }
 
     if (module_state) {
-        // The existence of dg_shader_ci is guaranteed if we have a module. Having dg_shader_ci == NULL is a very contrived situation,
-        // see test NegativeDataGraph.DataGraphWrongCreateInfoStructs
+        // The existence of dg_shader_ci is guaranteed if we have a module. Having dg_shader_ci == NULL is a very contrived
+        // situation, see test NegativeDataGraph.DataGraphWrongCreateInfoStructs
         assert(dg_shader_ci);
         pipe_state.data_graph_shader_stage_ci = vku::InitStructHelper();
         pipe_state.data_graph_shader_stage_ci.module = module_state->VkHandle();
@@ -252,18 +254,18 @@ std::vector<ShaderStageState> Pipeline::GetDataGraphStageStates(const DeviceStat
 }
 
 std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
-    const DeviceState &state_data, const Pipeline &pipe_state, VkPipelineLayout pipeline_layout,
-    std::vector<spirv::StatelessData> *inout_per_shader_stateless_data) {
+    const DeviceState& state_data, const Pipeline& pipe_state, VkPipelineLayout pipeline_layout,
+    std::vector<spirv::StatelessData>* inout_per_shader_stateless_data) {
     std::vector<ShaderStageState> stage_states;
 
     // Duplicated code because we decided to form GetStageStates for RTX sadly
-    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    const DescriptorSetLayoutList* descriptor_set_layouts = nullptr;
     if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
         descriptor_set_layouts = &pipeline_layout_state->set_layouts;
     }
 
     for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
-        const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
+        const auto& stage_ci = pipe_state.shader_stages_ci[stage_index];
         auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
         if (!module_state && pipe_state.pipeline_cache) {
             // Attempt to look up the pipeline cache for shader module data
@@ -274,7 +276,7 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                 (void)shader_ci;
                 inout_per_shader_stateless_data->resize(inout_per_shader_stateless_data->size() + 1);
-                spirv::StatelessData *stateless_data =
+                spirv::StatelessData* stateless_data =
                     &inout_per_shader_stateless_data->at(inout_per_shader_stateless_data->size() - 1);
                 module_state = GetShaderModuleFromInlinedSpirv(state_data, stage_ci, stateless_data);
             }
@@ -286,7 +288,7 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
         }
     }
 
-    const vku::safe_VkRayTracingPipelineCreateInfoCommon &rt_ci = pipe_state.RayTracingCreateInfo();
+    const vku::safe_VkRayTracingPipelineCreateInfoCommon& rt_ci = pipe_state.RayTracingCreateInfo();
     if (rt_ci.pLibraryInfo) {
         for (VkPipeline lib : vvl::make_span(rt_ci.pLibraryInfo->pLibraries, rt_ci.pLibraryInfo->libraryCount)) {
             auto lib_state = state_data.Get<vvl::Pipeline>(lib);
@@ -302,24 +304,24 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
     return stage_states;
 }
 
-static uint32_t GetCreateInfoShaders(const Pipeline &pipe_state) {
+static uint32_t GetCreateInfoShaders(const Pipeline& pipe_state) {
     uint32_t result = 0;
     if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS && !pipe_state.OwnsLibState(pipe_state.fragment_shader_state) &&
         !pipe_state.OwnsLibState(pipe_state.pre_raster_state)) {
         return result;  // pStages are ignored if not using one of these libraries
     }
 
-    for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+    for (const auto& stage_ci : pipe_state.shader_stages_ci) {
         result |= stage_ci.stage;
     }
     return result;
 }
 
-static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR *link_info, const DeviceState &state_data) {
+static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR* link_info, const DeviceState& state_data) {
     uint32_t result = 0;
     if (link_info) {
         for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-            const auto &state = state_data.Get<vvl::Pipeline>(link_info->pLibraries[i]);
+            const auto& state = state_data.Get<vvl::Pipeline>(link_info->pLibraries[i]);
             if (state) {
                 result |= state->active_shaders;
             }
@@ -328,7 +330,7 @@ static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR *link_inf
     return result;
 }
 
-static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
+static CBDynamicFlags GetGraphicsDynamicState(Pipeline& pipe_state) {
     CBDynamicFlags flags = 0;
 
     // "Dynamic state values set via pDynamicState must be ignored if the state they correspond to is not otherwise statically set
@@ -340,7 +342,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     const bool has_fragment_shader_state = pipe_state.OwnsLibState(pipe_state.fragment_shader_state);
     const bool has_fragment_output_state = pipe_state.OwnsLibState(pipe_state.fragment_output_state);
 
-    const auto *dynamic_state_ci = pipe_state.GraphicsCreateInfo().pDynamicState;
+    const auto* dynamic_state_ci = pipe_state.GraphicsCreateInfo().pDynamicState;
     if (dynamic_state_ci) {
         for (const VkDynamicState vk_dynamic_state :
              vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
@@ -500,7 +502,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
 // We "view" things as being dynamic if the pipeline does not have those shader stages, the spec says:
 // "If the state is not included ... in the new pipeline object, then that command buffer state is not disturbed. For example, mesh
 // shading pipelines do not include vertex input state and therefore do not disturb any such command buffer state."
-static CBDynamicFlags GetIgnoredDynamicState(Pipeline &pipe_state) {
+static CBDynamicFlags GetIgnoredDynamicState(Pipeline& pipe_state) {
     CBDynamicFlags flags = 0;
     if ((pipe_state.active_shaders & VK_SHADER_STAGE_VERTEX_BIT) == 0) {
         flags |= kVertexDynamicState;
@@ -521,7 +523,7 @@ static CBDynamicFlags GetIgnoredDynamicState(Pipeline &pipe_state) {
 }
 
 // This will only get the topology if possible
-static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_state, const DeviceState &state) {
+static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline& pipe_state, const DeviceState& state) {
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     if (!pipe_state.RasterizationState()) {
         return topology;
@@ -529,7 +531,7 @@ static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_st
 
     // Get Clip Space Topology first
     if (pipe_state.active_shaders & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
-        for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
+        for (const ShaderStageState& shader_stage_state : pipe_state.stage_states) {
             const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
             if (stage == VK_SHADER_STAGE_MESH_BIT_EXT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
                 if (shader_stage_state.HasSpirv()) {
@@ -539,7 +541,7 @@ static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_st
             }
         }
     } else if (pipe_state.active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-        for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
+        for (const ShaderStageState& shader_stage_state : pipe_state.stage_states) {
             const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
             if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
                 if (shader_stage_state.HasSpirv()) {
@@ -582,10 +584,10 @@ static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_st
     return topology;
 }
 
-static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
+static CBDynamicFlags GetRayTracingDynamicState(Pipeline& pipe_state) {
     CBDynamicFlags flags = 0;
 
-    const auto *dynamic_state_ci = pipe_state.RayTracingCreateInfo().pDynamicState;
+    const auto* dynamic_state_ci = pipe_state.RayTracingCreateInfo().pDynamicState;
     if (dynamic_state_ci) {
         for (const VkDynamicState vk_dynamic_state :
              vvl::make_span(dynamic_state_ci->pDynamicStates, dynamic_state_ci->dynamicStateCount)) {
@@ -602,7 +604,7 @@ static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
     return flags;
 }
 
-static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state) {
+static bool UsesPipelineRobustness(const void* pNext, const Pipeline& pipe_state) {
     bool result = false;
     const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pNext);
     if (!robustness_info) {
@@ -613,7 +615,7 @@ static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state
     result |= (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
               (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
     if (!result) {
-        for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+        for (const auto& stage_ci : pipe_state.shader_stages_ci) {
             const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_ci.pNext);
             if (stage_robustness_info) {
                 result |=
@@ -628,7 +630,7 @@ static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state
     return result;
 }
 
-static bool UsesPipelineVertexRobustness(const void *pNext, const Pipeline &pipe_state) {
+static bool UsesPipelineVertexRobustness(const void* pNext, const Pipeline& pipe_state) {
     bool result = false;
     const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pNext);
     if (!robustness_info) {
@@ -637,7 +639,7 @@ static bool UsesPipelineVertexRobustness(const void *pNext, const Pipeline &pipe
     result |= (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
               (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
     if (!result) {
-        for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+        for (const auto& stage_ci : pipe_state.shader_stages_ci) {
             const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_ci.pNext);
             if (stage_robustness_info) {
                 result |= (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
@@ -648,7 +650,7 @@ static bool UsesPipelineVertexRobustness(const void *pNext, const Pipeline &pipe
     return result;
 }
 
-static bool IgnoreColorAttachments(const DeviceState &state_data, Pipeline &pipe_state) {
+static bool IgnoreColorAttachments(const DeviceState& state_data, Pipeline& pipe_state) {
     // If the libraries used to create this pipeline are ignoring color attachments, this pipeline should as well
     if (pipe_state.library_create_info) {
         for (uint32_t i = 0; i < pipe_state.library_create_info->libraryCount; i++) {
@@ -665,12 +667,12 @@ static bool IgnoreColorAttachments(const DeviceState &state_data, Pipeline &pipe
                                             pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
 }
 
-static bool UsesShaderModuleId(const Pipeline &pipe_state) {
+static bool UsesShaderModuleId(const Pipeline& pipe_state) {
     if (pipe_state.shader_stages_ci.data() == nullptr) {
         return false;
     }
 
-    for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+    for (const auto& stage_ci : pipe_state.shader_stages_ci) {
         // if using GPL, can have null pStages
         if (stage_ci.ptr()) {
             const auto module_id_info =
@@ -683,14 +685,14 @@ static bool UsesShaderModuleId(const Pipeline &pipe_state) {
     return false;
 }
 
-static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<ShaderStageState> &stage_states) {
+static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<ShaderStageState>& stage_states) {
     vvl::unordered_set<uint32_t> result;
     for (const ShaderStageState& stage_state : stage_states) {
         if (!stage_state.HasSpirv()) {
             continue;
         }
         if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            for (const auto *variable : stage_state.entrypoint->user_defined_interface_variables) {
+            for (const auto* variable : stage_state.entrypoint->user_defined_interface_variables) {
                 if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
                     continue;  // not an output interface
                 }
@@ -704,7 +706,7 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<Shade
     return result;
 }
 
-static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags2 flags) {
+static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void* pNext, VkPipelineCreateFlags2 flags) {
     const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(pNext);
     if (flags2) {
         return flags2->flags;
@@ -712,7 +714,7 @@ static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void *pNext, VkPipeli
     return flags;
 }
 
-const Location Pipeline::GetCreateFlagsLoc(const Location &create_info_loc) const {
+const Location Pipeline::GetCreateFlagsLoc(const Location& create_info_loc) const {
     if (vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(GetCreateInfoPNext())) {
         return create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags);
     } else {
@@ -720,8 +722,8 @@ const Location Pipeline::GetCreateFlagsLoc(const Location &create_info_loc) cons
     }
 }
 
-std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipeline &p, const DeviceState &state,
-                                                                   const vku::safe_VkGraphicsPipelineCreateInfo &create_info) {
+std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipeline& p, const DeviceState& state,
+                                                                   const vku::safe_VkGraphicsPipelineCreateInfo& create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {
         // Creating a vertex input graphics library
@@ -743,8 +745,8 @@ std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipelin
 }
 
 std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
-    const Pipeline &p, const DeviceState &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-    const std::shared_ptr<const vvl::RenderPass> &rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
+    const Pipeline& p, const DeviceState& state, const vku::safe_VkGraphicsPipelineCreateInfo& create_info,
+    const std::shared_ptr<const vvl::RenderPass>& rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
         // Creating a pre-raster graphics library
@@ -766,8 +768,8 @@ std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
 }
 
 std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
-    const Pipeline &p, const DeviceState &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
+    const Pipeline& p, const DeviceState& state, const VkGraphicsPipelineCreateInfo& create_info,
+    const vku::safe_VkGraphicsPipelineCreateInfo& safe_create_info, const std::shared_ptr<const vvl::RenderPass>& rp,
     spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     const auto lib_type = GetGraphicsLibType(create_info);
 
@@ -797,8 +799,8 @@ std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
 // Pointers that should be ignored have been set to null in safe_create_info, but if this is a graphics library we need the "raw"
 // create_info.
 std::shared_ptr<FragmentOutputState> Pipeline::CreateFragmentOutputState(
-    const Pipeline &p, const DeviceState &state, const VkGraphicsPipelineCreateInfo &create_info,
-    const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp) {
+    const Pipeline& p, const DeviceState& state, const VkGraphicsPipelineCreateInfo& create_info,
+    const vku::safe_VkGraphicsPipelineCreateInfo& safe_create_info, const std::shared_ptr<const vvl::RenderPass>& rp) {
     // If this pipeline is being created a non-executable (i.e., does not contain complete state) pipeline with FO state, then
     // unconditionally set this pipeline's FO state.
     const auto lib_type = GetGraphicsLibType(create_info);
@@ -924,11 +926,11 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)) {
     if (library_create_info) {
-        const auto &exe_layout_state = state_data.Get<vvl::PipelineLayout>(GraphicsCreateInfo().layout);
-        const auto *exe_layout = exe_layout_state.get();
-        const auto *pre_raster_layout =
+        const auto& exe_layout_state = state_data.Get<vvl::PipelineLayout>(GraphicsCreateInfo().layout);
+        const auto* exe_layout = exe_layout_state.get();
+        const auto* pre_raster_layout =
             (pre_raster_state && pre_raster_state->pipeline_layout) ? pre_raster_state->pipeline_layout.get() : nullptr;
-        const auto *fragment_shader_layout = (fragment_shader_state && fragment_shader_state->pipeline_layout)
+        const auto* fragment_shader_layout = (fragment_shader_state && fragment_shader_state->pipeline_layout)
                                                  ? fragment_shader_state->pipeline_layout.get()
                                                  : nullptr;
         std::array<decltype(exe_layout), 3> layouts;
@@ -941,7 +943,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
         // TODO Could store the graphics_lib_type in the library state rather than searching for it again here.
         //      Or, could store a pointer back to the owning Pipeline.
         for (uint32_t i = 0; i < library_create_info->libraryCount; ++i) {
-            const auto &state = state_data.Get<vvl::Pipeline>(library_create_info->pLibraries[i]);
+            const auto& state = state_data.Get<vvl::Pipeline>(library_create_info->pLibraries[i]);
             if (state) {
                 graphics_lib_type |= state->graphics_lib_type;
             }
@@ -1058,7 +1060,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkDataGraphPipelineCreat
 }
 
 void Pipeline::Destroy() {
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->Destroy();
     }
     sub_states_.clear();
@@ -1067,7 +1069,7 @@ void Pipeline::Destroy() {
 
 }  // namespace vvl
 
-bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
+bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout* a, const vvl::PipelineLayout* b) {
     if (!a || !b) {
         return false;
     }
@@ -1077,7 +1079,7 @@ bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, c
     return *(a->set_compat_ids[set]) == *(b->set_compat_ids[set]);
 }
 
-std::string DescribePipelineLayoutSetNonCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
+std::string DescribePipelineLayoutSetNonCompatible(uint32_t set, const vvl::PipelineLayout* a, const vvl::PipelineLayout* b) {
     std::ostringstream ss;
     if (!a || !b) {
         ss << "The set (" << set << ") has a null VkPipelineLayout object\n";

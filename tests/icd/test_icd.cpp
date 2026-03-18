@@ -752,7 +752,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBuff
     unique_lock_t lock(global_lock);
     *pBuffer = (VkBuffer)global_unique_handle++;
     // Some address for RTX need to be aligned to 256
-    if (pCreateInfo->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT || pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT ||
+        pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
         const uint64_t rtx_alignment = current_available_address % 256;
         if (rtx_alignment != 0) {
             current_available_address += (256 - rtx_alignment);
@@ -865,8 +866,7 @@ static VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, c
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
-                                                                 VkMemoryRequirements2* pMemoryRequirements)
-{
+                                                                 VkMemoryRequirements2* pMemoryRequirements) {
     VkMemoryRequirements& memReq = pMemoryRequirements->memoryRequirements;
     memReq.size = 1024;
     memReq.alignment = 32;
@@ -1421,12 +1421,9 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
 
     if (auto* tensor_props = vku::FindStructInPNextChain<VkTensorFormatPropertiesARM>(pFormatProperties->pNext)) {
         constexpr VkFormatFeatureFlagBits2 tensor_flags =
-            VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
-            VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
-            VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM |
-            VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM |
-            VK_FORMAT_FEATURE_2_TENSOR_IMAGE_ALIASING_BIT_ARM |
-            VK_FORMAT_FEATURE_2_TENSOR_DATA_GRAPH_BIT_ARM;
+            VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
+            VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM | VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM |
+            VK_FORMAT_FEATURE_2_TENSOR_IMAGE_ALIASING_BIT_ARM | VK_FORMAT_FEATURE_2_TENSOR_DATA_GRAPH_BIT_ARM;
         tensor_props->linearTilingTensorFeatures = tensor_flags;
         tensor_props->optimalTilingTensorFeatures = tensor_flags;
     }
@@ -1435,7 +1432,6 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
     VkExternalTensorPropertiesARM* pExternalTensorProperties) {
-
     constexpr VkExternalMemoryHandleTypeFlags supported_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_FLAG_BITS_MAX_ENUM;
     if (pExternalTensorInfo->handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
         // Can't have dedicated memory with AHB
@@ -1454,16 +1450,18 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
     }
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t *pQueueFamilyDataGraphPropertyCount, VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
-
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
+    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
     // TODO: Need a way for test to decide to support or not support various engines
 
     if (pQueueFamilyDataGraphProperties == nullptr) {
         *pQueueFamilyDataGraphPropertyCount = 1;
     } else {
         pQueueFamilyDataGraphProperties[0].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM;
-        pQueueFamilyDataGraphProperties[0].engine = { VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false };
-        pQueueFamilyDataGraphProperties[0].operation = { VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0 };
+        pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM, false};
+        pQueueFamilyDataGraphProperties[0].operation = {
+            VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
     }
     return VK_SUCCESS;
 }
@@ -1967,16 +1965,17 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, 
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
-                                                                                    const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-                                                                                    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+static VKAPI_ATTR void VKAPI_CALL
+GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                 VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     // value from real running test
     pSizeInfo->accelerationStructureSize = 1062400;
     pSizeInfo->updateScratchSize = 4;
     pSizeInfo->buildScratchSize = 388480;
 }
 
-static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo){
+static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(
+    VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     pSizeInfo->accelerationStructureSize = 256;
     pSizeInfo->buildScratchSize = 256;
     pSizeInfo->updateScratchSize = 4;

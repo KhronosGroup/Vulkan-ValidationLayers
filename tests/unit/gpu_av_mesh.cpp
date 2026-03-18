@@ -22,7 +22,7 @@ TEST_F(NegativeGpuAVMesh, PrimitiveCount) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(triangles, max_vertices = 3, max_primitives = 1) out;
@@ -44,7 +44,7 @@ TEST_F(NegativeGpuAVMesh, PrimitiveCount) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 60;
     buffer_ptr[1] = 1;
 

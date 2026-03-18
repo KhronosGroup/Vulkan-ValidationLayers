@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    vkt::Queue* no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     } else if ((m_device->Physical().queue_properties_[no_gfx_queue->family_index].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0) {
@@ -113,7 +113,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     VkDeviceAddress ref_address = 0;
 
     for (size_t i = 0; i < N; ++i) {
-        vkt::Buffer &buffer = buffers[i];
+        vkt::Buffer& buffer = buffers[i];
         buffer_ci.size = (i + 1) * 4096;
         buffer.InitNoMemory(*m_device, buffer_ci);
         vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
@@ -153,7 +153,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     for (size_t i = 0; i < N; ++i) {
-        vkt::Buffer &buffer = buffers[i];
+        vkt::Buffer& buffer = buffers[i];
         buffer.InitNoMemory(*m_device, buffer_ci);
         // Consecutive offsets
         vk::BindBufferMemory(device(), buffer, buffer_memory, i * buffer_ci.size);

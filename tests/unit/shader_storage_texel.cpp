@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
     // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability ImageBuffer
                OpCapability StorageImageExtendedFormats
@@ -81,7 +81,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
     //
     // Unknown will become a 4-component but writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability ImageBuffer
                OpCapability StorageImageWriteWithoutFormat
@@ -159,7 +159,7 @@ TEST_F(NegativeShaderStorageTexel, ComponentTypeMismatch) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) writeonly uniform iimageBuffer storageTexelBuffer;
         void main() {
@@ -203,7 +203,7 @@ TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, R8ui) writeonly uniform uimageBuffer storageTexelBuffer;
         void main() {
@@ -247,7 +247,7 @@ TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch2) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, R32ui) writeonly uniform uimageBuffer storageTexelBuffer;
         void main() {
@@ -308,7 +308,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     fmt_props_3.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), format, fmt_props);
 
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability ImageBuffer
                   OpCapability StorageImageWriteWithoutFormat

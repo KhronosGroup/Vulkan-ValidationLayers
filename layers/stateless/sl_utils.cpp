@@ -21,7 +21,7 @@
 #include "sl_vuid_maps.h"
 
 namespace stateless {
-bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc,
+bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location& loc,
                                                     const uint32_t promoted_version) const {
     bool skip = false;
     if (api_version < promoted_version) {
@@ -33,10 +33,10 @@ bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const L
     return skip;
 }
 
-bool Instance::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc,
+bool Instance::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location& loc,
                                                     const uint32_t promoted_version) const {
     bool skip = false;
-    const auto &target_pdev = physical_device_properties_map.find(pdev);
+    const auto& target_pdev = physical_device_properties_map.find(pdev);
     if (target_pdev != physical_device_properties_map.end()) {
         auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
         if (effective_api_version < promoted_version) {
@@ -52,11 +52,11 @@ bool Instance::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const
     return skip;
 }
 
-bool Instance::OutputExtensionError(const Location &loc, const vvl::Extensions &extensions) const {
+bool Instance::OutputExtensionError(const Location& loc, const vvl::Extensions& extensions) const {
     return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", instance, loc,
                     "function required extension %s which has not been enabled.\n", String(extensions).c_str());
 }
-bool Device::OutputExtensionError(const Location &loc, const vvl::Extensions &extensions) const {
+bool Device::OutputExtensionError(const Location& loc, const vvl::Extensions& extensions) const {
     return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", device, loc,
                     "function required extension %s which has not been enabled.\n", String(extensions).c_str());
 }
@@ -77,7 +77,7 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf8) {
+static VkStringErrorFlags ValidateVkString(const int max_length, const char* utf8) {
     VkStringErrorFlags result = VK_STRING_ERROR_NONE;
     int num_char_bytes = 0;
     int i, j;
@@ -118,7 +118,7 @@ static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf
 }
 
 static const int kMaxParamCheckerStringLength = 256;
-bool Context::ValidateString(const Location &loc, const char *vuid, const char *validate_string) const {
+bool Context::ValidateString(const Location& loc, const char* vuid, const char* validate_string) const {
     bool skip = false;
 
     VkStringErrorFlags result = ValidateVkString(kMaxParamCheckerStringLength, validate_string);
@@ -133,7 +133,7 @@ bool Context::ValidateString(const Location &loc, const char *vuid, const char *
     return skip;
 }
 
-bool Context::ValidateNotZero(bool is_zero, const char *vuid, const Location &loc) const {
+bool Context::ValidateNotZero(bool is_zero, const char* vuid, const Location& loc) const {
     bool skip = false;
     if (is_zero) {
         skip |= log.LogError(vuid, error_obj.handle, loc, "is zero.");
@@ -141,7 +141,7 @@ bool Context::ValidateNotZero(bool is_zero, const char *vuid, const Location &lo
     return skip;
 }
 
-bool Context::ValidateRequiredPointer(const Location &loc, const void *value, const char *vuid) const {
+bool Context::ValidateRequiredPointer(const Location& loc, const void* value, const char* vuid) const {
     bool skip = false;
     if (value == nullptr) {
         skip |= log.LogError(vuid, error_obj.handle, loc, "is NULL.");
@@ -149,34 +149,34 @@ bool Context::ValidateRequiredPointer(const Location &loc, const void *value, co
     return skip;
 }
 
-bool Context::ValidateAllocationCallbacks(const VkAllocationCallbacks &callback, const Location &loc) const {
+bool Context::ValidateAllocationCallbacks(const VkAllocationCallbacks& callback, const Location& loc) const {
     bool skip = false;
-    skip |= ValidateRequiredPointer(loc.dot(Field::pfnAllocation), reinterpret_cast<const void *>(callback.pfnAllocation),
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnAllocation), reinterpret_cast<const void*>(callback.pfnAllocation),
                                     "VUID-VkAllocationCallbacks-pfnAllocation-00632");
 
-    skip |= ValidateRequiredPointer(loc.dot(Field::pfnReallocation), reinterpret_cast<const void *>(callback.pfnReallocation),
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnReallocation), reinterpret_cast<const void*>(callback.pfnReallocation),
                                     "VUID-VkAllocationCallbacks-pfnReallocation-00633");
 
-    skip |= ValidateRequiredPointer(loc.dot(Field::pfnFree), reinterpret_cast<const void *>(callback.pfnFree),
+    skip |= ValidateRequiredPointer(loc.dot(Field::pfnFree), reinterpret_cast<const void*>(callback.pfnFree),
                                     "VUID-VkAllocationCallbacks-pfnFree-00634");
 
     if (callback.pfnInternalAllocation) {
         skip |=
-            ValidateRequiredPointer(loc.dot(Field::pfnInternalAllocation), reinterpret_cast<const void *>(callback.pfnInternalFree),
+            ValidateRequiredPointer(loc.dot(Field::pfnInternalAllocation), reinterpret_cast<const void*>(callback.pfnInternalFree),
                                     "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
     }
 
     if (callback.pfnInternalFree) {
         skip |=
-            ValidateRequiredPointer(loc.dot(Field::pfnInternalFree), reinterpret_cast<const void *>(callback.pfnInternalAllocation),
+            ValidateRequiredPointer(loc.dot(Field::pfnInternalFree), reinterpret_cast<const void*>(callback.pfnInternalAllocation),
                                     "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
     }
     return skip;
 }
 
-bool Context::ValidateStringArray(const Location &count_loc, const Location &array_loc, uint32_t count, const char *const *array,
-                                  bool count_required, bool array_required, const char *count_required_vuid,
-                                  const char *array_required_vuid) const {
+bool Context::ValidateStringArray(const Location& count_loc, const Location& array_loc, uint32_t count, const char* const* array,
+                                  bool count_required, bool array_required, const char* count_required_vuid,
+                                  const char* array_required_vuid) const {
     bool skip = false;
 
     if ((array == nullptr) || (count == 0)) {
@@ -200,11 +200,11 @@ bool Context::ValidateStringArray(const Location &count_loc, const Location &arr
 //
 // However.. some structs we determined to warn the user because it might produce subtle effects, but this is the edge case, not the
 // normal case.
-bool Context::ValidatePnextStructExtension(const Location &loc, const VkBaseOutStructure *header) const {
+bool Context::ValidatePnextStructExtension(const Location& loc, const VkBaseOutStructure* header) const {
     bool skip = false;
     switch (header->sType) {
         case VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO: {
-            auto buffer_flags2_ci = (const VkBufferUsageFlags2CreateInfo *)header;
+            auto buffer_flags2_ci = (const VkBufferUsageFlags2CreateInfo*)header;
             if (buffer_flags2_ci->usage != 0 && !IsExtEnabled(extensions.vk_khr_maintenance5)) {
                 skip |= log.LogWarning(
                     "WARNING-VkBufferUsageFlags2CreateInfo-Extension", error_obj.handle, loc.dot(Field::pNext),
@@ -215,7 +215,7 @@ bool Context::ValidatePnextStructExtension(const Location &loc, const VkBaseOutS
         } break;
 
         case VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO: {
-            auto pipeline_flags2_ci = (const VkPipelineCreateFlags2CreateInfo *)header;
+            auto pipeline_flags2_ci = (const VkPipelineCreateFlags2CreateInfo*)header;
             if (pipeline_flags2_ci->flags != 0 && !IsExtEnabled(extensions.vk_khr_maintenance5)) {
                 skip |= log.LogWarning(
                     "WARNING-VkPipelineCreateFlags2CreateInfo-Extension", error_obj.handle, loc.dot(Field::pNext),
@@ -231,15 +231,15 @@ bool Context::ValidatePnextStructExtension(const Location &loc, const VkBaseOutS
     return skip;
 }
 
-bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
-                                  const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
-                                  const char *stype_vuid, const bool is_const_param) const {
+bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t allowed_type_count,
+                                  const VkStructureType* allowed_types, uint32_t header_version, const char* pnext_vuid,
+                                  const char* stype_vuid, const bool is_const_param) const {
     bool skip = false;
 
     if (next != nullptr) {
-        vvl::unordered_set<const void *> cycle_check;
+        vvl::unordered_set<const void*> cycle_check;
         vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
-        const char *disclaimer =
+        const char* disclaimer =
             "This error is based on the Valid Usage documentation for version %" PRIu32
             " of the Vulkan header.  It is possible that "
             "you are using a struct from a private extension or an extension that was added to a later version of the Vulkan "
@@ -252,9 +252,9 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
             skip |=
                 log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), header_version, pNext_loc.Fields().c_str());
         } else {
-            const VkStructureType *start = allowed_types;
-            const VkStructureType *end = allowed_types + allowed_type_count;
-            const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
+            const VkStructureType* start = allowed_types;
+            const VkStructureType* end = allowed_types + allowed_type_count;
+            const VkBaseOutStructure* current = reinterpret_cast<const VkBaseOutStructure*>(next);
 
             while (current != nullptr) {
                 if ((loc.function != Func::vkCreateInstance || (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
@@ -270,7 +270,7 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
 
                     // Search custom stype list -- if sType found, skip this entirely
                     bool custom = false;
-                    for (const auto &item : GetCustomStypeInfo()) {
+                    for (const auto& item : GetCustomStypeInfo()) {
                         if (item.first == current->sType) {
                             custom = true;
                             break;
@@ -304,7 +304,7 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
                         }
                     }
                 }
-                current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+                current = reinterpret_cast<const VkBaseOutStructure*>(current->pNext);
             }
         }
     }
@@ -312,7 +312,7 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
     return skip;
 }
 
-bool Context::ValidateBool32(const Location &loc, VkBool32 value) const {
+bool Context::ValidateBool32(const Location& loc, VkBool32 value) const {
     bool skip = false;
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
         skip |= log.LogError("UNASSIGNED-GeneralParameterError-UnrecognizedBool32", error_obj.handle, loc,
@@ -324,9 +324,9 @@ bool Context::ValidateBool32(const Location &loc, VkBool32 value) const {
     return skip;
 }
 
-bool Context::ValidateBool32Array(const Location &count_loc, const Location &array_loc, uint32_t count, const VkBool32 *array,
-                                  bool count_required, bool array_required, const char *count_required_vuid,
-                                  const char *array_required_vuid) const {
+bool Context::ValidateBool32Array(const Location& count_loc, const Location& array_loc, uint32_t count, const VkBool32* array,
+                                  bool count_required, bool array_required, const char* count_required_vuid,
+                                  const char* array_required_vuid) const {
     bool skip = false;
 
     if ((array == nullptr) || (count == 0)) {
@@ -347,7 +347,7 @@ bool Context::ValidateBool32Array(const Location &count_loc, const Location &arr
     return skip;
 }
 
-bool Context::ValidateReservedFlags(const Location &loc, VkFlags value, const char *vuid) const {
+bool Context::ValidateReservedFlags(const Location& loc, VkFlags value, const char* vuid) const {
     bool skip = false;
     if (value != 0) {
         skip |= log.LogError(vuid, error_obj.handle, loc, "is %" PRIu32 ", but must be 0.", value);
@@ -355,7 +355,7 @@ bool Context::ValidateReservedFlags(const Location &loc, VkFlags value, const ch
     return skip;
 }
 
-bool Context::ValidateReservedFlags(const Location &loc, VkFlags64 value, const char *vuid) const {
+bool Context::ValidateReservedFlags(const Location& loc, VkFlags64 value, const char* vuid) const {
     bool skip = false;
     if (value != 0) {
         skip |= log.LogError(vuid, error_obj.handle, loc, "is %" PRIu64 ", but must be 0.", value);
@@ -365,13 +365,13 @@ bool Context::ValidateReservedFlags(const Location &loc, VkFlags64 value, const 
 
 // helper to implement validation of both 32 bit and 64 bit flags.
 template <typename FlagTypedef>
-bool Context::ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags,
-                                          FlagTypedef value, const FlagType flag_type, const char *vuid,
-                                          const char *flags_zero_vuid) const {
+bool Context::ValidateFlagsImplementation(const Location& loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags,
+                                          FlagTypedef value, const FlagType flag_type, const char* vuid,
+                                          const char* flags_zero_vuid) const {
     bool skip = false;
 
     const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
-    const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
+    const char* zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
     if (required && value == 0) {
         skip |= log.LogError(zero_vuid, error_obj.handle, loc, "is zero.");
     }
@@ -391,8 +391,8 @@ bool Context::ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask 
     return skip;
 }
 
-bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
-                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid, bool instance_function) const {
+bool Context::ValidateFlags(const Location& loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
+                            const FlagType flag_type, const char* vuid, const char* flags_zero_vuid, bool instance_function) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 
@@ -424,8 +424,8 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
     return skip;
 }
 
-bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
-                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid, bool instance_function) const {
+bool Context::ValidateFlags(const Location& loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
+                            const FlagType flag_type, const char* vuid, const char* flags_zero_vuid, bool instance_function) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 
@@ -450,9 +450,9 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
     return skip;
 }
 
-bool Context::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask,
-                                 VkFlags all_flags, uint32_t count, const VkFlags *array, bool count_required,
-                                 const char *count_required_vuid, const char *array_required_vuid) const {
+bool Context::ValidateFlagsArray(const Location& count_loc, const Location& array_loc, vvl::FlagBitmask flag_bitmask,
+                                 VkFlags all_flags, uint32_t count, const VkFlags* array, bool count_required,
+                                 const char* count_required_vuid, const char* array_required_vuid) const {
     bool skip = false;
 
     if ((array == nullptr) || (count == 0)) {

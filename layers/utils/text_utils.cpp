@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 namespace text {
 
-std::string VFormat(const char *format, va_list argptr) {
+std::string VFormat(const char* format, va_list argptr) {
     // Counts actual characters. Null terminator is accounted separately.
     const int initial_max_symbol_count = 1024;
 
@@ -49,7 +49,7 @@ std::string VFormat(const char *format, va_list argptr) {
     return str;
 }
 
-std::string Format(const char *format, ...) {
+std::string Format(const char* format, ...) {
     va_list argptr;
     va_start(argptr, format);
     std::string str = VFormat(format, argptr);
@@ -57,12 +57,12 @@ std::string Format(const char *format, ...) {
     return str;
 }
 
-void ToLower(std::string &str) {
+void ToLower(std::string& str) {
     // std::tolower() returns int which can cause compiler warnings
     std::transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 }
 
-void ToUpper(std::string &str) {
+void ToUpper(std::string& str) {
     // std::toupper() returns int which can cause compiler warnings
     std::transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::toupper(c)); });
 }

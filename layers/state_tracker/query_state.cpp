@@ -25,9 +25,9 @@
 
 namespace vvl {
 
-QueryPool::QueryPool(VkQueryPool handle, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count,
+QueryPool::QueryPool(VkQueryPool handle, const VkQueryPoolCreateInfo* pCreateInfo, uint32_t index_count,
                      uint32_t perf_queue_family_index, uint32_t n_perf_pass, bool has_cb, bool has_rb,
-                     std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
+                     std::shared_ptr<const vvl::VideoProfileDesc>&& supp_video_profile,
                      VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
     : StateObject(handle, kVulkanObjectTypeQueryPool),
       safe_create_info(pCreateInfo),
@@ -56,7 +56,7 @@ void QueryPool::SetQueryState(uint32_t query, uint32_t perf_pass, QueryState sta
     assert(query < query_states_.size());
     assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
     if (state == QUERYSTATE_RESET) {
-        for (auto &state : query_states_[query]) {
+        for (auto& state : query_states_[query]) {
             state = QUERYSTATE_RESET;
         }
     } else {
@@ -166,7 +166,7 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
 
 }  // namespace vvl
 
-QueryCount::QueryCount(vvl::CommandBuffer &cb_state) {
+QueryCount::QueryCount(vvl::CommandBuffer& cb_state) {
     count = 1;
     subpass = cb_state.GetActiveSubpass();
     inside_render_pass = cb_state.active_render_pass != nullptr;

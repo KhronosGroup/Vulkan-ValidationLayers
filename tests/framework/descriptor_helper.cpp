@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,12 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "binding.h"
 
-OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<VkDescriptorSetLayoutBinding> &bindings,
-                                         VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
-                                         VkDescriptorPoolCreateFlags pool_flags, void *allocate_pnext, void *create_pool_pnext)
+OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<VkDescriptorSetLayoutBinding>& bindings,
+                                         VkDescriptorSetLayoutCreateFlags layout_flags, void* layout_pnext,
+                                         VkDescriptorPoolCreateFlags pool_flags, void* allocate_pnext, void* create_pool_pnext)
     : device_{device}, layout_(*device, bindings, layout_flags, layout_pnext) {
     std::vector<VkDescriptorPoolSize> pool_sizes;
-    for (const auto &b : bindings) {
+    for (const auto& b : bindings) {
         pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
     }
 
@@ -41,8 +41,8 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<
     }
 }
 
-OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, const OneOffDescriptorIndexingSet::Bindings &bindings,
-                                                         void *allocate_pnext, void *create_pool_pnext) {
+OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device, const OneOffDescriptorIndexingSet::Bindings& bindings,
+                                                         void* allocate_pnext, void* create_pool_pnext) {
     device_ = device;
     std::vector<VkDescriptorPoolSize> pool_sizes;
     VkDescriptorSetLayoutCreateFlags layout_flags = 0;
@@ -50,7 +50,7 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     std::vector<VkDescriptorSetLayoutBinding> ds_layout_bindings;
     std::vector<VkDescriptorBindingFlags> ds_binding_flags;
 
-    for (const auto &b : bindings) {
+    for (const auto& b : bindings) {
         pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
         ds_layout_bindings.emplace_back(
             VkDescriptorSetLayoutBinding{b.binding, b.descriptorType, b.descriptorCount, b.stageFlags, b.pImmutableSamplers});
@@ -90,9 +90,9 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     }
 }
 
-OneOffDescriptorSet::OneOffDescriptorSet(OneOffDescriptorSet &&rhs) noexcept { *this = std::move(rhs); }
+OneOffDescriptorSet::OneOffDescriptorSet(OneOffDescriptorSet&& rhs) noexcept { *this = std::move(rhs); }
 
-OneOffDescriptorSet &OneOffDescriptorSet::operator=(OneOffDescriptorSet &&rhs) noexcept {
+OneOffDescriptorSet& OneOffDescriptorSet::operator=(OneOffDescriptorSet&& rhs) noexcept {
     device_ = rhs.device_;
     rhs.device_ = nullptr;
 
@@ -170,7 +170,7 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
 }
 
 void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
-                                                     const VkAccelerationStructureKHR *pAccelerationStructures,
+                                                     const VkAccelerationStructureKHR* pAccelerationStructures,
                                                      uint32_t arrayElement /*= 0*/) {
     VkWriteDescriptorSetAccelerationStructureKHR write_desc_set_accel_struct = vku::InitStructHelper();
     write_desc_set_accel_struct.accelerationStructureCount = accelerationStructureCount;
@@ -182,7 +182,7 @@ void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accel
     AddDescriptorWrite(binding, arrayElement, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount);
 }
 
-void OneOffDescriptorSet::WriteDescriptorTensorInfo(int binding, const VkTensorViewARM *view, uint32_t arrayElement) {
+void OneOffDescriptorSet::WriteDescriptorTensorInfo(int binding, const VkTensorViewARM* view, uint32_t arrayElement) {
     VkWriteDescriptorSetTensorARM tensor_desc_write_info = vku::InitStructHelper();
     tensor_desc_write_info.tensorViewCount = 1;
     tensor_desc_write_info.pTensorViews = view;
@@ -196,7 +196,7 @@ void OneOffDescriptorSet::WriteDescriptorTensorInfo(int binding, const VkTensorV
 void OneOffDescriptorSet::UpdateDescriptorSets() {
     assert(resource_infos.size() == descriptor_writes.size());
     for (size_t i = 0; i < resource_infos.size(); i++) {
-        const auto &info = resource_infos[i];
+        const auto& info = resource_infos[i];
         if (info.image_info.has_value()) {
             descriptor_writes[i].pImageInfo = &info.image_info.value();
         } else if (info.buffer_info.has_value()) {
@@ -214,7 +214,7 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
 }
 
 namespace vkt {
-DescriptorGetInfo::DescriptorGetInfo(VkSampler *sampler) {
+DescriptorGetInfo::DescriptorGetInfo(VkSampler* sampler) {
     get_info.type = VK_DESCRIPTOR_TYPE_SAMPLER;
     get_info.data.pSampler = sampler;
 }
@@ -259,6 +259,6 @@ DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, VkDeviceAddress addr
     }
 }
 
-DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, const vkt::Buffer &buffer, VkDeviceSize range, VkFormat format)
+DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, const vkt::Buffer& buffer, VkDeviceSize range, VkFormat format)
     : DescriptorGetInfo(type, buffer.Address(), range, format) {}
 }  // namespace vkt

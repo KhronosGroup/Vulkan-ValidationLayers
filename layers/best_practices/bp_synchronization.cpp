@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -22,8 +22,8 @@
 #include "state_tracker/queue_state.h"
 #include "generated/dispatch_functions.h"
 
-bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc,
-                                        const VkDependencyInfo& dep_info, VkCommandBuffer commandBuffer) const {
+bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfo& dep_info,
+                                        VkCommandBuffer commandBuffer) const {
     bool skip = false;
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(

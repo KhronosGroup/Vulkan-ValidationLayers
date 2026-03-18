@@ -29,8 +29,8 @@
 
 namespace stateless {
 
-bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_info, uint32_t subpass,
-                                          VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const {
+bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2& create_info, uint32_t subpass,
+                                          VkPipelineStageFlags2 stages, const char* vuid, const Location& loc) const {
     bool skip = false;
     if (subpass == VK_SUBPASS_EXTERNAL || subpass >= create_info.subpassCount) {
         return skip;
@@ -63,10 +63,10 @@ bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_
     return skip;
 }
 
-bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const ErrorObject &error_obj) const {
+bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info, const ErrorObject& error_obj) const {
     bool skip = false;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
-    const char *vuid = nullptr;
+    const char* vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     VkBool32 android_external_format_resolve_feature = false;
@@ -75,15 +75,15 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
 #endif
 
     for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
-        const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
+        const Location& attachment_loc = create_info_loc.dot(Field::pAttachments, i);
 
         // if not null, also confirms rp2 is being used
-        const void *pNext =
-            (use_rp2) ? reinterpret_cast<VkAttachmentDescription2 const *>(&create_info.pAttachments[i])->pNext : nullptr;
-        const auto *attachment_description_stencil_layout =
+        const void* pNext =
+            (use_rp2) ? reinterpret_cast<VkAttachmentDescription2 const*>(&create_info.pAttachments[i])->pNext : nullptr;
+        const auto* attachment_description_stencil_layout =
             (use_rp2) ? vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(pNext) : nullptr;
 
-        const VkAttachmentDescription2 &attachment = create_info.pAttachments[i];
+        const VkAttachmentDescription2& attachment = create_info.pAttachments[i];
         if (attachment.format == VK_FORMAT_UNDEFINED) {
             if (use_rp2 && android_external_format_resolve_feature) {
                 if (GetExternalFormat(pNext) == 0) {
@@ -367,7 +367,7 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
     }
 
     for (uint32_t i = 0; i < create_info.subpassCount; ++i) {
-        const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[i];
+        const VkSubpassDescription2& subpass_desc = create_info.pSubpasses[i];
         if (subpass_desc.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-00845"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
@@ -386,7 +386,7 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
     }
 
     for (uint32_t i = 0; i < create_info.dependencyCount; ++i) {
-        const VkSubpassDependency2 &dependency = create_info.pDependencies[i];
+        const VkSubpassDependency2& dependency = create_info.pDependencies[i];
         const Location dependency_loc = create_info_loc.dot(Field::pDependencies, i);
 
         // Need to check first so layer doesn't segfault from out of bound array access
@@ -439,27 +439,27 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
     return skip;
 }
 
-bool Device::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                    const Context &context) const {
+bool Device::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                                    const Context& context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     return ValidateCreateRenderPass(*create_info_2.ptr(), context.error_obj);
 }
 
-bool Device::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                     const Context &context) const {
+bool Device::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                                     const Context& context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     return ValidateCreateRenderPass(*create_info_2.ptr(), context.error_obj);
 }
 
-void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 &create_info) {
+void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2& create_info) {
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
-    auto &renderpass_state = renderpasses_states[renderPass];
+    auto& renderpass_state = renderpasses_states[renderPass];
     lock.unlock();
 
     for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
-        const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[subpass];
+        const VkSubpassDescription2& subpass_desc = create_info.pSubpasses[subpass];
 
         for (uint32_t i = 0; i < subpass_desc.colorAttachmentCount; ++i) {
             if (subpass_desc.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -473,9 +473,9 @@ void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateI
         }
     }
 }
-void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                            const RecordObject &record_obj) {
+void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                            const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -483,9 +483,9 @@ void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassC
     RecordRenderPass(*pRenderPass, *create_info_2.ptr());
 }
 
-void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                const RecordObject &record_obj) {
+void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                                const RecordObject& record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     if (record_obj.result != VK_SUCCESS) {
         return;
@@ -494,15 +494,15 @@ void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderP
     RecordRenderPass(*pRenderPass, *create_info_2.ptr());
 }
 
-void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
-                                             const RecordObject &record_obj) {
+void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
+                                             const RecordObject& record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
 }
 
-bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
-                                               const Location &loc) const {
+bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void* pNext, const VkRect2D render_area,
+                                               const Location& loc) const {
     bool skip = false;
     const auto rp_stripe_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pNext);
     if (!rp_stripe_begin) {
@@ -523,7 +523,7 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
     bool has_overlapping_stripes = false;
 
     for (uint32_t i = 0; i < rp_stripe_begin->stripeInfoCount; ++i) {
-        const Location &stripe_info_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos, i);
+        const Location& stripe_info_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos, i);
         const VkRect2D stripe_area = rp_stripe_begin->pStripeInfos[i].stripeArea;
         total_stripe_area += (stripe_area.extent.width * stripe_area.extent.height);
 
@@ -664,8 +664,8 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
     return skip;
 }
 
-bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
-                                        const ErrorObject &error_obj) const {
+bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* const rp_begin,
+                                        const ErrorObject& error_obj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         const LogObjectList objlist(commandBuffer, rp_begin->renderPass);
@@ -686,17 +686,17 @@ bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkR
     return skip;
 }
 
-bool Device::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      VkSubpassContents, const Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                      VkSubpassContents, const Context& context) const {
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
-bool Device::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassBeginInfo *, const Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                       const VkSubpassBeginInfo*, const Context& context) const {
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
-static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info, VkImageView image_view) {
+static bool UniqueRenderingInfoImageViews(const VkRenderingInfo& rendering_info, VkImageView image_view) {
     bool unique_views = true;
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
         if (rendering_info.pColorAttachments[i].imageView == image_view) {
@@ -730,10 +730,10 @@ static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info,
     return unique_views;
 }
 
-bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                     const Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
+                                                     const Context& context) const {
     bool skip = false;
-    const auto &error_obj = context.error_obj;
+    const auto& error_obj = context.error_obj;
     const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
 
     if (!enabled_features.dynamicRendering) {
@@ -840,8 +840,8 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo &attachment_info,
-                                               const Location &attachment_loc) const {
+bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo& attachment_info,
+                                               const Location& attachment_loc) const {
     bool skip = false;
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
@@ -858,7 +858,7 @@ bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, co
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
         const LogObjectList objlist(commandBuffer, attachment_info.imageView);
-        const char *vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate) ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
+        const char* vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate) ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
                                                                                  : "VUID-VkRenderingAttachmentInfo-imageView-06138";
         skip |= LogError(vuid, objlist, attachment_loc.dot(Field::imageLayout),
                          "must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR (or the alias "
@@ -875,8 +875,8 @@ bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer,
-                                                         const VkRenderingAttachmentInfo &attachment_info,
-                                                         const Location &attachment_loc) const {
+                                                         const VkRenderingAttachmentInfo& attachment_info,
+                                                         const Location& attachment_loc) const {
     bool skip = false;
 
     const auto attachment_feedback_loop_info = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(attachment_info.pNext);
@@ -892,7 +892,7 @@ bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer command
 }
 
 bool Device::ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRenderingFlags rendering_flags,
-                                            VkResolveModeFlagBits resolve_mode, const Location &attachment_loc) const {
+                                            VkResolveModeFlagBits resolve_mode, const Location& attachment_loc) const {
     bool skip = false;
 
     if (rendering_flags & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) {
@@ -911,11 +911,11 @@ bool Device::ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRen
     return skip;
 }
 
-bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
-                                                   const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                   const Location& rendering_info_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-        const VkRenderingAttachmentInfo &color_attachment = rendering_info.pColorAttachments[i];
+        const VkRenderingAttachmentInfo& color_attachment = rendering_info.pColorAttachments[i];
         if (color_attachment.imageView == VK_NULL_HANDLE) continue;
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
 
@@ -976,12 +976,12 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
-                                                   const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                   const Location& rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pDepthAttachment || rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) return skip;
 
-    const VkRenderingAttachmentInfo &depth_attachment = *rendering_info.pDepthAttachment;
+    const VkRenderingAttachmentInfo& depth_attachment = *rendering_info.pDepthAttachment;
     const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, depth_attachment, attachment_loc);
@@ -1027,12 +1027,12 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
-                                                     const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                     const Location& rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pStencilAttachment || rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) return skip;
 
-    const VkRenderingAttachmentInfo &stencil_attachment = *rendering_info.pStencilAttachment;
+    const VkRenderingAttachmentInfo& stencil_attachment = *rendering_info.pStencilAttachment;
     const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, stencil_attachment, attachment_loc);
@@ -1078,8 +1078,8 @@ bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool Device::ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
-                                                       const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                                       const Location& rendering_info_loc) const {
     bool skip = false;
     if (rendering_info.flags & VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR) {
         if (!enabled_features.maintenance10) {
@@ -1089,7 +1089,7 @@ bool Device::ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBu
         }
     } else {
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-            const VkRenderingAttachmentInfo &attachment_info = rendering_info.pColorAttachments[i];
+            const VkRenderingAttachmentInfo& attachment_info = rendering_info.pColorAttachments[i];
             if (const auto flags_info = vku::FindStructInPNextChain<VkRenderingAttachmentFlagsInfoKHR>(attachment_info.pNext)) {
                 if (flags_info->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR) {
                     skip |= LogError("VUID-vkCmdBeginRendering-pRenderingInfo-11751", commandBuffer,
@@ -1127,9 +1127,9 @@ bool Device::ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBu
 }
 
 bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
-    VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
-    const VkRenderingFragmentShadingRateAttachmentInfoKHR &rendering_fsr_attachment_info,
-    const Location &rendering_info_loc) const {
+    VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+    const VkRenderingFragmentShadingRateAttachmentInfoKHR& rendering_fsr_attachment_info,
+    const Location& rendering_info_loc) const {
     bool skip = false;
     if (rendering_fsr_attachment_info.imageView == VK_NULL_HANDLE) return skip;
 

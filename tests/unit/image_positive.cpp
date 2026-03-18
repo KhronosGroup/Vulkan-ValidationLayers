@@ -39,7 +39,7 @@ TEST_F(PositiveImage, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    vkt::Queue* no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
     } else if ((m_device->Physical().queue_properties_[no_gfx_queue->family_index].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0) {

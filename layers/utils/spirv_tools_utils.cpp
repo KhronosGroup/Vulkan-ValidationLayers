@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -26,7 +26,7 @@
 
 #include <sstream>
 
-spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
+spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4) {
     if (api_version >= VK_API_VERSION_1_4) {
         return SPV_ENV_VULKAN_1_4;
     } else if (api_version >= VK_API_VERSION_1_3) {
@@ -44,9 +44,9 @@ spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
 }
 
 // Some Vulkan extensions/features are just all done in spirv-val behind optional settings
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spv_target_env spirv_environment, spvtools::ValidatorOptions &out_options, uint32_t *out_hash,
-                            std::string &out_command) {
+void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const DeviceFeatures& enabled_features,
+                            spv_target_env spirv_environment, spvtools::ValidatorOptions& out_options, uint32_t* out_hash,
+                            std::string& out_command) {
     struct Settings {
         bool relax_block_layout;
         bool uniform_buffer_standard_layout;

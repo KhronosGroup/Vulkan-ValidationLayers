@@ -20,8 +20,8 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <cstring>
 
-static inline bool ComparePipelineSampleLocationsStateCreateInfo(const VkPipelineSampleLocationsStateCreateInfoEXT &a,
-                                                                 const VkPipelineSampleLocationsStateCreateInfoEXT &b) {
+static inline bool ComparePipelineSampleLocationsStateCreateInfo(const VkPipelineSampleLocationsStateCreateInfoEXT& a,
+                                                                 const VkPipelineSampleLocationsStateCreateInfoEXT& b) {
     // Having VkSampleLocationEXT not confirmed to matter for the VU this is being used for, so just check the Count is good enough
     return (a.sampleLocationsEnable == b.sampleLocationsEnable) &&
            (a.sampleLocationsInfo.sampleLocationsPerPixel == b.sampleLocationsInfo.sampleLocationsPerPixel) &&
@@ -30,8 +30,8 @@ static inline bool ComparePipelineSampleLocationsStateCreateInfo(const VkPipelin
            (a.sampleLocationsInfo.sampleLocationsCount == b.sampleLocationsInfo.sampleLocationsCount);
 }
 
-bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &a,
-                                               const VkPipelineMultisampleStateCreateInfo &b) {
+bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo& a,
+                                               const VkPipelineMultisampleStateCreateInfo& b) {
     bool valid_mask = true;
     if (a.pSampleMask && b.pSampleMask && (a.rasterizationSamples == b.rasterizationSamples)) {
         uint32_t length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
@@ -47,8 +47,8 @@ bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateC
 
     bool valid_pNext = true;
     if (a.pNext && b.pNext) {
-        auto *a_sample_location = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(a.pNext);
-        auto *b_sample_location = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(b.pNext);
+        auto* a_sample_location = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(a.pNext);
+        auto* b_sample_location = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(b.pNext);
         if (a_sample_location && b_sample_location) {
             if (!ComparePipelineSampleLocationsStateCreateInfo(*a_sample_location, *b_sample_location)) {
                 valid_pNext = false;
@@ -65,38 +65,38 @@ bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateC
            (a.alphaToCoverageEnable == b.alphaToCoverageEnable) && (a.alphaToOneEnable == b.alphaToOneEnable);
 }
 
-bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding &a, const VkDescriptorSetLayoutBinding &b) {
+bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding& a, const VkDescriptorSetLayoutBinding& b) {
     return (a.binding == b.binding) && (a.descriptorType == b.descriptorType) && (a.descriptorCount == b.descriptorCount) &&
            (a.stageFlags == b.stageFlags) && (a.pImmutableSamplers == b.pImmutableSamplers);
 }
 
-bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &a,
-                                              const VkPipelineColorBlendAttachmentState &b) {
+bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState& a,
+                                              const VkPipelineColorBlendAttachmentState& b) {
     return (a.blendEnable == b.blendEnable) && (a.srcColorBlendFactor == b.srcColorBlendFactor) &&
            (a.dstColorBlendFactor == b.dstColorBlendFactor) && (a.colorBlendOp == b.colorBlendOp) &&
            (a.srcAlphaBlendFactor == b.srcAlphaBlendFactor) && (a.dstAlphaBlendFactor == b.dstAlphaBlendFactor) &&
            (a.alphaBlendOp == b.alphaBlendOp) && (a.colorWriteMask == b.colorWriteMask);
 }
 
-bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR &a,
-                                                       const VkPipelineFragmentShadingRateStateCreateInfoKHR &b) {
+bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR& a,
+                                                       const VkPipelineFragmentShadingRateStateCreateInfoKHR& b) {
     // Since this is chained in a pnext, we don't want to check the pNext/sType
     return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
            (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
 }
 
-static inline bool CompareSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo &a, const VkSamplerYcbcrConversionInfo &b) {
+static inline bool CompareSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo& a, const VkSamplerYcbcrConversionInfo& b) {
     return a.conversion == b.conversion;
 }
 
-static inline bool CompareSamplerBorderColorComponentMappingCreateInfo(const VkSamplerBorderColorComponentMappingCreateInfoEXT &a,
-                                                                       const VkSamplerBorderColorComponentMappingCreateInfoEXT &b) {
+static inline bool CompareSamplerBorderColorComponentMappingCreateInfo(const VkSamplerBorderColorComponentMappingCreateInfoEXT& a,
+                                                                       const VkSamplerBorderColorComponentMappingCreateInfoEXT& b) {
     return (a.components.r == b.components.r) && (a.components.g == b.components.g) && (a.components.b == b.components.b) &&
            (a.components.a == b.components.a) && (a.srgb == b.srgb);
 }
 
-static inline bool CompareSamplerCustomBorderColorCreateInfo(const VkSamplerCustomBorderColorCreateInfoEXT &a,
-                                                             const VkSamplerCustomBorderColorCreateInfoEXT &b) {
+static inline bool CompareSamplerCustomBorderColorCreateInfo(const VkSamplerCustomBorderColorCreateInfoEXT& a,
+                                                             const VkSamplerCustomBorderColorCreateInfoEXT& b) {
     return (memcmp(a.customBorderColor.uint32, b.customBorderColor.uint32,
                    sizeof(VkSamplerCustomBorderColorCreateInfoEXT::customBorderColor)) == 0 &&
             a.format == b.format);
@@ -104,10 +104,10 @@ static inline bool CompareSamplerCustomBorderColorCreateInfo(const VkSamplerCust
 // to be sure there are gaps between fields and its safe to use memcmp
 static_assert(sizeof(VkSamplerCustomBorderColorCreateInfoEXT::customBorderColor) == 16);
 
-bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b) {
+bool CompareSamplerCreateInfo(const VkSamplerCreateInfo& a, const VkSamplerCreateInfo& b) {
     // VkSamplerYcbcrConversionInfo
-    auto *a_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(a.pNext);
-    auto *b_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(b.pNext);
+    auto* a_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(a.pNext);
+    auto* b_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(b.pNext);
     if (a_ycbcr_conversion || b_ycbcr_conversion) {  // at least one not null
         if (!a_ycbcr_conversion || !b_ycbcr_conversion) {
             return false;  // one null, other not null
@@ -117,8 +117,8 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
         }
     }
     // VkSamplerBorderColorComponentMappingCreateInfoEXT
-    auto *a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);
-    auto *b_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(b.pNext);
+    auto* a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);
+    auto* b_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(b.pNext);
     if (a_component_mapping || b_component_mapping) {  // at least one not null
         if (!a_component_mapping || !b_component_mapping) {
             return false;  // one null, other not null
@@ -128,8 +128,8 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
         }
     }
     // VkSamplerCustomBorderColorCreateInfoEXT
-    auto *a_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(a.pNext);
-    auto *b_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(b.pNext);
+    auto* a_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(a.pNext);
+    auto* b_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(b.pNext);
     if (a_border_color || b_border_color) {  // at least one not null
         if (!a_border_color || !b_border_color) {
             return false;  // one null, other not null
@@ -139,8 +139,8 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
         }
     }
     // VkSamplerReductionModeCreateInfo
-    auto get_reduction_mode = [](const VkSamplerCreateInfo &ci) {
-        if (auto *reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(ci.pNext)) {
+    auto get_reduction_mode = [](const VkSamplerCreateInfo& ci) {
+        if (auto* reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(ci.pNext)) {
             return reduction_mode_ci->reductionMode;
         }
         // AVERAGE is default reduction mode (used when pNext does not specify VkSamplerReductionModeCreateInfo)
@@ -159,7 +159,7 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
            (a.maxLod == b.maxLod) && (a.borderColor == b.borderColor) && (a.unnormalizedCoordinates == b.unnormalizedCoordinates);
 }
 
-bool CompareDependencyInfo(const VkDependencyInfo &a, const VkDependencyInfo &b) {
+bool CompareDependencyInfo(const VkDependencyInfo& a, const VkDependencyInfo& b) {
     if (a.dependencyFlags != b.dependencyFlags || a.memoryBarrierCount != b.memoryBarrierCount ||
         a.bufferMemoryBarrierCount != b.bufferMemoryBarrierCount || a.imageMemoryBarrierCount != b.imageMemoryBarrierCount) {
         return false;

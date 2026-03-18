@@ -20,7 +20,7 @@
 
 namespace gpuav {
 
-void RegisterRayQueryValidation(Validator &gpuav, CommandBufferSubState &cb) {
+void RegisterRayQueryValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.ray_query) {
         return;
     }

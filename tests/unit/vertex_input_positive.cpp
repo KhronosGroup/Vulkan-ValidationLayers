@@ -36,7 +36,7 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
         input_attribs[i].location = i;
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in mat2x4 x;
         void main(){
@@ -74,7 +74,7 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
         input_attribs[i].location = i;
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x[2];
         void main(){
@@ -111,7 +111,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     //     in VertexIn {
     //         layout(location = 4) vec4 x;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -166,7 +166,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     //         layout(location = 4) vec4 y[2];
     //         layout(location = 1) vec3 x;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -220,7 +220,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     //         layout(location = 4) ivec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -272,7 +272,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -325,7 +325,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
         input_attribs[i].location = i;
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec3 y1;
@@ -335,7 +335,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
            gl_Position = x + vec4(y1, y2) + z;
         }
     )glsl";
-    const char *fsSource = R"glsl(
+    const char* fsSource = R"glsl(
         #version 450
         layout(location=0, component=0) out float color0;
         layout(location=0, component=1) out float color1;
@@ -408,7 +408,7 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     input_attribs[3].offset = 96;
     input_attribs[3].format = VK_FORMAT_R64G64B64A64_SFLOAT;
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in dmat4 x;
         void main(){
@@ -442,7 +442,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
 
     vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in float64_t pos;
@@ -473,7 +473,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bitExtraInput) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in float64_t pos; // Uses only 1 of the 4 components
@@ -518,7 +518,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     //         float64 y;
     //         ivec4 z;
     //     } x_struct;
-    const char *vsSource = R"(
+    const char* vsSource = R"(
                OpCapability Shader
                OpCapability Float64
                OpMemoryModel Logical Simple
@@ -564,7 +564,7 @@ TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in f64vec2 pos;
@@ -805,7 +805,7 @@ TEST_F(PositiveVertexInput, InputBindingMaxVertexInputBindingStrideDynamic) {
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.stride = m_device->Physical().limits_.maxVertexInputBindingStride + 1;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -894,7 +894,7 @@ TEST_F(PositiveVertexInput, LegacyVertexAttributes) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -939,14 +939,14 @@ TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source_int = R"glsl(
+    const char* vs_source_int = R"glsl(
         #version 450
         layout(location=0) in uvec4 x;
         void main(){}
     )glsl";
     VkShaderObj vs_int(*m_device, vs_source_int, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const char *vs_source_float = R"glsl(
+    const char* vs_source_float = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         void main(){}
@@ -1000,7 +1000,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustness) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vs_source = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x; /* not provided */
         void main(){
@@ -1022,7 +1022,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustnessDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;
@@ -1071,7 +1071,7 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float a;
 
@@ -1132,7 +1132,7 @@ TEST_F(PositiveVertexInput, UnusedInputBinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec4 y;
@@ -1175,7 +1175,7 @@ TEST_F(PositiveVertexInput, UnusedInputBindingDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec4 y;
@@ -1356,7 +1356,7 @@ TEST_F(PositiveVertexInput, AttributeNotProvided) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x; /* not provided */
         void main(){
@@ -1365,7 +1365,7 @@ TEST_F(PositiveVertexInput, AttributeNotProvided) {
     )glsl";
     VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);

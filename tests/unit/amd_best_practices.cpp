@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 #include "../framework/pipeline_helper.h"
 
 // Tests for AMD-specific best practices
-const char *kEnableAMDValidation = "validate_best_practices_amd";
+const char* kEnableAMDValidation = "validate_best_practices_amd";
 
 class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
@@ -556,7 +556,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSizeMaintenance5) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
         void main(){}

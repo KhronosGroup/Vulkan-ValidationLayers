@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
- * Copyright (c) 2023-2025 NVIDIA Corporation
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
+ * Copyright (c) 2023-2026 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ class NegativeShaderCooperativeVector : public VkLayerTest {
   public:
     void SetupConvertCooperativeVectorMatrixNVTest();
     void SetupCmdConvertCooperativeVectorMatrixNVTest();
-    void RunSPIRVTest(const char *expected_error, const char *shaderBody, uint32_t count = 1);
+    void RunSPIRVTest(const char* expected_error, const char* shaderBody, uint32_t count = 1);
 
     VkConvertCooperativeVectorMatrixInfoNV info;
     size_t dstSize;
@@ -294,7 +294,7 @@ TEST_F(NegativeShaderCooperativeVector, DeviceConvertUnsupportedMatrixType) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeShaderCooperativeVector::RunSPIRVTest(const char *expected_error, const char *shaderBody, uint32_t count) {
+void NegativeShaderCooperativeVector::RunSPIRVTest(const char* expected_error, const char* shaderBody, uint32_t count) {
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     std::string shader_source = std::string(R"(

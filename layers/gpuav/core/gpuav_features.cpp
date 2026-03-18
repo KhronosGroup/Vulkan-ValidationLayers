@@ -38,8 +38,8 @@ static std::vector<VkExtensionProperties> GetAvailableExtensions(VkPhysicalDevic
     }
 }
 
-static bool IsExtensionAvailable(const char *extension_name, const std::vector<VkExtensionProperties> &available_extensions) {
-    for (const VkExtensionProperties &ext : available_extensions) {
+static bool IsExtensionAvailable(const char* extension_name, const std::vector<VkExtensionProperties>& available_extensions) {
+    for (const VkExtensionProperties& ext : available_extensions) {
         if (strncmp(extension_name, ext.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
             return true;
         }
@@ -54,8 +54,8 @@ static const VulkanTypedHandle kNoObjects;
 
 // In PreCallRecord we try to turn on as many features as possible on behalf of the app (and warn the user if we are doing it).
 // Later after device creation, we can decide if the required Vulkan feature for each GPU-AV setting is found and report errors
-void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo *modified_create_info,
-                           const Location &loc) {
+void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo* modified_create_info,
+                           const Location& loc) {
     // Query things here to make sure we don't attempt to add a feature this is just not supported
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature = vku::InitStructHelper();
     VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper(&supported_coop_mat_feature);
@@ -74,12 +74,11 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
     // First core features
     {
-        const VkPhysicalDeviceFeatures &supported_features = features_2.features;
+        const VkPhysicalDeviceFeatures& supported_features = features_2.features;
 
-        VkPhysicalDeviceFeatures *modified_features =
-            const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
+        VkPhysicalDeviceFeatures* modified_features = const_cast<VkPhysicalDeviceFeatures*>(modified_create_info->pEnabledFeatures);
         if (!modified_features) {
-            if (auto *modified_features_2 = const_cast<VkPhysicalDeviceFeatures2 *>(
+            if (auto* modified_features_2 = const_cast<VkPhysicalDeviceFeatures2*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
                 modified_features = &modified_features_2->features;
             } else {
@@ -120,7 +119,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
     if (supported_timeline_feature.timelineSemaphore) {
         auto add_timeline_semaphore = [modified_create_info, &adjustment_warnings]() {
-            if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
+            if (auto* ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
                 if (ts_features->timelineSemaphore == VK_FALSE) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE\n";
@@ -136,7 +135,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version > VK_API_VERSION_1_1) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (features12->timelineSemaphore == VK_FALSE) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE\n";
@@ -155,7 +154,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
     if (supported_memory_model_feature.vulkanMemoryModel) {
         auto add_memory_model = [modified_create_info, &adjustment_warnings]() {
-            if (auto *mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures *>(
+            if (auto* mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(modified_create_info))) {
                 if (mm_features->vulkanMemoryModel == VK_FALSE) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE\n";
@@ -178,7 +177,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version > VK_API_VERSION_1_1) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (features12->vulkanMemoryModel == VK_FALSE) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE\n";
@@ -201,7 +200,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     if (supported_bda_feature.bufferDeviceAddress) {
         auto add_bda = [modified_create_info, &adjustment_warnings]() {
             // Add buffer device address feature
-            if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
+            if (auto* bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
                 if (!bda_features->bufferDeviceAddress) {
                     adjustment_warnings +=
@@ -218,7 +217,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version >= VK_API_VERSION_1_2) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->bufferDeviceAddress) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::bufferDeviceAddress to VK_TRUE\n";
@@ -236,7 +235,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
     if (supported_scalar_feature.scalarBlockLayout) {
         auto add_scalar = [modified_create_info, &adjustment_warnings]() {
-            if (auto *bda_features = const_cast<VkPhysicalDeviceScalarBlockLayoutFeatures *>(
+            if (auto* bda_features = const_cast<VkPhysicalDeviceScalarBlockLayoutFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceScalarBlockLayoutFeatures>(modified_create_info))) {
                 if (!bda_features->scalarBlockLayout) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceScalarBlockLayoutFeatures::scalarBlockLayout to VK_TRUE\n";
@@ -252,7 +251,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version >= VK_API_VERSION_1_2) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->scalarBlockLayout) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::scalarBlockLayout to VK_TRUE\n";
@@ -271,7 +270,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     if (supported_8bit_feature.storageBuffer8BitAccess) {
         auto add_8bit_access = [modified_create_info, &adjustment_warnings]() {
             // Add storageBuffer8BitAccess feature
-            if (auto *eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures *>(
+            if (auto* eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
                 if (!eight_bit_access_feature->storageBuffer8BitAccess) {
                     adjustment_warnings += "\tForcing VkPhysicalDevice8BitStorageFeatures::storageBuffer8BitAccess to VK_TRUE\n";
@@ -288,7 +287,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version >= VK_API_VERSION_1_2) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->storageBuffer8BitAccess) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::storageBuffer8BitAccess to VK_TRUE\n";
@@ -307,7 +306,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     if (supported_shader_float16_int8_feature.shaderInt8) {
         auto add_int8 = [modified_create_info, &adjustment_warnings]() {
             // Add shaderInt8 feature
-            if (auto *sixteen_bit_access_feature = const_cast<VkPhysicalDeviceShaderFloat16Int8Features *>(
+            if (auto* sixteen_bit_access_feature = const_cast<VkPhysicalDeviceShaderFloat16Int8Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceShaderFloat16Int8Features>(modified_create_info))) {
                 if (!sixteen_bit_access_feature->shaderInt8) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceShaderFloat16Int8Features::shaderInt8 to VK_TRUE\n";
@@ -324,7 +323,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version >= VK_API_VERSION_1_2) {
-            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+            if (auto* features12 = const_cast<VkPhysicalDeviceVulkan12Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->shaderInt8) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan12Features::shaderInt8 to VK_TRUE\n";
@@ -343,7 +342,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     if (supported_16bit_feature.storageBuffer16BitAccess) {
         auto add_16bit_access = [modified_create_info, &adjustment_warnings]() {
             // Add storageBuffer16BitAccess feature
-            if (auto *sixteen_bit_access_feature = const_cast<VkPhysicalDevice16BitStorageFeatures *>(
+            if (auto* sixteen_bit_access_feature = const_cast<VkPhysicalDevice16BitStorageFeatures*>(
                     vku::FindStructInPNextChain<VkPhysicalDevice16BitStorageFeatures>(modified_create_info))) {
                 if (!sixteen_bit_access_feature->storageBuffer16BitAccess) {
                     adjustment_warnings += "\tForcing VkPhysicalDevice16BitStorageFeatures::storageBuffer16BitAccess to VK_TRUE\n";
@@ -360,7 +359,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         };
 
         if (api_version >= VK_API_VERSION_1_1) {
-            if (auto *features11 = const_cast<VkPhysicalDeviceVulkan11Features *>(
+            if (auto* features11 = const_cast<VkPhysicalDeviceVulkan11Features*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(modified_create_info->pNext))) {
                 if (!features11->storageBuffer16BitAccess) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceVulkan11Features::storageBuffer16BitAccess to VK_TRUE\n";
@@ -398,7 +397,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                 vku::AddExtension(*modified_create_info, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
             }
 
-            if (auto *robust_buffer_2_feature = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
+            if (auto* robust_buffer_2_feature = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR*>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(modified_create_info))) {
                 if (!robust_buffer_2_feature->robustBufferAccess2 && supported_robustness2_feature.robustBufferAccess2) {
                     adjustment_warnings += "\tForcing VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2 to VK_TRUE\n";
@@ -428,7 +427,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     if (gpuav_settings.force_on_robustness && supported_coop_mat_feature.cooperativeMatrixRobustBufferAccess) {
         // Because they need to have VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix to even use this extensions, we
         // don't add it, we only need to update the other feature bit for them
-        if (auto *coop_mat_feature = const_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(
+        if (auto* coop_mat_feature = const_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(modified_create_info))) {
             if (!coop_mat_feature->cooperativeMatrixRobustBufferAccess) {
                 adjustment_warnings +=

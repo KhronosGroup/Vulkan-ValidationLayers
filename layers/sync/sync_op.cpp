@@ -48,21 +48,21 @@ class MapRangesRangeGenerator {
         // Default construction *must* be empty range
         assert(current_.empty());
     }
-    MapRangesRangeGenerator(const AccessMap &filter, const AccessRange &range)
+    MapRangesRangeGenerator(const AccessMap& filter, const AccessRange& range)
         : range_(range), map_(&filter), map_pos_(), current_() {
         SeekBegin();
     }
-    MapRangesRangeGenerator(const MapRangesRangeGenerator &from) = default;
+    MapRangesRangeGenerator(const MapRangesRangeGenerator& from) = default;
 
-    const AccessRange &operator*() const { return current_; }
-    const AccessRange *operator->() const { return &current_; }
-    MapRangesRangeGenerator &operator++() {
+    const AccessRange& operator*() const { return current_; }
+    const AccessRange* operator->() const { return &current_; }
+    MapRangesRangeGenerator& operator++() {
         ++map_pos_;
         UpdateCurrent();
         return *this;
     }
 
-    bool operator==(const MapRangesRangeGenerator &other) const { return current_ == other.current_; }
+    bool operator==(const MapRangesRangeGenerator& other) const { return current_ == other.current_; }
 
   protected:
     void UpdateCurrent() {
@@ -80,7 +80,7 @@ class MapRangesRangeGenerator {
     // Adding this functionality here, to avoid gratuitous Base:: qualifiers in the derived class
     // Note: Not exposed in this classes public interface to encourage using a consistent ++/empty generator semantic
     template <typename Pred>
-    MapRangesRangeGenerator &PredicatedIncrement(Pred &pred) {
+    MapRangesRangeGenerator& PredicatedIncrement(Pred& pred) {
         do {
             ++map_pos_;
         } while (map_pos_ != map_->end() && map_pos_->first.intersects(range_) && !pred(map_pos_));
@@ -89,7 +89,7 @@ class MapRangesRangeGenerator {
     }
 
     const AccessRange range_;
-    const AccessMap *map_ = nullptr;
+    const AccessMap* map_ = nullptr;
     AccessMap::const_iterator map_pos_;
     AccessRange current_;
 };
@@ -104,13 +104,13 @@ class FilteredGeneratorGenerator {
         // Default construction for KeyType *must* be empty range
         assert(current_.empty());
     }
-    FilteredGeneratorGenerator(const AccessMap &filter, RangeGen &gen) : filter_(&filter), gen_(gen), filter_pos_(), current_() {
+    FilteredGeneratorGenerator(const AccessMap& filter, RangeGen& gen) : filter_(&filter), gen_(gen), filter_pos_(), current_() {
         SeekBegin();
     }
-    FilteredGeneratorGenerator(const FilteredGeneratorGenerator &from) = default;
-    const AccessRange &operator*() const { return current_; }
-    const AccessRange *operator->() const { return &current_; }
-    FilteredGeneratorGenerator &operator++() {
+    FilteredGeneratorGenerator(const FilteredGeneratorGenerator& from) = default;
+    const AccessRange& operator*() const { return current_; }
+    const AccessRange* operator->() const { return &current_; }
+    FilteredGeneratorGenerator& operator++() {
         AccessRange gen_range = GenRange();
         AccessRange filter_range = FilterRange();
         current_ = {};
@@ -126,7 +126,7 @@ class FilteredGeneratorGenerator {
         return *this;
     }
 
-    bool operator==(const FilteredGeneratorGenerator &other) const { return current_ == other.current_; }
+    bool operator==(const FilteredGeneratorGenerator& other) const { return current_ == other.current_; }
 
   private:
     AccessRange AdvanceFilter() {
@@ -150,7 +150,7 @@ class FilteredGeneratorGenerator {
     AccessRange FilterRange() const { return (filter_pos_ != filter_->end()) ? filter_pos_->first : AccessRange{}; }
     AccessRange GenRange() const { return *gen_; }
 
-    AccessRange FastForwardFilter(const AccessRange &range) {
+    AccessRange FastForwardFilter(const AccessRange& range) {
         auto filter_range = FilterRange();
         int retry_count = 0;
         const static int kRetryLimit = 2;  // TODO -- determine whether this limit is optimal
@@ -170,7 +170,7 @@ class FilteredGeneratorGenerator {
 
     // TODO: Consider adding "seek" (or an absolute bound "get" to range generators to make this walk
     // faster.
-    AccessRange FastForwardGen(const AccessRange &range) {
+    AccessRange FastForwardGen(const AccessRange& range) {
         auto gen_range = GenRange();
         while (!gen_range.empty() && (gen_range.end <= range.begin)) {
             ++gen_;
@@ -190,7 +190,7 @@ class FilteredGeneratorGenerator {
         }
     }
 
-    const AccessMap *filter_ = nullptr;
+    const AccessMap* filter_ = nullptr;
     RangeGen gen_;
     AccessMap::const_iterator filter_pos_;
     AccessRange current_;
@@ -198,10 +198,10 @@ class FilteredGeneratorGenerator {
 
 using EventImageRangeGenerator = FilteredGeneratorGenerator<subresource_adapter::ImageRangeGenerator>;
 
-void BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, uint32_t barrier_count,
-                                    const VkMemoryBarrier *barriers) {
+void BarrierSet::MakeMemoryBarriers(const SyncExecScope& src, const SyncExecScope& dst, uint32_t barrier_count,
+                                    const VkMemoryBarrier* barriers) {
     memory_barriers.reserve(std::max<uint32_t>(1, barrier_count));
-    for (const VkMemoryBarrier &barrier : vvl::make_span(barriers, barrier_count)) {
+    for (const VkMemoryBarrier& barrier : vvl::make_span(barriers, barrier_count)) {
         SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
         memory_barriers.emplace_back(sync_barrier);
     }
@@ -217,7 +217,7 @@ void BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScop
     execution_dependency_barrier_count = (barrier_count == 0) ? 1 : 0;
 }
 
-void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo &dep_info) {
+void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo& dep_info) {
     // Collect unique execution dependencies from buffer and image barriers.
     //
     // NOTE: the reason to collect execution dependencies in addition to original buffer/image
@@ -227,14 +227,14 @@ void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependency
     // all READ accesses that are in scope. To emulate this behavior we collect unique
     // execution dependencies and apply them to all memory accesses (don't specify access mask).
     small_vector<std::pair<VkPipelineStageFlags2, VkPipelineStageFlags2>, 4> buffer_image_barrier_exec_deps;
-    for (const VkBufferMemoryBarrier2 &buffer_barrier :
+    for (const VkBufferMemoryBarrier2& buffer_barrier :
          vvl::make_span(dep_info.pBufferMemoryBarriers, dep_info.bufferMemoryBarrierCount)) {
         const auto src_dst = std::make_pair(buffer_barrier.srcStageMask, buffer_barrier.dstStageMask);
         if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
             buffer_image_barrier_exec_deps.emplace_back(src_dst);
         }
     }
-    for (const VkImageMemoryBarrier2 &image_barrier :
+    for (const VkImageMemoryBarrier2& image_barrier :
          vvl::make_span(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
         const auto src_dst = std::make_pair(image_barrier.srcStageMask, image_barrier.dstStageMask);
         if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
@@ -245,13 +245,13 @@ void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependency
     memory_barriers.reserve(dep_info.memoryBarrierCount + buffer_image_barrier_exec_deps.size());
 
     // Add global memory barriers specified in VkDependencyInfo
-    for (const VkMemoryBarrier2 &barrier : vvl::make_span(dep_info.pMemoryBarriers, dep_info.memoryBarrierCount)) {
+    for (const VkMemoryBarrier2& barrier : vvl::make_span(dep_info.pMemoryBarriers, dep_info.memoryBarrierCount)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         memory_barriers.emplace_back(SyncBarrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask));
     }
     // Add execution dependencies from buffer and image barriers
-    for (const auto &src_dst : buffer_image_barrier_exec_deps) {
+    for (const auto& src_dst : buffer_image_barrier_exec_deps) {
         auto src = SyncExecScope::MakeSrc(queue_flags, src_dst.first);
         auto dst = SyncExecScope::MakeDst(queue_flags, src_dst.second);
         memory_barriers.emplace_back(SyncBarrier(src, dst));
@@ -260,10 +260,10 @@ void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependency
     execution_dependency_barrier_count = (uint32_t)buffer_image_barrier_exec_deps.size();
 }
 
-void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                          uint32_t barrier_count, const VkBufferMemoryBarrier *barriers) {
+void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                          uint32_t barrier_count, const VkBufferMemoryBarrier* barriers) {
     buffer_barriers.reserve(barrier_count);
-    for (const VkBufferMemoryBarrier &barrier : vvl::make_span(barriers, barrier_count)) {
+    for (const VkBufferMemoryBarrier& barrier : vvl::make_span(barriers, barrier_count)) {
         if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
             const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
@@ -272,10 +272,10 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const
     }
 }
 
-void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                          const VkBufferMemoryBarrier2 *barriers) {
+void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                          const VkBufferMemoryBarrier2* barriers) {
     buffer_barriers.reserve(barrier_count);
-    for (const VkBufferMemoryBarrier2 &barrier : vvl::make_span(barriers, barrier_count)) {
+    for (const VkBufferMemoryBarrier2& barrier : vvl::make_span(barriers, barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
@@ -286,9 +286,9 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQue
     }
 }
 
-void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                         uint32_t barrier_count, const VkImageMemoryBarrier *barriers,
-                                         const DeviceExtensions &extensions) {
+void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
+                                         uint32_t barrier_count, const VkImageMemoryBarrier* barriers,
+                                         const DeviceExtensions& extensions) {
     image_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
@@ -307,8 +307,8 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const 
     }
 }
 
-void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                         const VkImageMemoryBarrier2 *barriers, const DeviceExtensions &extensions) {
+void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                         const VkImageMemoryBarrier2* barriers, const DeviceExtensions& extensions) {
     image_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
@@ -330,11 +330,11 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueu
     }
 }
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
                                              VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                                             uint32_t memory_barrier_count, const VkMemoryBarrier *memory_barriers,
-                                             uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
-                                             uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers)
+                                             uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers,
+                                             uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
+                                             uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers)
     : SyncOpBase(command) {
     const auto src_exec_scope = SyncExecScope::MakeSrc(queue_flags, src_stage_mask);
     const auto dst_exec_scope = SyncExecScope::MakeDst(queue_flags, dst_stage_mask);
@@ -348,8 +348,8 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
                                          sync_state.device_state->extensions);
 }
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                             const VkDependencyInfo &dep_info)
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
+                                             const VkDependencyInfo& dep_info)
     : SyncOpBase(command) {
     const ExecScopes stage_masks = sync_utils::GetExecScopes(dep_info);
 
@@ -363,18 +363,18 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
                                          sync_state.device_state->extensions);
 }
 
-bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext& cb_context) const {
     bool skip = false;
-    const auto *context = cb_context.GetCurrentAccessContext();
+    const auto* context = cb_context.GetCurrentAccessContext();
     assert(context);
     if (!context) return skip;
 
     // Validate Image Layout transitions
-    for (const auto &image_barrier : barrier_set_.image_barriers) {
+    for (const auto& image_barrier : barrier_set_.image_barriers) {
         if (!image_barrier.layout_transition) {
             continue;
         }
-        const vvl::Image &image_state = *image_barrier.image;
+        const vvl::Image& image_state = *image_barrier.image;
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(cb_context.GetSyncState().extensions, image_state.create_info);
         const auto hazard = context->DetectImageBarrierHazard(
@@ -383,7 +383,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
             const Location loc(command_);
-            const SyncValidator &sync_state = cb_context.GetSyncState();
+            const SyncValidator& sync_state = cb_context.GetSyncState();
             const std::string resource_description = sync_state.FormatHandle(image_state.Handle());
             const std::string error =
                 sync_state.error_messages_.ImageBarrierError(hazard, cb_context, command_, resource_description, image_barrier);
@@ -393,12 +393,12 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
     return skip;
 }
 
-ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext* cb_context) {
     const auto tag = cb_context->NextCommandTag(command_);
-    for (const auto &buffer_barrier : barrier_set_.buffer_barriers) {
+    for (const auto& buffer_barrier : barrier_set_.buffer_barriers) {
         cb_context->AddCommandHandle(tag, buffer_barrier.buffer->Handle());
     }
-    for (auto &image_barrier : barrier_set_.image_barriers) {
+    for (auto& image_barrier : barrier_set_.image_barriers) {
         if (image_barrier.layout_transition) {
             const auto tag_ex = cb_context->AddCommandHandle(tag, image_barrier.image->Handle());
             image_barrier.handle_index = tag_ex.handle_index;
@@ -408,9 +408,9 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
     return tag;
 }
 
-void SyncOpPipelineBarrier::ApplySingleBufferBarrier(CommandExecutionContext &exec_context, const SyncBufferBarrier &buffer_barrier,
-                                                     const SyncBarrier &exec_dep_barrier) const {
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+void SyncOpPipelineBarrier::ApplySingleBufferBarrier(CommandExecutionContext& exec_context, const SyncBufferBarrier& buffer_barrier,
+                                                     const SyncBarrier& exec_dep_barrier) const {
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     if (SimpleBinding(*buffer_barrier.buffer)) {
@@ -425,16 +425,16 @@ void SyncOpPipelineBarrier::ApplySingleBufferBarrier(CommandExecutionContext &ex
     access_context->RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-void SyncOpPipelineBarrier::ApplySingleImageBarrier(CommandExecutionContext &exec_context, const SyncImageBarrier &image_barrier,
-                                                    const SyncBarrier &exec_dep_barrier, const ResourceUsageTag exec_tag) const {
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+void SyncOpPipelineBarrier::ApplySingleImageBarrier(CommandExecutionContext& exec_context, const SyncImageBarrier& image_barrier,
+                                                    const SyncBarrier& exec_dep_barrier, const ResourceUsageTag exec_tag) const {
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
     ApplySingleImageBarrierFunctor apply_barrier(*access_context, barrier_scope, image_barrier.barrier,
                                                  image_barrier.layout_transition, image_barrier.handle_index, exec_tag);
 
-    const auto &sub_state = SubState(*image_barrier.image);
+    const auto& sub_state = SubState(*image_barrier.image);
     const bool can_transition_depth_slices =
         CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
     auto range_gen = sub_state.MakeImageRangeGen(image_barrier.subresource_range, can_transition_depth_slices);
@@ -443,15 +443,15 @@ void SyncOpPipelineBarrier::ApplySingleImageBarrier(CommandExecutionContext &exe
     access_context->RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-void SyncOpPipelineBarrier::ApplySingleMemoryBarrier(CommandExecutionContext &exec_context,
-                                                     const SyncBarrier &memory_barrier) const {
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+void SyncOpPipelineBarrier::ApplySingleMemoryBarrier(CommandExecutionContext& exec_context,
+                                                     const SyncBarrier& memory_barrier) const {
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
     access_context->RegisterGlobalBarrier(memory_barrier, queue_id);
 }
 
-void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Apply markup action.
@@ -463,7 +463,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     // NOTE: it is enough to apply markup action to buffer and image barriers. The global barriers
     // do not use infill operations (no layout transitions) and also do not split access map ranges
     // because global barriers are applied to the full range.
-    for (const SyncBufferBarrier &barrier : barrier_set_.buffer_barriers) {
+    for (const SyncBufferBarrier& barrier : barrier_set_.buffer_barriers) {
         if (SimpleBinding(*barrier.buffer)) {
             const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
             const AccessRange range = barrier.range + base_address;
@@ -471,8 +471,8 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
             access_context->UpdateMemoryAccessState(markup_action, range);
         }
     }
-    for (const SyncImageBarrier &barrier : barrier_set_.image_barriers) {
-        const auto &sub_state = SubState(*barrier.image);
+    for (const SyncImageBarrier& barrier : barrier_set_.image_barriers) {
+        const auto& sub_state = SubState(*barrier.image);
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -483,7 +483,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
 
     // Use PendingBarriers to collect barriers that must be applied independently
     PendingBarriers pending_barriers;
-    for (const SyncBufferBarrier &barrier : barrier_set_.buffer_barriers) {
+    for (const SyncBufferBarrier& barrier : barrier_set_.buffer_barriers) {
         if (SimpleBinding(*barrier.buffer)) {
             const BarrierScope barrier_scope(barrier.barrier, queue_id);
             CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier.barrier, false, vvl::kNoIndex32,
@@ -495,12 +495,12 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
             access_context->UpdateMemoryAccessState(collect_barriers, range);
         }
     }
-    for (const SyncImageBarrier &barrier : barrier_set_.image_barriers) {
+    for (const SyncImageBarrier& barrier : barrier_set_.image_barriers) {
         const BarrierScope barrier_scope(barrier.barrier, queue_id);
         CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier.barrier, barrier.layout_transition,
                                                 barrier.handle_index, pending_barriers);
 
-        const auto &sub_state = SubState(*barrier.image);
+        const auto& sub_state = SubState(*barrier.image);
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -511,7 +511,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     // Do kFullRange update only when there is multiple memory barriers.
     // For a single barrier we can use global barrier functionality.
     if (barrier_set_.memory_barriers.size() > 1) {
-        for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
+        for (const SyncBarrier& barrier : barrier_set_.memory_barriers) {
             const BarrierScope barrier_scope(barrier, queue_id);
             CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier, false, vvl::kNoIndex32,
                                                     pending_barriers);
@@ -528,7 +528,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     }
 }
 
-void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, const ResourceUsageTag exec_tag) const {
+void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext& exec_context, const ResourceUsageTag exec_tag) const {
     if (!exec_context.ValidForSyncOps()) {
         return;
     }
@@ -556,30 +556,30 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, 
         ApplyMultipleBarriers(exec_context, exec_tag);
     }
 
-    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
     if (barrier_set_.single_exec_scope) {
         events_context->ApplyBarrier(barrier_set_.src_exec_scope, barrier_set_.dst_exec_scope, exec_tag);
     } else {
-        for (const auto &barrier : barrier_set_.memory_barriers) {
+        for (const auto& barrier : barrier_set_.memory_barriers) {
             events_context->ApplyBarrier(barrier.src_exec_scope, barrier.dst_exec_scope, exec_tag);
         }
     }
 }
 
-bool SyncOpPipelineBarrier::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpPipelineBarrier::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // The layout transitions happen at the replay tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
     return replay.DetectFirstUseHazard(first_use_range);
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                   uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
+                                   uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                                   const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                   const VkImageMemoryBarrier *pImageMemoryBarriers)
+                                   const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                   const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                   const VkImageMemoryBarrier* pImageMemoryBarriers)
     : SyncOpBase(command), barrier_sets_(1) {
-    auto &barrier_set = barrier_sets_[0];
+    auto& barrier_set = barrier_sets_[0];
     const auto src_exec_scope = SyncExecScope::MakeSrc(queue_flags, srcStageMask);
     const auto dst_exec_scope = SyncExecScope::MakeDst(queue_flags, dstStageMask);
 
@@ -595,12 +595,12 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                   uint32_t eventCount, const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo)
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags,
+                                   uint32_t eventCount, const VkEvent* pEvents, const VkDependencyInfo* pDependencyInfo)
     : SyncOpBase(command), barrier_sets_(eventCount) {
     for (uint32_t i = 0; i < eventCount; i++) {
-        const auto &dep_info = pDependencyInfo[i];
-        auto &barrier_set = barrier_sets_[i];
+        const auto& dep_info = pDependencyInfo[i];
+        auto& barrier_set = barrier_sets_[i];
         auto stage_masks = sync_utils::GetExecScopes(dep_info);
 
         barrier_set.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
@@ -615,16 +615,16 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
-const char *const SyncOpWaitEvents::kIgnored = "Wait operation is ignored for this event.";
+const char* const SyncOpWaitEvents::kIgnored = "Wait operation is ignored for this event.";
 
-bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext& cb_context) const {
     bool skip = false;
-    const auto &sync_state = cb_context.GetSyncState();
+    const auto& sync_state = cb_context.GetSyncState();
     const VkCommandBuffer command_buffer_handle = cb_context.GetCBState().VkHandle();
 
     // This is only interesting at record and not replay (Execute/Submit) time.
     for (size_t barrier_set_index = 0; barrier_set_index < barrier_sets_.size(); barrier_set_index++) {
-        const auto &barrier_set = barrier_sets_[barrier_set_index];
+        const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (barrier_set.single_exec_scope) {
             const Location loc(command_);
             if (barrier_set.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
@@ -633,9 +633,9 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                                    "srcStageMask includes %s, unsupported by synchronization validation.",
                                    string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
             } else {
-                const auto &barriers = barrier_set.memory_barriers;
+                const auto& barriers = barrier_set.memory_barriers;
                 for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
-                    const auto &barrier = barriers[barrier_index];
+                    const auto& barrier = barriers[barrier_index];
                     if (barrier.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
                         const std::string vuid =
                             std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
@@ -655,22 +655,22 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
     return skip;
 }
 
-bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, const ResourceUsageTag base_tag) const {
+bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
     bool skip = false;
-    const auto &sync_state = exec_context.GetSyncState();
+    const auto& sync_state = exec_context.GetSyncState();
     const QueueId queue_id = exec_context.GetQueueId();
 
     VkPipelineStageFlags2 event_stage_masks = 0U;
     VkPipelineStageFlags2 barrier_mask_params = 0U;
     bool events_not_found = false;
-    const auto *events_context = exec_context.GetCurrentEventsContext();
+    const auto* events_context = exec_context.GetCurrentEventsContext();
     assert(events_context);
     size_t barrier_set_index = 0;
     size_t barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
     const Location loc(command_);
-    for (const auto &event : events_) {
-        const auto *sync_event = events_context->Get(event.get());
-        const auto &barrier_set = barrier_sets_[barrier_set_index];
+    for (const auto& event : events_) {
+        const auto* sync_event = events_context->Get(event.get());
+        const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (!sync_event) {
             // NOTE PHASE2: This is where we'll need queue submit time validation to come back and check the srcStageMask bits
             //              or solve this with replay creating the SyncEventState in the queue context... also this will be a
@@ -692,7 +692,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
             event_stage_masks |= sync_event->scope.mask_param;
         }
 
-        const auto &src_exec_scope = barrier_set.src_exec_scope;
+        const auto& src_exec_scope = barrier_set.src_exec_scope;
 
         const auto ignore_reason = sync_event->IsIgnoredByWait(command_, src_exec_scope.mask_param);
         if (ignore_reason) {
@@ -700,13 +700,13 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                 case SyncEventState::ResetWaitRace:
                 case SyncEventState::Reset2WaitRace: {
                     // Four permuations of Reset and Wait calls...
-                    const char *vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent-event-03834"
+                    const char* vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent-event-03834"
                                                                                 : "VUID-vkCmdResetEvent-event-03835";
                     if (ignore_reason == SyncEventState::Reset2WaitRace) {
                         vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent2-event-03831"
                                                                         : "VUID-vkCmdResetEvent2-event-03832";
                     }
-                    const char *const message =
+                    const char* const message =
                         "%s %s operation following %s without intervening execution barrier, may cause race condition. %s";
                     skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
                                                 CmdName(), vvl::String(sync_event->last_command), kIgnored);
@@ -715,10 +715,10 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                 case SyncEventState::SetRace: {
                     // Issue error message that Wait is waiting on an signal subject to race condition, and is thus ignored for
                     // this event
-                    const char *const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
-                    const char *const message =
+                    const char* const vuid = "SYNC-vkCmdWaitEvents-unsynchronized-setops";
+                    const char* const message =
                         "%s Unsychronized %s calls result in race conditions w.r.t. event signalling, %s %s";
-                    const char *const reason = "First synchronization scope is undefined.";
+                    const char* const reason = "First synchronization scope is undefined.";
                     skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
                                                 vvl::String(sync_event->last_command), reason, kIgnored);
                     break;
@@ -726,8 +726,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                 case SyncEventState::MissingStageBits: {
                     const auto missing_bits = sync_event->scope.mask_param & ~src_exec_scope.mask_param;
                     // Issue error message that event waited for is not in wait events scope
-                    const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
-                    const char *const message =
+                    const char* const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
+                    const char* const message =
                         "%s stageMask %s includes stages not present in srcStageMask %s. Stages missing from srcStageMask: %s. %s";
                     skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
                                                 sync_utils::StringPipelineStageFlags(sync_event->scope.mask_param).c_str(),
@@ -750,15 +750,15 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     assert(ignore_reason == SyncEventState::NotIgnored);
             }
         } else if (barrier_set.image_barriers.size()) {
-            const auto &image_memory_barriers = barrier_set.image_barriers;
-            const auto *context = exec_context.GetCurrentAccessContext();
+            const auto& image_memory_barriers = barrier_set.image_barriers;
+            const auto* context = exec_context.GetCurrentAccessContext();
             assert(context);
-            for (const auto &image_memory_barrier : image_memory_barriers) {
+            for (const auto& image_memory_barrier : image_memory_barriers) {
                 if (!image_memory_barrier.layout_transition) continue;
-                const auto *image_state = image_memory_barrier.image.get();
+                const auto* image_state = image_memory_barrier.image.get();
                 if (!image_state) continue;
-                const auto &subresource_range = image_memory_barrier.subresource_range;
-                const auto &src_access_scope = image_memory_barrier.barrier.src_access_scope;
+                const auto& subresource_range = image_memory_barrier.subresource_range;
+                const auto& src_access_scope = image_memory_barrier.barrier.src_access_scope;
                 const auto hazard = context->DetectImageBarrierHazard(
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
@@ -782,7 +782,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     if (extra_stage_bits) {
         assert(vvl::Func::vkCmdWaitEvents == command_);
         // Issue error message that event waited for is not in wait events scope
-        const char *const message =
+        const char* const message =
             "srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto handle = exec_context.Handle();
         if (!events_not_found) {
@@ -793,7 +793,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     return skip;
 }
 
-ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext* cb_context) {
     const auto tag = cb_context->NextCommandTag(command_);
 
     ReplayRecord(*cb_context, tag);
@@ -801,20 +801,20 @@ ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context
 }
 
 // Need to restrict to only valid exec and access scope for this event
-static SyncBarrier RestrictToEvent(const SyncBarrier &barrier, const SyncEventState &sync_event) {
+static SyncBarrier RestrictToEvent(const SyncBarrier& barrier, const SyncEventState& sync_event) {
     SyncBarrier result = barrier;
     result.src_exec_scope.exec_scope = sync_event.scope.exec_scope & barrier.src_exec_scope.exec_scope;
     result.src_access_scope = sync_event.scope.valid_accesses & barrier.src_access_scope;
     return result;
 }
 
-void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
     if (!exec_context.ValidForSyncOps()) return;
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
-    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
+    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     access_context->ResolveAllSubpassDependencies();
@@ -833,16 +833,16 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
     // TODO: need a test that demonstrates this (when doing some work on syncval events)
     size_t barrier_set_index = 0;
     size_t barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
-    for (auto &event_shared : events_) {
+    for (auto& event_shared : events_) {
         if (!event_shared.get()) continue;
-        auto *sync_event = events_context->GetFromShared(event_shared);
+        auto* sync_event = events_context->GetFromShared(event_shared);
 
         sync_event->last_command = command_;
         sync_event->last_command_tag = exec_tag;
 
-        const auto &barrier_set = barrier_sets_[barrier_set_index];
+        const auto& barrier_set = barrier_sets_[barrier_set_index];
         if (!sync_event->IsIgnoredByWait(command_, barrier_set.src_exec_scope.mask_param)) {
-            for (const SyncBufferBarrier &barrier : barrier_set.buffer_barriers) {
+            for (const SyncBufferBarrier& barrier : barrier_set.buffer_barriers) {
                 if (SimpleBinding(*barrier.buffer)) {
                     const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
                     const AccessRange range = barrier.range + base_address;
@@ -851,8 +851,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                     access_context->UpdateMemoryAccessState(markup_action, filtered_range_gen);
                 }
             }
-            for (const SyncImageBarrier &barrier : barrier_set.image_barriers) {
-                const auto &sub_state = SubState(*barrier.image);
+            for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
+                const auto& sub_state = SubState(*barrier.image);
                 const bool can_transition_depth_slices =
                     CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -871,18 +871,18 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
     PendingBarriers pending_barriers;
     barrier_set_index = 0;
     barrier_set_incr = (barrier_sets_.size() == 1) ? 0 : 1;
-    for (auto &event_shared : events_) {
+    for (auto& event_shared : events_) {
         if (!event_shared.get()) continue;
-        auto *sync_event = events_context->GetFromShared(event_shared);
+        auto* sync_event = events_context->GetFromShared(event_shared);
 
-        const auto &barrier_set = barrier_sets_[barrier_set_index];
-        const auto &dst = barrier_set.dst_exec_scope;
+        const auto& barrier_set = barrier_sets_[barrier_set_index];
+        const auto& dst = barrier_set.dst_exec_scope;
         if (!sync_event->IsIgnoredByWait(command_, barrier_set.src_exec_scope.mask_param)) {
             // These apply barriers one at a time as the are restricted to the resource ranges specified per each barrier,
             // but do not update the dependency chain information (but set the "pending" state) // s.t. the order independence
             // of the barriers is maintained.
 
-            for (const SyncBufferBarrier &barrier : barrier_set.buffer_barriers) {
+            for (const SyncBufferBarrier& barrier : barrier_set.buffer_barriers) {
                 if (SimpleBinding(*barrier.buffer)) {
                     const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                     const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
@@ -896,13 +896,13 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                     access_context->UpdateMemoryAccessState(collect_barriers, range_gen);
                 }
             }
-            for (const SyncImageBarrier &barrier : barrier_set.image_barriers) {
+            for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
                 CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, event_barrier, barrier.layout_transition,
                                                         barrier.handle_index, pending_barriers);
 
-                const auto &sub_state = SubState(*barrier.image);
+                const auto& sub_state = SubState(*barrier.image);
                 const bool can_transition_depth_slices =
                     CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -913,7 +913,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             // TODO: because each iteration applies functor to the same range, investigate if it is
             // beneficial for the functor to support multiple barriers, so we traverse access map once.
             auto global_range_gen = EventSimpleRangeGenerator(sync_event->FirstScope(), kFullRange);
-            for (const auto &barrier : barrier_set.memory_barriers) {
+            for (const auto& barrier : barrier_set.memory_barriers) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
                 CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
@@ -938,43 +938,43 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
     pending_barriers.Apply(exec_tag);
 }
 
-bool SyncOpWaitEvents::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpWaitEvents::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
 }
 
-void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events) {
+void SyncOpWaitEvents::MakeEventsList(const SyncValidator& sync_state, uint32_t event_count, const VkEvent* events) {
     events_.reserve(event_count);
     for (uint32_t event_index = 0; event_index < event_count; event_index++) {
         events_.emplace_back(sync_state.Get<vvl::Event>(events[event_index]));
     }
 }
 
-SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags, VkEvent event,
                                    VkPipelineStageFlags2 stageMask)
     : SyncOpBase(command), event_(sync_state.Get<vvl::Event>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
-bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpResetEvent::Validate(const CommandBufferAccessContext& cb_context) const {
     return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
 }
 
-bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, const ResourceUsageTag base_tag) const {
-    auto *events_context = exec_context.GetCurrentEventsContext();
+bool SyncOpResetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
+    auto* events_context = exec_context.GetCurrentEventsContext();
     assert(events_context);
     bool skip = false;
     if (!events_context) return skip;
 
-    const auto &sync_state = exec_context.GetSyncState();
-    const auto *sync_event = events_context->Get(event_);
+    const auto& sync_state = exec_context.GetSyncState();
+    const auto* sync_event = events_context->Get(event_);
     if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     if (sync_event->last_command_tag > base_tag) return skip;  // if we validated this in recording of the secondary, don't repeat
 
-    const char *const set_wait =
+    const char* const set_wait =
         "%s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
         "hazards.";
-    const char *message = set_wait;  // Only one message this call.
+    const char* message = set_wait;  // Only one message this call.
     if (!sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
-        const char *vuid = nullptr;
+        const char* vuid = nullptr;
         switch (sync_event->last_command) {
             case vvl::Func::vkCmdSetEvent:
             case vvl::Func::vkCmdSetEvent2KHR:
@@ -1007,21 +1007,21 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
     return skip;
 }
 
-ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext* cb_context) {
     const auto tag = cb_context->NextCommandTag(command_);
     ReplayRecord(*cb_context, tag);
     return tag;
 }
 
-bool SyncOpResetEvent::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpResetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
 }
 
-void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpResetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     if (!exec_context.ValidForSyncOps()) return;
-    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
 
-    auto *sync_event = events_context->GetFromShared(event_);
+    auto* sync_event = events_context->GetFromShared(event_);
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // Update the event state
@@ -1032,8 +1032,8 @@ void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resou
     sync_event->barriers = 0U;
 }
 
-SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                               VkPipelineStageFlags2 stageMask, const AccessContext *access_context)
+SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags, VkEvent event,
+                               VkPipelineStageFlags2 stageMask, const AccessContext* access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)),
@@ -1049,8 +1049,8 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
     }
 }
 
-SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                               const VkDependencyInfo &dep_info, const AccessContext *access_context)
+SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator& sync_state, VkQueueFlags queue_flags, VkEvent event,
+                               const VkDependencyInfo& dep_info, const AccessContext* access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)),
@@ -1062,35 +1062,35 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
     }
 }
 
-bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpSetEvent::Validate(const CommandBufferAccessContext& cb_context) const {
     return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
 }
-bool SyncOpSetEvent::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpSetEvent::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
 }
 
-bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, const ResourceUsageTag base_tag) const {
+bool SyncOpSetEvent::DoValidate(const CommandExecutionContext& exec_context, const ResourceUsageTag base_tag) const {
     bool skip = false;
 
-    const auto &sync_state = exec_context.GetSyncState();
-    auto *events_context = exec_context.GetCurrentEventsContext();
+    const auto& sync_state = exec_context.GetSyncState();
+    auto* events_context = exec_context.GetCurrentEventsContext();
     assert(events_context);
     if (!events_context) return skip;
 
-    const auto *sync_event = events_context->Get(event_);
+    const auto* sync_event = events_context->Get(event_);
     if (!sync_event) return skip;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     if (sync_event->last_command_tag >= base_tag) return skip;  // for replay we don't want to revalidate internal "last commmand"
 
-    const char *const reset_set =
+    const char* const reset_set =
         "%s %s operation following %s without intervening execution barrier, is a race condition and may result in data "
         "hazards.";
-    const char *const wait =
+    const char* const wait =
         "%s %s operation following %s without intervening vkCmdResetEvent, may result in data hazard and is ignored.";
 
     if (!sync_event->HasBarrier(src_exec_scope_.mask_param, src_exec_scope_.exec_scope)) {
-        const char *vuid_stem = nullptr;
-        const char *message = nullptr;
+        const char* vuid_stem = nullptr;
+        const char* message = nullptr;
         switch (sync_event->last_command) {
             case vvl::Func::vkCmdResetEvent:
             case vvl::Func::vkCmdResetEvent2KHR:
@@ -1132,9 +1132,9 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
     return skip;
 }
 
-ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext* cb_context) {
     const auto tag = cb_context->NextCommandTag(command_);
-    auto *events_context = cb_context->GetCurrentEventsContext();
+    auto* events_context = cb_context->GetCurrentEventsContext();
     const QueueId queue_id = cb_context->GetQueueId();
     assert(recorded_context_);
     if (recorded_context_ && events_context) {
@@ -1143,12 +1143,12 @@ ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) 
     return tag;
 }
 
-void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpSetEvent::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // Create a copy of the current context, and merge in the state snapshot at record set event time
     // Note: we mustn't change the recorded context copy, as a given CB could be submitted more than once (in generaL)
     if (!exec_context.ValidForSyncOps()) return;
-    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
-    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    SyncEventsContext* events_context = exec_context.GetCurrentEventsContext();
+    AccessContext* access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Note: merged_context is a copy of the access_context, combined with the recorded context
@@ -1159,9 +1159,9 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resourc
     DoRecord(queue_id, exec_tag, merged_context, events_context);
 }
 
-void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std::shared_ptr<const AccessContext> &access_context,
-                              SyncEventsContext *events_context) const {
-    auto *sync_event = events_context->GetFromShared(event_);
+void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std::shared_ptr<const AccessContext>& access_context,
+                              SyncEventsContext* events_context) const {
+    auto* sync_event = events_context->GetFromShared(event_);
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // NOTE: We're going to simply record the sync scope here, as anything else would be implementation defined/undefined
@@ -1191,9 +1191,9 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
     sync_event->barriers = 0U;
 }
 
-SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValidator &sync_state,
-                                             const VkRenderPassBeginInfo *pRenderPassBegin,
-                                             const VkSubpassBeginInfo *pSubpassBeginInfo)
+SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValidator& sync_state,
+                                             const VkRenderPassBeginInfo* pRenderPassBegin,
+                                             const VkSubpassBeginInfo* pSubpassBeginInfo)
     : SyncOpBase(command), rp_context_(nullptr) {
     if (pRenderPassBegin) {
         rp_state_ = sync_state.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
@@ -1204,7 +1204,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
             // TODO: Revisit this when all attachment validation is through SyncOps to see if we can discard the plain pointer copy
             // Note that this a safe to presist as long as shared_attachments is not cleared
             attachments_.reserve(shared_attachments_.size());
-            for (const auto &attachment : shared_attachments_) {
+            for (const auto& attachment : shared_attachments_) {
                 attachments_.emplace_back(attachment.get());
             }
         }
@@ -1214,13 +1214,13 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
     }
 }
 
-bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext& cb_context) const {
     // Check if any of the layout transitions are hazardous.... but we don't have the renderpass context to work with, so we
     bool skip = false;
 
     assert(rp_state_.get());
     if (nullptr == rp_state_.get()) return skip;
-    auto &rp_state = *rp_state_.get();
+    auto& rp_state = *rp_state_.get();
 
     const uint32_t subpass = 0;
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[0].viewMask;
@@ -1235,7 +1235,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
 
     // Validate attachment operations
     if (attachments_.empty()) return skip;
-    const auto &render_area = renderpass_begin_info_.renderArea;
+    const auto& render_area = renderpass_begin_info_.renderArea;
     const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
 
     // Since the isn't a valid RenderPassAccessContext until Record, needs to create the view/generator list... we could limit this
@@ -1256,7 +1256,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     return skip;
 }
 
-ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext* cb_context) {
     assert(rp_state_.get());
     if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(command_);
     const ResourceUsageTag begin_tag =
@@ -1268,11 +1268,11 @@ ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_co
     return begin_tag;
 }
 
-bool SyncOpBeginRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
-    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+bool SyncOpBeginRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
+    CommandExecutionContext& exec_context = replay.GetExecutionContext();
     // this operation is not allowed in secondary command buffers
     assert(exec_context.Handle().type == kVulkanObjectTypeQueue);
-    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    auto& batch_context = static_cast<QueueBatchContext&>(exec_context);
     batch_context.BeginRenderPassReplaySetup(replay, *this);
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
@@ -1280,12 +1280,12 @@ bool SyncOpBeginRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag
     return replay.DetectFirstUseHazard(first_use_range);
 }
 
-void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
 
-SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator &sync_state,
-                                     const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo)
+SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator& sync_state,
+                                     const VkSubpassBeginInfo* pSubpassBeginInfo, const VkSubpassEndInfo* pSubpassEndInfo)
     : SyncOpBase(command) {
     if (pSubpassBeginInfo) {
         subpass_begin_info_.initialize(pSubpassBeginInfo);
@@ -1295,25 +1295,25 @@ SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator &syn
     }
 }
 
-bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext& cb_context) const {
     bool skip = false;
-    const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
+    const auto* renderpass_context = cb_context.GetCurrentRenderPassContext();
     if (!renderpass_context) return skip;
 
     skip |= renderpass_context->ValidateNextSubpass(cb_context, command_);
     return skip;
 }
 
-ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext* cb_context) {
     return cb_context->RecordNextSubpass(command_);
 }
 
-bool SyncOpNextSubpass::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpNextSubpass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
-    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+    CommandExecutionContext& exec_context = replay.GetExecutionContext();
     // this operation is not allowed in secondary command buffers
     assert(exec_context.Handle().type == kVulkanObjectTypeQueue);
-    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    auto& batch_context = static_cast<QueueBatchContext&>(exec_context);
     batch_context.NextSubpassReplaySetup(replay);
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
@@ -1321,31 +1321,31 @@ bool SyncOpNextSubpass::ReplayValidate(ReplayState &replay, ResourceUsageTag rec
     return replay.DetectFirstUseHazard(first_use_range);
 }
 
-void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {
+void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {
     // All the needed replay state changes (for the layout transition, and context update) have to happen in ReplayValidate
 }
-SyncOpEndRenderPass::SyncOpEndRenderPass(vvl::Func command, const SyncValidator &sync_state,
-                                         const VkSubpassEndInfo *pSubpassEndInfo)
+SyncOpEndRenderPass::SyncOpEndRenderPass(vvl::Func command, const SyncValidator& sync_state,
+                                         const VkSubpassEndInfo* pSubpassEndInfo)
     : SyncOpBase(command) {
     if (pSubpassEndInfo) {
         subpass_end_info_.initialize(pSubpassEndInfo);
     }
 }
 
-bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
+bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext& cb_context) const {
     bool skip = false;
-    const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
+    const auto* renderpass_context = cb_context.GetCurrentRenderPassContext();
 
     if (!renderpass_context) return skip;
     skip |= renderpass_context->ValidateEndRenderPass(cb_context, command_);
     return skip;
 }
 
-ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) {
+ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext* cb_context) {
     return cb_context->RecordEndRenderPass(command_);
 }
 
-bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
+bool SyncOpEndRenderPass::ReplayValidate(ReplayState& replay, ResourceUsageTag recorded_tag) const {
     // Any store/resolve operations happen before the EndRenderPass tag so we can ignore them
     // Only the layout transitions happen at the replay tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
@@ -1353,48 +1353,48 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
     skip |= replay.DetectFirstUseHazard(first_use_range);
 
     // We can cleanup here as the recorded tag represents the final layout transition (which is the last operation or the RP)
-    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+    CommandExecutionContext& exec_context = replay.GetExecutionContext();
     // this operation is not allowed in secondary command buffers
     assert(exec_context.Handle().type == kVulkanObjectTypeQueue);
-    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    auto& batch_context = static_cast<QueueBatchContext&>(exec_context);
     batch_context.EndRenderPassReplayCleanup(replay);
 
     return skip;
 }
 
-void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {}
+void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext& exec_context, ResourceUsageTag exec_tag) const {}
 
-ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                         const ErrorObject &error_obj, uint32_t index, ResourceUsageTag base_tag)
+ReplayState::ReplayState(CommandExecutionContext& exec_context, const CommandBufferAccessContext& recorded_context,
+                         const ErrorObject& error_obj, uint32_t index, ResourceUsageTag base_tag)
     : exec_context_(exec_context), recorded_context_(recorded_context), error_obj_(error_obj), index_(index), base_tag_(base_tag) {}
 
-AccessContext *ReplayState::ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
-                                                       const AccessContext &external_context) {
+AccessContext* ReplayState::ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op,
+                                                       const AccessContext& external_context) {
     return rp_replay_.Begin(queue_flags, begin_op, external_context);
 }
 
-AccessContext *ReplayState::ReplayStateRenderPassNext() { return rp_replay_.Next(); }
+AccessContext* ReplayState::ReplayStateRenderPassNext() { return rp_replay_.Next(); }
 
-void ReplayState::ReplayStateRenderPassEnd(AccessContext &external_context) { rp_replay_.End(external_context); }
+void ReplayState::ReplayStateRenderPassEnd(AccessContext& external_context) { rp_replay_.End(external_context); }
 
-const AccessContext *ReplayState::GetRecordedAccessContext() const {
+const AccessContext* ReplayState::GetRecordedAccessContext() const {
     if (rp_replay_.begin_op) {
         return rp_replay_.replay_context;
     }
     return recorded_context_.GetCurrentAccessContext();
 }
 
-bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const {
+bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange& first_use_range) const {
     bool skip = false;
     if (first_use_range.non_empty()) {
         // We're allowing for the Replay(Validate|Record) to modify the exec_context (e.g. for Renderpass operations), so
         // we need to fetch the current access context each time
-        const AccessContext *access_context = GetRecordedAccessContext();
+        const AccessContext* access_context = GetRecordedAccessContext();
 
         const HazardResult hazard = access_context->DetectFirstUseHazard(exec_context_.GetQueueId(), first_use_range,
                                                                          *exec_context_.GetCurrentAccessContext());
         if (hazard.IsHazard()) {
-            const SyncValidator &sync_state = exec_context_.GetSyncState();
+            const SyncValidator& sync_state = exec_context_.GetSyncState();
             LogObjectList objlist(exec_context_.Handle(), recorded_context_.Handle());
             const std::string error = sync_state.error_messages_.FirstUseError(hazard, exec_context_, recorded_context_, index_);
             skip |= sync_state.SyncError(hazard.Hazard(), objlist, error_obj_.location, error);
@@ -1409,7 +1409,7 @@ bool ReplayState::ValidateFirstUse() {
     bool skip = false;
     ResourceUsageRange first_use_range = {0, 0};
 
-    for (const auto &sync_op : recorded_context_.GetSyncOps()) {
+    for (const auto& sync_op : recorded_context_.GetSyncOps()) {
         // Set the range to cover all accesses until the next sync_op, and validate
         first_use_range.end = sync_op.tag;
         skip |= DetectFirstUseHazard(first_use_range);
@@ -1428,9 +1428,9 @@ bool ReplayState::ValidateFirstUse() {
 
     return skip;
 }
-AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
-                                                         const AccessContext &external_context) {
-    const RenderPassAccessContext *rp_context = begin_op_.GetRenderPassAccessContext();
+AccessContext* ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass& begin_op_,
+                                                         const AccessContext& external_context) {
+    const RenderPassAccessContext* rp_context = begin_op_.GetRenderPassAccessContext();
     assert(rp_context);
 
     begin_op = &begin_op_;
@@ -1440,7 +1440,7 @@ AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flag
 
     // Replace the Async contexts with the the async context of the "external" context
     // For replay we don't care about async subpasses, just async queue batches
-    for (AccessContext &context : GetSubpassContexts()) {
+    for (AccessContext& context : GetSubpassContexts()) {
         context.ClearAsyncContexts();
         context.ImportAsyncContexts(external_context);
     }
@@ -1448,16 +1448,16 @@ AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flag
     return &subpass_contexts[0];
 }
 
-AccessContext *ReplayState::RenderPassReplayState::Next() {
+AccessContext* ReplayState::RenderPassReplayState::Next() {
     subpass++;
 
-    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
+    const RenderPassAccessContext* rp_context = begin_op->GetRenderPassAccessContext();
 
     replay_context = &rp_context->GetSubpassContexts()[subpass];
     return &subpass_contexts[subpass];
 }
 
-void ReplayState::RenderPassReplayState::End(AccessContext &external_context) {
+void ReplayState::RenderPassReplayState::End(AccessContext& external_context) {
     external_context.ResolveChildContexts(GetSubpassContexts());
     *this = RenderPassReplayState{};
 }
@@ -1467,11 +1467,11 @@ vvl::span<AccessContext> ReplayState::RenderPassReplayState::GetSubpassContexts(
                           begin_op->GetRenderPassAccessContext()->GetRenderPassState()->create_info.subpassCount);
 }
 
-void SyncEventsContext::ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag) {
+void SyncEventsContext::ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag) {
     const bool all_commands_bit = 0 != (src.mask_param & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    for (auto &event_pair : map_) {
+    for (auto& event_pair : map_) {
         assert(event_pair.second);  // Shouldn't be storing empty
-        auto &sync_event = *event_pair.second;
+        auto& sync_event = *event_pair.second;
         // Events don't happen at a stage, so we need to check and store the unexpanded ALL_COMMANDS if set for inter-event-calls
         // But only if occuring before the tag
         if (((sync_event.barriers & src.exec_scope) || all_commands_bit) && (sync_event.last_command_tag <= tag)) {
@@ -1488,24 +1488,24 @@ void SyncEventsContext::ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageT
     ApplyBarrier(src_scope, dst_scope, tag);
 }
 
-SyncEventsContext &SyncEventsContext::DeepCopy(const SyncEventsContext &from) {
+SyncEventsContext& SyncEventsContext::DeepCopy(const SyncEventsContext& from) {
     // We need a deep copy of the const context to update during validation phase
-    for (const auto &event : from.map_) {
+    for (const auto& event : from.map_) {
         map_.emplace(event.first, std::make_shared<SyncEventState>(*event.second));
     }
     return *this;
 }
 
-void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet &referenced) const {
-    for (const auto &event : map_) {
-        const std::shared_ptr<const SyncEventState> &event_state = event.second;
+void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet& referenced) const {
+    for (const auto& event : map_) {
+        const std::shared_ptr<const SyncEventState>& event_state = event.second;
         if (event_state) {
             event_state->AddReferencedTags(referenced);
         }
     }
 }
 
-SyncEventState::SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
+SyncEventState::SyncEventState(const SyncEventState::EventPointer& event_state) : SyncEventState() {
     event = event_state;
     destroyed = (event.get() == nullptr) || event_state->Destroyed();
 }
@@ -1544,7 +1544,7 @@ bool SyncEventState::HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStage
            (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
-void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {
+void SyncEventState::AddReferencedTags(ResourceUsageTagSet& referenced) const {
     if (first_scope) {
         first_scope->AddReferencedTags(referenced);
     }

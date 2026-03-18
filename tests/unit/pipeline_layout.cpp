@@ -102,7 +102,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-    const char *max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
+    const char* max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
     m_errorMonitor->SetDesiredError(max_sampler_vuid);
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&ds_layout});
     m_errorMonitor->VerifyFound();
@@ -358,8 +358,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     uint32_t sum_samplers = m_device->Physical().limits_.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->Physical().limits_.maxDescriptorSetInputAttachments;
 
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
@@ -694,7 +693,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -744,7 +743,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0, nullptr);
 
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main"
@@ -782,13 +781,13 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
 
     // Should be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 
-    const auto set_sampled_image = [&](CreatePipelineHelper &helper) {
+    const auto set_sampled_image = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.dsl_bindings_[0] = {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr};
     };
     CreatePipelineHelper::OneshotTest(*this, set_sampled_image, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 
-    const auto set_sampler = [&](CreatePipelineHelper &helper) {
+    const auto set_sampler = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.dsl_bindings_[0] = {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
     };
@@ -828,7 +827,7 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},
                                      });
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -878,7 +877,7 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
 
     RETURN_IF_SKIP(Init());
 
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -909,7 +908,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     }
     std::vector<VkDescriptorSetLayout> ds_vk_layouts;
-    for (const auto &ds_layout : ds_layouts) {
+    for (const auto& ds_layout : ds_layouts) {
         ds_vk_layouts.push_back(ds_layout);
     }
 
@@ -968,7 +967,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArray) {
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };
@@ -1004,7 +1003,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArrayOf1) {
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };

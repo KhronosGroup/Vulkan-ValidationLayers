@@ -34,18 +34,18 @@
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
-static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {
-    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo* pCreateInfo) {
+    const auto* external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
-    const auto *swapchain_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo* pCreateInfo) {
+    const auto* swapchain_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
 }
 
-static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::DeviceState &dev_data, VkImage img,
-                                                    const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
+static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::DeviceState& dev_data, VkImage img,
+                                                    const VkImageCreateInfo* create_info, bool disjoint, bool is_external_ahb) {
     vvl::Image::MemoryReqs result{};
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
@@ -84,7 +84,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::DeviceState &dev_
     return result;
 }
 
-static std::vector<VkSparseImageMemoryRequirements> GetSparseRequirements(const vvl::DeviceState &dev_data, VkImage img,
+static std::vector<VkSparseImageMemoryRequirements> GetSparseRequirements(const vvl::DeviceState& dev_data, VkImage img,
                                                                           bool sparse_residency) {
     std::vector<VkSparseImageMemoryRequirements> result;
     if (sparse_residency) {
@@ -96,7 +96,7 @@ static std::vector<VkSparseImageMemoryRequirements> GetSparseRequirements(const 
     return result;
 }
 
-static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
+static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo& create_info) {
     const VkFormat format = create_info.format;
     VkImageAspectFlags aspect_mask = 0;
     if (vkuFormatIsMultiplane(format)) {
@@ -115,7 +115,7 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTypeFlagBitsEXT object_type_required) {
+static bool GetMetalExport(const VkImageCreateInfo* info, VkExportMetalObjectTypeFlagBitsEXT object_type_required) {
     bool retval = false;
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
@@ -131,7 +131,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 
 namespace vvl {
 
-Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2 ff)
+Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkFormatFeatureFlags2 ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -169,7 +169,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
     }
 }
 
-Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
              uint32_t swapchain_index, VkFormatFeatureFlags2 ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
@@ -201,7 +201,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
 }
 
 void Image::Destroy() {
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->Destroy();
     }
     // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
@@ -217,11 +217,11 @@ void Image::Destroy() {
 }
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2 structure, for a given format
-template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy>(const VkBufferImageCopy &) const;
-template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy2>(const VkBufferImageCopy2 &) const;
+template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy>(const VkBufferImageCopy&) const;
+template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy2>(const VkBufferImageCopy2&) const;
 
 template <typename RegionType>
-VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
+VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType& region) const {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
@@ -290,8 +290,8 @@ VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
     return buffer_size;
 }
 
-void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
+void Image::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    for (auto& item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     Bindable::NotifyInvalidate(invalid_nodes, unlink);
@@ -300,7 +300,7 @@ void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool un
     }
 }
 
-bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const {
+bool Image::IsCreateInfoEqual(const VkImageCreateInfo& other_create_info) const {
     bool is_equal = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
     is_equal = is_equal && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
     is_equal = is_equal && IsMipLevelsEqual(other_create_info) && IsArrayLayersEqual(other_create_info);
@@ -312,7 +312,7 @@ bool Image::IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const 
 }
 
 // Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
-bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const {
+bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo& other_create_info) const {
     bool is_compatible = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
     is_compatible = is_compatible && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
     is_compatible = is_compatible && IsMipLevelsEqual(other_create_info);
@@ -329,7 +329,7 @@ bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImage
     return is_compatible;
 }
 
-bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
+bool Image::IsCompatibleAliasing(const Image* other_image_state) const {
     if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
         !(create_info.flags & other_image_state->create_info.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
@@ -348,19 +348,19 @@ bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
     return false;
 }
 
-VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers& sub) const {
     return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
 }
 
-VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource& sub) const {
     return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
 }
 
-VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange& range) const {
     return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
 }
 
-std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const {
+std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers& subresource) const {
     std::ostringstream ss;
     VkExtent3D subresource_extent = GetEffectiveSubresourceExtent(subresource);
 
@@ -396,7 +396,7 @@ std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &sub
     return ss.str();
 }
 
-VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
+VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange& range) const {
     VkImageSubresourceRange norm = range;
     norm.levelCount = GetEffectiveLevelCount(range, create_info.mipLevels);
     norm.layerCount = GetEffectiveLayerCount(range, create_info.arrayLayers);
@@ -404,13 +404,13 @@ VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourc
     return norm;
 }
 
-uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers &resource) const {
+uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) const {
     return (resource.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (create_info.arrayLayers - resource.baseArrayLayer)
                                                               : resource.layerCount;
 }
 
-VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
-                                                          const VkImageSubresourceRange &full_range) {
+VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state,
+                                                          const VkImageSubresourceRange& full_range) {
     VkImageSubresourceRange encoder_range = full_range;
     if (CanTransitionDepthSlices(device_state.extensions, create_info)) {
         encoder_range.layerCount = create_info.extent.depth;
@@ -426,7 +426,7 @@ void Image::SetInitialLayoutMap() {
     std::shared_ptr<ImageLayoutMap> new_layout_map;
     std::shared_ptr<std::shared_mutex> new_layout_map_lock;
 
-    auto get_layout_map = [&new_layout_map, &new_layout_map_lock](const Image &other_image) {
+    auto get_layout_map = [&new_layout_map, &new_layout_map_lock](const Image& other_image) {
         new_layout_map = other_image.layout_map;
         new_layout_map_lock = other_image.layout_map_lock;
         return true;
@@ -454,7 +454,7 @@ void Image::SetInitialLayoutMap() {
     layout_map_lock = std::move(new_layout_map_lock);
 }
 
-void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout) {
+void Image::SetImageLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
     using sparse_container::update_range_value;
     using sparse_container::value_precedence;
     RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
@@ -464,18 +464,18 @@ void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout l
     }
 }
 
-void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index) {
+void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain>& swapchain, uint32_t swapchain_index) {
     assert(IsSwapchainImage());
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
 
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->SetSwapchain(*swapchain);
     }
 }
 
-bool Image::CompareCreateInfo(const Image &other) const {
+bool Image::CompareCreateInfo(const Image& other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
@@ -574,15 +574,15 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       inherited_usage(GetInheritedUsage(create_info, *image_state)) {
 }
 
-void ImageView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
+void ImageView::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
+    for (auto& item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
 void ImageView::Destroy() {
-    for (auto &item : sub_states_) {
+    for (auto& item : sub_states_) {
         item.second->Destroy();
     }
     if (image_state) {
@@ -599,9 +599,9 @@ uint32_t ImageView::GetAttachmentLayerCount() const {
     return create_info.subresourceRange.layerCount;
 }
 
-VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image &image_state,
-                                                                      const VkImageViewCreateInfo &image_view_ci) {
-    const VkImageCreateInfo &image_ci = image_state.create_info;
+VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image& image_state,
+                                                                      const VkImageViewCreateInfo& image_view_ci) {
+    const VkImageCreateInfo& image_ci = image_state.create_info;
 
     VkImageSubresourceRange range = image_view_ci.subresourceRange;
     range.levelCount = GetEffectiveLevelCount(range, image_ci.mipLevels);
@@ -618,7 +618,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     return range;
 }
 
-VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions &extensions) const {
+VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions& extensions) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
@@ -638,7 +638,7 @@ VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions
     return image_state->NormalizeSubresourceRange(subres_range);
 }
 
-bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
+bool ImageView::OverlapSubresource(const ImageView& compare_view) const {
     if (VkHandle() == compare_view.VkHandle()) {
         return true;
     }
