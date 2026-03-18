@@ -14,6 +14,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "binding.h"
+#include "test_framework.h"
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
@@ -4825,5 +4826,15 @@ TEST_F(NegativeImage, ArrayFrom3dImage) {
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, VK_REMAINING_ARRAY_LAYERS};
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-06723");
     vkt::ImageView view(*m_device, image_view_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, StatelessChainOfLocations) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11912");
+    RETURN_IF_SKIP(Init());
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    // VUID-VkImageSubresourceRange-aspectMask-requiredbitmask
+    m_errorMonitor->SetDesiredError("pCreateInfo->subresourceRange.aspectMask");
+    image.CreateView(0);
     m_errorMonitor->VerifyFound();
 }

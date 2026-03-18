@@ -1120,7 +1120,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     if member.type in self.validatedStructs:
                         memberNamePrefix = f'{valuePrefix}{member.name}.'
                         memberDisplayNamePrefix = f'{valueDisplayName}.'
-                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, [], context, selector))
+                        newErrorLoc = f'{member.name}_loc'
+                        usedLines.append(f'[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name});')
+                        usedLines.append(self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, [], context, selector))
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks
