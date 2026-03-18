@@ -1056,17 +1056,19 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             buffer_memory_requirements_info_2.buffer = buffer;
             VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
             VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
-            DispatchGetBufferMemoryRequirements2Helper(api_version, device, &buffer_memory_requirements_info_2, &memory_requirements);
+            DispatchGetBufferMemoryRequirements2Helper(api_version, device, &buffer_memory_requirements_info_2,
+                                                       &memory_requirements);
 
             if (memory_dedicated_requirements.requiresDedicatedAllocation) {
-                const char *vuid =
+                const char* vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-01444" : "VUID-vkBindBufferMemory-buffer-01444";
                 if (dedicated_buffer == VK_NULL_HANDLE) {
                     const LogObjectList objlist(buffer, memory);
                     skip |= LogError(
                         vuid, objlist, loc.dot(Field::memory),
                         "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but the buffer, if queried with "
-                        "vkGetBufferMemoryRequirements2() reports requiresDedicatedAllocation is VK_TRUE.\n%s",
+                        "vkGetBufferMemoryRequirements2() reports VkMemoryDedicatedRequirements::requiresDedicatedAllocation is "
+                        "VK_TRUE.\n%s",
                         PrintPNextChain(Struct::VkBindBufferMemoryInfo, pNext).c_str());
                 } else if (dedicated_buffer != buffer) {
                     const LogObjectList objlist(buffer, memory, dedicated_buffer);
@@ -2099,7 +2101,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
                 skip |= LogError(vuid, objlist, loc.dot(Field::memory),
                                  "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but "
                                  "vkGetImageMemoryRequirements2() reports "
-                                 "VkImageMemoryRequirementsInfo2::requiresDedicatedAllocation = VK_TRUE.");
+                                 "VkMemoryDedicatedRequirements::requiresDedicatedAllocation = VK_TRUE.");
             } else if (dedicated_image != bind_info.image) {
                 const LogObjectList objlist(bind_info.image, bind_info.memory);
                 skip |= LogError(vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
