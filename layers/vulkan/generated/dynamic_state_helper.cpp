@@ -580,11 +580,11 @@ std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
         case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             func = vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT;
             break;
-        case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
-            func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
-            break;
         case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
             func = vvl::Func::vkCmdSetDepthClampRangeEXT;
+            break;
+        case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
+            func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
             break;
         default:
             ss << "(Unknown Dynamic State) ";
@@ -612,6 +612,13 @@ static std::string_view stencil_test_enable_static{
 std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
     std::ostringstream ss;
     switch (dynamic_state) {
+        case CB_DYNAMIC_STATE_LINE_WIDTH:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
         case CB_DYNAMIC_STATE_DEPTH_BIAS:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;
@@ -805,8 +812,8 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             } else {
                 ss << rasterizer_discard_enable_static;
             }
-            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
-                ss << "vkCmdSetSampleLocationsEnableEXT last set logicOpEnable to VK_TRUE.\n";
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+                ss << "vkCmdSetSampleLocationsEnableEXT last set sampleLocationsEnable to VK_TRUE.\n";
             } else {
                 ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineSampleLocationsStateCreateInfoEXT::"
                       "sampleLocationsEnable was VK_TRUE in the last bound graphics pipeline.\n";
@@ -818,7 +825,7 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             } else {
                 ss << rasterizer_discard_enable_static;
             }
-            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)) {
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
                 ss << "vkCmdSetShadingRateImageEnableNV last set shadingRateImageEnable to VK_TRUE.\n";
             } else {
                 ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportShadingRateImageStateCreateInfoNV::"
@@ -867,6 +874,34 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             }
             break;
         case CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_POLYGON_MODE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_SAMPLE_MASK_EXT:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;
             } else {
@@ -943,6 +978,13 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             break;
+        case CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
         case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;
@@ -996,6 +1038,34 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             } else {
                 ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineCoverageModulationStateCreateInfoNV::"
                       "coverageModulationTableEnable was VK_TRUE in the last bound graphics pipeline.\n";
+            }
+            break;
+        case CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
             }
             break;
         case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
