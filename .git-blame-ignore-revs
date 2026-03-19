@@ -180,3 +180,6 @@ f661d4b3eb04e0dce562ef2da08aca257e3afa69
 
 # Use vkt alias over Vk*Obj
 0b4eb25ae1a0f15186f72e2686a35a4c2ae91a9e
+
+# Clang-Format 22 upgrade
+a4d871cfb7781d649c29da41b569724fd5d35a7f
