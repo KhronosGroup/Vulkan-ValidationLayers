@@ -3209,12 +3209,21 @@ bool CoreChecks::ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint
     }
 
     if (!queue_uses_tosa_1_0) {
-        skip |=
-            LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941", device, loc,
-                     "Entrypoint %s includes \"TOSA.001000.1\" instructions but the queue associated with the command buffer does not include the required property:\n%s"
-                     "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM for queueFamilyIndex %u returned:\n%s",
-                     entry_point->name.c_str(), string_VkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property).c_str(), queueFamilyIndex,
-                     string_VkQueueFamilyDataGraphPropertiesARM(device_state->queue_family_data_graph_properties.at(queueFamilyIndex)).c_str());
+        std::ostringstream ss;
+        ss << "Entrypoint " << entry_point->name
+           << "includes \"TOSA.001000.1\" instructions but the queue associated with the command buffer does not include the "
+              "required property:\n"
+           << string_VkQueueFamilyDataGraphPropertiesARM(tosa_1_0_property)
+           << "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM for queueFamilyIndex " << queueFamilyIndex << "returned:\n";
+        auto properties = device_state->queue_family_data_graph_properties.at(queueFamilyIndex);
+        for (const auto& p : properties) {
+            ss << string_VkQueueFamilyDataGraphPropertiesARM(p) << '\n';
+        }
+        if (properties.empty()) {
+            // with just a blank it's unclear if the function is wrong or there really are no properties.
+            ss << "EMPTY\n";
+        }
+        skip |= LogError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09941", device, loc, "%s", ss.str().c_str());
     }
 
     return skip;
