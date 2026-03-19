@@ -773,3 +773,25 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches)
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValTimelineSemaphore, ConcurrentHostSignalAndSubmit) {
+    TEST_DESCRIPTION("Concurrently signal timeline semaphore on the host and Submit to the queue");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    const int N = 2000;
+    std::thread thread([&] {
+        vkt::Fence fence(*m_device);
+        for (int i = 0; i < N; i++) {
+            m_default_queue->Submit(vkt::no_cmd, fence);
+            fence.Wait(kWaitTimeout);
+            fence.Reset();
+        }
+    });
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    {
+        for (int i = 0; i < N; i++) {
+            semaphore.Signal(i + 1);
+        }
+    }
+    thread.join();
+}

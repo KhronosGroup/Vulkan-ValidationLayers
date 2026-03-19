@@ -2746,6 +2746,13 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
     if (!syncval_settings.submit_time_validation) {
         return skip;
     }
+    // Although SignalSemaphore does not run on the queue, the signalling can resolve
+    // previously submitted batches that are waiting for this signal, and this will
+    // initiate validation that touches queue state. That's why queue mutex is used here.
+    // NOTE: that's in addition that we call ClearPending, which itself needs queue mutex
+    // (but clear pending can go away in the future)
+    std::lock_guard lock_guard(queue_mutex_);
+
     ClearPending();
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
     SignalsUpdate& signals_update = cmd_state->signals_update;
