@@ -2226,6 +2226,14 @@ void DispatchDevice::GetDescriptorEXT(VkDevice device, const VkDescriptorGetInfo
     vku::safe_VkDescriptorAddressInfoEXT address_info;
 
     switch (pDescriptorInfo->type) {
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
+            if (auto* tensor_pnext = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext)) {
+                VkDescriptorGetTensorInfoARM local_tensor = *tensor_pnext;
+                local_tensor.tensorView = Unwrap(local_tensor.tensorView);
+                local_pDescriptorInfo.pNext = vku::SafePnextCopy(&local_tensor);
+            }
+            break;
+        }
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             // if using null descriptors can be null
             if (pDescriptorInfo->data.pSampler) {
