@@ -3434,3 +3434,51 @@ TEST_F(PositiveWsi, MultipleCreateDisplay) {
     vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
 }
+
+TEST_F(PositiveWsi, ConcurrentPresentAndSubmit) {
+    TEST_DESCRIPTION("Concurrent Present with present fence and Submit on different queues");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Test requires two queues";
+    }
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+    const int N = 500;
+
+    // QueueSubmit on the second queue and QueuePresent on the main queue run in parallel.
+    // It is a valid setup because submits to different queues do not require synchronization.
+    std::thread thread([&] {
+        vkt::Fence fence(*m_device);
+        for (int i = 0; i < N; i++) {
+            m_second_queue->Submit(vkt::no_cmd, fence);
+            fence.Wait(kWaitTimeout);
+            fence.Reset();
+        }
+        m_second_queue->Wait();  // Not required but was useful as one more place to trigger driver bug
+    });
+    {
+        vkt::Semaphore acquire_semaphore(*m_device);
+
+        vkt::Fence present_fence(*m_device);
+        VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+        present_fence_info.swapchainCount = 1;
+        present_fence_info.pFences = &present_fence.handle();
+
+        for (int k = 0; k < N; k++) {
+            const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+            m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
+            present_fence.Wait(kWaitTimeout);
+            present_fence.Reset();
+        }
+        m_default_queue->Wait();  // Not required but was useful as one more place to trigger driver bug
+    }
+    thread.join();
+}
