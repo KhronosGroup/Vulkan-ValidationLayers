@@ -13,4 +13,30 @@
  * limitations under the License.
  */
 
-// TODO - Placeholder
+#include "core_validation.h"
+
+bool CoreChecks::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyMicromapEXT-deferredOperation-03678");
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                        const VkCopyMicromapToMemoryInfoEXT* pInfo,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyMicromapToMemoryEXT-deferredOperation-03678");
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                        const VkCopyMemoryToMicromapInfoEXT* pInfo,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
+                                      "VUID-vkCopyMemoryToMicromapEXT-deferredOperation-03678");
+    return skip;
+}
