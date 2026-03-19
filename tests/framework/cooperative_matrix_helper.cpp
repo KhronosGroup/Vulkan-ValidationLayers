@@ -12,6 +12,7 @@
  */
 
 #include "cooperative_matrix_helper.h"
+#include <spirv/unified1/spirv.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/container_utils.h"
@@ -118,6 +119,33 @@ bool CooperativeMatrixHelper::HasValidProperty(VkScopeKHR scope, uint32_t m, uin
         return true;
     }
 
+    return false;
+}
+
+bool CooperativeMatrixHelper::HasSupportedMatrixUse(VkScopeKHR scope, uint32_t rows, uint32_t cols, VkComponentTypeKHR type,
+                                                    uint32_t use) const {
+    for (const auto& prop : coop_matrix_props) {
+        if (prop.scope != scope) continue;
+        if (use == spv::CooperativeMatrixUseMatrixAKHR && prop.AType == type && prop.MSize == rows && prop.KSize == cols)
+            return true;
+        if (use == spv::CooperativeMatrixUseMatrixBKHR && prop.BType == type && prop.KSize == rows && prop.NSize == cols)
+            return true;
+        if (use == spv::CooperativeMatrixUseMatrixAccumulatorKHR && (prop.CType == type || prop.ResultType == type) &&
+            prop.MSize == rows && prop.NSize == cols)
+            return true;
+    }
+    for (const auto& prop : coop_matrix_flex_props) {
+        if (prop.scope != scope) continue;
+        if (use == spv::CooperativeMatrixUseMatrixAKHR && prop.AType == type && (rows % prop.MGranularity) == 0 &&
+            (cols % prop.KGranularity) == 0)
+            return true;
+        if (use == spv::CooperativeMatrixUseMatrixBKHR && prop.BType == type && (rows % prop.KGranularity) == 0 &&
+            (cols % prop.NGranularity) == 0)
+            return true;
+        if (use == spv::CooperativeMatrixUseMatrixAccumulatorKHR && (prop.CType == type || prop.ResultType == type) &&
+            (rows % prop.MGranularity) == 0 && (cols % prop.NGranularity) == 0)
+            return true;
+    }
     return false;
 }
 

@@ -31,5 +31,6 @@ class CooperativeMatrixHelper {
     bool Has64BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) const;
     bool Has16x16UintProperty() const;
     bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) const;
+    bool HasSupportedMatrixUse(VkScopeKHR scope, uint32_t rows, uint32_t cols, VkComponentTypeKHR type, uint32_t use) const;
     const char *VkComponentTypeToGLSL(VkComponentTypeKHR type) const;
 };
