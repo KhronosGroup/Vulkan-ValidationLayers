@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <spirv/unified1/spirv.hpp>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
@@ -273,6 +274,12 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.HasSupportedMatrixUse(VK_SCOPE_SUBGROUP_KHR, 16, 32, VK_COMPONENT_TYPE_FLOAT_E4M3_NV,
+                                      spv::CooperativeMatrixUseMatrixAKHR)) {
+        GTEST_SKIP() << "desired VkCooperativeMatrixPropertiesKHR not found";
+    }
+
     const char* cs_source = R"glsl(
         #version 450 core
         #extension GL_EXT_float_e4m3 : require
@@ -281,7 +288,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
         #extension GL_KHR_cooperative_matrix : enable
         layout(local_size_x = 32) in;
         void main() {
-            coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> cmA = coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA>(3.0);
+            coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 32, gl_MatrixUseA> cmA = coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 32, gl_MatrixUseA>(3.0);
         }
     )glsl";
 
