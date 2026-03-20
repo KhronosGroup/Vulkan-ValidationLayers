@@ -580,11 +580,11 @@ std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
         case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             func = vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT;
             break;
-        case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
-            func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
-            break;
         case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
             func = vvl::Func::vkCmdSetDepthClampRangeEXT;
+            break;
+        case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
+            func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
             break;
         default:
             ss << "(Unknown Dynamic State) ";
