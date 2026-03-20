@@ -1967,6 +1967,24 @@ void CommandBuffer::Destroy() noexcept {
 }
 CommandBuffer::~CommandBuffer() noexcept { Destroy(); }
 
+CommandBuffer::CommandBuffer(CommandBuffer&& rhs) noexcept : Handle(std::move(rhs)) {
+    dev_handle_ = rhs.dev_handle_;
+    cmd_pool_ = rhs.cmd_pool_;
+    rhs.dev_handle_ = VK_NULL_HANDLE;
+    rhs.cmd_pool_ = VK_NULL_HANDLE;
+}
+
+CommandBuffer& CommandBuffer::operator=(CommandBuffer&& rhs) noexcept {
+    Destroy();
+    dev_handle_ = rhs.dev_handle_;
+    cmd_pool_ = rhs.cmd_pool_;
+    handle_ = rhs.handle_;
+    rhs.dev_handle_ = VK_NULL_HANDLE;
+    rhs.cmd_pool_ = VK_NULL_HANDLE;
+    rhs.handle_ = VK_NULL_HANDLE;
+    return *this;
+}
+
 void CommandBuffer::Init(const Device& dev, const VkCommandBufferAllocateInfo& info) {
     VkCommandBuffer cmd;
 
@@ -2219,6 +2237,21 @@ void CommandBuffer::TransitionLayout(const vkt::Image& image, VkImageLayout old_
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
+void CommandBuffer::TransitionLayout(const VkImage image, VkImageLayout old_layout, VkImageLayout new_layout,
+                                     const VkImageSubresourceRange& subresource_range) {
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = subresource_range;
+    vk::CmdPipelineBarrier(handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
 // For positive tests, if you run with sync val, ideally want no errors.
 // Many tests need a simple quick way to sync multiple commands
 void CommandBuffer::FullMemoryBarrier() {
@@ -2320,6 +2353,41 @@ std::vector<VkImage> Swapchain::GetImages() const {
     std::vector<VkImage> images(image_count);
     vk::GetSwapchainImagesKHR(device(), handle(), &image_count, images.data());
     return images;
+}
+
+std::vector<vkt::CommandBuffer> Swapchain::RecordTransitionToPresentLayout(const vkt::Device& device,
+                                                                           const vkt::CommandPool& command_pool) const {
+    const std::vector<VkImage> swapchain_images = GetImages();
+    std::vector<vkt::CommandBuffer> command_buffers;
+    command_buffers.reserve(swapchain_images.size());
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        auto& cb = command_buffers.emplace_back(device, command_pool);
+        cb.Begin();
+        cb.TransitionLayout(swapchain_images[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        cb.End();
+    }
+    return command_buffers;
+}
+
+bool Swapchain::TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool) {
+    const std::vector<VkImage> swapchain_images = GetImages();
+    auto transition_to_present_cbs = RecordTransitionToPresentLayout(device, command_pool);
+    std::vector<bool> is_transitioned(swapchain_images.size(), false);
+    vkt::Fence fence(device);
+
+    // Iterate more times than swapchain images to have a better chance to acquire all images
+    const size_t iteration_count = swapchain_images.size() * 2;
+
+    for (size_t i = 0; i < iteration_count; i++) {
+        const uint32_t image_index = AcquireNextImage(fence, kWaitTimeout);
+        fence.Wait(kWaitTimeout);
+        fence.Reset();
+        queue.SubmitAndWait(transition_to_present_cbs[image_index]);
+        queue.Present(*this, image_index, vkt::no_semaphore);
+        is_transitioned[image_index] = true;
+    }
+    queue.Wait();
+    return std::all_of(is_transitioned.begin(), is_transitioned.end(), [](bool b) { return b; });
 }
 
 uint32_t Swapchain::AcquireNextImage(const Semaphore& image_acquired, uint64_t timeout, VkResult* result) {
