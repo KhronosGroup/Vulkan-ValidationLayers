@@ -1468,6 +1468,7 @@ ExtensionData GetExtensionData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_image_robustness, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_4444_formats, {Reason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_EXT_device_fault, {Reason::Promoted, {vvl::Extension::_VK_KHR_device_fault}}},
         {vvl::Extension::_VK_ARM_rasterization_order_attachment_access,
          {Reason::Promoted, {vvl::Extension::_VK_EXT_rasterization_order_attachment_access}}},
         {vvl::Extension::_VK_VALVE_mutable_descriptor_type, {Reason::Promoted, {vvl::Extension::_VK_EXT_mutable_descriptor_type}}},

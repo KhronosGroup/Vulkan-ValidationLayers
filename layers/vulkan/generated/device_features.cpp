@@ -613,6 +613,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->attachmentFragmentShadingRate |= enabled->attachmentFragmentShadingRate == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR: {
+                const VkPhysicalDeviceShaderConstantDataFeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(pNext);
+                features->shaderConstantData |= enabled->shaderConstantData == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR: {
+                const VkPhysicalDeviceShaderAbortFeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderAbortFeaturesKHR*>(pNext);
+                features->shaderAbort |= enabled->shaderAbort == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR: {
                 const VkPhysicalDeviceShaderQuadControlFeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderQuadControlFeaturesKHR*>(pNext);
@@ -788,6 +800,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceMaintenance7FeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance7FeaturesKHR*>(pNext);
                 features->maintenance7 |= enabled->maintenance7 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR: {
+                const VkPhysicalDeviceFaultFeaturesKHR* enabled = reinterpret_cast<const VkPhysicalDeviceFaultFeaturesKHR*>(pNext);
+                features->deviceFault |= enabled->deviceFault == VK_TRUE;
+                features->deviceFaultVendorBinary |= enabled->deviceFaultVendorBinary == VK_TRUE;
+                features->deviceFaultReportMasked |= enabled->deviceFaultReportMasked == VK_TRUE;
+                features->deviceFaultDeviceLostOnMasked |= enabled->deviceFaultDeviceLostOnMasked == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR: {

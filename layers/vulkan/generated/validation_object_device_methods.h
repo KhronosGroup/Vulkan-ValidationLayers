@@ -3243,6 +3243,22 @@ virtual void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer comman
 virtual void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
                                                            const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                     VkDeviceFaultInfoKHR* pFaultInfo, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                   VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                    VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                       const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                     const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                      const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                                 const ErrorObject& error_obj) const {
     return false;

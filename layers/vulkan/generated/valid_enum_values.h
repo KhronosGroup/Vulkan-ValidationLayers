@@ -124,6 +124,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1RateControlGroup
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkTimeDomainKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionKHR value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkRasterizationOrderAMD value) const;
@@ -193,8 +195,6 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateNV value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDeviceAddressBindingTypeEXT value) const;
 template <>

@@ -2530,6 +2530,17 @@ static inline void DispatchCmdCopyMemoryToImageIndirectKHR(
     dispatch->CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
 }
 
+static inline VkResult DispatchGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                        VkDeviceFaultInfoKHR* pFaultInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo);
+}
+
+static inline VkResult DispatchGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDeviceFaultDebugInfoKHR(device, pDebugInfo);
+}
+
 static inline void DispatchCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);

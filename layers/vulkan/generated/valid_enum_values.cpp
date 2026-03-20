@@ -1415,6 +1415,16 @@ ValidValue stateless::Context::IsValidEnumValue(VkTimeDomainKHR value) const {
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionKHR value) const {
+    switch (value) {
+        case VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_KHR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const {
     switch (value) {
         case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT:
@@ -1906,16 +1916,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMotionIns
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_STATIC_NV:
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_MATRIX_MOTION_NV:
         case VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_SRT_MOTION_NV:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
-    switch (value) {
-        case VK_DEVICE_FAULT_VENDOR_BINARY_HEADER_VERSION_ONE_EXT:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -3379,6 +3379,15 @@ const char* stateless::Context::DescribeEnum(VkTimeDomainKHR value) const {
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDeviceFaultVendorBinaryHeaderVersionKHR value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDeviceFaultVendorBinaryHeaderVersionKHR value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkDebugReportObjectTypeEXT value) const {
     switch (value) {
         case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT:
@@ -3720,15 +3729,6 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkAccelerationStructureMot
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkAccelerationStructureMotionInstanceTypeNV value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const {
     return nullptr;
 }
 

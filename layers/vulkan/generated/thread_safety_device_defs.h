@@ -2502,6 +2502,18 @@ void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer
                                                    const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                    const RecordObject& record_obj) override;
 
+void PreCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                           VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) override;
+
+void PostCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                            VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) override;
+
+void PreCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                             const RecordObject& record_obj) override;
+
+void PostCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                              const RecordObject& record_obj) override;
+
 void PreCallRecordCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                       const RecordObject& record_obj) override;
 

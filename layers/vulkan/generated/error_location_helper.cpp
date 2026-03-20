@@ -574,7 +574,9 @@ const char* String(Func func) {
     {"vkGetDeviceBufferMemoryRequirements", 36},
     {"vkGetDeviceBufferMemoryRequirementsKHR", 39},
     {"vkGetDeviceCombinedImageSamplerIndexNVX", 40},
+    {"vkGetDeviceFaultDebugInfoKHR", 29},
     {"vkGetDeviceFaultInfoEXT", 24},
+    {"vkGetDeviceFaultReportsKHR", 27},
     {"vkGetDeviceGroupPeerMemoryFeatures", 35},
     {"vkGetDeviceGroupPeerMemoryFeaturesKHR", 38},
     {"vkGetDeviceGroupPresentCapabilitiesKHR", 39},
@@ -1107,11 +1109,14 @@ const char* String(Struct structure) {
     {"VkDeviceDeviceMemoryReportCreateInfoEXT", 40},
     {"VkDeviceDiagnosticsConfigCreateInfoNV", 38},
     {"VkDeviceEventInfoEXT", 21},
-    {"VkDeviceFaultAddressInfoEXT", 28},
+    {"VkDeviceFaultAddressInfoKHR", 28},
     {"VkDeviceFaultCountsEXT", 23},
+    {"VkDeviceFaultDebugInfoKHR", 26},
     {"VkDeviceFaultInfoEXT", 21},
-    {"VkDeviceFaultVendorBinaryHeaderVersionOneEXT", 45},
-    {"VkDeviceFaultVendorInfoEXT", 27},
+    {"VkDeviceFaultInfoKHR", 21},
+    {"VkDeviceFaultShaderAbortMessageInfoKHR", 39},
+    {"VkDeviceFaultVendorBinaryHeaderVersionOneKHR", 45},
+    {"VkDeviceFaultVendorInfoKHR", 27},
     {"VkDeviceGroupBindSparseInfo", 28},
     {"VkDeviceGroupCommandBufferBeginInfo", 36},
     {"VkDeviceGroupDeviceCreateInfo", 30},
@@ -1534,6 +1539,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExternalSemaphoreInfo", 38},
     {"VkPhysicalDeviceExternalTensorInfoARM", 38},
     {"VkPhysicalDeviceFaultFeaturesEXT", 33},
+    {"VkPhysicalDeviceFaultFeaturesKHR", 33},
+    {"VkPhysicalDeviceFaultPropertiesKHR", 35},
     {"VkPhysicalDeviceFeatures", 25},
     {"VkPhysicalDeviceFeatures2", 26},
     {"VkPhysicalDeviceFloatControlsProperties", 40},
@@ -1713,12 +1720,15 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceSchedulingControlsPropertiesARM", 48},
     {"VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", 52},
     {"VkPhysicalDeviceShader64BitIndexingFeaturesEXT", 47},
+    {"VkPhysicalDeviceShaderAbortFeaturesKHR", 39},
+    {"VkPhysicalDeviceShaderAbortPropertiesKHR", 41},
     {"VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV", 52},
     {"VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", 46},
     {"VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", 45},
     {"VkPhysicalDeviceShaderAtomicInt64Features", 42},
     {"VkPhysicalDeviceShaderBfloat16FeaturesKHR", 42},
     {"VkPhysicalDeviceShaderClockFeaturesKHR", 39},
+    {"VkPhysicalDeviceShaderConstantDataFeaturesKHR", 46},
     {"VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM", 46},
     {"VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM", 48},
     {"VkPhysicalDeviceShaderCoreProperties2AMD", 41},
@@ -2667,6 +2677,8 @@ const char* String(Field field) {
     {"deviceCoherentMemory", 21},
     {"deviceEvent", 12},
     {"deviceFault", 12},
+    {"deviceFaultDeviceLostOnMasked", 30},
+    {"deviceFaultReportMasked", 24},
     {"deviceFaultVendorBinary", 24},
     {"deviceGeneratedCommands", 24},
     {"deviceGeneratedCommandsMultiDrawIndirectCount", 46},
@@ -2881,6 +2893,7 @@ const char* String(Field field) {
     {"f64", 4},
     {"faceMask", 9},
     {"failOp", 7},
+    {"faultAddressInfo", 17},
     {"fd", 3},
     {"features", 9},
     {"feedbackLoopEnable", 19},
@@ -3017,6 +3030,7 @@ const char* String(Field field) {
     {"groupCountX", 12},
     {"groupCountY", 12},
     {"groupCountZ", 12},
+    {"groupId", 8},
     {"groupIndex", 11},
     {"groupShader", 12},
     {"groupSize", 10},
@@ -3180,6 +3194,7 @@ const char* String(Field field) {
     {"instanceShaderBindingTableRecordOffset", 39},
     {"instances", 10},
     {"instantiationBoundingBoxLimit", 30},
+    {"instructionAddressInfo", 23},
     {"instrumentation", 16},
     {"int32", 6},
     {"int64", 6},
@@ -3360,6 +3375,7 @@ const char* String(Field field) {
     {"maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic", 58},
     {"maxDescriptorSetUpdateAfterBindUniformBuffers", 46},
     {"maxDescriptorSetUpdateAfterBindUniformBuffersDynamic", 53},
+    {"maxDeviceFaultCount", 20},
     {"maxDiscardRectangles", 21},
     {"maxDisplacementMicromapSubdivisionLevel", 40},
     {"maxDpbSlots", 12},
@@ -3532,6 +3548,7 @@ const char* String(Field field) {
     {"maxSequencesCount", 18},
     {"maxSets", 8},
     {"maxSgprAllocation", 18},
+    {"maxShaderAbortMessageSize", 26},
     {"maxShaderBindingTableRecordIndex", 33},
     {"maxShaderCount", 15},
     {"maxShaderGroupStride", 21},
@@ -3648,6 +3665,7 @@ const char* String(Field field) {
     {"meshShader", 11},
     {"meshShaderQueries", 18},
     {"messageCode", 12},
+    {"messageDataSize", 16},
     {"messageIdNumber", 16},
     {"messageSeverity", 16},
     {"messageType", 12},
@@ -3943,6 +3961,7 @@ const char* String(Field field) {
     {"pData", 6},
     {"pDataSize", 10},
     {"pDatas", 7},
+    {"pDebugInfo", 11},
     {"pDecodeInfo", 12},
     {"pDecompressMemoryInfoEXT", 25},
     {"pDecompressMemoryRegions", 25},
@@ -4140,6 +4159,7 @@ const char* String(Field field) {
     {"pMemoryWin32HandleProperties", 29},
     {"pMemoryZirconHandleProperties", 30},
     {"pMessage", 9},
+    {"pMessageData", 13},
     {"pMessageIdName", 15},
     {"pMessenger", 11},
     {"pMetadata", 10},
@@ -4892,6 +4912,7 @@ const char* String(Field field) {
     {"sgprsPerSimd", 13},
     {"shader", 7},
     {"shader64BitIndexing", 20},
+    {"shaderAbort", 12},
     {"shaderArraysPerEngineCount", 27},
     {"shaderBFloat16CooperativeMatrix", 32},
     {"shaderBFloat16DotProduct", 25},
@@ -4909,6 +4930,7 @@ const char* String(Field field) {
     {"shaderBufferFloat64Atomics", 27},
     {"shaderBufferInt64Atomics", 25},
     {"shaderClipDistance", 19},
+    {"shaderConstantData", 19},
     {"shaderCoreBuiltins", 19},
     {"shaderCoreCount", 16},
     {"shaderCoreFeatures", 19},
@@ -5417,6 +5439,7 @@ const char* String(Field field) {
     {"vendorFaultCode", 16},
     {"vendorFaultData", 16},
     {"vendorID", 9},
+    {"vendorInfo", 11},
     {"vendorInfoCount", 16},
     {"version", 8},
     {"vertexAttributeAccessBeyondStride", 34},
@@ -5567,8 +5590,8 @@ const char* String(Enum value) {
     {"VkDescriptorUpdateTemplateType", 31},
     {"VkDeviceAddressBindingTypeEXT", 30},
     {"VkDeviceEventTypeEXT", 21},
-    {"VkDeviceFaultAddressTypeEXT", 28},
-    {"VkDeviceFaultVendorBinaryHeaderVersionEXT", 42},
+    {"VkDeviceFaultAddressTypeKHR", 28},
+    {"VkDeviceFaultVendorBinaryHeaderVersionKHR", 42},
     {"VkDeviceMemoryReportEventTypeEXT", 33},
     {"VkDirectDriverLoadingModeLUNARG", 32},
     {"VkDiscardRectangleModeEXT", 26},
@@ -5714,6 +5737,7 @@ const char* String(FlagBitmask value) {
     {"VkDescriptorSetLayoutCreateFlagBits", 36},
     {"VkDeviceAddressBindingFlagBitsEXT", 34},
     {"VkDeviceDiagnosticsConfigFlagBitsNV", 36},
+    {"VkDeviceFaultFlagBitsKHR", 25},
     {"VkDeviceGroupPresentModeFlagBitsKHR", 36},
     {"VkDeviceQueueCreateFlagBits", 28},
     {"VkDisplayPlaneAlphaFlagBitsKHR", 31},
@@ -6073,6 +6097,7 @@ const char* String(Extension extension) {
     {"VK_KHR_depth_stencil_resolve", 29},
     {"VK_KHR_descriptor_update_template", 34},
     {"VK_KHR_device_address_commands", 31},
+    {"VK_KHR_device_fault", 20},
     {"VK_KHR_device_group", 20},
     {"VK_KHR_device_group_creation", 29},
     {"VK_KHR_display", 15},
@@ -6141,9 +6166,11 @@ const char* String(Extension extension) {
     {"VK_KHR_sampler_mirror_clamp_to_edge", 36},
     {"VK_KHR_sampler_ycbcr_conversion", 32},
     {"VK_KHR_separate_depth_stencil_layouts", 38},
+    {"VK_KHR_shader_abort", 20},
     {"VK_KHR_shader_atomic_int64", 27},
     {"VK_KHR_shader_bfloat16", 23},
     {"VK_KHR_shader_clock", 20},
+    {"VK_KHR_shader_constant_data", 28},
     {"VK_KHR_shader_draw_parameters", 30},
     {"VK_KHR_shader_expect_assume", 28},
     {"VK_KHR_shader_float16_int8", 27},
@@ -6435,6 +6462,7 @@ bool IsFieldPointer(Field field) {
     case Field::pData:
     case Field::pDataSize:
     case Field::pDatas:
+    case Field::pDebugInfo:
     case Field::pDecodeInfo:
     case Field::pDecompressMemoryInfoEXT:
     case Field::pDecompressMemoryRegions:
@@ -6632,6 +6660,7 @@ bool IsFieldPointer(Field field) {
     case Field::pMemoryWin32HandleProperties:
     case Field::pMemoryZirconHandleProperties:
     case Field::pMessage:
+    case Field::pMessageData:
     case Field::pMessageIdName:
     case Field::pMessenger:
     case Field::pMetadata:
@@ -7716,6 +7745,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceFragmentShadingRateKHR;
     case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
        return Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceShaderConstantDataFeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceShaderAbortFeaturesKHR;
+    case VK_STRUCTURE_TYPE_DEVICE_FAULT_SHADER_ABORT_MESSAGE_INFO_KHR:
+       return Struct::VkDeviceFaultShaderAbortMessageInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceShaderAbortPropertiesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR:
        return Struct::VkPhysicalDeviceShaderQuadControlFeaturesKHR;
     case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
@@ -7976,6 +8013,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR:
        return Struct::VkPhysicalDeviceLayeredApiVulkanPropertiesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceFaultFeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceFaultPropertiesKHR;
+    case VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR:
+       return Struct::VkDeviceFaultInfoKHR;
+    case VK_STRUCTURE_TYPE_DEVICE_FAULT_DEBUG_INFO_KHR:
+       return Struct::VkDeviceFaultDebugInfoKHR;
     case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR:
        return Struct::VkMemoryBarrierAccessFlags3KHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR:

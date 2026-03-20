@@ -653,6 +653,10 @@ static VKAPI_ATTR void VKAPI_CALL
 StubCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectKHR(VkCommandBuffer, const VkCopyMemoryIndirectInfoKHR*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer, const VkCopyMemoryToImageIndirectInfoKHR*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceFaultReportsKHR(VkDevice, uint64_t, uint32_t*, VkDeviceFaultInfoKHR*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceFaultDebugInfoKHR(VkDevice, VkDeviceFaultDebugInfoKHR*) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndRendering2KHR(VkCommandBuffer, const VkRenderingEndInfoKHR*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance, const VkDebugReportCallbackCreateInfoEXT*,
                                                                        const VkAllocationCallbacks*, VkDebugReportCallbackEXT*) {
@@ -1886,6 +1890,8 @@ const auto& GetApiExtensionMap() {
         {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", {vvl::Extension::_VK_KHR_maintenance6}},
         {"vkCmdCopyMemoryIndirectKHR", {vvl::Extension::_VK_KHR_copy_memory_indirect}},
         {"vkCmdCopyMemoryToImageIndirectKHR", {vvl::Extension::_VK_KHR_copy_memory_indirect}},
+        {"vkGetDeviceFaultReportsKHR", {vvl::Extension::_VK_KHR_device_fault}},
+        {"vkGetDeviceFaultDebugInfoKHR", {vvl::Extension::_VK_KHR_device_fault}},
         {"vkCmdEndRendering2KHR", {vvl::Extension::_VK_KHR_maintenance10}},
         {"vkDebugMarkerSetObjectTagEXT", {vvl::Extension::_VK_EXT_debug_marker}},
         {"vkDebugMarkerSetObjectNameEXT", {vvl::Extension::_VK_EXT_debug_marker}},
@@ -3415,6 +3421,14 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         (PFN_vkCmdCopyMemoryToImageIndirectKHR)gpa(device, "vkCmdCopyMemoryToImageIndirectKHR");
     if (table->CmdCopyMemoryToImageIndirectKHR == nullptr) {
         table->CmdCopyMemoryToImageIndirectKHR = (PFN_vkCmdCopyMemoryToImageIndirectKHR)StubCmdCopyMemoryToImageIndirectKHR;
+    }
+    table->GetDeviceFaultReportsKHR = (PFN_vkGetDeviceFaultReportsKHR)gpa(device, "vkGetDeviceFaultReportsKHR");
+    if (table->GetDeviceFaultReportsKHR == nullptr) {
+        table->GetDeviceFaultReportsKHR = (PFN_vkGetDeviceFaultReportsKHR)StubGetDeviceFaultReportsKHR;
+    }
+    table->GetDeviceFaultDebugInfoKHR = (PFN_vkGetDeviceFaultDebugInfoKHR)gpa(device, "vkGetDeviceFaultDebugInfoKHR");
+    if (table->GetDeviceFaultDebugInfoKHR == nullptr) {
+        table->GetDeviceFaultDebugInfoKHR = (PFN_vkGetDeviceFaultDebugInfoKHR)StubGetDeviceFaultDebugInfoKHR;
     }
     table->CmdEndRendering2KHR = (PFN_vkCmdEndRendering2KHR)gpa(device, "vkCmdEndRendering2KHR");
     if (table->CmdEndRendering2KHR == nullptr) {
