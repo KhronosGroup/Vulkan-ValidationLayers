@@ -524,22 +524,6 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, Command
                                       gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
                                       static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
     }
-
-    std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
-    for (const auto& func : vvl::make_span(cb_state.on_instrumentation_error_logger_register_functions)) {
-        error_loggers.emplace_back(func(gpuav, cb_state, last_bound));
-    }
-
-    CommandBufferSubState::ErrorLoggerFunc error_logger =
-        [&gpuav, &cb_handle, common_error_info, error_loggers = std::move(error_loggers)](
-            const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
-            bool skip = false;
-            skip |= LogInstrumentationError(gpuav, cb_handle, objlist, common_error_info, error_record, loc_with_debug_region,
-                                            error_loggers);
-            return skip;
-        };
-
-    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, CommandBufferSubState& cb_state,
@@ -558,26 +542,6 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
 
     UpdateInstrumentationDescHeap(gpuav, cb_state, last_bound, indirect_memory, action_command_index_offset, resource_index_offset,
                                   loc);
-
-    std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
-    for (size_t i = 0; i < cb_state.on_instrumentation_error_logger_register_functions.size(); ++i) {
-        const CommandBufferSubState::OnInstrumentationErrorLoggerRegister& error_logger_register =
-            cb_state.on_instrumentation_error_logger_register_functions[i];
-
-        error_loggers.emplace_back(error_logger_register(gpuav, cb_state, last_bound));
-    }
-
-    const VkCommandBuffer cb_handle = cb_state.VkHandle();
-    CommandBufferSubState::ErrorLoggerFunc error_logger =
-        [&gpuav, &cb_handle, common_error_info, error_loggers = std::move(error_loggers)](
-            const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
-            bool skip = false;
-            skip |= LogInstrumentationError(gpuav, cb_handle, objlist, common_error_info, error_record, loc_with_debug_region,
-                                            error_loggers);
-            return skip;
-        };
-
-    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 
     VkDeviceAddress gpuav_data_address = heap_buffer.Address();
     VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
@@ -629,25 +593,6 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
     const uint32_t resource_index_offset = error_logger_index * gpuav.indices_buffer_alignment_;
 
     UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound, action_command_index_offset, resource_index_offset, loc);
-
-    std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
-    for (size_t i = 0; i < cb_state.on_instrumentation_error_logger_register_functions.size(); ++i) {
-        const CommandBufferSubState::OnInstrumentationErrorLoggerRegister& error_logger_register =
-            cb_state.on_instrumentation_error_logger_register_functions[i];
-        error_loggers.emplace_back(error_logger_register(gpuav, cb_state, last_bound));
-    }
-
-    const VkCommandBuffer cb_handle = cb_state.VkHandle();
-    CommandBufferSubState::ErrorLoggerFunc error_logger =
-        [&gpuav, &cb_handle, common_error_info, error_loggers = std::move(error_loggers)](
-            const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
-            bool skip = false;
-            skip |= LogInstrumentationError(gpuav, cb_handle, objlist, common_error_info, error_record, loc_with_debug_region,
-                                            error_loggers);
-            return skip;
-        };
-
-    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
@@ -708,6 +653,27 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
     } else {
         PreCallSetupShaderInstrumentationResourcesClassic(gpuav, cb_state, last_bound, common_error_info, inst_binding_pipe_layout,
                                                           loc);
+    }
+
+    // We have a single set of InstrumentationErrorLogger for ALL the instrumented shaders
+    // (there is one for each validation_cmd callback)
+    {
+        std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
+        for (const auto& func : vvl::make_span(cb_state.on_instrumentation_error_logger_register_functions)) {
+            error_loggers.emplace_back(func(gpuav, cb_state, last_bound));
+        }
+
+        const VkCommandBuffer cb_handle = cb_state.VkHandle();
+        CommandBufferSubState::ErrorLoggerFunc error_logger =
+            [&gpuav, &cb_handle, common_error_info, error_loggers = std::move(error_loggers)](
+                const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
+                bool skip = false;
+                skip |= LogInstrumentationError(gpuav, cb_handle, objlist, common_error_info, error_record, loc_with_debug_region,
+                                                error_loggers);
+                return skip;
+            };
+
+        cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
     }
 }
 
