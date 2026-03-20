@@ -2088,14 +2088,6 @@ class DeviceState : public vvl::base::Device {
         VkSemaphoreType semaphore_type = VK_SEMAPHORE_TYPE_BINARY;
     };
 
-    inline std::optional<ExternalOpaqueInfo> GetOpaqueInfoFromFdHandle(int fd) const {
-        ReadLockGuard guard(fd_handle_map_lock_);
-        if (const auto itr = fd_handle_map_.find(fd); itr != fd_handle_map_.cend()) {
-            return itr->second;
-        }
-        return {};
-    }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     inline std::optional<ExternalOpaqueInfo> GetOpaqueInfoFromWin32Handle(HANDLE handle) const {
         ReadLockGuard guard(win32_handle_map_lock_);
@@ -2199,10 +2191,6 @@ class DeviceState : public vvl::base::Device {
 
     // Canonical ids of the set layouts created from *this* device.
     vvl::DescriptorSetLayoutDict descriptor_set_layout_canonical_ids_;
-
-    // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
-    vvl::unordered_map<int, ExternalOpaqueInfo> fd_handle_map_;
-    mutable std::shared_mutex fd_handle_map_lock_;
 
     void UpdateCommandBufferHeapReservedAddressMap(vvl::CommandBuffer* cb_state, const vvl::range<VkDeviceAddress>& new_range,
                                                    bool is_sampler);

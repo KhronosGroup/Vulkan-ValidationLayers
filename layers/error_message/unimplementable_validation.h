@@ -740,6 +740,20 @@ const char* unimplementable_validation[] = {
 
     // This is caught by VUID-VkPipelineShaderStageCreateInfo-stage-parameter
     "VUID-VkPipelineShaderStageCreateInfo-stage-00706",
+
+    // We use to have these implemented until approuched in
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11900
+    //
+    // There is no real way for VVL to track FD handles and while it "might work"
+    // the cost of false positives are not worth the integrity of the tool.
+    //
+    // If someone complains in a |real world app| how this would have helpped, we can discuss adding them back somehow.
+    "VUID-VkImportSemaphoreFdInfoKHR-handleType-03263",
+    "VUID-VkImportSemaphoreFdInfoKHR-handleType-03264",
+    "VUID-VkMemoryAllocateInfo-allocationSize-01742",
+    "VUID-VkMemoryDedicatedAllocateInfo-image-01878",
+    "VUID-VkMemoryDedicatedAllocateInfo-buffer-01879",
+    "VUID-VkMemoryDedicatedAllocateInfoTensorARM-tensor-09859",
 };
 
 // These are things that "could be done" but require a crazy amount of work, for no real usecase
