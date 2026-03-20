@@ -336,6 +336,23 @@ const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t comp
     return AddType(std::move(new_inst), SpvType::kVector);
 }
 
+const Type& TypeManager::GetTypeVectorIdEXT(const Type& component_type, const Constant& component_count) {
+    const uint32_t count = component_count.GetValueUint32();
+    for (const auto& [id, type] : id_to_type_) {
+        if (type->spv_type_ != SpvType::kVectorIdEXT) continue;
+        if (type->meta_.vector.component_count != count) continue;
+        const Type* existing_component = FindTypeById(type->inst_.Word(2));
+        if (existing_component && (*existing_component == component_type)) {
+            return *type;
+        }
+    }
+
+    const uint32_t type_id = module_.TakeNextId();
+    auto new_inst = std::make_unique<Instruction>(4, spv::OpTypeVectorIdEXT);
+    new_inst->Fill({type_id, component_type.Id(), component_count.Id()});
+    return AddType(std::move(new_inst), SpvType::kVectorIdEXT);
+}
+
 const Type& TypeManager::GetTypeMatrix(const Type& column_type, uint32_t column_count) {
     for (const auto type : matrix_types_) {
         if (type->meta_.matrix.component_count != column_count) {

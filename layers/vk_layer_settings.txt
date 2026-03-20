@@ -135,6 +135,11 @@ khronos_validation.gpuav_max_indices_count = 8192
 # Enable shader instrumentation on VK_EXT_mesh_shader
 khronos_validation.gpuav_mesh_shading = true
 
+# Poison value (uninitialized variable detection)
+# =====================
+# Instrument shaders to detect uses of uninitialized values.
+khronos_validation.gpuav_poison_value = true
+
 # Post process descriptor indexing
 # =====================
 # Track which descriptor indexes were used in shader to run normal validation afterwards

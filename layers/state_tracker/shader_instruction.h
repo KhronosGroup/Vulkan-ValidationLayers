@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 #include <spirv/unified1/spirv.hpp>
@@ -107,6 +108,11 @@ class Instruction {
     // Increments Length() as well
     void AppendWord(uint32_t word);
     void ReplaceResultId(uint32_t new_result_id);
+    // Calls |callback| with the value of each operand word that is an ID (not a literal).
+    // When |include_ambiguous| is true (default), composite words (which may include literals)
+    // and words beyond the grammar's defined operands (which may be BitEnum parameter literals)
+    // are visited. When false, only words that are unambiguously IDs are visited.
+    void ForEachIdOperand(const std::function<void(uint32_t id)>& callback, bool include_ambiguous = true) const;
     // searchs all operands to replace ID if found
     void ReplaceOperandId(uint32_t old_word, uint32_t new_word);
     void ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swap_map);

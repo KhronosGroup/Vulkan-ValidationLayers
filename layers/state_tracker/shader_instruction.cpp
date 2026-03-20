@@ -316,6 +316,33 @@ void Instruction::ReplaceResultId(uint32_t new_result_id) {
     UpdateDebugInfo();
 }
 
+void Instruction::ForEachIdOperand(const std::function<void(uint32_t id)>& callback, bool include_ambiguous) const {
+    const uint32_t length = Length();
+    const uint32_t num_defined = static_cast<uint32_t>(operand_info_.types.size());
+    uint32_t type_index = 0;
+    for (uint32_t word_index = operand_index_; word_index < length; word_index++, type_index++) {
+        if (type_index < num_defined) {
+            OperandKind kind = operand_info_.types[type_index];
+            if (kind == OperandKind::Id) {
+                callback(words_[word_index]);
+            } else if (kind == OperandKind::Composite && include_ambiguous) {
+                // Composite covers OpPhi (id,label pairs) and OpGroupMemberDecorate
+                // (id,literal pairs). Visiting all composite words is conservative -
+                // callers may see labels or literals alongside the IDs.
+                callback(words_[word_index]);
+            }
+        } else {
+            // Beyond the grammar's defined operands. For Id-variadic instructions
+            // (e.g. OpFunctionCall, OpCompositeConstruct) all remaining words are IDs.
+            // For BitEnum tails (ImageOperands, MemoryAccess, etc.) remaining words
+            // are a mix of IDs and literals whose types depend on the mask bits.
+            if (include_ambiguous || num_defined == 0 || operand_info_.types.back() != OperandKind::BitEnum) {
+                callback(words_[word_index]);
+            }
+        }
+    }
+}
+
 void Instruction::ReplaceOperandId(uint32_t old_word, uint32_t new_word) {
     const uint32_t length = Length();
     uint32_t type_index = 0;

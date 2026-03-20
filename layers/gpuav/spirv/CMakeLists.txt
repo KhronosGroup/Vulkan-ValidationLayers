@@ -31,6 +31,8 @@ target_sources(gpu_av_spirv PRIVATE
     ray_hit_object_pass.cpp
     sanitizer_pass.h
     sanitizer_pass.cpp
+    poison_pass.h
+    poison_pass.cpp
     shared_memory_data_race_pass.h
     shared_memory_data_race_pass.cpp
     debug_descriptor_pass.h

@@ -23,6 +23,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
 void RegisterRayQueryValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterRayHitObjectValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb);
+void RegisterPoisonValueValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSubState& cb);
 void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubState& cb);

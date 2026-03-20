@@ -2035,7 +2035,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
         };
 
         void main() {
-            Bar new_bar;
+            Bar new_bar = Bar(0u, 0u, uint[2](0u, 0u));
             b = new_bar;
         }
     )glsl";
@@ -2058,7 +2058,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
         };
 
         void main() {
-            Bar new_bar;
+            Bar new_bar = Bar(vec4(0.0));
             b = new_bar;
         }
     )glsl";
@@ -2085,7 +2085,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
         };
 
         void main() {
-            Bar new_bar;
+            Bar new_bar = Bar(0u, Bar2(vec4(0.0)));
             b = new_bar;
         }
     )glsl";

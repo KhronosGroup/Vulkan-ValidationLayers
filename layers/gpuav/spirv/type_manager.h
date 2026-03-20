@@ -159,6 +159,7 @@ class TypeManager {
     const Type& GetTypeArray(const Type& element_type, const Constant& length, bool get_explicit_layout = true);
     const Type& GetTypeRuntimeArray(const Type& element_type, bool get_explicit_layout = true);
     const Type& GetTypeVector(const Type& component_type, uint32_t component_count);
+    const Type& GetTypeVectorIdEXT(const Type& component_type, const Constant& component_count);
     const Type& GetTypeMatrix(const Type& column_type, uint32_t column_count);
     const Type& GetTypeSampledImage(const Type& image_type);
     const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type, bool get_explicit_layout = true);

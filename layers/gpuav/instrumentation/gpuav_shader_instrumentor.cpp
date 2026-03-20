@@ -32,6 +32,7 @@
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/spirv/log_error_pass.h"
+#include "gpuav/spirv/poison_pass.h"
 #include "error_message/spirv_logging.h"
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <spirv/unified1/spirv.hpp>
@@ -1636,6 +1637,14 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     spirv::Module module(input_spirv, debug_report, instrumentation_device_settings_, interface, modified_features);
 
     bool modified = false;
+
+    // Poison pass runs first so its checks are outermost: later passes' if/else guards end up
+    // inside the poison conditional, meaning root-cause "uninitialized value" errors are reported
+    // before downstream checks (e.g. BDA OOB) that would mask them.
+    if (gpuav_settings.shader_instrumentation.poison_value) {
+        spirv::PoisonPass pass(module);
+        modified |= pass.Run();
+    }
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {

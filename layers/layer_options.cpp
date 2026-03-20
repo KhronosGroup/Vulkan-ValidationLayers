@@ -205,6 +205,7 @@ const char* VK_LAYER_GPUAV_MESH_SHADING = "gpuav_mesh_shading";
 const char* VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char* VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB = "gpuav_vertex_attribute_fetch_oob";
 const char* VK_LAYER_GPUAV_SHADER_SANITIZER = "gpuav_shader_sanitizer";
+const char* VK_LAYER_GPUAV_POISON_VALUE = "gpuav_poison_value";
 const char* VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE = "gpuav_shared_memory_data_race";
 const char* VK_LAYER_GPUAV_MAX_INDICES_COUNT = "gpuav_max_indices_count";
 const char* VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
@@ -1051,6 +1052,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER,
                                     gpuav_settings.shader_instrumentation.sanitizer);
+        }
+
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_POISON_VALUE)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_POISON_VALUE,
+                                    gpuav_settings.shader_instrumentation.poison_value);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE)) {
