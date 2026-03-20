@@ -183,6 +183,11 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
                 break;
             }
+            case spv::OpUntypedVariableKHR: {
+                type_manager_.AddUntypedVariable(new_inst->ResultId());
+                types_values_constants_.emplace_back(std::move(new_inst));
+                break;
+            }
             case spv::OpSpecConstantOp: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
                 // If folded, we drop the |new_inst| as we will add it inside the function

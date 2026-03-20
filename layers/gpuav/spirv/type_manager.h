@@ -204,6 +204,9 @@ class TypeManager {
     void AddUndef(std::unique_ptr<Instruction> new_inst);
     bool IsUndef(uint32_t id) const;
 
+    void AddUntypedVariable(uint32_t id) { untyped_variable_set_.insert(id); };
+    bool IsUntypedVariable(uint32_t id) const { return untyped_variable_set_.find(id) != untyped_variable_set_.end(); }
+
   private:
     Module& module_;
 
@@ -212,6 +215,10 @@ class TypeManager {
     vvl::unordered_map<uint32_t, std::unique_ptr<Type>> id_to_type_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Constant>> id_to_constant_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Variable>> id_to_variable_;
+
+    // Currently don't fully support untyped pointers, but to allow things not to break, start tracking them so when searching for
+    // Variable, we can assert if not found, it is an OpUntypedVariableKHR
+    vvl::unordered_set<uint32_t> untyped_variable_set_;
 
     // Create faster lookups for specific types
     // some types are base types and only will be one
