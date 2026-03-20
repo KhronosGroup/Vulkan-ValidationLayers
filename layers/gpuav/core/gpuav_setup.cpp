@@ -267,10 +267,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
     {
         VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();
         error_buffer_ci.size = glsl::kErrorBufferByteSize;
-        error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-            error_buffer_ci.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        }
+        error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo error_buffer_alloc_ci = {};
         error_buffer_alloc_ci.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         error_buffer_alloc_ci.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -288,10 +285,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         indices_buffer_alignment_ = Align(index_size, (uint32_t)phys_dev_props.limits.minStorageBufferOffsetAlignment);
 
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-            buffer_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        }
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         buffer_info.size = gpuav_settings.indices_buffer_count * indices_buffer_alignment_;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
