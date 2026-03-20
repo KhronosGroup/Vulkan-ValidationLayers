@@ -780,6 +780,7 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-maintenance4-08602
         case ActionVUID::PUSH_CONSTANT_08602: suffix = "maintenance4-08602"; break;
 
+        // TODO - Remove https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8149
         // ### VUID-vkCmdDraw-None-08608
         case ActionVUID::DYNAMIC_STATE_ALL_SET_08608: suffix = "None-08608"; break;
 

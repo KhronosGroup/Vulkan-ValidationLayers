@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 
 // NOLINTBEGIN
 
+#include <sstream>
 #include "state_tracker/pipeline_state.h"
 
 VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
@@ -350,17 +351,16 @@ std::string DynamicStatesToString(CBDynamicFlags const& dynamic_states) {
 }
 
 std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states) {
-    std::string ret;
+    std::ostringstream ss;
     // enum is not zero based
     for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
         CBDynamicState status = static_cast<CBDynamicState>(index);
         if (dynamic_states[status]) {
-            if (!ret.empty()) ret.append(", ");
-            ret.append(DescribeDynamicStateCommand(status));
+            ss << " - " << DescribeDynamicStateCommand(status) << " (pipeline missing "
+               << string_VkDynamicState(ConvertToDynamicState(status)) << ")\n";
         }
     }
-    if (ret.empty()) ret.append("(Unknown Dynamic State)");
-    return ret;
+    return ss.str().c_str();
 }
 
 std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
