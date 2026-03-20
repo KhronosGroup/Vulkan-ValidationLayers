@@ -1426,6 +1426,7 @@ TEST_F(NegativeImageLayout, DynamicRenderingFragmentShadingRateSubmitTime) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();

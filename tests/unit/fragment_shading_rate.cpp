@@ -1186,10 +1186,10 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
         GTEST_SKIP() << "No format found without shading rate attachment support";
     }
 
-    VkImageFormatProperties imageFormatProperties;
+    VkImageFormatProperties format_props;
     if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                    VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0,
-                                                   &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+                                                   &format_props) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         GTEST_SKIP() << "Format not supported";
     }
     // Initialize image with transfer source usage
@@ -1213,10 +1213,10 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     // Create a view with the fragment shading rate attachment usage, but that doesn't support it
     CreateImageViewTest(createinfo, "VUID-VkImageViewCreateInfo-usage-04550");
 
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(fsrProperties);
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_props);
 
-    if (!fsrProperties.layeredShadingRateAttachments) {
+    if (!fsr_props.layeredShadingRateAttachments) {
         if (IsPlatformMockICD()) {
             GTEST_SKIP() << "Test not supported by MockICD, doesn't correctly advertise format support for fragment shading "
                             "rate attachments";
@@ -2781,6 +2781,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         ivci.subresourceRange.layerCount = 6;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-02086");
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01003");
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-usage-04551");
         vkt::ImageView view(*m_device, ivci);
         m_errorMonitor->VerifyFound();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -3689,13 +3690,13 @@ TEST_F(NegativeFragmentShadingRate, AttachmentFragmentShadingRate) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(fsr_properties);
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
+    }
 
-    RenderPass2SingleSubpass rp_fsr_1(*this);
-    rp_fsr_1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp_fsr_1.AddFragmentShadingRateAttachment(0, VK_IMAGE_LAYOUT_GENERAL, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkSubpassDescription2-attachmentFragmentShadingRate");
-    rp_fsr_1.CreateRenderPass();
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-attachmentFragmentShadingRate-12386");
+    image.CreateView();
     m_errorMonitor->VerifyFound();
 }

@@ -1734,9 +1734,13 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image& image_state, 
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
-    } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
-               !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-        if (enabled_features.attachmentFragmentShadingRate) {
+    } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        if (!enabled_features.attachmentFragmentShadingRate && !enabled_features.shadingRateImage) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-attachmentFragmentShadingRate-12386", image_state.Handle(),
+                             create_info_loc.dot(Field::image),
+                             "was created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, but the "
+                             "attachmentFragmentShadingRate feature was not enabled.");
+        } else if (!(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-usage-04550", image_state.Handle(), create_info_loc.dot(Field::format),
                              "%s with tiling %s doesn't support VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.\n."
                              "(supported features: %s)",
@@ -2158,8 +2162,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
         }
     }
 
-    if (enabled_features.attachmentFragmentShadingRate &&
-        !phys_dev_ext_props.fragment_shading_rate_props.layeredShadingRateAttachments &&
+    if (!phys_dev_ext_props.fragment_shading_rate_props.layeredShadingRateAttachments &&
         image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR && normalized_subresource_range.layerCount != 1) {
         skip |= LogError("VUID-VkImageViewCreateInfo-usage-04551", create_info.image,
                          create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
