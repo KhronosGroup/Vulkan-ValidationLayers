@@ -1630,19 +1630,13 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBuffer) {
 
 TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     TEST_DESCRIPTION("Test dynamic rendering with pipeline missing flags.");
-
-    AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    bool fragment_density = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    bool shading_rate = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
-        GetPhysicalDeviceProperties2(fsr_properties);
-    }
-
+    GetPhysicalDeviceProperties2(fsr_properties);
     InitRenderTarget();
 
     VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
@@ -1650,23 +1644,15 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     // Mostly likely will only find support for this on a custom profiles
     if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-        shading_rate = false;
-    }
-    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
-        fragment_density = false;
-    }
-    if (!fragment_density && !shading_rate) {
-        GTEST_SKIP() << "shading rate / fragment shading not supported";
+        GTEST_SKIP() << "Not Depth support for FSR";
+    } else if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
+                                           VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "Not Depth support for FDM";
     }
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-    if (shading_rate) {
-        image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-    }
-    if (fragment_density) {
-        image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-    }
+    image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
 
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView depth_image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1674,7 +1660,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    if (shading_rate) {
+    {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06183");
         VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
         fragment_shading_rate.imageView = depth_image_view;
@@ -1707,7 +1693,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (fragment_density) {
+    {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06184");
         VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
         fragment_density_map.imageView = depth_image_view;
@@ -1864,6 +1850,7 @@ TEST_F(NegativeDynamicRendering, MismatchedSamplesColorsNV) {
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     TEST_DESCRIPTION("Test BeginRenderingInfo with FragmentShadingRateAttachment.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
@@ -1992,6 +1979,7 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderPassBeginInfo) {
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
     TEST_DESCRIPTION("Test BeginRendering with FragmentShadingRateAttachmentInfo with missing image usage bit.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
@@ -3145,6 +3133,7 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -3285,6 +3274,7 @@ TEST_F(NegativeDynamicRendering, PNextImageView) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -3967,6 +3957,7 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewReadOnlyOptimalLayout) {
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     TEST_DESCRIPTION("Test BeginRenderingInfo image view with FragmentShadingRateAttachment.");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -4417,13 +4408,13 @@ TEST_F(NegativeDynamicRendering, Pipeline) {
 
 TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize) {
     TEST_DESCRIPTION("Test FragmentShadingRateAttachment size.");
-
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -4468,13 +4459,13 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
 
 TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGroupExt) {
     TEST_DESCRIPTION("Test FragmentShadingRateAttachment size with device group extension.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -6791,6 +6782,7 @@ TEST_F(NegativeDynamicRendering, IdentitySwizzleDepthStencil) {
 
 TEST_F(NegativeDynamicRendering, IdentitySwizzleFragmentShadingRate) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();

@@ -2682,28 +2682,6 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                                         const Location& create_info_loc) const {
     bool skip = false;
 
-    if (!enabled_features.attachmentFragmentShadingRate) {
-        for (uint32_t i = 0; i < create_info.subpassCount; i++) {
-            const auto* fragment_shading_rate_attachment =
-                vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(create_info.pSubpasses[i].pNext);
-            if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
-                continue;
-            }
-            if (fragment_shading_rate_attachment->pFragmentShadingRateAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8083
-                skip |=
-                    LogError("UNASSIGNED-VkSubpassDescription2-attachmentFragmentShadingRate", device,
-                             create_info_loc.dot(Field::pSubpasses, i)
-                                 .pNext(vvl::Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment)
-                                 .dot(Field::attachment),
-                             "(%" PRIu32 ") is not allowed because the attachmentFragmentShadingRate feature was not enabled.",
-                             fragment_shading_rate_attachment->pFragmentShadingRateAttachment->attachment);
-            }
-        }
-
-        return skip;
-    }
-
     for (uint32_t attachment_description = 0; attachment_description < create_info.attachmentCount; ++attachment_description) {
         std::vector<uint32_t> used_as_fragment_shading_rate_attachment;
 
