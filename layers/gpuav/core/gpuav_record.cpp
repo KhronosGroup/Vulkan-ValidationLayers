@@ -650,6 +650,24 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
+void Validator::PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
+                                                     const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    auto& sub_state = SubState(*cb_state);
+    const LastBound& last_bound = cb_state->GetLastBoundCompute();
+    const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
+    for (const auto buffer_state : buffer_states) {
+        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+            continue;
+        }
+        const VkBuffer buffer = buffer_state->VkHandle();
+        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
+        valcmd::DispatchIndirect(*this, record_obj.location, sub_state, last_bound, buffer, offset);
+        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+    }
+}
+
 void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                              uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                              const RecordObject& record_obj) {
