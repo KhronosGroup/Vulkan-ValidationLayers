@@ -1882,9 +1882,9 @@ TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirect) {
                              vkt::device_address);
 
     vkt::Buffer dst_build_buffer(*m_device, 1 * sizeof(VkStridedDeviceAddressNV),
-                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                  vkt::device_address);
 
     VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
@@ -1985,9 +1985,9 @@ TEST_F(PositiveRayTracing, CmdBuildClusterAccelerationStructureIndirectSameBuffe
     auto* count_data = static_cast<uint32_t*>(count_buffer.Memory().Map());
     memcpy(count_data, &input_count, sizeof(input_count));
 
-    vkt::Buffer dst_addresses_buffer(
-        *m_device, sizeof(VkDeviceAddress),
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
+    vkt::Buffer dst_addresses_buffer(*m_device, sizeof(VkDeviceAddress),
+                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                     vkt::device_address);
 
     VkClusterAccelerationStructureCommandsInfoNV command_info = vku::InitStructHelper();
     command_info.input = input_info;

@@ -759,12 +759,11 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
 
     {
         BufferAddressValidation<1> dst_addresses_array_validator = {{{
-            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-12307",
+            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-12381",
              [](const vvl::Buffer& buffer_state) {
-                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
+                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0;
              },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-             kUsageErrorMsgBuffer},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
         }}};
 
         skip |= dst_addresses_array_validator.ValidateDeviceAddress(
