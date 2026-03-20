@@ -40,8 +40,12 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                 error_found = true;
 
                 const uint32_t index = error_record[kInst_LogError_ParameterOffset_0];
-                const uint32_t bound = error_record[kInst_LogError_ParameterOffset_1];
+                const uint32_t encoded_bound = error_record[kInst_LogError_ParameterOffset_1];
                 const uint32_t variable_id = error_record[kInst_LogError_ParameterOffset_2];
+
+                const uint32_t bound = encoded_bound & 0x00FFFFFFu;
+                const uint32_t access_type = (encoded_bound >> 24) & 0x3u;
+                const uint32_t dim_index = (encoded_bound >> 26) & 0x1Fu;
 
                 const uint32_t instruction_position_offset = error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
 
@@ -52,7 +56,16 @@ void RegisterSharedMemoryOobValidation(Validator& gpuav, CommandBufferSubState& 
                 } else {
                     strm << "[error, original SPIR-V not found]";
                 }
-                strm << "\" accessed out of bounds (index == " << index << ", bound == " << bound << ").";
+                strm << "\" ";
+                if (access_type == 1) {
+                    strm << "vector component";
+                } else {
+                    strm << "array index";
+                    if (dim_index > 0) {
+                        strm << " (dimension " << dim_index << ")";
+                    }
+                }
+                strm << " " << index << " is >= " << ((access_type == 1) ? "vector size " : "array size ") << bound << ".";
 
                 uint32_t opcode = (uint32_t)spv::OpMax;
                 if (instrumented_shader) {
