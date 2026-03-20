@@ -2081,7 +2081,7 @@ TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
     vk::CmdSetPrimitiveTopology(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08608");
+    m_errorMonitor->SetDesiredWarning("WARNING-Ignored-DynamicState");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
