@@ -44,7 +44,7 @@ void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    const std::string regex = "index == " + std::to_string(expected_index) + ", bound == " + std::to_string(expected_bound);
+    const std::string regex = std::to_string(expected_index) + " is >= .* " + std::to_string(expected_bound);
     m_errorMonitor->SetDesiredErrorRegex(vuid, regex.c_str());
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -231,8 +231,8 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "index == 2, bound == 2");
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "index == 2, bound == 2");
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -290,7 +290,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, MeshShader) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "index == 4, bound == 4");
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "4 is >= array size 4");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

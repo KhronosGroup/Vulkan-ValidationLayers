@@ -34,6 +34,8 @@ class SharedMemoryOobPass : public Pass {
     struct IndexCheck {
         uint32_t index_id;
         uint32_t bound;
+        uint32_t access_type;  // 0 = array, 1 = vector, 2 = matrix
+        uint32_t dim_index;    // which dimension in a multi-dimensional access
     };
 
     struct InstructionMeta {

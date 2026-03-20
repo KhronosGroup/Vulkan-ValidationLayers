@@ -43,7 +43,8 @@ uint32_t SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionI
     uint32_t function_result = 0;
     for (const auto& check : meta.checks) {
         function_result = module_.TakeNextId();
-        const uint32_t bound_id = type_manager_.GetConstantUInt32(check.bound).Id();
+        const uint32_t encoded_bound = check.bound | (check.access_type << 24) | (check.dim_index << 26);
+        const uint32_t bound_id = type_manager_.GetConstantUInt32(encoded_bound).Id();
 
         block.CreateInstruction(
             spv::OpFunctionCall,
@@ -97,7 +98,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
 
         meta.target_instruction = &inst;
         meta.variable_id = variable->Id();
-        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count});
+        meta.checks.push_back({index_id, vector_type->meta_.vector.component_count, 1, 0});
         return true;
     } else if (!inst.IsNonPtrAccessChain()) {
         return false;
@@ -134,6 +135,7 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
     const Type* pointee_type = type_manager_.FindChildType(*base_ptr_type, 0);
 
     // Word(3) is the base pointer, Word(4..Length()-1) are indices
+    uint32_t dim_index = 0;
     for (uint32_t i = 4; i < inst.Length(); ++i) {
         uint32_t idx_id = inst.Word(i);
 
@@ -142,13 +144,14 @@ bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, Basi
             case SpvType::kVector:
             case SpvType::kVectorIdEXT: {
                 idx_id = CastToUint32(idx_id, block, &inst_it);
-                const uint32_t bound = (pointee_type->spv_type_ == SpvType::kArray) ? pointee_type->meta_.array.length
-                                                                                    : pointee_type->meta_.vector.component_count;
-                meta.checks.push_back({idx_id, bound});
+                const bool is_array = (pointee_type->spv_type_ == SpvType::kArray);
+                const uint32_t bound = is_array ? pointee_type->meta_.array.length : pointee_type->meta_.vector.component_count;
+                const uint32_t access_type = is_array ? 0 : 1;
+                meta.checks.push_back({idx_id, bound, access_type, dim_index});
+                dim_index++;
                 pointee_type = type_manager_.FindChildType(*pointee_type, 0);
             } break;
             case SpvType::kStruct: {
-                // Struct member indices are always constant -- advance type but no check needed
                 auto idx_c = type_manager_.FindConstantById(idx_id);
                 uint32_t member_idx = idx_c->GetValueUint32();
                 pointee_type = type_manager_.FindChildType(*pointee_type, member_idx);
