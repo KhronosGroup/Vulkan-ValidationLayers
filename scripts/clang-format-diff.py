@@ -90,14 +90,16 @@ def main():
   for filename, lines in lines_by_file.items():
     if args.i and args.verbose:
       print('Formatting {}'.format(filename))
+
     command = [args.binary, filename]
-    if args.i:
-      command.append('-i')
+    # We no longer pass '-i' to clang-format directly.
+    # We need to intercept the stdout to filter out whitespace-only changes.
     if args.sort_includes:
       command.append('-sort-includes')
     command.extend(lines)
     if args.style:
       command.extend(['-style', args.style])
+
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
                          stderr=None,
@@ -107,11 +109,50 @@ def main():
     if p.returncode != 0:
       sys.exit(p.returncode)
 
-    if not args.i:
-      with open(filename) as f:
-        code = f.readlines()
-      formatted_code = StringIO(stdout).readlines()
-      diff = difflib.unified_diff(code, formatted_code,
+    with open(filename) as f:
+      code = f.readlines()
+    formatted_code = StringIO(stdout).readlines()
+
+    # From Clang-Format 18 to 20+ there were some dumb changes, things like
+    #
+    # const char* x;
+    # const char *x;
+    #
+    # were getting triggered as errors and failing CI
+    # We want clang-format for general formatting, but this nit-pick level
+    # is dumb to flag an error for what clearing seems to be a clang-format regression
+    #
+    # Filter out 1:1 line changes where the only difference is whitespace
+    # directly adjacent to an asterisk (*) or ampersand (&).
+    adjusted_formatted_code = []
+    sm = difflib.SequenceMatcher(None, code, formatted_code)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+      if tag == 'equal':
+        adjusted_formatted_code.extend(code[i1:i2])
+      elif tag == 'replace' and (i2 - i1) == (j2 - j1):
+        for original, formatted in zip(code[i1:i2], formatted_code[j1:j2]):
+          # Strip spaces around * and & using regex, then compare.
+          # r'\s*([*&])\s*' matches any whitespace, an asterisk or ampersand, and any trailing whitespace.
+          # r'\1' replaces it with just the captured character (* or &).
+          norm_orig = re.sub(r'\s*([*&])\s*', r'\1', original)
+          norm_fmt = re.sub(r'\s*([*&])\s*', r'\1', formatted)
+
+          if norm_orig == norm_fmt:
+            adjusted_formatted_code.append(original)
+          else:
+            adjusted_formatted_code.append(formatted)
+      else:
+        # Non 1:1 replacement (e.g. line wrapping or breaking), accept formatting
+        adjusted_formatted_code.extend(formatted_code[j1:j2])
+
+    if args.i:
+      # If in-place mode is on, write back to file ONLY if there are actual changes left
+      if code != adjusted_formatted_code:
+        with open(filename, 'w') as f:
+          f.writelines(adjusted_formatted_code)
+    else:
+      # Otherwise, print the unified diff based on the adjusted code
+      diff = difflib.unified_diff(code, adjusted_formatted_code,
                                   filename, filename,
                                   '(before formatting)', '(after formatting)')
       diff_string = ''.join(diff)
