@@ -2818,3 +2818,73 @@ TEST_F(PositiveGpuAV, ConstantFoldingCompositeShuffle) {
     pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveGpuAV, HeapWithUntypedPointers) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* vsSource = R"glsl(
+        #version 450
+
+        #extension GL_EXT_descriptor_heap: require
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout (location = 0) in vec3 inPos;
+        layout (location = 1) in vec3 inNormal;
+        layout (location = 2) in vec2 inUV;
+        layout (location = 3) in vec3 inColor;
+
+        layout(push_constant) uniform PushConsts {
+            int samplerIndex;
+            int frameIndex;
+        } pushConsts;
+
+        layout(descriptor_heap) buffer UBO {
+            mat4 projection;
+            mat4 view;
+            mat4 model[2];
+        } ubo[];
+
+        layout (location = 0) out vec3 outNormal;
+        layout (location = 1) out vec3 outColor;
+        layout (location = 2) out vec2 outUV;
+        layout (location = 3) flat out int outInstanceIndex;
+
+        void main() {
+            outNormal = inNormal;
+            outColor = inColor;
+            outUV = inUV;
+            gl_Position = ubo[pushConsts.frameIndex].projection * ubo[pushConsts.frameIndex].view * ubo[pushConsts.frameIndex].model[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
+            outInstanceIndex = gl_InstanceIndex;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+
+    VkVertexInputBindingDescription binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes[] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3},
+        {2, 0, VK_FORMAT_R32G32_SFLOAT, sizeof(float) * 6},
+        {3, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 8},
+    };
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1u;
+    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 4u;
+    pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.pStages = pipe.shader_stages_.data();
+    pipe.CreateGraphicsPipeline(false);
+}

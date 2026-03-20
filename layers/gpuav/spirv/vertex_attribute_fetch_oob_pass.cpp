@@ -54,9 +54,9 @@ bool VertexAttributeFetchOobPass::Instrument() {
         for (; word < total_words; word++) {
             const uint32_t interface_id = entry_point->Word(word);
             const Variable* variable = type_manager_.FindVariableById(interface_id);
-            // guaranteed by spirv-val to be a OpVariable
-            assert(variable);
-            if (variable->StorageClass() == spv::StorageClassInput) {
+            // guaranteed by spirv-val to be a OpVariable/OpUntypedVariable
+            assert(variable || type_manager_.IsUntypedVariable(interface_id));
+            if (variable && variable->StorageClass() == spv::StorageClassInput) {
                 found_input = true;
                 break;
             }
