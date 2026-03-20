@@ -79,7 +79,6 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
   public:
     const vku::safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &create_info;
-    bool shared_presentable;                   // True for a front-buffered swapchain image
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
     const uint64_t ahb_format;                 // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects

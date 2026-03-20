@@ -204,9 +204,6 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
             images[image_index].present_submission_ref.reset();
         }
     }
-    if (shared_presentable) {
-        images[image_index].image_state->shared_presentable = shared_presentable;
-    }
     images[image_index].ResetPresentWaitSemaphores();
 
     acquire_history_ring_buffer[acquire_request_count % acquire_history_ring_buffer_size] = image_index;
