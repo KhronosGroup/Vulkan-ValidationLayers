@@ -1487,14 +1487,6 @@ void DeviceState::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAl
             dedicated_binding.emplace(dedicated_tensor->tensor, tensor_state->create_info);
         }
     }
-    if (const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
-        // Successful import operation transfers POSIX handle ownership to the driver.
-        // Stop tracking handle at this point. It can not be used for import operations anymore.
-        // The map's erase is a no-op for externally created handles that are not tracked here.
-        // NOTE: In contrast, the successful import does not transfer ownership of a Win32 handle.
-        WriteLockGuard guard(fd_handle_map_lock_);
-        fd_handle_map_.erase(import_memory_fd_info->fd);
-    }
     Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
                                 physical_device_count));
     return;
@@ -1504,17 +1496,6 @@ void DeviceState::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, c
                                           const RecordObject& record_obj) {
     if (auto mem_info = Get<DeviceMemory>(mem)) {
         fake_memory.Free(mem_info->fake_base_address);
-    }
-    {
-        WriteLockGuard guard(fd_handle_map_lock_);
-        for (auto it = fd_handle_map_.begin(); it != fd_handle_map_.end();) {
-            if (it->second.device_memory == mem) {
-                it = fd_handle_map_.erase(it);
-                break;
-            } else {
-                ++it;
-            }
-        }
     }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {
@@ -4225,42 +4206,12 @@ void DeviceState::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemap
     if (auto semaphore_state = Get<Semaphore>(pGetFdInfo->semaphore)) {
         // Record before locking with the WriteLockGuard
         RecordGetExternalSemaphoreState(*semaphore_state, pGetFdInfo->handleType);
-
-        ExternalOpaqueInfo external_info = {};
-        external_info.semaphore_flags = semaphore_state->flags;
-        external_info.semaphore_type = semaphore_state->type;
-
-        WriteLockGuard guard(fd_handle_map_lock_);
-        fd_handle_map_.insert_or_assign(*pFd, external_info);
     }
 }
 
 void DeviceState::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
     if (auto fence_node = Get<Fence>(fence)) {
         fence_node->Import(handle_type, flags);
-    }
-}
-
-void DeviceState::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
-                                               const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    if (const auto memory_state = Get<DeviceMemory>(pGetFdInfo->memory)) {
-        // For validation purposes we need to keep allocation size and memory type index.
-        // There is no need to keep pNext chain.
-        ExternalOpaqueInfo external_info = {};
-        external_info.allocation_size = memory_state->allocate_info.allocationSize;
-        external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
-        external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
-        external_info.dedicated_image = memory_state->GetDedicatedImage();
-        external_info.device_memory = memory_state->VkHandle();
-
-        WriteLockGuard guard(fd_handle_map_lock_);
-        // `insert_or_assign` ensures that information is updated when the system decides to re-use
-        // closed handle value for a new handle. The fd handle created inside Vulkan _can_ be closed
-        // using the 'close' system call, which is not tracked by the validation layer.
-        fd_handle_map_.insert_or_assign(*pFd, external_info);
     }
 }
 
