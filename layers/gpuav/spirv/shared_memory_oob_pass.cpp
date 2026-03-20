@@ -209,16 +209,7 @@ bool SharedMemoryOobPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
-                    CreateFunctionCall(current_block, &inst_it, meta);
-                } else {
-                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
-                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
-                    InjectFunctionPost(current_block, ic_data);
-                    block_it++;
-                    block_it++;
-                    break;
-                }
+                CreateFunctionCall(current_block, &inst_it, meta);
             }
         }
     }

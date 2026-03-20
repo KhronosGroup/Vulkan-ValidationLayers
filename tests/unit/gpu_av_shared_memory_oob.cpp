@@ -176,19 +176,49 @@ TEST_F(NegativeGpuAVSharedMemoryOob, VectorExtractDynamic) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryOob, VectorInsertDynamic) {
-    const char* shader_source = R"glsl(
-        #version 450
-        layout(local_size_x = 1) in;
-        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
-        shared vec4 v;
-        void main() {
-            v = vec4(1.0);
-            uint i = ssbo.data[0] + 4;
-            v[i] = 2.0;
-        }
-    )glsl";
+    const char* shader_source = R"spirv(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %ssbo %v
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %runtime_arr ArrayStride 4
+               OpMemberDecorate %ssbo_struct 0 Offset 0
+               OpDecorate %ssbo_struct Block
+               OpDecorate %ssbo DescriptorSet 0
+               OpDecorate %ssbo Binding 0
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %uint_0 = OpConstant %uint 0
+     %uint_4 = OpConstant %uint 4
+    %float_1 = OpConstant %float 1
+    %float_2 = OpConstant %float 2
+%runtime_arr = OpTypeRuntimeArray %uint
+%ssbo_struct = OpTypeStruct %runtime_arr
+   %ssbo_ptr = OpTypePointer StorageBuffer %ssbo_struct
+   %elem_ptr = OpTypePointer StorageBuffer %uint
+       %ssbo = OpVariable %ssbo_ptr StorageBuffer
+     %wg_ptr = OpTypePointer Workgroup %v4float
+          %v = OpVariable %wg_ptr Workgroup
+       %main = OpFunction %void None %void_fn
+      %entry = OpLabel
+   %init_vec = OpCompositeConstruct %v4float %float_1 %float_1 %float_1 %float_1
+               OpStore %v %init_vec
+      %chain = OpAccessChain %elem_ptr %ssbo %uint_0 %uint_0
+    %idx_val = OpLoad %uint %chain
+    %oob_idx = OpIAdd %uint %idx_val %uint_4
+   %loaded_v = OpLoad %v4float %v
+  %inserted = OpVectorInsertDynamic %v4float %loaded_v %float_2 %oob_idx
+               OpStore %v %inserted
+       %cast = OpBitcast %uint %float_2
+               OpStore %chain %cast
+               OpReturn
+               OpFunctionEnd
+    )spirv";
 
-    TestHelper(shader_source, 4, 4);
+    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpVectorInsertDynamic", SPV_SOURCE_ASM);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryOob, LongVectorOob) {
@@ -218,7 +248,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
     const char* shader_source = R"slang(
         RWStructuredBuffer<uint> outputBuffer;
 
-        [numthreads(2, 1, 1)]
+        [numthreads(1, 1, 1)]
         void main(uint3 groupThreadID : SV_GroupThreadID)
         {
             struct A {
@@ -234,7 +264,7 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
             static groupshared S temp;
             uint i = outputBuffer[0] + 2;
             temp.z[i].b = 0;
-            outputBuffer[groupThreadID.x] = temp.z[groupThreadID.x].b;
+            outputBuffer[0] = temp.z[0].b;
         }
     )slang";
 
@@ -259,7 +289,6 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
     m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -341,14 +370,14 @@ TEST_F(NegativeGpuAVSharedMemoryOob, MeshShader) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    RETURN_IF_SKIP(InitGpuAvFramework(
-        {{OBJECT_LAYER_NAME, "gpuav_shared_memory_data_race", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}}, false));
+    RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1) in;
         layout(max_vertices = 3, max_primitives = 1) out;
         layout(triangles) out;
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
