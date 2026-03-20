@@ -851,6 +851,10 @@ bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
 bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
                                                     const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                             VkDeviceFaultInfoKHR* pFaultInfo, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                               const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,

@@ -514,6 +514,8 @@ PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
 PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
 PFN_vkCmdCopyMemoryIndirectKHR CmdCopyMemoryIndirectKHR;
 PFN_vkCmdCopyMemoryToImageIndirectKHR CmdCopyMemoryToImageIndirectKHR;
+PFN_vkGetDeviceFaultReportsKHR GetDeviceFaultReportsKHR;
+PFN_vkGetDeviceFaultDebugInfoKHR GetDeviceFaultDebugInfoKHR;
 PFN_vkCmdEndRendering2KHR CmdEndRendering2KHR;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
@@ -1452,6 +1454,10 @@ void InitExtensionFromCore(const char* extension_name) {
             }
         },
         {
+            "VK_EXT_device_fault", []() {
+            }
+        },
+        {
             "VK_EXT_extended_dynamic_state2", []() {
                 CmdSetRasterizerDiscardEnableEXT = CmdSetRasterizerDiscardEnable;
                 CmdSetDepthBiasEnableEXT = CmdSetDepthBiasEnable;
@@ -2061,6 +2067,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             "VK_KHR_copy_memory_indirect", [](VkInstance , VkDevice device) {
                 CmdCopyMemoryIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryIndirectKHR"));
                 CmdCopyMemoryToImageIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryToImageIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryToImageIndirectKHR"));
+            }
+        },
+        {
+            "VK_KHR_device_fault", [](VkInstance , VkDevice device) {
+                GetDeviceFaultReportsKHR = reinterpret_cast<PFN_vkGetDeviceFaultReportsKHR>(GetDeviceProcAddr(device, "vkGetDeviceFaultReportsKHR"));
+                GetDeviceFaultDebugInfoKHR = reinterpret_cast<PFN_vkGetDeviceFaultDebugInfoKHR>(GetDeviceProcAddr(device, "vkGetDeviceFaultDebugInfoKHR"));
             }
         },
         {
@@ -3105,6 +3117,8 @@ void ResetAllExtensions() {
     CmdBindDescriptorBufferEmbeddedSamplers2EXT = nullptr;
     CmdCopyMemoryIndirectKHR = nullptr;
     CmdCopyMemoryToImageIndirectKHR = nullptr;
+    GetDeviceFaultReportsKHR = nullptr;
+    GetDeviceFaultDebugInfoKHR = nullptr;
     CmdEndRendering2KHR = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;

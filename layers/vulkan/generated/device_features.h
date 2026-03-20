@@ -352,10 +352,14 @@ struct DeviceFeatures {
     bool externalMemoryRDMA;
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     bool screenBufferImport;
-    // VkPhysicalDeviceFaultFeaturesEXT
+    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
     bool deviceFault;
-    // VkPhysicalDeviceFaultFeaturesEXT
+    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
     bool deviceFaultVendorBinary;
+    // VkPhysicalDeviceFaultFeaturesKHR
+    bool deviceFaultDeviceLostOnMasked;
+    // VkPhysicalDeviceFaultFeaturesKHR
+    bool deviceFaultReportMasked;
     // VkPhysicalDeviceFeatures
     bool alphaToOne;
     // VkPhysicalDeviceFeatures
@@ -798,6 +802,8 @@ struct DeviceFeatures {
     bool separateDepthStencilLayouts;
     // VkPhysicalDeviceShader64BitIndexingFeaturesEXT
     bool shader64BitIndexing;
+    // VkPhysicalDeviceShaderAbortFeaturesKHR
+    bool shaderAbort;
     // VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV
     bool shaderFloat16VectorAtomics;
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT
@@ -862,6 +868,8 @@ struct DeviceFeatures {
     bool shaderDeviceClock;
     // VkPhysicalDeviceShaderClockFeaturesKHR
     bool shaderSubgroupClock;
+    // VkPhysicalDeviceShaderConstantDataFeaturesKHR
+    bool shaderConstantData;
     // VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM
     bool shaderCoreBuiltins;
     // VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures, VkPhysicalDeviceVulkan13Features

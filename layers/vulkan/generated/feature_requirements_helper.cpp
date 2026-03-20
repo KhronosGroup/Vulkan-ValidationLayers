@@ -2967,6 +2967,36 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->deviceFaultVendorBinary, "VkPhysicalDeviceFaultFeaturesEXT::deviceFaultVendorBinary"};
         }
 
+        case Feature::deviceFaultDeviceLostOnMasked: {
+            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceFaultFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->deviceFaultDeviceLostOnMasked, "VkPhysicalDeviceFaultFeaturesKHR::deviceFaultDeviceLostOnMasked"};
+        }
+
+        case Feature::deviceFaultReportMasked: {
+            auto vk_struct = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceFaultFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->deviceFaultReportMasked, "VkPhysicalDeviceFaultFeaturesKHR::deviceFaultReportMasked"};
+        }
+
         case Feature::formatPack: {
             auto vk_struct = const_cast<VkPhysicalDeviceFormatPackFeaturesARM*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceFormatPackFeaturesARM>(*inout_pnext_chain));
@@ -4810,7 +4840,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-        case Feature::constantAlphaColorBlendFactors: {
+            case Feature::constantAlphaColorBlendFactors: {
             auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR*>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
@@ -5923,6 +5953,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->shader64BitIndexing, "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing"};
         }
 
+        case Feature::shaderAbort: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderAbortFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderAbortFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderAbortFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderAbort, "VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort"};
+        }
+
         case Feature::shaderFloat16VectorAtomics: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV>(*inout_pnext_chain));
@@ -6455,6 +6500,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                 }
             }
             return {&vk_struct->shaderSubgroupClock, "VkPhysicalDeviceShaderClockFeaturesKHR::shaderSubgroupClock"};
+        }
+
+        case Feature::shaderConstantData: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderConstantDataFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderConstantDataFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderConstantDataFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderConstantData, "VkPhysicalDeviceShaderConstantDataFeaturesKHR::shaderConstantData"};
         }
 
         case Feature::shaderCoreBuiltins: {

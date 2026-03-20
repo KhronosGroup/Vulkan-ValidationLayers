@@ -4857,6 +4857,12 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
     return skip;
 }
 
+// vkGetDeviceFaultReportsKHR:
+// Checked by chassis: device: "VUID-vkGetDeviceFaultReportsKHR-device-parameter"
+
+// vkGetDeviceFaultDebugInfoKHR:
+// Checked by chassis: device: "VUID-vkGetDeviceFaultDebugInfoKHR-device-parameter"
+
 // vkCmdEndRendering2KHR:
 // Checked by chassis: commandBuffer: "VUID-vkCmdEndRendering2KHR-commandBuffer-parameter"
 

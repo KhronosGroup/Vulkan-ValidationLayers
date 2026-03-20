@@ -1156,6 +1156,12 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdCopyMemoryToImageIndirectKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdCopyMemoryToImageIndirectKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdCopyMemoryToImageIndirectKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceFaultReportsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceFaultReportsKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceFaultReportsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceFaultDebugInfoKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceFaultDebugInfoKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceFaultDebugInfoKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndRendering2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndRendering2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndRendering2KHR);

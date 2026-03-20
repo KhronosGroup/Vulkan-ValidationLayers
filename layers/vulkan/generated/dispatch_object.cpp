@@ -5564,6 +5564,19 @@ void Device::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
         commandBuffer, (const VkCopyMemoryToImageIndirectInfoKHR*)local_pCopyMemoryToImageIndirectInfo);
 }
 
+VkResult Device::GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                          VkDeviceFaultInfoKHR* pFaultInfo) {
+    VkResult result = device_dispatch_table.GetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo);
+
+    return result;
+}
+
+VkResult Device::GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
+    VkResult result = device_dispatch_table.GetDeviceFaultDebugInfoKHR(device, pDebugInfo);
+
+    return result;
+}
+
 void Device::CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);
 }
