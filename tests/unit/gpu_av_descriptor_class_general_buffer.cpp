@@ -2811,3 +2811,150 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmallDra
                          4,  // binding range
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors, true, true);
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBufferDeviceAddressCommands) {
+    TEST_DESCRIPTION("Make sure OOB is still checked when result is from a BufferDeviceAddress");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+
+        struct Test {
+            float a;
+        };
+
+        layout(buffer_reference, std430, buffer_reference_align = 16) buffer TestBuffer {
+            Test test;
+        };
+
+        Test GetTest(uint64_t ptr) {
+            return TestBuffer(ptr).test;
+        }
+
+        // 12 bytes large
+        layout(set = 0, binding = 0) buffer foo {
+            TestBuffer data;
+            float x;
+        } in_buffer;
+
+        void main() {
+            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
+    // too small
+    vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    VkDeviceAddress block_ptr = block_buffer.Address();
+
+    uint8_t* in_buffer_ptr = (uint8_t*)in_buffer.Memory().Map();
+    memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
+
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                vkt::device_address);
+    VkDispatchIndirectCommand* dispatch_data = (VkDispatchIndirectCommand*)indirect_buffer.Memory().Map();
+    dispatch_data->x = 1u;
+    dispatch_data->y = 1u;
+    dispatch_data->z = 1u;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+
+    VkDispatchIndirect2InfoKHR dispatch_info = vku::InitStructHelper();
+    dispatch_info.addressRange = indirect_buffer.AddressRange();
+    dispatch_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    vk::CmdDispatchIndirect2KHR(m_command_buffer, &dispatch_info);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect2KHR-storageBuffers-06936");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadDeviceAddressCommands) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform Foo { uint index[]; };
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
+        void main() {
+            // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
+            // so u_index.index[4] accesses bytes 64, 65, 66, and 67
+            data[0] = index[4];
+        }
+    )glsl";
+    vkt::SimpleGPL pipe(*this, pipeline_layout, vertshader);
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand) * 5u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                vkt::device_address);
+    VkDrawIndirectCommand* draw_data = (VkDrawIndirectCommand*)indirect_buffer.Memory().Map();
+    draw_data->vertexCount = 3u;
+    draw_data->instanceCount = 1u;
+    draw_data->firstVertex = 0u;
+    draw_data->firstInstance = 0u;
+
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    uint32_t* count_data = (uint32_t*)count_buffer.Memory().Map();
+    *count_data = 1u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    VkDrawIndirectCount2InfoKHR draw_info = vku::InitStructHelper();
+    draw_info.addressRange = indirect_buffer.StridedAddressRange(sizeof(VkDrawIndirectCommand));
+    draw_info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    draw_info.countAddressRange = count_buffer.AddressRange();
+    draw_info.countAddressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    draw_info.maxDrawCount = 5u;
+    vk::CmdDrawIndirectCount2KHR(m_command_buffer, &draw_info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount2KHR-uniformBuffers-06935", 3);
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
