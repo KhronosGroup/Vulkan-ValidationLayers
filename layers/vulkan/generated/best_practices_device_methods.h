@@ -423,6 +423,12 @@ void PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestam
                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                               uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
 
+void PostCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                            VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) override;
+
+void PostCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                              const RecordObject& record_obj) override;
+
 void PostCallRecordDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
                                               const RecordObject& record_obj) override;
 

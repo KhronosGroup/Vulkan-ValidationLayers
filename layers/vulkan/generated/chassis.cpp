@@ -19014,6 +19014,101 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                        VkDeviceFaultInfoKHR* pFaultInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDeviceFaultReportsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDeviceFaultReportsKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDeviceFaultReportsKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDeviceFaultReportsKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDeviceFaultReportsKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDeviceFaultReportsKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDeviceFaultReportsKHR");
+        result = device_dispatch->GetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDeviceFaultReportsKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDeviceFaultReportsKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDeviceFaultDebugInfoKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDeviceFaultDebugInfoKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDeviceFaultDebugInfoKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDeviceFaultDebugInfoKHR(device, pDebugInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDeviceFaultDebugInfoKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDeviceFaultDebugInfoKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDeviceFaultDebugInfoKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDeviceFaultDebugInfoKHR(device, pDebugInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDeviceFaultDebugInfoKHR");
+        result = device_dispatch->GetDeviceFaultDebugInfoKHR(device, pDebugInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDeviceFaultDebugInfoKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDeviceFaultDebugInfoKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDeviceFaultDebugInfoKHR(device, pDebugInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     VVL_ZoneScoped;
 
@@ -37629,6 +37724,8 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", {kFuncTypeDev, (void*)CmdBindDescriptorBufferEmbeddedSamplers2EXT}},
         {"vkCmdCopyMemoryIndirectKHR", {kFuncTypeDev, (void*)CmdCopyMemoryIndirectKHR}},
         {"vkCmdCopyMemoryToImageIndirectKHR", {kFuncTypeDev, (void*)CmdCopyMemoryToImageIndirectKHR}},
+        {"vkGetDeviceFaultReportsKHR", {kFuncTypeDev, (void*)GetDeviceFaultReportsKHR}},
+        {"vkGetDeviceFaultDebugInfoKHR", {kFuncTypeDev, (void*)GetDeviceFaultDebugInfoKHR}},
         {"vkCmdEndRendering2KHR", {kFuncTypeDev, (void*)CmdEndRendering2KHR}},
         {"vkCreateDebugReportCallbackEXT", {kFuncTypeInst, (void*)CreateDebugReportCallbackEXT}},
         {"vkDestroyDebugReportCallbackEXT", {kFuncTypeInst, (void*)DestroyDebugReportCallbackEXT}},

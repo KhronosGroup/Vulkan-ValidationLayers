@@ -298,6 +298,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityDotProductFloat16AccFloat16VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat16AccFloat16, nullptr, ""}},
         {spv::CapabilityDotProductBFloat16AccVALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductBFloat16Acc, nullptr, ""}},
         {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;

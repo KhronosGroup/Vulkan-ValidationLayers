@@ -216,7 +216,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_vulkan_memory_model{kNotSupported};
     ExtEnabled vk_khr_shader_terminate_invocation{kNotSupported};
     ExtEnabled vk_khr_fragment_shading_rate{kNotSupported};
+    ExtEnabled vk_khr_shader_constant_data{kNotSupported};
     ExtEnabled vk_khr_dynamic_rendering_local_read{kNotSupported};
+    ExtEnabled vk_khr_shader_abort{kNotSupported};
     ExtEnabled vk_khr_shader_quad_control{kNotSupported};
     ExtEnabled vk_khr_spirv_1_4{kNotSupported};
     ExtEnabled vk_khr_separate_depth_stencil_layouts{kNotSupported};
@@ -271,6 +273,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_video_encode_quantization_map{kNotSupported};
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotSupported};
     ExtEnabled vk_khr_maintenance7{kNotSupported};
+    ExtEnabled vk_khr_device_fault{kNotSupported};
     ExtEnabled vk_khr_maintenance8{kNotSupported};
     ExtEnabled vk_khr_shader_fma{kNotSupported};
     ExtEnabled vk_khr_maintenance9{kNotSupported};
@@ -701,7 +704,9 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_vulkan_memory_model:
         case vvl::Extension::_VK_KHR_shader_terminate_invocation:
         case vvl::Extension::_VK_KHR_fragment_shading_rate:
+        case vvl::Extension::_VK_KHR_shader_constant_data:
         case vvl::Extension::_VK_KHR_dynamic_rendering_local_read:
+        case vvl::Extension::_VK_KHR_shader_abort:
         case vvl::Extension::_VK_KHR_shader_quad_control:
         case vvl::Extension::_VK_KHR_spirv_1_4:
         case vvl::Extension::_VK_KHR_separate_depth_stencil_layouts:
@@ -756,6 +761,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_video_encode_quantization_map:
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
+        case vvl::Extension::_VK_KHR_device_fault:
         case vvl::Extension::_VK_KHR_maintenance8:
         case vvl::Extension::_VK_KHR_shader_fma:
         case vvl::Extension::_VK_KHR_maintenance9:

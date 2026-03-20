@@ -969,6 +969,26 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceShaderConstantDataFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR: {  // Covers
+                                                                                     // VUID-VkPhysicalDeviceShaderConstantDataFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderConstantDataFeaturesKHR);
+                VkPhysicalDeviceShaderConstantDataFeaturesKHR* structure = (VkPhysicalDeviceShaderConstantDataFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderConstantData), structure->shaderConstantData);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceShaderAbortFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR: {  // Covers
+                                                                             // VUID-VkPhysicalDeviceShaderAbortFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderAbortFeaturesKHR);
+                VkPhysicalDeviceShaderAbortFeaturesKHR* structure = (VkPhysicalDeviceShaderAbortFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderAbort), structure->shaderAbort);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderQuadControlFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceShaderQuadControlFeaturesKHR-sType-sType
@@ -1292,6 +1312,22 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance7FeaturesKHR);
                 VkPhysicalDeviceMaintenance7FeaturesKHR* structure = (VkPhysicalDeviceMaintenance7FeaturesKHR*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::maintenance7), structure->maintenance7);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceFaultFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR: {  // Covers VUID-VkPhysicalDeviceFaultFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFaultFeaturesKHR);
+                VkPhysicalDeviceFaultFeaturesKHR* structure = (VkPhysicalDeviceFaultFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::deviceFault), structure->deviceFault);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::deviceFaultVendorBinary), structure->deviceFaultVendorBinary);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::deviceFaultReportMasked), structure->deviceFaultReportMasked);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::deviceFaultDeviceLostOnMasked), structure->deviceFaultDeviceLostOnMasked);
             }
         } break;
 
@@ -5116,6 +5152,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // No Validation code for VkDeviceFaultShaderAbortMessageInfoKHR structure members  -- Covers
+        // VUID-VkDeviceFaultShaderAbortMessageInfoKHR-sType-sType
+
         // No Validation code for VkSurfaceProtectedCapabilitiesKHR structure members  -- Covers
         // VUID-VkSurfaceProtectedCapabilitiesKHR-sType-sType
 
@@ -8667,7 +8706,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 262> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 265> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -8746,6 +8785,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT,
@@ -8853,12 +8893,14 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CONSTANT_DATA_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES,
@@ -12121,7 +12163,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
                                        "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != nullptr) {
         [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
-        constexpr std::array<VkStructureType, 116> allowed_structs_VkPhysicalDeviceProperties2 = {
+        constexpr std::array<VkStructureType, 118> allowed_structs_VkPhysicalDeviceProperties2 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_PROPERTIES_NV,
@@ -12153,6 +12195,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_COMPUTE_QUEUE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_PROPERTIES_VALVE,
@@ -12210,6 +12253,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_PROPERTIES_ARM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ABORT_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD,
@@ -20195,6 +20239,49 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
                                               "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask", false);
             }
         }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                     VkDeviceFaultInfoKHR* pFaultInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_fault)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_fault});
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pFaultCounts), loc.dot(Field::pFaultInfo), pFaultCounts, pFaultInfo, VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR,
+        true, true, false, "VUID-VkDeviceFaultInfoKHR-sType-sType", kVUIDUndefined,
+        "VUID-vkGetDeviceFaultReportsKHR-pFaultCounts-parameter", "VUID-vkGetDeviceFaultReportsKHR-pFaultCounts-arraylength");
+    if (pFaultInfo != nullptr) {
+        for (uint32_t pFaultIndexs = 0; pFaultIndexs < *pFaultCounts; ++pFaultIndexs) {
+            [[maybe_unused]] const Location pFaultInfo_loc = loc.dot(Field::pFaultInfo, pFaultIndexs);
+            skip |= context.ValidateStructPnext(pFaultInfo_loc, pFaultInfo[pFaultIndexs].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkDeviceFaultInfoKHR-pNext-pNext",
+                                                kVUIDUndefined, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_device_fault)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_fault});
+    skip |= context.ValidateStructType(loc.dot(Field::pDebugInfo), pDebugInfo, VK_STRUCTURE_TYPE_DEVICE_FAULT_DEBUG_INFO_KHR, true,
+                                       "VUID-vkGetDeviceFaultDebugInfoKHR-pDebugInfo-parameter",
+                                       "VUID-VkDeviceFaultDebugInfoKHR-sType-sType");
+    if (pDebugInfo != nullptr) {
+        [[maybe_unused]] const Location pDebugInfo_loc = loc.dot(Field::pDebugInfo);
+        constexpr std::array<VkStructureType, 1> allowed_structs_VkDeviceFaultDebugInfoKHR = {
+            VK_STRUCTURE_TYPE_DEVICE_FAULT_SHADER_ABORT_MESSAGE_INFO_KHR};
+
+        skip |= context.ValidateStructPnext(pDebugInfo_loc, pDebugInfo->pNext, allowed_structs_VkDeviceFaultDebugInfoKHR.size(),
+                                            allowed_structs_VkDeviceFaultDebugInfoKHR.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDeviceFaultDebugInfoKHR-pNext-pNext",
+                                            "VUID-VkDeviceFaultDebugInfoKHR-sType-unique", false);
     }
     return skip;
 }

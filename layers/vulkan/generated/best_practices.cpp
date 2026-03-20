@@ -1036,6 +1036,16 @@ void BestPractices::PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, ui
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void BestPractices::PostCallRecordGetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                           VkDeviceFaultInfoKHR* pFaultInfo, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                             const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void bp_state::Instance::PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance,
                                                                     const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                     const VkAllocationCallbacks* pAllocator,

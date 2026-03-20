@@ -342,10 +342,14 @@ enum class Feature {
     externalMemoryRDMA,
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     screenBufferImport,
-    // VkPhysicalDeviceFaultFeaturesEXT
+    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
     deviceFault,
-    // VkPhysicalDeviceFaultFeaturesEXT
+    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
     deviceFaultVendorBinary,
+    // VkPhysicalDeviceFaultFeaturesKHR
+    deviceFaultDeviceLostOnMasked,
+    // VkPhysicalDeviceFaultFeaturesKHR
+    deviceFaultReportMasked,
     // VkPhysicalDeviceFeatures
     alphaToOne,
     // VkPhysicalDeviceFeatures
@@ -788,6 +792,8 @@ enum class Feature {
     separateDepthStencilLayouts,
     // VkPhysicalDeviceShader64BitIndexingFeaturesEXT
     shader64BitIndexing,
+    // VkPhysicalDeviceShaderAbortFeaturesKHR
+    shaderAbort,
     // VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV
     shaderFloat16VectorAtomics,
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT
@@ -852,6 +858,8 @@ enum class Feature {
     shaderDeviceClock,
     // VkPhysicalDeviceShaderClockFeaturesKHR
     shaderSubgroupClock,
+    // VkPhysicalDeviceShaderConstantDataFeaturesKHR
+    shaderConstantData,
     // VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM
     shaderCoreBuiltins,
     // VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures, VkPhysicalDeviceVulkan13Features

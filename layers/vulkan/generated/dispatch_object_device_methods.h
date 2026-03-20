@@ -545,6 +545,8 @@ void CmdBindDescriptorBufferEmbeddedSamplers2EXT(
 void CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo);
 void CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
                                      const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo);
+VkResult GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts, VkDeviceFaultInfoKHR* pFaultInfo);
+VkResult GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo);
 void CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo);
 VkResult DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo);
 VkResult DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
