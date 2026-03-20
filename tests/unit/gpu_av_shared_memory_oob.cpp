@@ -16,16 +16,17 @@
 class NegativeGpuAVSharedMemoryOob : public GpuAVSharedMemoryOobTest {
   protected:
     void TestHelper(const char* source, uint32_t expected_index, uint32_t expected_bound,
-                    const char* vuid = "SPIRV-SharedMemoryOob-OpAccessChain");
+                    const char* vuid = "SPIRV-SharedMemoryOob-OpAccessChain", SpvSourceType source_type = SPV_SOURCE_GLSL,
+                    VkSpecializationInfo* spec_info = nullptr);
 };
 
 void NegativeGpuAVSharedMemoryOob::TestHelper(const char* shader_source, uint32_t expected_index, uint32_t expected_bound,
-                                              const char* vuid) {
+                                              const char* vuid, SpvSourceType source_type, VkSpecializationInfo* spec_info) {
     RETURN_IF_SKIP(InitSharedMemoryOob());
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, source_type, spec_info);
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -131,20 +132,47 @@ TEST_F(NegativeGpuAVSharedMemoryOob, ArrayOfStructs) {
 }
 
 TEST_F(NegativeGpuAVSharedMemoryOob, VectorExtractDynamic) {
-    const char* shader_source = R"glsl(
-        #version 450
-        layout(local_size_x = 1) in;
-        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
-        shared vec4 v;
-        void main() {
-            v = vec4(1.0);
-            uint i = ssbo.data[0] + 4;
-            float x = v[i];
-            ssbo.data[1] = floatBitsToUint(x);
-        }
-    )glsl";
+    const char* shader_source = R"spirv(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %ssbo %v
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %runtime_arr ArrayStride 4
+               OpMemberDecorate %ssbo_struct 0 Offset 0
+               OpDecorate %ssbo_struct Block
+               OpDecorate %ssbo DescriptorSet 0
+               OpDecorate %ssbo Binding 0
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %uint_0 = OpConstant %uint 0
+     %uint_4 = OpConstant %uint 4
+    %float_1 = OpConstant %float 1
+%runtime_arr = OpTypeRuntimeArray %uint
+%ssbo_struct = OpTypeStruct %runtime_arr
+   %ssbo_ptr = OpTypePointer StorageBuffer %ssbo_struct
+   %elem_ptr = OpTypePointer StorageBuffer %uint
+       %ssbo = OpVariable %ssbo_ptr StorageBuffer
+     %wg_ptr = OpTypePointer Workgroup %v4float
+          %v = OpVariable %wg_ptr Workgroup
+       %main = OpFunction %void None %void_fn
+      %entry = OpLabel
+   %init_vec = OpCompositeConstruct %v4float %float_1 %float_1 %float_1 %float_1
+               OpStore %v %init_vec
+      %chain = OpAccessChain %elem_ptr %ssbo %uint_0 %uint_0
+    %idx_val = OpLoad %uint %chain
+    %oob_idx = OpIAdd %uint %idx_val %uint_4
+   %loaded_v = OpLoad %v4float %v
+  %extracted = OpVectorExtractDynamic %float %loaded_v %oob_idx
+       %cast = OpBitcast %uint %extracted
+               OpStore %chain %cast
+               OpReturn
+               OpFunctionEnd
+    )spirv";
 
-    TestHelper(shader_source, 4, 4);
+    TestHelper(shader_source, 4, 4, "SPIRV-SharedMemoryOob-OpVectorExtractDynamic", SPV_SOURCE_ASM);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryOob, VectorInsertDynamic) {
@@ -233,6 +261,77 @@ TEST_F(NegativeGpuAVSharedMemoryOob, SlangNestedStruct) {
 
     m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
     m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", "2 is >= array size 2");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVSharedMemoryOob, SpecConstantArraySize) {
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        layout(constant_id = 0) const uint SIZE = 4;
+        shared uint arr[SIZE];
+        void main() {
+            arr[3] = 1;
+            ssbo.data[0] = arr[3];
+        }
+    )glsl";
+
+    uint32_t spec_value = 3;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo spec_info = {1, &entry, sizeof(uint32_t), &spec_value};
+    TestHelper(shader_source, 3, 3, "SPIRV-SharedMemoryOob-OpAccessChain", SPV_SOURCE_GLSL, &spec_info);
+}
+
+TEST_F(NegativeGpuAVSharedMemoryOob, MaxSharedMemorySize) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework(
+        {{OBJECT_LAYER_NAME, "gpuav_shared_memory_data_race", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
+    const uint32_t array_size = max_shared_memory_size / sizeof(uint32_t);
+
+    std::ostringstream cs;
+    cs << R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } ssbo;
+        shared uint arr[)glsl";
+    cs << array_size;
+    cs << R"glsl(];
+        void main() {
+            uint i = ssbo.data[0] + )glsl";
+    cs << array_size;
+    cs << R"glsl(;
+            arr[i] = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t* buf_ptr = (uint32_t*)in_buffer.Memory().Map();
+    memset((void*)buf_ptr, 0, 32);
+    in_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    const std::string regex = std::to_string(array_size) + " is >= array size " + std::to_string(array_size);
+    m_errorMonitor->SetDesiredErrorRegex("SPIRV-SharedMemoryOob-OpAccessChain", regex.c_str());
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
