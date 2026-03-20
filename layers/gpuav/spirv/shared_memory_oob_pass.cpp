@@ -33,23 +33,25 @@ const static OfflineFunction kOfflineFunction = {"inst_shared_memory_oob",
 
 SharedMemoryOobPass::SharedMemoryOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
-void SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+uint32_t SharedMemoryOobPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_def = GetLinkFunction(link_function_id_, kOfflineFunction);
-    const uint32_t void_type = type_manager_.GetTypeVoid().Id();
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.GetConstantUInt32(inst_position).Id();
     const uint32_t variable_id_const = type_manager_.GetConstantUInt32(meta.variable_id).Id();
 
+    uint32_t function_result = 0;
     for (const auto& check : meta.checks) {
-        const uint32_t function_result = module_.TakeNextId();
+        function_result = module_.TakeNextId();
         const uint32_t bound_id = type_manager_.GetConstantUInt32(check.bound).Id();
 
         block.CreateInstruction(
             spv::OpFunctionCall,
-            {void_type, function_result, function_def, check.index_id, bound_id, inst_position_id, variable_id_const}, inst_it);
+            {bool_type, function_result, function_def, check.index_id, bound_id, inst_position_id, variable_id_const}, inst_it);
     }
 
     module_.need_log_error_ = true;
+    return function_result;
 }
 
 bool SharedMemoryOobPass::RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it,
@@ -204,7 +206,16 @@ bool SharedMemoryOobPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                CreateFunctionCall(current_block, &inst_it, meta);
+                if (!module_.settings_.safe_mode) {
+                    CreateFunctionCall(current_block, &inst_it, meta);
+                } else {
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
+                    InjectFunctionPost(current_block, ic_data);
+                    block_it++;
+                    block_it++;
+                    break;
+                }
             }
         }
     }

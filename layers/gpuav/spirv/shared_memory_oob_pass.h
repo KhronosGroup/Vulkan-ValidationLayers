@@ -44,7 +44,7 @@ class SharedMemoryOobPass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it, const Instruction& inst,
                                  InstructionMeta& meta);
-    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t link_function_id_ = 0;
 };
