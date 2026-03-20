@@ -464,10 +464,6 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
 bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     vku::safe_VkShaderCreateInfoEXT& modified_create_info, const Location& create_info_loc,
     chassis::ShaderObjectInstrumentationData& instrumentation_data) {
-    if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(modified_create_info.pNext)) {
-        return false;
-    }
-
     const uint32_t unique_shader_id = unique_shader_module_id_++;
 
     std::vector<uint32_t>& instrumented_spirv = instrumentation_data.instrumented_spirv;
@@ -531,6 +527,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     "for VkShaderEXT created with it, therefore no validation error will be repored for them by GPU-AV at "
                     "runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
+        } else if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(new_create_info.pNext)) {
+            continue;
         } else {
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
@@ -543,9 +541,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     ? vvl::DescriptorMode::DescriptorModeHeap
                     : SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
             if (mode == vvl::DescriptorMode::DescriptorModeHeap) {
-                if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(new_create_info.pNext)) {
-                    continue;
-                }
                 AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(&new_create_info));
                 chassis_state.is_modified |=
                     PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
