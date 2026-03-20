@@ -313,6 +313,11 @@ class GpuAVSharedMemoryDataRaceTest : public GpuAVTest {
     void InitSharedMemoryDataRace(uint32_t message_limit = 1);
 };
 
+class GpuAVSharedMemoryOobTest : public GpuAVTest {
+  public:
+    void InitSharedMemoryOob();
+};
+
 class DebugPrintfTests : public VkLayerTest {
   public:
     void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
