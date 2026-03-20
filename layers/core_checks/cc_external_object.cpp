@@ -91,22 +91,6 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
         }
     }
 
-    if (pImportSemaphoreFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT) {
-        if (const auto payload_info = device_state->GetOpaqueInfoFromFdHandle(pImportSemaphoreFdInfo->fd)) {
-            if (sem_state->flags != payload_info->semaphore_flags) {
-                // would use string_VkSemaphoreCreateFlags but no valid flags yet
-                skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-03263", device, info_loc.dot(Field::semaphore),
-                                 "was created with flags 0x%" PRIx32 " but fd (%d) was exported with 0x%" PRIx32 ".",
-                                 sem_state->flags, pImportSemaphoreFdInfo->fd, payload_info->semaphore_flags);
-            }
-            if (sem_state->type != payload_info->semaphore_type) {
-                skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-03264", device, info_loc.dot(Field::semaphore),
-                                 "was created with %s but fd (%d) was exported as %s.", string_VkSemaphoreType(sem_state->type),
-                                 pImportSemaphoreFdInfo->fd, string_VkSemaphoreType(payload_info->semaphore_type));
-            }
-        }
-    }
-
     return skip;
 }
 
