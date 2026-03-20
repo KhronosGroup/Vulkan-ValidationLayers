@@ -782,12 +782,12 @@ TEST_F(NegativeDeviceAddressCommands, CmdDrawMeshTasksIndirectCount2EXT) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
     InitRenderTarget();
 
-    vkt::Buffer buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
-    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(buffer.Memory().Map());
-    draw_ptr->vertexCount = 3u;
-    draw_ptr->instanceCount = 1u;
-    draw_ptr->firstVertex = 0u;
-    draw_ptr->firstInstance = 0u;
+    vkt::Buffer buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                       vkt::device_address);
+    VkDrawMeshTasksIndirectCommandEXT* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(buffer.Memory().Map());
+    draw_ptr->groupCountX = 1u;
+    draw_ptr->groupCountY = 1u;
+    draw_ptr->groupCountZ = 1u;
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
@@ -3569,6 +3569,10 @@ TEST_F(NegativeDeviceAddressCommands, DrawMeshIndirectCountFeature) {
     InitRenderTarget();
 
     vkt::Buffer buffer(*m_device, 2048u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    VkDrawMeshTasksIndirectCommandEXT* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(buffer.Memory().Map());
+    draw_ptr->groupCountX = 1u;
+    draw_ptr->groupCountY = 1u;
+    draw_ptr->groupCountZ = 1u;
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
 
     const char* mesh_source = R"glsl(
