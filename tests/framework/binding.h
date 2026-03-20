@@ -1079,16 +1079,12 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void Destroy() noexcept;
 
     explicit CommandBuffer() : Handle() {}
-    CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { Init(dev, info); }
-    CommandBuffer(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+    CommandBuffer(const Device& dev, const VkCommandBufferAllocateInfo& info) { Init(dev, info); }
+    CommandBuffer(const Device& dev, const CommandPool& pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         Init(dev, pool, level);
     }
-    CommandBuffer(CommandBuffer &&rhs) noexcept : Handle(std::move(rhs)) {
-        dev_handle_ = rhs.dev_handle_;
-        rhs.dev_handle_ = VK_NULL_HANDLE;
-        cmd_pool_ = rhs.cmd_pool_;
-        rhs.cmd_pool_ = VK_NULL_HANDLE;
-    }
+    CommandBuffer(CommandBuffer&& rhs) noexcept;
+    CommandBuffer& operator=(CommandBuffer&& rhs) noexcept;
 
     // vkAllocateCommandBuffers()
     void Init(const Device &dev, const VkCommandBufferAllocateInfo &info);
@@ -1165,6 +1161,11 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void ImageBarrier(const vkt::Image& image, VkImageLayout current_layout);
 
     void TransitionLayout(const vkt::Image& image, VkImageLayout old_layout, VkImageLayout new_layout);
+
+    // Used when vkt:Image is not available, for example, for swapchain images
+    void TransitionLayout(const VkImage image, VkImageLayout old_layout, VkImageLayout new_layout,
+                          const VkImageSubresourceRange& subresource_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+
     void FullMemoryBarrier();
 
   private:
@@ -1408,6 +1409,14 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
 
     uint32_t GetImageCount() const;
     std::vector<VkImage> GetImages() const;
+
+    // Each command buffer records layout transition to present layout for corresponding swapchain image
+    std::vector<vkt::CommandBuffer> RecordTransitionToPresentLayout(const vkt::Device& device,
+                                                                    const vkt::CommandPool& command_pool) const;
+
+    // Return true if *all* swapchain images were transitioned.
+    // We don't have a guarantee its always possible because the ordering of the acquired images is unspecified
+    bool TryTransitionToPresentLayout(const vkt::Device& device, vkt::Queue& queue, const vkt::CommandPool& command_pool);
 
     uint32_t AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result = nullptr);
     uint32_t AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result = nullptr);

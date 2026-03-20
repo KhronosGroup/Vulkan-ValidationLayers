@@ -3355,15 +3355,14 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-
-    const auto images = m_swapchain.GetImages();
-    for (auto image : images) {
-        SetPresentImageLayout(image);
-    }
+    const auto swapchain_images = m_swapchain.GetImages();
 
     vkt::Semaphore semaphore(*m_device);
     const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
-    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore));
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(semaphore));
 
     // the semaphore has already been waited on
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-03268");
@@ -3384,11 +3383,7 @@ TEST_F(NegativeWsi, QueuePresentDependsOnTimelineWait) {
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
-
-    const auto images = m_swapchain.GetImages();
-    for (auto image : images) {
-        SetPresentImageLayout(image);
-    }
+    const auto swapchain_images = m_swapchain.GetImages();
 
     vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
@@ -3397,7 +3392,10 @@ TEST_F(NegativeWsi, QueuePresentDependsOnTimelineWait) {
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     vkt::Semaphore binary_semaphore(*m_device);
-    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(binary_semaphore));
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(binary_semaphore));
 
     // the semaphore has already been waited on
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-03268");
@@ -3413,9 +3411,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
     // Acquire image using a semaphore
@@ -3433,9 +3430,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
     // Acquire image using a semaphore
@@ -3443,10 +3439,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
 
     // Dummy submit that signals semaphore that will be waited by the present. Does not wait on the acquire semaphore.
-    m_command_buffer.Begin();
-    m_command_buffer.End();
     const vkt::Semaphore submit_semaphore(*m_device);
-    m_default_queue->Submit(m_command_buffer, vkt::Signal(submit_semaphore));
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(submit_semaphore));
 
     // Present waits on submit semaphore. Does not wait on the acquire semaphore.
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
@@ -3461,9 +3455,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
     // Acquire image using a fence
@@ -3478,7 +3471,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
     // NOTE: this test validates vkQueuePresentKHR.
     // At this point it's fine to wait for the fence to avoid in-use errors during test exit
     // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
-    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
@@ -3486,9 +3479,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
     }
 
     // Acquire image using a semaphore and fence
@@ -3505,7 +3497,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
     // NOTE: this test validates vkQueuePresentKHR.
     // At this point it's fine to wait for the fence to avoid in-use errors during test exit
     // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
-    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
@@ -4837,16 +4829,17 @@ TEST_F(NegativeWsi, SignalPresentSemaphore) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
     const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
-    }
 
     vkt::Semaphore acquire_semaphore(*m_device);
     uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+
     vkt::Semaphore present_semaphore(*m_device);
     // Signal present semaphore
-    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
     // Wait on present semaphore
     m_default_queue->Present(m_swapchain, image_index, present_semaphore);
 
@@ -4868,15 +4861,16 @@ TEST_F(NegativeWsi, SignalPresentSemaphoreAfterQueueWait) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
     const auto swapchain_images = m_swapchain.GetImages();
-    for (auto image : swapchain_images) {
-        SetPresentImageLayout(image);
-    }
 
     vkt::Semaphore acquire_semaphore(*m_device);
     uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+
     vkt::Semaphore present_semaphore(*m_device);
-    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
     m_default_queue->Present(m_swapchain, image_index, present_semaphore);
 
     // Workaround with QueueWait is only allowed when maintenance1 is not used.

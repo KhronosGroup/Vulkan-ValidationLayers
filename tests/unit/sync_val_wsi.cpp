@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,19 +55,25 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     // Loop through the indices until we find one we are reusing...
     // When fence is non-null this can timeout so we need to track results
     // Acquire can always timeout, so we need to track results
-    auto acquire_used_image_semaphore = [this, &image_used](const vkt::Semaphore& sem, uint32_t& index) {
+    auto acquire_used_image_semaphore = [this, &image_used, &images](const vkt::Semaphore& sem, uint32_t& index) {
         VkResult result = VK_SUCCESS;
         while (true) {
             index = m_swapchain.AcquireNextImage(sem, kWaitTimeout, &result);
             if ((result != VK_SUCCESS) || image_used[index]) break;
 
-            result = m_default_queue->Present(m_swapchain, index, sem);
+            m_command_buffer.Begin();
+            m_command_buffer.TransitionLayout(images[index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            m_command_buffer.End();
+            m_default_queue->Submit(m_command_buffer, vkt::Wait(sem));
+            m_device->Wait();
+
+            result = m_default_queue->Present(m_swapchain, index, vkt::no_semaphore);
             if (result != VK_SUCCESS) break;
             image_used[index] = true;
         }
         return result;
     };
-    auto acquire_used_image_fence = [this, &image_used](const vkt::Fence& fence, uint32_t& index) {
+    auto acquire_used_image_fence = [this, &image_used, &images](const vkt::Fence& fence, uint32_t& index) {
         VkResult result = VK_SUCCESS;
         while (true) {
             index = m_swapchain.AcquireNextImage(fence, kWaitTimeout, &result);
@@ -75,6 +81,12 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
             result = fence.Wait(kWaitTimeout);
             fence.Reset();
+
+            m_command_buffer.Begin();
+            m_command_buffer.TransitionLayout(images[index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+            m_command_buffer.End();
+            m_default_queue->SubmitAndWait(m_command_buffer);
+
             m_default_queue->Present(m_swapchain, index, vkt::no_semaphore);
 
             if (result != VK_SUCCESS) break;
@@ -83,34 +95,12 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
         return result;
     };
 
-    auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
-        VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-        image_barrier.srcAccessMask = 0U;
-        image_barrier.dstAccessMask = 0U;
-        image_barrier.oldLayout = from;
-        image_barrier.newLayout = to;
-        image_barrier.image = h_image;
-
-        image_barrier.subresourceRange = full_image;
-        m_command_buffer.Begin();
-        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
-        m_command_buffer.End();
-    };
-
-    // Transition swapchain images to PRESENT_SRC layout for presentation
-    for (VkImage image : images) {
-        write_barrier_cb(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-        m_default_queue->Submit(m_command_buffer);
-        m_device->Wait();
-        m_command_buffer.Reset();
-    }
-
     uint32_t acquired_index = 0;
     REQUIRE_SUCCESS(acquire_used_image_fence(fence, acquired_index), "acquire_used_image");
 
-    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
 
     // Look for errors between the acquire and first use...
     // No sync operations...
@@ -136,10 +126,17 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     vkt::Semaphore sem(*m_device);
     REQUIRE_SUCCESS(acquire_used_image_semaphore(sem, acquired_index), "acquire_used_image");
 
-    m_command_buffer.Reset();
-    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
     // The wait mask doesn't match the operations in the command buffer
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    image_barrier.image = images[acquired_index];
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &image_barrier);
+    m_command_buffer.End();
+
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_default_queue->Submit(m_command_buffer, vkt::Wait(sem, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
@@ -159,8 +156,9 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     REQUIRE_SUCCESS(acquire_used_image_fence(fence, acquired_index), "acquire_used_index");
     REQUIRE_SUCCESS(fence.Wait(kWaitTimeout), "WaitForFences");
 
-    m_command_buffer.Reset();
-    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
 
     fence.Reset();
     m_default_queue->Submit(m_command_buffer, vkt::Signal(sem));
