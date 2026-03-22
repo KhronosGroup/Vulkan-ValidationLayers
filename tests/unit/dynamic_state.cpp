@@ -5279,7 +5279,8 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamples) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicState, SampleLocationsEnable) {
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4671
+TEST_F(NegativeDynamicState, DISABLED_SampleLocationsEnable) {
     TEST_DESCRIPTION("Test sample locations enable");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
