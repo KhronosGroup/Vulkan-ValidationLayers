@@ -98,7 +98,7 @@ const char* unimplementable_validation[] = {
     // Same as above, struct is returned by the driver
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerSize-07340",
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-07341",
-    "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-parameter",
+    "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneKHR-headerVersion-parameter",
 
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7958
     // These are useless VUs and nothing to do
@@ -683,6 +683,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceShaderLongVectorPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceDescriptorHeapPropertiesEXT-sType-sType",
+    "VUID-VkPastPresentationTimingEXT-pNext-pNext",
+    "VUID-VkPastPresentationTimingEXT-sType-sType",
+    "VUID-VkPhysicalDeviceShaderAbortPropertiesKHR-sType-sType",
+    "VUID-VkPhysicalDeviceFaultPropertiesKHR-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
     "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"
@@ -843,6 +847,10 @@ const char* deprecated_validation[] = {
     "VUID-RuntimeSpirv-OpHitObjectTraceRayNV-07714",
     "VUID-RuntimeSpirv-OpHitObjectTraceRayNV-07715",
     "VUID-RuntimeSpirv-OpHitObjectTraceRayNV-07716",
+
+    // No one wants to own VK_EXT_opacity_micromap with the KHR coming out
+    // ... sad
+    "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-micromap-parameter",
 };
 
 // clang-format on

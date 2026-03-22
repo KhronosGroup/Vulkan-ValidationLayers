@@ -360,18 +360,22 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     const auto& error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    // VU was removed in 1.4.344
+    // VU was removed in 1.4.344 and returned in 1.4.347 as an explicit "set to null/zero"
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4725
-    skip |=
-        context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount), create_info_loc.dot(Field::ppEnabledLayerNames),
-                                    pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
-                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
-    if (pCreateInfo->ppEnabledLayerNames) {
-        for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-            skip |= context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
-                                           "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter",
-                                           pCreateInfo->ppEnabledLayerNames[i]);
-        }
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8096/
+    if (pCreateInfo->enabledLayerCount != 0) {
+        skip |= LogError("VUID-VkDeviceCreateInfo-enabledLayerCount-12384", physicalDevice,
+                         create_info_loc.dot(Field::enabledLayerCount),
+                         "is %" PRIu32
+                         " (not zero).\nDevice Layers have never worked since Vulkan 1.0 and only Instance Layers should be used "
+                         "instead: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-devicelayers",
+                         pCreateInfo->enabledLayerCount);
+    } else if (pCreateInfo->ppEnabledLayerNames) {
+        skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-12385", physicalDevice,
+                         create_info_loc.dot(Field::ppEnabledLayerNames),
+                         "is %p (not null).\nDevice Layers have never worked since Vulkan 1.0 and only Instance Layers should be "
+                         "used instead: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-devicelayers",
+                         pCreateInfo->ppEnabledLayerNames);
     }
 
     // If this device supports VK_KHR_portability_subset, it must be enabled

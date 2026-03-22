@@ -525,7 +525,7 @@ TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
     device_ci.enabledLayerCount = 1u;
     device_ci.ppEnabledLayerNames = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-enabledLayerCount-12384");
     vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
