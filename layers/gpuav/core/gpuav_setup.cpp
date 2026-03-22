@@ -158,7 +158,7 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
 
 static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device,
                                   VmaAllocator* pAllocator) {
-    VmaVulkanFunctions functions;
+    VmaVulkanFunctions functions = {};
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
     allocator_info.device = device;
