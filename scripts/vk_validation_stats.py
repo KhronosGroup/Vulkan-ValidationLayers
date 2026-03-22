@@ -359,7 +359,7 @@ class OutputDatabase:
             "11447" : ["01245", "01282", "01293", "10285"],
             "11448" : ["00065", "03867"],
             "11451" : ["07474"],
-            "11452" : ["00740", "04331", "04332", "04335", "04487", "04488", "04489", "06264", "07045", "07051", "07057", "10595", "10596", "10597", "12333", "12335", "12336", "12337"],
+            "11452" : ["00740", "04331", "04332", "04335", "04487", "04488", "04489", "06264", "07045", "07051", "07057", "10595", "10596", "10597", "12333", "12335", "12336", "12337", "07106", "07108", "07109", "07110", "07111"],
             "11453" : ["06022", "06533", "06534", "06535", "06536", "09299", "09300"],
             "11481" : ["02532", "02533", "03049", "03050", "09044", "09045", "09046"],
             "11793" : ["12379"],
@@ -460,6 +460,8 @@ class OutputDatabase:
         external_count = 0
         sparse_count = 0
 
+        no_category = set()
+
         vuid_list = list(self.vj.all_vuids)
         vuid_list.sort()
         for vuid in vuid_list:
@@ -551,6 +553,7 @@ class OutputDatabase:
                     table.append(f'<th>WSI</th></tr>')
                 continue
 
+            no_category.add(vuid)
             table.append('<th>To be categorized</th></tr>')
 
         table.append('</table>\n</body>\n</html>\n')
@@ -573,6 +576,12 @@ class OutputDatabase:
             hfile.write(preamble)
             hfile.write(''.join(stats))
             hfile.write(''.join(table))
+
+        if len(no_category) != 0:
+            print("WARNING - Following VUs still missing a category:")
+            for vuid in no_category:
+                print(f' - {vuid}')
+
 
 class SpirvValidation:
     def __init__(self, repo_path):
