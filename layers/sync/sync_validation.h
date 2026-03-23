@@ -484,8 +484,7 @@ class SyncValidator : public vvl::DeviceProxy {
                                         const ErrorObject &error_obj) const override;
     uint32_t SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
                               PresentedImages &presented_images) const;
-    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
-                                       const RecordObject &record_obj) override;
+    void RecordQueuePresent(VkQueue queue, QueuePresentCmdState* cmd_state);
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t *pImageIndex, const RecordObject &record_obj) override;
     void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo, uint32_t *pImageIndex,
@@ -508,10 +507,7 @@ class SyncValidator : public vvl::DeviceProxy {
                                         const ErrorObject &error_obj) const override;
     bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                            const ErrorObject &error_obj) const override;
-    void PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
-                                       const RecordObject &record_obj) override;
-    void PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
-                                          const RecordObject &record_obj) override;
+    void RecordSignalSemaphore(VkDevice device, QueueSubmitCmdState* cmd_state);
     void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
                                       const RecordObject &record_obj) override;
     void PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,

@@ -2280,13 +2280,6 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
     host_waitable_semaphores_.clear();
 }
 
-struct QueuePresentCmdState {
-    std::shared_ptr<const QueueSyncState> queue;
-    SignalsUpdate signals_update;
-    PresentedImages presented_images;
-    QueuePresentCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}
-};
-
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
@@ -2298,7 +2291,9 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
     ClearPending();
 
-    vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, *this);
+    QueuePresentCmdState cmd_state_obj(*this);
+    QueuePresentCmdState* cmd_state = &cmd_state_obj;
+
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -2337,6 +2332,10 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     if (!skip) {
         cmd_state->queue->SetPendingLastBatch(std::move(batch));
     }
+
+    if (!skip) {
+        const_cast<SyncValidator*>(this)->RecordQueuePresent(queue, cmd_state);
+    }
     return skip;
 }
 
@@ -2361,22 +2360,11 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, Q
     return static_cast<uint32_t>(presented_images.size());
 }
 
-void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
-                                                  const RecordObject& record_obj) {
+void SyncValidator::RecordQueuePresent(VkQueue queue, QueuePresentCmdState* cmd_state) {
     stats.UpdateAccessStats(*this);
     stats.UpdateMemoryStats();
 
     if (!syncval_settings.submit_time_validation) {
-        return;
-    }
-
-    // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
-    // static payload
-    vvl::TlsGuard<QueuePresentCmdState> cmd_state;
-
-    // See vvl::Device::PostCallRecordQueuePresentKHR for spec excerpt supporting
-    if (record_obj.result == VK_ERROR_OUT_OF_HOST_MEMORY || record_obj.result == VK_ERROR_OUT_OF_DEVICE_MEMORY ||
-        record_obj.result == VK_ERROR_DEVICE_LOST) {
         return;
     }
 
@@ -2571,8 +2559,6 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     if (!skip) {
         const_cast<SyncValidator*>(this)->RecordQueueSubmit(queue, fence, cmd_state);
     }
-
-    // Note that if we skip, guard cleans up for us, but cannot release the reserved tag range
     return skip;
 }
 
@@ -2754,7 +2740,10 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
     std::lock_guard lock_guard(queue_mutex_);
 
     ClearPending();
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
+
+    QueueSubmitCmdState cmd_state_obj(*this);
+    QueueSubmitCmdState* cmd_state = &cmd_state_obj;
+
     SignalsUpdate& signals_update = cmd_state->signals_update;
 
     auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
@@ -2771,6 +2760,10 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
 
     signals.emplace_back(SignalInfo(semaphore_state, pSignalInfo->value));
     skip |= PropagateTimelineSignals(signals_update, error_obj);
+
+    if (!skip) {
+        const_cast<SyncValidator*>(this)->RecordSignalSemaphore(device, cmd_state);
+    }
     return skip;
 }
 
@@ -2779,29 +2772,16 @@ bool SyncValidator::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkS
     return PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
 }
 
-void SyncValidator::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
-                                                  const RecordObject& record_obj) {
+void SyncValidator::RecordSignalSemaphore(VkDevice device, QueueSubmitCmdState* cmd_state) {
     if (!syncval_settings.submit_time_validation) {
         return;
     }
 
-    // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
-    // static payload
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
-
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
     ApplySignalsUpdate(cmd_state->signals_update, nullptr);
     for (const auto& qs : queue_sync_states_) {
         qs->ApplyPendingLastBatch();
         qs->ApplyPendingUnresolvedBatches();
     }
-}
-
-void SyncValidator::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
-                                                     const RecordObject& record_obj) {
-    PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
 }
 
 void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
