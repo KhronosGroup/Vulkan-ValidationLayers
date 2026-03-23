@@ -23,9 +23,12 @@
 
 namespace gpuav {
 
+// Needs to hold VkDeviceAddress and be a multiple of minStorageBufferOffsetAlignment, which can be a maximum of 256
+const VkDeviceSize bda_table_size = 256;
+
 struct BufferDeviceAddressCbState {
     BufferDeviceAddressCbState(CommandBufferSubState& cb) {
-        bda_ranges_snapshot_ptr = cb.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(VkDeviceAddress));
+        bda_ranges_snapshot_ptr = cb.gpu_resources_manager.GetDeviceLocalBufferRange(bda_table_size);
     }
 
     vko::BufferRange bda_ranges_snapshot_ptr{};
@@ -127,7 +130,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
             cb.gpu_resources_manager.FlushAllocation(bda_table);
 
             // Fill a GPU buffer with a pointer to the BDA table
-            vko::BufferRange bda_table_ptr = cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
+            vko::BufferRange bda_table_ptr = cb.gpu_resources_manager.GetHostCoherentBufferRange(bda_table_size);
             *(VkDeviceAddress*)bda_table_ptr.offset_mapped_ptr = bda_table.offset_address;
 
             vko::CmdSynchronizedCopyBufferRange(per_submission_cb, bda_cb_state->bda_ranges_snapshot_ptr, bda_table_ptr);
