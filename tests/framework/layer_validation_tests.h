@@ -296,10 +296,24 @@ class GpuAVDescriptorHeap : public GpuAVTest {
   public:
     void InitGpuAVDescriptorHeap(bool safe_mode = true);
 
+    void CreateResourceHeap(VkDeviceSize app_size);
+    void CreateSamplerHeap(VkDeviceSize app_size, bool use_embedded_samplers = false);
+
+    void BindResourceHeap();
+    void BindSamplerHeap();
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+
+    vkt::Buffer resource_heap_;
+    uint8_t *resource_heap_data_ = nullptr;
+    vkt::Buffer sampler_heap_;
+    uint8_t *sampler_heap_data_ = nullptr;
+
     VkDeviceSize AlignResource(VkDeviceSize offset);
     VkDeviceSize AlignSampler(VkDeviceSize offset);
 
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+  private:
+    bool embedded_samplers = false;
 };
 
 class GpuAVRayHitObjectTest : public GpuAVTest {
