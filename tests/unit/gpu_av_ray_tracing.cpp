@@ -21,7 +21,9 @@
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
-TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
+// In practice, tracing more rays than the driver allows will likely crash it
+// so disable this test
+TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirect) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);

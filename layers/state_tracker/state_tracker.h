@@ -680,7 +680,7 @@ class DeviceState : public vvl::base::Device {
         return found_it->second;
     }
 
-    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts) const;
+    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts = nullptr) const;
 
     // From the spec:
     // If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return
@@ -859,9 +859,6 @@ class DeviceState : public vvl::base::Device {
                                                      const VkAllocationCallbacks* pAllocator,
                                                      const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
-        VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* create_info,
-        std::shared_ptr<vvl::Buffer>&& buf_state);
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure,

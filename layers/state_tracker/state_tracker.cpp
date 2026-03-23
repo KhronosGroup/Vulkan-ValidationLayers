@@ -98,7 +98,7 @@ void DeviceState::RemoveSubState(LayerObjectTypeId id) {
     ForEachShared<vvl::ShaderObject>([id](std::shared_ptr<vvl::ShaderObject> state) { state->RemoveSubState(id); });
 }
 
-VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts = nullptr) const {
+VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts) const {
     // GPU-AV needs to pass in the modified extensions, since it may turn on BDA on its own
     if (!exts) {
         exts = &extensions;
@@ -2768,24 +2768,6 @@ void DeviceState::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
     Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo));
 }
 
-std::shared_ptr<AccelerationStructureKHR> DeviceState::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* create_info,
-    std::shared_ptr<Buffer>&& buf_state) {
-    // If the buffer's device address has not been queried,
-    // get it here. Since it is used for the purpose of
-    // validation, do not try to update buffer_state, since
-    // it only tracks application state.
-    VkDeviceAddress buffer_address = 0;
-    if (buf_state) {
-        if (buf_state->deviceAddress != 0) {
-            buffer_address = buf_state->deviceAddress;
-        } else if (buf_state->Binding()) {
-            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle());
-        }
-    }
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address);
-}
-
 void DeviceState::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator,
@@ -2794,8 +2776,7 @@ void DeviceState::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    auto buffer_state = Get<Buffer>(pCreateInfo->buffer);
-    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state)));
+    Add(std::make_shared<AccelerationStructureKHR>(*this, pCreateInfo, *pAccelerationStructure));
 }
 
 void DeviceState::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
@@ -2806,16 +2787,7 @@ void DeviceState::PostCallRecordCreateAccelerationStructure2KHR(VkDevice device,
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11880
-    const auto buffer_states = GetBuffersByAddress(pCreateInfo->addressRange.address);
-    for (const auto buffer_state : buffer_states) {
-        if (buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
-            auto buffer_state_ptr = Get<Buffer>(buffer_state->VkHandle());
-            Add(std::make_shared<AccelerationStructureKHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state_ptr),
-                                                           pCreateInfo->addressRange.address));
-            break;
-        }
-    }
+    Add(std::make_shared<AccelerationStructureKHR>(*this, pCreateInfo, *pAccelerationStructure));
 }
 
 void DeviceState::PostCallRecordBuildAccelerationStructuresKHR(
@@ -3001,7 +2973,7 @@ void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, 
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const RecordObject& record_obj) {
     if (auto as_state = Get<vvl::AccelerationStructureKHR>(accelerationStructure)) {
-        if (as_state->acceleration_structure_address != 0) {
+        if (as_state->GetAccelerationStructureAddress() != 0) {
             WriteLockGuard lock(as_with_addresses.array_mutex);
             auto as_found_it = std::find(as_with_addresses.array.begin(), as_with_addresses.array.end(), as_state.get());
             while (as_found_it != as_with_addresses.array.end()) {
@@ -3011,7 +2983,7 @@ void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, 
 
                 as_found_it = std::find(as_with_addresses.array.begin() + i, as_with_addresses.array.end(), as_state.get());
             }
-            as_state->acceleration_structure_address = 0;
+            as_state->SetAccelerationStructureAddress(0);
         }
     }
     Destroy<AccelerationStructureKHR>(accelerationStructure);
@@ -5749,7 +5721,7 @@ void DeviceState::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, Vk
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
-        dst_as_state->build_info_khr = src_as_state->build_info_khr;
+        dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
     }
 }
 
@@ -5762,7 +5734,7 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
-        dst_as_state->build_info_khr = src_as_state->build_info_khr;
+        dst_as_state->SetBuildInfo(src_as_state->GetBuildInfo());
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(dst_as_state);
             cb_state->AddChild(src_as_state);
@@ -6573,7 +6545,7 @@ void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevic
         return;
     }
     if (auto as_state = Get<vvl::AccelerationStructureKHR>(pInfo->accelerationStructure)) {
-        as_state->acceleration_structure_address = record_obj.device_address;
+        as_state->SetAccelerationStructureAddress(record_obj.device_address);
         WriteLockGuard lock(as_with_addresses.array_mutex);
         if (as_with_addresses.array.capacity() <= (as_with_addresses.array.size() + 1)) {
             as_with_addresses.array.reserve(as_with_addresses.array.capacity() * 2);
@@ -6593,12 +6565,12 @@ small_vector<const vvl::AccelerationStructureKHR*, 2> DeviceState::GetAccelerati
     ReadLockGuard lock(as_with_addresses.array_mutex);
     auto as_found_it =
         std::find_if(as_with_addresses.array.begin(), as_with_addresses.array.end(),
-                     [address](vvl::AccelerationStructureKHR* as) { return as->acceleration_structure_address == address; });
+                     [address](vvl::AccelerationStructureKHR* as) { return as->GetAccelerationStructureAddress() == address; });
 
     while (as_found_it != as_with_addresses.array.end()) {
         as_vector.emplace_back(*as_found_it);
         as_found_it = std::find_if(as_found_it + 1, as_with_addresses.array.end(), [address](vvl::AccelerationStructureKHR* as) {
-            return as->acceleration_structure_address == address;
+            return as->GetAccelerationStructureAddress() == address;
         });
     }
     return as_vector;
