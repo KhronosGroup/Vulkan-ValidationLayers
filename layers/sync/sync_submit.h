@@ -422,7 +422,7 @@ class QueueSyncState {
 
     // Unresolved batches state management.
     // The Validate phase makes request to update the list of unresolved batches by calling SetPendingUnresolvedBatches.
-    // Then the Record phase actually updates the list of unresolved batches by calling ApplyPendingLastBatch.
+    // Then the Record phase actually updates the list of unresolved batches by calling ApplyPendingUnresolvedBatches.
     // Pending unresovled batches is a mutable state. It relies on the queue external synchronization.
     const std::vector<UnresolvedBatch> &UnresolvedBatches() const { return unresolved_batches_; }
     void SetPendingUnresolvedBatches(std::vector<UnresolvedBatch> &&unresolved_batches) const;
@@ -457,6 +457,13 @@ struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
     SignalsUpdate signals_update;
     QueueSubmitCmdState(const SyncValidator &sync_validator) : signals_update(sync_validator) {}
+};
+
+struct QueuePresentCmdState {
+    std::shared_ptr<const QueueSyncState> queue;
+    SignalsUpdate signals_update;
+    PresentedImages presented_images;
+    QueuePresentCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}
 };
 
 }  // namespace syncval

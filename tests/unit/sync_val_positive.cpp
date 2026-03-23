@@ -879,20 +879,15 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
 TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitSyncValFramework());
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
     if (IsPlatformMockICD()) {
         // Mock does not support proper ordering of events, e.g. wait can return before signal
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     constexpr uint64_t max_signal_value = 10'000;
-
-    VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
-    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&semaphore_type_info);
-    vkt::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     std::atomic<bool> bailout{false};
     m_errorMonitor->SetBailout(&bailout);
@@ -901,10 +896,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     auto signaling_thread = std::thread{[&] {
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
-            VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
-            signal_info.semaphore = semaphore;
-            signal_info.value = ++last_signalled_value;
-            ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(*m_device, &signal_info));
+            ASSERT_EQ(VK_SUCCESS, semaphore.Signal(++last_signalled_value));
             if (bailout.load()) {
                 break;
             }
@@ -913,12 +905,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     // Wait for each signal
     uint64_t wait_value = 1;
     while (wait_value <= max_signal_value) {
-        VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
-        wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
-        wait_info.semaphoreCount = 1;
-        wait_info.pSemaphores = &semaphore.handle();
-        wait_info.pValues = &wait_value;
-        ASSERT_EQ(VK_SUCCESS, vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
+        ASSERT_EQ(VK_SUCCESS, semaphore.Wait(wait_value, vvl::kU64Max));
         ++wait_value;
         if (bailout.load()) {
             break;
