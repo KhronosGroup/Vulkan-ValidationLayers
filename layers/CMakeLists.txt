@@ -402,6 +402,7 @@ target_sources(vvl PRIVATE
     state_tracker/tensor_state.h
     state_tracker/queue_state.cpp
     state_tracker/queue_state.h
+    state_tracker/ray_tracing_state.cpp
     state_tracker/ray_tracing_state.h
     state_tracker/render_pass_state.cpp
     state_tracker/render_pass_state.h

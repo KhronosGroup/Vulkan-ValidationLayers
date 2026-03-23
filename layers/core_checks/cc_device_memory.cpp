@@ -133,51 +133,60 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location& function
                                                         const char* vuid) const {
     bool skip = false;
 
-    const vvl::Buffer& buffer_a = *accel_struct_a.buffer_state;
-    const vvl::Buffer& buffer_b = *accel_struct_b.buffer_state;
+    const vvl::BufferAndOffset& buffer_a = accel_struct_a.GetFirstValidBuffer(*device_state);
+    const vvl::BufferAndOffset& buffer_b = accel_struct_b.GetFirstValidBuffer(*device_state);
+    if (!buffer_a || !buffer_b) {
+        return skip;
+    }
+    const vvl::range<VkDeviceSize> range_a(buffer_a.offset, accel_struct_a.GetSize());
+    const vvl::range<VkDeviceSize> range_b(buffer_b.offset, accel_struct_b.GetSize());
 
-    const vvl::range<VkDeviceSize> range_a(accel_struct_a.GetOffset(), accel_struct_a.GetSize());
-    const vvl::range<VkDeviceSize> range_b(accel_struct_b.GetOffset(), accel_struct_b.GetSize());
-
-    if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
+    if (const auto [memory, overlap_range] = buffer_a.state->GetResourceMemoryOverlap(range_a, buffer_b.state, range_b);
         memory != VK_NULL_HANDLE) {
-        objlist.add(accel_struct_a.Handle(), buffer_a.Handle(), accel_struct_b.Handle(), buffer_b.Handle());
+        objlist.add(accel_struct_a.Handle(), buffer_a.state->Handle(), accel_struct_b.Handle(), buffer_b.state->Handle());
 
-        skip |= LogError(vuid, objlist, function_loc,
-                         "memory backing buffer (%s) used as storage for %s (%s) overlaps memory backing buffer (%s) used as "
-                         "storage for %s (%s). Overlapped memory is (%s) on range %s.",
-                         FormatHandle(buffer_a).c_str(), loc_a.Fields().c_str(), FormatHandle(accel_struct_a.Handle()).c_str(),
-                         FormatHandle(buffer_b).c_str(), loc_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
-                         FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
+        skip |=
+            LogError(vuid, objlist, function_loc,
+                     "memory backing buffer (%s) used as storage for %s (%s) overlaps memory backing buffer (%s) used as "
+                     "storage for %s (%s). Overlapped memory is (%s) on range %s.",
+                     FormatHandle(*buffer_a.state).c_str(), loc_a.Fields().c_str(), FormatHandle(accel_struct_a.Handle()).c_str(),
+                     FormatHandle(*buffer_b.state).c_str(), loc_b.Fields().c_str(), FormatHandle(accel_struct_b.Handle()).c_str(),
+                     FormatHandle(memory).c_str(), string_range_hex(overlap_range).c_str());
     }
 
     return skip;
 }
 
 // Check to see if host-visible memory was bound to this buffer
-bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& accel_struct,
-                                                              const Location& buffer_loc, const char* vuid) const {
-    bool result = false;
-    result |= ValidateMemoryIsBoundToBuffer(device, *accel_struct.buffer_state, buffer_loc, vuid);
-    if (!result) {
-        if (const auto memory_state = accel_struct.buffer_state->MemoryState()) {
-            if ((phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags &
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-                const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), memory_state->Handle());
-                result |=
-                    LogError(vuid, objlist, buffer_loc, "has been created with a buffer whose bound memory is not host visible.");
-            }
+bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& as, const Location& buffer_loc,
+                                                              const char* vuid) const {
+    bool skip = false;
+    const auto as_buffer = as.GetFirstValidBuffer(*device_state);
+    if (!as_buffer) {
+        return skip;
+    }
+    skip |= ValidateMemoryIsBoundToBuffer(device, *as_buffer.state, buffer_loc, vuid);
+    if (const auto memory_state = as_buffer.state->MemoryState()) {
+        if ((phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags &
+             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
+            const LogObjectList objlist(as.Handle(), as_buffer.state->Handle(), memory_state->Handle());
+            skip |= LogError(vuid, objlist, buffer_loc, "has been created with a buffer whose bound memory is not host visible.");
         }
     }
-    return result;
+
+    return skip;
 }
 
-bool CoreChecks::ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& accel_struct,
+bool CoreChecks::ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& as,
                                                                    const Location& accel_struct_loc, const char* vuid) const {
     bool skip = false;
-    if (const vvl::DeviceMemory* memory_state = accel_struct.buffer_state->MemoryState()) {
+    const auto as_buffer = as.GetFirstValidBuffer(*device_state);
+    if (!as_buffer) {
+        return skip;
+    }
+    if (const vvl::DeviceMemory* memory_state = as_buffer.state->MemoryState()) {
         if (memory_state->multi_instance) {
-            const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), memory_state->Handle());
+            const LogObjectList objlist(as.Handle(), as_buffer.state->Handle(), memory_state->Handle());
             skip |= LogError(vuid, objlist, accel_struct_loc,
                              "has been created with a buffer bound to memory (%s) that was allocated with multiple instances.",
                              FormatHandle(memory_state->Handle()).c_str());

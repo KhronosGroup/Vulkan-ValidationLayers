@@ -1184,8 +1184,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
                                  DescribeInstruction().c_str());
             }
-        } else if (acc_node->buffer_state) {
-            for (const auto& mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
+        } else if (auto as_buffer = acc_node->GetFirstValidBuffer(*dev_proxy.device_state)) {
+            for (const auto& mem_binding : as_buffer.state->GetInvalidMemory()) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",

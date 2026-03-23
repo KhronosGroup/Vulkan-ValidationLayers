@@ -653,19 +653,21 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                             continue;
                         }
                         const vvl::AccelerationStructureKHR* accel = accel_descriptor->GetAccelerationStructureStateKHR();
-                        if (!accel || !accel->buffer_state) {
+                        if (!accel) {
                             continue;
                         }
-                        const AccessRange range = MakeRange(*accel->buffer_state, accel->GetOffset(), accel->GetSize());
-                        auto hazard = current_context_->DetectHazard(*accel->buffer_state, sync_index, range);
-                        // TODO: figure out what is the purpose of SuppressedBoundDescriptorWAW and do we still need it?
-                        if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
-                            LogObjectList objlist(cb_state_->Handle(), accel->buffer_state->Handle(), pipe->Handle());
-                            const std::string resource_description = sync_state_.FormatHandle(accel->Handle());
-                            const std::string error = error_messages_.AccelerationStructureDescriptorError(
-                                hazard, *this, loc.function, resource_description, *pipe, variable.decorations.set, *descriptor_set,
-                                descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
-                            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+                        if (const vvl::BufferAndOffset as_buffer = accel->GetFirstValidBuffer(cb_state_->dev_data)) {
+                            const AccessRange range = MakeRange(*as_buffer.state, as_buffer.offset, accel->GetSize());
+                            auto hazard = current_context_->DetectHazard(*as_buffer.state, sync_index, range);
+                            // TODO: figure out what is the purpose of SuppressedBoundDescriptorWAW and do we still need it?
+                            if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
+                                LogObjectList objlist(cb_state_->Handle(), as_buffer.state->Handle(), pipe->Handle());
+                                const std::string resource_description = sync_state_.FormatHandle(accel->Handle());
+                                const std::string error = error_messages_.AccelerationStructureDescriptorError(
+                                    hazard, *this, loc.function, resource_description, *pipe, variable.decorations.set,
+                                    *descriptor_set, descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
+                                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+                            }
                         }
                         break;
                     }
@@ -792,12 +794,14 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                             continue;
                         }
                         const vvl::AccelerationStructureKHR* accel = accel_descriptor->GetAccelerationStructureStateKHR();
-                        if (!accel || !accel->buffer_state) {
+                        if (!accel) {
                             continue;
                         }
-                        const AccessRange range = MakeRange(*accel->buffer_state, accel->GetOffset(), accel->GetSize());
-                        const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, accel->Handle());
-                        current_context_->UpdateAccessState(*accel->buffer_state, sync_index, range, tag_ex);
+                        if (const vvl::BufferAndOffset as_buffer = accel->GetFirstValidBuffer(cb_state_->dev_data)) {
+                            const AccessRange range = MakeRange(*as_buffer.state, as_buffer.offset, accel->GetSize());
+                            const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, accel->Handle());
+                            current_context_->UpdateAccessState(*as_buffer.state, sync_index, range, tag_ex);
+                        }
                         break;
                     }
                     // TODO: INLINE_UNIFORM_BLOCK_EXT
