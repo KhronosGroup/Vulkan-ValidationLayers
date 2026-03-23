@@ -23,6 +23,7 @@
 #include "gpuav/instrumentation/descriptor_checks.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/register_validation.h"
+#include "gpuav/instrumentation/post_process_descriptor_heap.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
@@ -79,6 +80,13 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     // Align index buffer size to 4: validation shader reads DWORDS
     if (gpuav_settings.IsBufferValidationEnabled() && (in_usage & (VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
+    }
+
+    // If descriptor heaps are used, uniform buffers can be used for indirect indices and we need to be able to copy from them
+    if (gpuav_settings.shader_instrumentation.descriptor_heap) {
+        if (in_usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT) {
+            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        }
     }
 
     chassis_state.create_info_copy = chassis_state.modified_create_info.ptr();
@@ -153,6 +161,16 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
     chassis_state.pBindInfos = reinterpret_cast<VkDescriptorBufferBindingInfoEXT*>(chassis_state.modified_binding_infos.data());
 }
 
+void Validator::PreCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                            const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
+    if (pPushDataInfo->offset + pPushDataInfo->data.size > gpuav_cb_state.push_data_.size()) {
+        gpuav_cb_state.push_data_.resize(pPushDataInfo->offset + pPushDataInfo->data.size);
+    }
+    memcpy(gpuav_cb_state.push_data_.data() + pPushDataInfo->offset, pPushDataInfo->data.address, pPushDataInfo->data.size);
+}
+
 void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                                 const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -160,6 +178,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     CommandBufferSubState& gpuav_cb_state = SubState(*cb_state);
     RegisterDescriptorChecksValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
+    RegisterPostProcessingDescriptorHeap(*this, gpuav_cb_state);
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
     RegisterVertexAttributeFetchOobValidation(*this, gpuav_cb_state);
     RegisterMeshShadingValidation(*this, gpuav_cb_state);

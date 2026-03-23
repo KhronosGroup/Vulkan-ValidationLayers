@@ -43,6 +43,7 @@ const int kErrorGroup_GpuPreBuildAccelerationStructures = 12;
 const int kErrorGroup_InstMeshShading = 13;
 const int kErrorGroup_InstRayHitObject = 14;
 const int kErrorGroup_SharedMemoryDataRace = 15;
+const int kErrorGroup_InstDescriptorHeap = 16;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModel_Vertex = 0;
@@ -146,6 +147,24 @@ const int kErrorSubCode_Sanitizer_Atan2 = 4;
 const int kErrorSubCode_Sanitizer_Fminmax = 5;
 const int kErrorSubCode_Sanitizer_CoopMatAlignment = 6;
 const int kErrorSubCode_Sanitizer_Count = 7;  // update when adding new item
+
+// Descriptor heap
+const int kErrorSubCode_HeapBufferPointerAlignment = 1;
+const int kErrorSubCode_HeapSamplerPointerAlignment = 2;
+const int kErrorSubCode_HeapImagePointerAlignment = 3;
+const int kErrorSubCode_HeapImageTexelPointerAlignment = 4;
+const int kErrorSubCode_HeapAccelerationStructureAlignment = 5;
+const int kErrorSubCode_HeapTensorAlignment = 6;
+const int kErrorSubCode_HeapInvalidBufferDescriptor = 7;
+const int kErrorSubCode_HeapInvalidSamplerDescriptor = 8;
+const int kErrorSubCode_HeapInvalidImageDescriptor = 9;
+const int kErrorSubCode_HeapInvalidTexelPointer = 10;
+const int kErrorSubCode_HeapUnregisteredCustomBorderColor = 11;
+const int kErrorSubCode_HeapDifferentCustomBorderColor = 12;
+const int kErrorSubCode_HeapResourceOOB = 13;
+const int kErrorSubCode_HeapResourceReservedRange = 14;
+const int kErrorSubCode_HeapSamplerOOB = 15;
+const int kErrorSubCode_HeapSamplerReservedRange = 16;
 
 // Pre Draw
 //

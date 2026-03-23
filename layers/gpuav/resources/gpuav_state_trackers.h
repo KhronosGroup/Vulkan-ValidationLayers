@@ -162,6 +162,14 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Track which index we have bound our Descriptor Buffer in CmdBindDescriptorBuffersEXT
     uint32_t resource_descriptor_buffer_index_;
 
+    std::vector<uint8_t> push_data_;
+
+    template <typename T>
+    T GetPushData(size_t offset) {
+        assert(offset + sizeof(T) <= push_data_.size());
+        return *reinterpret_cast<T *>(push_data_.data() + offset);
+    }
+
   private:
     void AllocateResources(const Location &loc);
     void ResetCBState(bool should_destroy);

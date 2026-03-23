@@ -200,6 +200,7 @@ const char* VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE = "gpuav_shared_memory_data_r
 const char* VK_LAYER_GPUAV_MAX_INDICES_COUNT = "gpuav_max_indices_count";
 const char* VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 const char* VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT = "gpuav_shaders_to_instrument";
+const char* VK_LAYER_GPUAV_DESCRIPTOR_HEAP = "gpuav_descriptor_heap";
 
 const char* VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
 const char* VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
@@ -979,6 +980,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB,
                                     gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob);
+        }
+
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_HEAP)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_HEAP,
+                                    gpuav_settings.shader_instrumentation.descriptor_heap);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB)) {

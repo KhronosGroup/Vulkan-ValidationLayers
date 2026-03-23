@@ -231,6 +231,10 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Vertex attribute fetch limits
         {glsl::kBindingInstVertexAttributeFetchLimits, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        // Descriptor heap post processing
+        {glsl::kBindingInstDescriptorHeapPostProcess, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        // Descriptor heap valid descriptors buffer
+        {glsl::kBindingInstDescriptorHeapValidDescriptors, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     assert(instrumentation_bindings_.size() == glsl::kTotalBindings);
 
