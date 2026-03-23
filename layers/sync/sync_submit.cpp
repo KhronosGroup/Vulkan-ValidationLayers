@@ -631,10 +631,6 @@ std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::RegisterAsyncContext
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     auto skip_resolved_filter = [&batches_resolved](auto& batch) { return !vvl::Contains(batches_resolved, batch); };
     std::vector<ConstPtr> async_batches = sync_state_.GetLastBatches(skip_resolved_filter);
-    std::vector<ConstPtr> async_pending_batches = sync_state_.GetLastPendingBatches(skip_resolved_filter);
-    if (!async_pending_batches.empty()) {
-        vvl::Append(async_batches, async_pending_batches);
-    }
     for (const auto& async_batch : async_batches) {
         const QueueId async_queue = async_batch->GetQueueId();
         ResourceUsageTag sync_tag;
@@ -801,24 +797,6 @@ std::vector<QueueBatchContext::Ptr> SyncValidator::GetLastBatches(std::function<
     return snapshot;
 }
 
-std::vector<QueueBatchContext::ConstPtr> SyncValidator::GetLastPendingBatches(
-    std::function<bool(const QueueBatchContext::ConstPtr&)> filter) const {
-    std::vector<QueueBatchContext::ConstPtr> snapshot;
-    for (const auto& queue_sync_state : queue_sync_states_) {
-        auto batch = queue_sync_state->PendingLastBatch();
-        if (batch && filter(batch)) {
-            snapshot.emplace_back(std::move(batch));
-        }
-    }
-    return snapshot;
-}
-
-void SyncValidator::ClearPending() const {
-    for (const auto& queue_state : queue_sync_states_) {
-        queue_state->ClearPending();
-    }
-}
-
 // Note that function is const, but updates mutable submit_index to allow Validate to create correct tagging for command invocation
 // scope state.
 // Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
@@ -830,45 +808,21 @@ const LastSynchronizedPresent& QueueSyncState::GetLastSynchronizedPresent() cons
     return last_batch_ ? last_batch_->last_synchronized_present : empty;
 }
 
-void QueueSyncState::SetPendingLastBatch(QueueBatchContext::Ptr&& last) const { pending_last_batch_ = std::move(last); }
-
-// Since we're updating the QueueSync state, this is Record phase and the access log needs to point to the global one
-// Batch Contexts saved during signalling have their AccessLog reset when the pending signals are signalled.
-// NOTE: By design, QueueBatchContexts that are neither last, nor referenced by a signal are abandoned as unowned, since
-//       the contexts Resolve all history from previous all contexts when created
-void QueueSyncState::ApplyPendingLastBatch() {
-    // Update the queue to point to the last batch from the submit
-    if (pending_last_batch_) {
-        // Clean up the events data in the previous last batch on queue, as only the subsequent batches have valid use for them
-        // and the QueueBatchContext::Setup calls have be copying them along from batch to batch during submit.
+void QueueSyncState::SetLastBatch(QueueBatchContext::Ptr&& last) {
+    if (last) {
+        // Clean up the events data in the previous last batch on queue, as only the subsequent
+        // batches have valid use for them and the QueueBatchContext::Setup calls have be copying
+        // them along from batch to batch during submit.
         if (last_batch_) {
             last_batch_->ResetEventsContext();
         }
-        pending_last_batch_->Trim();
-        last_batch_ = std::move(pending_last_batch_);
+        last->Trim();
+        last_batch_ = std::move(last);
     }
 }
 
-void QueueSyncState::SetPendingUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches) const {
-    pending_unresolved_batches_ = std::move(unresolved_batches);
-    update_unresolved_batches_ = true;
-}
-
-void QueueSyncState::ApplyPendingUnresolvedBatches() {
-    if (update_unresolved_batches_) {
-        unresolved_batches_ = std::move(pending_unresolved_batches_);
-        pending_unresolved_batches_.clear();
-        update_unresolved_batches_ = false;
-    }
-}
-
-void QueueSyncState::ClearPending() const {
-    pending_last_batch_ = nullptr;
-    if (update_unresolved_batches_) {
-        const_cast<std::vector<UnresolvedBatch>&>(unresolved_batches_) = std::move(pending_unresolved_batches_);
-        pending_unresolved_batches_.clear();
-        update_unresolved_batches_ = false;
-    }
+void QueueSyncState::SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches) {
+    unresolved_batches_ = std::move(unresolved_batches);
 }
 
 void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferAccessContext& cb_access,

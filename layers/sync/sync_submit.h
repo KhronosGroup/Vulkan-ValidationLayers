@@ -410,29 +410,12 @@ class QueueSyncState {
 
     const LastSynchronizedPresent &GetLastSynchronizedPresent() const;
 
-    // Last batch state management.
-    // The Validate phase makes a request to update last batch by calling SetPendingLastBatch.
-    // Then the Record phase actually updates the last batch by calling ApplyPendingLastBatch.
-    // Pending last batch is a mutable state. It relies on the queue external synchronization.
     QueueBatchContext::ConstPtr LastBatch() const { return last_batch_; }
     QueueBatchContext::Ptr LastBatch() { return last_batch_; }
-    void SetPendingLastBatch(QueueBatchContext::Ptr &&last) const;
-    void ApplyPendingLastBatch();
-    QueueBatchContext::Ptr PendingLastBatch() const { return pending_last_batch_; }
+    void SetLastBatch(QueueBatchContext::Ptr&& last);
 
-    // Unresolved batches state management.
-    // The Validate phase makes request to update the list of unresolved batches by calling SetPendingUnresolvedBatches.
-    // Then the Record phase actually updates the list of unresolved batches by calling ApplyPendingUnresolvedBatches.
-    // Pending unresovled batches is a mutable state. It relies on the queue external synchronization.
-    const std::vector<UnresolvedBatch> &UnresolvedBatches() const { return unresolved_batches_; }
-    void SetPendingUnresolvedBatches(std::vector<UnresolvedBatch> &&unresolved_batches) const;
-    void ApplyPendingUnresolvedBatches();
-    const std::vector<UnresolvedBatch> &PendingUnresolvedBatches() const { return pending_unresolved_batches_; }
-
-    // Called by the Validate methods to ensure no pending state is left.
-    // Pending state is automatically cleared in PostRecord calls,
-    // the only exception is when validation error happens.
-    void ClearPending() const;
+    const std::vector<UnresolvedBatch>& UnresolvedBatches() const { return unresolved_batches_; }
+    void SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches);
 
   private:
     const QueueId id_;
@@ -447,20 +430,16 @@ class QueueSyncState {
     // is resolved, we start processing other queued batches until we uncoutner a batch with unresolved
     // wait-before-signal (it becomes the new head of the list) or the list is empty.
     std::vector<UnresolvedBatch> unresolved_batches_;
-
-    mutable QueueBatchContext::Ptr pending_last_batch_;
-    mutable std::vector<UnresolvedBatch> pending_unresolved_batches_;
-    mutable bool update_unresolved_batches_ = false;
 };
 
 struct QueueSubmitCmdState {
-    std::shared_ptr<const QueueSyncState> queue;
+    std::shared_ptr<QueueSyncState> queue;
     SignalsUpdate signals_update;
-    QueueSubmitCmdState(const SyncValidator &sync_validator) : signals_update(sync_validator) {}
+    QueueSubmitCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}
 };
 
 struct QueuePresentCmdState {
-    std::shared_ptr<const QueueSyncState> queue;
+    std::shared_ptr<QueueSyncState> queue;
     SignalsUpdate signals_update;
     PresentedImages presented_images;
     QueuePresentCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}

@@ -115,15 +115,13 @@ class SyncValidator : public vvl::DeviceProxy {
 
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
 
+    std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(QueueId queue_id) const;
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     std::vector<QueueBatchContext::ConstPtr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
     std::vector<QueueBatchContext::Ptr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter);
-    std::vector<QueueBatchContext::ConstPtr> GetLastPendingBatches(
-        std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
-    void ClearPending() const;
 
     void Created(vvl::CommandBuffer &cb_state) override;
     void Created(vvl::Swapchain &swapchain_state) override;
@@ -482,20 +480,19 @@ class SyncValidator : public vvl::DeviceProxy {
 
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                         const ErrorObject &error_obj) const override;
-    uint32_t SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
-                              PresentedImages &presented_images) const;
-    void RecordQueuePresent(VkQueue queue, QueuePresentCmdState* cmd_state);
+    bool ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, const ErrorObject& error_obj);
+    uint32_t SetupPresentInfo(const VkPresentInfoKHR& present_info, QueueBatchContext::Ptr& batch,
+                              PresentedImages& presented_images);
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t *pImageIndex, const RecordObject &record_obj) override;
     void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo, uint32_t *pImageIndex,
                                             const RecordObject &record_obj) override;
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t *pImageIndex, const RecordObject &record_obj);
-    bool ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                             const ErrorObject &error_obj) const;
+    bool ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                            const ErrorObject& error_obj);
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                     const ErrorObject &error_obj) const override;
-    void RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitCmdState *cmd_state);
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                         const ErrorObject &error_obj) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
@@ -505,9 +502,9 @@ class SyncValidator : public vvl::DeviceProxy {
                                      uint64_t timeout, const RecordObject &record_obj) override;
     bool PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                         const ErrorObject &error_obj) const override;
+    bool ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo, const ErrorObject& error_obj);
     bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                            const ErrorObject &error_obj) const override;
-    void RecordSignalSemaphore(VkDevice device, QueueSubmitCmdState* cmd_state);
     void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
                                       const RecordObject &record_obj) override;
     void PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
