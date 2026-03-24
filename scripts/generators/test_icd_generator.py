@@ -123,6 +123,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkGetPhysicalDeviceDisplayPropertiesKHR',
             'vkRegisterDisplayEventEXT',
             'vkQueueSubmit',
+            'vkGetDeviceFaultReportsKHR',
             'vkGetMemoryWin32HandlePropertiesKHR',
             'vkRegisterDisplayEventEXT',
             'vkCreatePipelineBinariesKHR',

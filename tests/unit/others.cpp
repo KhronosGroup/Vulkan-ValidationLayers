@@ -1299,7 +1299,6 @@ TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
 }
 
 TEST_F(VkLayerTest, GetDeviceFaultInfoEXT) {
-    TEST_DESCRIPTION("Call vkGetDeviceFaultInfoEXT when no device is lost");
     AddRequiredExtensions(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFaultFeaturesEXT ext_features = vku::InitStructHelper();
@@ -1312,45 +1311,14 @@ TEST_F(VkLayerTest, GetDeviceFaultInfoEXT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, GetDeviceFaultDebugInfoKHR) {
-    TEST_DESCRIPTION("Call vkGetDeviceFaultDebugInfoKHR when no device is lost");
+TEST_F(VkLayerTest, GetDeviceFaultDebugInfo) {
     AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceFault);
-    AddRequiredFeature(vkt::Feature::deviceFaultVendorBinary); // TODO: do we need this?
     RETURN_IF_SKIP(Init());
     VkDeviceFaultDebugInfoKHR debug_info = vku::InitStructHelper();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VUID-GetDeviceFaultDebugInfoKHR-device-");
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceFaultDebugInfoKHR-device-12383");
     vk::GetDeviceFaultDebugInfoKHR(device(), &debug_info);
     m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, GetDeviceFaultReportsKHRWithoutTimeout) {
-    TEST_DESCRIPTION("Call vkGetDeviceFaultReportsKHR without timeout value returns success and no faults when device is not lost");
-    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::deviceFault);
-    RETURN_IF_SKIP(Init());
-
-    uint32_t faultCounts = static_cast<uint32_t>(-1);
-    VkResult result = vk::GetDeviceFaultReportsKHR(device(), 0, &faultCounts, NULL);
-
-    ASSERT_EQ(VK_SUCCESS, result);
-    ASSERT_EQ(faultCounts, 0);
-
-    m_errorMonitor->Finish();
-}
-
-TEST_F(VkLayerTest, GetDeviceFaultReportsKHRWithTimeout) {
-    TEST_DESCRIPTION("Call vkGetDeviceFaultReportsKHR with timeout value returns timeout and no faults when device is not lost");
-    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::deviceFault);
-    RETURN_IF_SKIP(Init());
-
-    uint32_t faultCounts = static_cast<uint32_t>(-1);
-    VkResult result = vk::GetDeviceFaultReportsKHR(device(), 1000u, &faultCounts, NULL);
-
-    ASSERT_EQ(VK_TIMEOUT, result);
-
-    m_errorMonitor->Finish();
 }
 
 TEST_F(VkLayerTest, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {

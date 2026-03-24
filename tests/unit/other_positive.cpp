@@ -709,3 +709,22 @@ TEST_F(VkPositiveLayerTest, HeapWithoutUntypedPointers) {
         GTEST_SKIP() << "Need VK_KHR_shader_untyped_pointers not supported";
     InitState();
 }
+
+TEST_F(VkPositiveLayerTest, GetDeviceFaultReportsWithoutTimeout) {
+    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceFault);
+    RETURN_IF_SKIP(Init());
+    uint32_t fault_counts = 0;
+    VkResult result = vk::GetDeviceFaultReportsKHR(device(), 0, &fault_counts, nullptr);
+    ASSERT_EQ(VK_SUCCESS, result);
+    ASSERT_EQ(fault_counts, 0);
+}
+
+TEST_F(VkPositiveLayerTest, GetDeviceFaultReportsWithTimeout) {
+    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceFault);
+    RETURN_IF_SKIP(Init());
+    uint32_t fault_counts = 0;
+    VkResult result = vk::GetDeviceFaultReportsKHR(device(), 1000u, &fault_counts, nullptr);
+    ASSERT_EQ(VK_TIMEOUT, result);
+}

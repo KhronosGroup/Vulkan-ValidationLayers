@@ -1027,6 +1027,12 @@
                     "deviceFault": true,
                     "deviceFaultVendorBinary": true
                 },
+                "VkPhysicalDeviceFaultFeaturesKHR": {
+                    "deviceFault": true,
+                    "deviceFaultVendorBinary": true,
+                    "deviceFaultReportMasked": true,
+                    "deviceFaultDeviceLostOnMasked": true
+                },
                 "VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM": {
                     "shaderCoreBuiltins": true
                 },
@@ -1463,6 +1469,9 @@
                         "VK_QUEUE_COMPUTE_BIT",
                         "VK_QUEUE_TRANSFER_BIT"
                     ]
+                },
+                "VkPhysicalDeviceFaultPropertiesKHR": {
+                    "maxDeviceFaultCount": 1
                 },
                 "VkPhysicalDevicePushDescriptorPropertiesKHR": {
                     "maxPushDescriptors": 4294967000
@@ -2540,6 +2549,7 @@
                 "VK_KHR_depth_stencil_resolve": 1,
                 "VK_KHR_descriptor_update_template": 1,
                 "VK_KHR_device_address_commands": 1,
+                "VK_KHR_device_fault": 1,
                 "VK_KHR_device_group": 1,
                 "VK_KHR_device_group_creation": 1,
                 "VK_KHR_display": 1,

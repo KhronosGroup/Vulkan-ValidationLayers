@@ -30,6 +30,18 @@ class FeatureRequirementsGenerator(BaseGenerator):
         # the same name as Vulkan 1.2 and
         # VkPhysicalDeviceBufferDeviceAddressFeaturesKHR features, but are
         # semantically different.  They are given a suffix to be distinguished.
+        #
+        # This file is only used for tests, so when this happens we no longer can use
+        #
+        #     AddRequiredFeature(vkt::Feature::deviceFault);
+        #
+        # and instead need to use the old manual way
+        #
+        #     RETURN_IF_SKIP(InitFramework());
+        #     VkPhysicalDeviceFaultFeaturesEXT ext_features = vku::InitStructHelper();
+        #     auto features2 = GetPhysicalDeviceFeatures2(ext_features);
+        #     RETURN_IF_SKIP(InitState(nullptr, &features2));
+        #
         self.identical_but_different_features = {
             "VkPhysicalDeviceFaultFeaturesEXT",
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
