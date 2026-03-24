@@ -15,13 +15,13 @@
 #include "../framework/buffer_helper.h"
 #include "utils/math_utils.h"
 
-void GpuAVDescriptorBuffer::InitBasicDescriptorBuffer(bool safe_mode) {
+void GpuAVDescriptorBuffer::InitBasicDescriptorBuffer(std::vector<VkLayerSettingEXT> layer_settings, bool safe_mode) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings, safe_mode));
     RETURN_IF_SKIP(InitState());
 
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -30,7 +30,7 @@ void GpuAVDescriptorBuffer::InitBasicDescriptorBuffer(bool safe_mode) {
 class PositiveGpuAVDescriptorBuffer : public GpuAVDescriptorBuffer {};
 
 TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer({}, false));
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
@@ -40,11 +40,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
-
-    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
-    pipe_layout_ci.setLayoutCount = 1;
-    pipe_layout_ci.pSetLayouts = &ds_layout.handle();
-    vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
     ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
@@ -101,7 +97,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer({}, false));
     InitRenderTarget();
 
     vkt::Buffer bda(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -115,11 +111,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     vkt::DescriptorSetLayout ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
-
-    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
-    pipe_layout_ci.setLayoutCount = 1;
-    pipe_layout_ci.pSetLayouts = &ds_layout.handle();
-    vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
     ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
@@ -310,7 +302,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, PostProcessAliasImageBindingPartiallyBound
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer({}, false));
 
     const char* csSource = R"glsl(
         #version 460
@@ -432,7 +424,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, MultipleAccessChainsBDA) {
     TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
     RETURN_IF_SKIP(CheckSlangSupport());
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer({}, false));
 
     const char* slang_shader = R"slang(
         struct Data {

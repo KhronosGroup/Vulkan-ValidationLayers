@@ -265,7 +265,7 @@ class GpuAVMesh : public GpuAVTest {
 
 class GpuAVDescriptorBuffer : public GpuAVTest {
   public:
-    void InitBasicDescriptorBuffer(bool safe_mode = true);
+    void InitBasicDescriptorBuffer(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
 };
 
