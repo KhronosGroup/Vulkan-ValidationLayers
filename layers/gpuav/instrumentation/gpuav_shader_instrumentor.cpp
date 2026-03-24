@@ -461,9 +461,10 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
     chassis_state.modified_shader_handle = sub_state.original_handle;
 }
 
-bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
-    vku::safe_VkShaderCreateInfoEXT& modified_create_info, const Location& create_info_loc,
-    chassis::ShaderObjectInstrumentationData& instrumentation_data) {
+bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT& modified_create_info,
+                                                                     const Location& create_info_loc,
+                                                                     chassis::ShaderObjectInstrumentationData& instrumentation_data,
+                                                                     const vvl::DescriptorMode descriptor_mode) {
     const uint32_t unique_shader_id = unique_shader_module_id_++;
 
     std::vector<uint32_t>& instrumented_spirv = instrumentation_data.instrumented_spirv;
@@ -473,6 +474,8 @@ bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     interface.entry_point_stage = modified_create_info.stage;
     interface.specialization_info = modified_create_info.pSpecializationInfo->ptr();
     interface.has_task_shader = (modified_create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0;
+    interface.descriptor_mode = descriptor_mode;
+
     BuildDescriptorSetLayoutInfo(modified_create_info, interface.instrumentation_dsl);
 
     const bool is_shader_instrumented = InstrumentShader(
@@ -543,7 +546,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             if (mode == vvl::DescriptorMode::DescriptorModeHeap) {
                 AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure*>(&new_create_info));
                 chassis_state.is_modified |=
-                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data, mode);
             } else {
                 // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
                 if (new_create_info.pSetLayouts) {
@@ -561,7 +564,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
 
                 chassis_state.is_modified |=
-                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data, mode);
             }
         }
     }
@@ -1252,6 +1255,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         interface.entry_point_stage = stage_state.GetStage();
         interface.specialization_info = stage_state.GetSpecializationInfo()->ptr();
         interface.has_task_shader = (pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
+        interface.descriptor_mode = pipeline_state.descriptor_heap_mode     ? vvl::DescriptorModeHeap
+                                    : pipeline_state.descriptor_buffer_mode ? vvl::DescriptorModeBuffer
+                                                                            : vvl::DescriptorModeClassic;
         const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1450,6 +1456,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             interface.entry_point_stage = modified_stage_state.GetStage();
             interface.specialization_info = modified_stage_state.GetSpecializationInfo()->ptr();
             interface.has_task_shader = (linked_pipeline_state.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
+            interface.descriptor_mode = linked_pipeline_state.descriptor_heap_mode     ? vvl::DescriptorModeHeap
+                                        : linked_pipeline_state.descriptor_buffer_mode ? vvl::DescriptorModeBuffer
+                                                                                       : vvl::DescriptorModeClassic;
             const bool is_shader_instrumented =
                 InstrumentShader(modified_module_state->spirv->words_, interface, instrumented_spirv);
 
@@ -1625,24 +1634,26 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
-        // Will wrap descriptor indexing with if/else to prevent crashing if OOB
-        spirv::DescriptorIndexingOOBPass oob_pass(module);
-        modified |= oob_pass.Run();
+        if (interface.descriptor_mode == vvl::DescriptorModeClassic) {
+            // Will wrap descriptor indexing with if/else to prevent crashing if OOB
+            spirv::DescriptorIndexingOOBPass oob_pass(module);
+            modified |= oob_pass.Run();
 
-        // Depending on the DescriptorClass, will add dedicated check
-        if (!modified_features.robustBufferAccess) {
-            // This check is for catching OOB in a UBO/SSBO which is caught with robustBufferAccess
-            spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
-            modified |= general_buffer_pass.Run();
+            // Depending on the DescriptorClass, will add dedicated check
+            if (!modified_features.robustBufferAccess) {
+                // This check is for catching OOB in a UBO/SSBO which is caught with robustBufferAccess
+                spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
+                modified |= general_buffer_pass.Run();
 
-            // Details being worked out in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
-            // But for what we are checking for, can rely on robustBufferAccess
-            spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
-            modified |= texel_buffer_pass.Run();
-        } else if (modified_features.cooperativeMatrix && !modified_features.cooperativeMatrixRobustBufferAccess) {
-            // Cooperative Matrix OOB rules are unique and have their own robustness feature, so still need to run the pass
-            spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
-            modified |= general_buffer_pass.Run();
+                // Details being worked out in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
+                // But for what we are checking for, can rely on robustBufferAccess
+                spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
+                modified |= texel_buffer_pass.Run();
+            } else if (modified_features.cooperativeMatrix && !modified_features.cooperativeMatrixRobustBufferAccess) {
+                // Cooperative Matrix OOB rules are unique and have their own robustness feature, so still need to run the pass
+                spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
+                modified |= general_buffer_pass.Run();
+            }
         }
     }
 
@@ -1674,8 +1685,10 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
     // in a if/else, this means they will be gaurded as if they were inside the above passes
     if (gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
-        spirv::PostProcessDescriptorIndexingPass pass(module);
-        modified |= pass.Run();
+        if (interface.descriptor_mode == vvl::DescriptorModeClassic) {
+            spirv::PostProcessDescriptorIndexingPass pass(module);
+            modified |= pass.Run();
+        }
     }
 
     if (gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
