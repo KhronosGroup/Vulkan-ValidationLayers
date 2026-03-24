@@ -241,14 +241,16 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
         skip |= ValidatePerformanceQueryResults(*query_pool_state, firstQuery, queryCount, flags, error_obj.location);
     }
 
-    const VkDeviceSize effective_query_size = ((queryCount - 1) * stride + query_size);
-    if (query_size != 0 && dataSize < effective_query_size) {
-        skip |= LogError("VUID-vkGetQueryPoolResults-dataSize-00817", queryPool, error_obj.location.dot(Field::queryPool),
-                         "(%s) specified dataSize %zu which is "
-                         "less than %" PRIu64
-                         " calculated from ((queryCount - 1) * stride) + querySize) where:\n  queryCount = %" PRIu32
-                         "\n  stride = %" PRIu64 "\n  querySize = %" PRIu32 "",
-                         FormatHandle(queryPool).c_str(), dataSize, effective_query_size, queryCount, stride, query_size);
+    if (queryCount != 0) {
+        const VkDeviceSize effective_query_size = ((queryCount - 1) * stride + query_size);
+        if (query_size != 0 && dataSize < effective_query_size) {
+            skip |= LogError("VUID-vkGetQueryPoolResults-dataSize-00817", queryPool, error_obj.location.dot(Field::queryPool),
+                             "(%s) specified dataSize %zu which is "
+                             "less than %" PRIu64
+                             " calculated from ((queryCount - 1) * stride) + querySize) where:\n  queryCount = %" PRIu32
+                             "\n  stride = %" PRIu64 "\n  querySize = %" PRIu32 "",
+                             FormatHandle(queryPool).c_str(), dataSize, effective_query_size, queryCount, stride, query_size);
+        }
     }
 
     if (queryCount > 1 && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) != 0) {
