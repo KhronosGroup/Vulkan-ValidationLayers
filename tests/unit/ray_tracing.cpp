@@ -5791,6 +5791,94 @@ TEST_F(NegativeRayTracing, DestroyedDeviceAddressRange) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure2KHR) {
+    TEST_DESCRIPTION(
+        "Test CmdCopyAccelerationStructureKHR with AS created with version 2 of create info, and the buffer backing either src or "
+        "dst has been destroyed.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas_no_buf = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas_no_buf->SetCreateWithVersion2(true);
+    blas_no_buf->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
+    blas_no_buf->Create();
+    blas_no_buf->GetBuffer().Destroy();
+
+    auto valid_blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    valid_blas->SetCreateWithVersion2(true);
+    valid_blas->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
+    valid_blas->Create();
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_no_buf->handle();
+    copy_info.dst = valid_blas->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    copy_info.src = valid_blas->handle();
+    copy_info.dst = blas_no_buf->handle();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemory2KHR) {
+    TEST_DESCRIPTION(
+        "vkCmdCopyAccelerationStructureToMemoryKHR with src AS created with version 2 of create info, "
+        "where the backing buffer has been destroyed");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas_no_buf = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas_no_buf->SetCreateWithVersion2(true);
+    blas_no_buf->SetAddressFlags(VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR);
+    blas_no_buf->Create();
+    blas_no_buf->GetBuffer().Destroy();
+
+    VkDeviceOrHostAddressKHR dst_addr{};
+    dst_addr.deviceAddress = Align<VkDeviceAddress>(0xbaadbeef, 256);
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_no_buf->handle();
+    copy_info.dst = dst_addr;
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeRayTracing, CreateInfo2DestroyBuffer) {
     TEST_DESCRIPTION("Use create info version 2, destroy buffer after creation and try to use AS in a build");
 
