@@ -1941,11 +1941,6 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
 
     const uint32_t index = 0;
 
-    VkBufferCopy buffer_copy = {};
-    buffer_copy.srcOffset = 0u;
-    buffer_copy.dstOffset = 0u;
-    buffer_copy.size = descriptor_buffer_size;
-
     VkBufferMemoryBarrier2 buffer_memory_barrier = vku::InitStructHelper();
     buffer_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_memory_barrier.dstAccessMask = VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT;
@@ -1966,6 +1961,7 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
     buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
     m_command_buffer.Begin();
+    VkBufferCopy buffer_copy = {0, 0, descriptor_buffer_size};
     vk::CmdCopyBuffer(m_command_buffer, src_descriptor_buffer, device_local_descriptor_buffer, 1u, &buffer_copy);
     vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
