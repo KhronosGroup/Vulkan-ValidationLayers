@@ -386,9 +386,10 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
             for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
                 const VkAccelerationStructureGeometryKHR& geom = rt::GetGeometry(info, geom_i);
-                if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+                const uint32_t primitive_count = build_ranges_infos[info_i][geom_i].primitiveCount;
+                if (primitive_count > 0 && geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     BlasArray blas_array;
-                    blas_array.size = build_ranges_infos[info_i][geom_i].primitiveCount;
+                    blas_array.size = primitive_count;
                     blas_array.array_start_addr =
                         geom.geometry.instances.data.deviceAddress + build_ranges_infos[info_i][geom_i].primitiveOffset;
                     blas_array.is_array_of_pointers = uint32_t(geom.geometry.instances.arrayOfPointers);
