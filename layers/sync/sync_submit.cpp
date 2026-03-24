@@ -27,7 +27,7 @@ AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag a
 
 bool AcquiredImage::Invalid() const { return vvl::StateObject::Invalid(image); }
 
-SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const QueueBatchContext::Ptr& batch,
+SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const BatchContextPtr& batch,
                        const SyncExecScope& exec_scope, uint64_t timeline_value)
     : semaphore_state(semaphore_state),
       batch(batch),
@@ -44,7 +44,7 @@ SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_st
       first_scope(),
       acquired_image(std::make_shared<AcquiredImage>(presented, acquire_tag)) {}
 
-void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const QueueBatchContext::Ptr& batch,
+void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
                                    const VkSemaphoreSubmitInfo& submit_signal) {
     const VkSemaphore semaphore = semaphore_state.VkHandle();
     // Signal can't be registered in both lists at the same time.
@@ -65,7 +65,7 @@ void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const 
     binary_signal_requests.emplace(semaphore, SignalInfo(semaphore_state.shared_from_this(), batch, exec_scope, 0));
 }
 
-bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, const std::shared_ptr<QueueBatchContext>& batch,
+bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
                                      const VkSemaphoreSubmitInfo& submit_signal) {
     const VkSemaphore semaphore = semaphore_state.VkHandle();
     std::vector<SignalInfo>& signals = timeline_signals[semaphore];
@@ -182,7 +182,7 @@ PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index) {
     return ret_val;
 }
 
-void SwapchainSubState::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
+void SwapchainSubState::GetPresentBatches(std::vector<BatchContextPtr>& batches) const {
     for (const auto& presented_image : presented) {
         if (presented_image.batch) {
             batches.push_back(presented_image.batch);
@@ -516,7 +516,7 @@ void QueueBatchContext::ResolveSubmitSemaphoreWait(const SignalInfo& signal_info
     }
 }
 
-void QueueBatchContext::ResolveLastBatch(const QueueBatchContext::ConstPtr& last_batch) {
+void QueueBatchContext::ResolveLastBatch(const BatchContextPtr& last_batch) {
     // Copy in the event state from the previous batch (on this queue)
     events_context_.DeepCopy(last_batch->events_context_);
 
@@ -538,10 +538,10 @@ void QueueBatchContext::ImportTags(const QueueBatchContext& from) {
     }
 }
 
-std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
-                                                                                const PresentedImages& presented_images,
-                                                                                SignalsUpdate& signals_update) {
-    std::vector<ConstPtr> batches_resolved;
+std::vector<BatchContextPtr> QueueBatchContext::ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
+                                                                    const PresentedImages& presented_images,
+                                                                    SignalsUpdate& signals_update) {
+    std::vector<BatchContextPtr> batches_resolved;
     for (VkSemaphore semaphore : wait_semaphores) {
         auto signal_info = signals_update.OnBinaryWait(semaphore);
         if (!signal_info) {
@@ -627,10 +627,10 @@ void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
     }
 }
 
-std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::RegisterAsyncContexts(const std::vector<ConstPtr>& batches_resolved) {
+std::vector<BatchContextPtr> QueueBatchContext::RegisterAsyncContexts(const std::vector<BatchContextPtr>& batches_resolved) {
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     auto skip_resolved_filter = [&batches_resolved](auto& batch) { return !vvl::Contains(batches_resolved, batch); };
-    std::vector<ConstPtr> async_batches = sync_state_.GetLastBatches(skip_resolved_filter);
+    std::vector<BatchContextPtr> async_batches = sync_state_.GetLastBatches(skip_resolved_filter);
     for (const auto& async_batch : async_batches) {
         const QueueId async_queue = async_batch->GetQueueId();
         ResourceUsageTag sync_tag;
@@ -667,10 +667,10 @@ ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
     return tag_range_.begin;
 }
 
-std::vector<BatchContextConstPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_infos,
-                                                                        std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
-                                                                        SignalsUpdate& signals_update) {
-    std::vector<BatchContextConstPtr> resolved_batches;
+std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_infos,
+                                                                   std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
+                                                                   SignalsUpdate& signals_update) {
+    std::vector<BatchContextPtr> resolved_batches;
     for (const auto& wait_info : wait_infos) {
         auto semaphore_state = sync_state_.Get<vvl::Semaphore>(wait_info.semaphore);
         if (!semaphore_state) {
@@ -774,22 +774,10 @@ VkSwapchainKHR QueueBatchContext::AcquireResourceRecord::GetSwapchainHandle() co
     return presented_.image->create_from_swapchain;
 }
 
-std::vector<QueueBatchContext::ConstPtr> SyncValidator::GetLastBatches(
-    std::function<bool(const QueueBatchContext::ConstPtr&)> filter) const {
-    std::vector<QueueBatchContext::ConstPtr> snapshot;
-    for (const auto& queue_sync_state : queue_sync_states_) {
-        auto batch = queue_sync_state->LastBatch();
-        if (batch && filter(batch)) {
-            snapshot.emplace_back(std::move(batch));
-        }
-    }
-    return snapshot;
-}
-
-std::vector<QueueBatchContext::Ptr> SyncValidator::GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr&)> filter) {
-    std::vector<QueueBatchContext::Ptr> snapshot;
-    for (const auto& queue_sync_state : queue_sync_states_) {
-        auto batch = queue_sync_state->LastBatch();
+std::vector<BatchContextPtr> SyncValidator::GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const {
+    std::vector<BatchContextPtr> snapshot;
+    for (const QueueSyncState& queue_sync_state : queue_sync_states_) {
+        auto batch = queue_sync_state.LastBatch();
         if (batch && filter(batch)) {
             snapshot.emplace_back(std::move(batch));
         }
@@ -801,14 +789,14 @@ std::vector<QueueBatchContext::Ptr> SyncValidator::GetLastBatches(std::function<
 // scope state.
 // Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
 // atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
-uint64_t QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
+uint64_t QueueSyncState::ReserveSubmitId() { return submit_index_++; }
 
 const LastSynchronizedPresent& QueueSyncState::GetLastSynchronizedPresent() const {
     static const LastSynchronizedPresent empty;
     return last_batch_ ? last_batch_->last_synchronized_present : empty;
 }
 
-void QueueSyncState::SetLastBatch(QueueBatchContext::Ptr&& last) {
+void QueueSyncState::SetLastBatch(BatchContextPtr&& last) {
     if (last) {
         // Clean up the events data in the previous last batch on queue, as only the subsequent
         // batches have valid use for them and the QueueBatchContext::Setup calls have be copying
@@ -931,11 +919,11 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
-PresentedImage::PresentedImage(SyncValidator& sync_state, QueueBatchContext::Ptr batch_, VkSwapchainKHR swapchain,
-                               uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)
-    : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<vvl::Swapchain>(swapchain), {}},
-      batch(std::move(batch_)) {
-    SetImage(image_index_);
+PresentedImage::PresentedImage(SyncValidator& sync_state, BatchContextPtr batch, VkSwapchainKHR swapchain, uint32_t image_index,
+                               uint32_t present_index, ResourceUsageTag tag)
+    : PresentedImageRecord{tag, image_index, present_index, sync_state.Get<vvl::Swapchain>(swapchain), {}},
+      batch(std::move(batch)) {
+    SetImage(image_index);
 }
 
 PresentedImage::PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint32_t at_index) : PresentedImage() {

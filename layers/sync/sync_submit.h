@@ -30,13 +30,10 @@ namespace syncval {
 
 struct PresentedImage;
 class QueueBatchContext;
-struct QueueSubmitCmdState;
 class QueueSyncState;
 class SyncValidator;
 
 using BatchContextPtr = std::shared_ptr<QueueBatchContext>;
-using BatchContextConstPtr = std::shared_ptr<const QueueBatchContext>;
-
 using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
 
 struct AcquiredImage {
@@ -53,14 +50,14 @@ struct AcquiredImage {
 // Information associated with a semaphore signal
 struct SignalInfo {
     // QueueSubmit signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore> &semaphore_state, const std::shared_ptr<QueueBatchContext> &batch,
-               const SyncExecScope &exec_scope, uint64_t timeline_value);
+    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const BatchContextPtr& batch,
+               const SyncExecScope& exec_scope, uint64_t timeline_value);
 
     // SignalSemaphore signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore> &semaphore_state, uint64_t timeline_value);
+    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, uint64_t timeline_value);
 
     // AcquireNextImage signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore> &semaphore_state, const PresentedImage &presented,
+    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const PresentedImage& presented,
                ResourceUsageTag acquire_tag);
 
     // Signaled semaphore. Not null.
@@ -125,11 +122,11 @@ struct SignalsUpdate {
     SignalsUpdate(const SyncValidator &sync_validator) : sync_validator_(sync_validator) {}
 
   private:
-    void OnBinarySignal(const vvl::Semaphore &semaphore_state, const std::shared_ptr<QueueBatchContext> &batch,
-                        const VkSemaphoreSubmitInfo &submit_signal);
+    void OnBinarySignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
+                        const VkSemaphoreSubmitInfo& submit_signal);
     // Return false if signal is invalid (non-increasing value)
-    bool OnTimelineSignal(const vvl::Semaphore &semaphore_state, const std::shared_ptr<QueueBatchContext> &batch,
-                          const VkSemaphoreSubmitInfo &submit_signal);
+    bool OnTimelineSignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
+                          const VkSemaphoreSubmitInfo& submit_signal);
 
   private:
     const SyncValidator &sync_validator_;
@@ -253,7 +250,7 @@ struct UnresolvedBatch {
     // The batches from the resolved dependencies. They are used for async validaton.
     // This includes the batches from the resolved waits and also the last batch
     // (prior batch on the same queue).
-    std::vector<BatchContextConstPtr> resolved_dependencies;
+    std::vector<BatchContextPtr> resolved_dependencies;
 
     // Signals to signal when all the waits are resolved.
     std::vector<VkSemaphoreSubmitInfo> signals;
@@ -264,7 +261,7 @@ struct UnresolvedBatch {
 
 // Helper struct to resolve wait-before-signal
 struct UnresolvedQueue {
-    std::shared_ptr<QueueSyncState> queue_state;
+    QueueSyncState* queue_state = nullptr;
     std::vector<UnresolvedBatch> unresolved_batches;
     // whether unresolved state should be updated for this queue
     bool update_unresolved = false;
@@ -312,11 +309,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         vvl::Func command_;
     };
 
-    using Ptr = std::shared_ptr<QueueBatchContext>;
-    using ConstPtr = std::shared_ptr<const QueueBatchContext>;
-
-    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
-    QueueBatchContext(const SyncValidator &sync_state);
+    QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state);
+    QueueBatchContext(const SyncValidator& sync_state);
     QueueBatchContext() = delete;
     ~QueueBatchContext();
     void Trim();
@@ -335,17 +329,17 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ResetEventsContext() { events_context_.Clear(); }
 
     // For Submit
-    std::vector<BatchContextConstPtr> ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
-                                                         std::vector<VkSemaphoreSubmitInfo> &unresolved_waits,
-                                                         SignalsUpdate &signals_update);
+    std::vector<BatchContextPtr> ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
+                                                    std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
+                                                    SignalsUpdate& signals_update);
 
     bool ValidateSubmit(const std::vector<CommandBufferConstPtr> &command_buffers, uint64_t submit_index, uint32_t batch_index,
                         std::vector<std::string> &current_label_stack, const ErrorObject &error_obj);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present
-    std::vector<ConstPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores, const PresentedImages &presented_images,
-                                              SignalsUpdate &signals_update);
+    std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
+                                                     const PresentedImages& presented_images, SignalsUpdate& signals_update);
     bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
     void LogPresentOperations(const PresentedImages &presented_images, uint64_t submit_index);
@@ -368,8 +362,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void NextSubpassReplaySetup(ReplayState &replay);
     void EndRenderPassReplayCleanup(ReplayState &replay);
 
-    [[nodiscard]] std::vector<ConstPtr> RegisterAsyncContexts(const std::vector<ConstPtr> &batches_resolved);
-    void ResolveLastBatch(const QueueBatchContext::ConstPtr &last_batch);
+    [[nodiscard]] std::vector<BatchContextPtr> RegisterAsyncContexts(const std::vector<BatchContextPtr>& batches_resolved);
+    void ResolveLastBatch(const BatchContextPtr& last_batch);
 
     void ResolveSubmitSemaphoreWait(const SignalInfo &signal_info, VkPipelineStageFlags2 wait_mask);
     void ImportTags(const QueueBatchContext &from);
@@ -399,30 +393,29 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
 
 class QueueSyncState {
   public:
-    QueueSyncState(const std::shared_ptr<vvl::Queue> &queue_state, QueueId id) : id_(id), queue_state_(queue_state) {}
+    QueueSyncState() = default;
+    QueueSyncState(const std::shared_ptr<vvl::Queue>& queue_state, QueueId id) : id_(id), queue_state_(queue_state) {}
 
     VulkanTypedHandle Handle() const { return queue_state_->Handle(); }
     const vvl::Queue *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_state_->queue_family_properties.queueFlags; }
     QueueId GetQueueId() const { return id_; }
-    // Method is const but updates mutable sumbit_index atomically.
-    uint64_t ReserveSubmitId() const;
+    uint64_t ReserveSubmitId();
 
     const LastSynchronizedPresent &GetLastSynchronizedPresent() const;
 
-    QueueBatchContext::ConstPtr LastBatch() const { return last_batch_; }
-    QueueBatchContext::Ptr LastBatch() { return last_batch_; }
-    void SetLastBatch(QueueBatchContext::Ptr&& last);
+    BatchContextPtr LastBatch() const { return last_batch_; }
+    void SetLastBatch(BatchContextPtr&& last);
 
     const std::vector<UnresolvedBatch>& UnresolvedBatches() const { return unresolved_batches_; }
     void SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches);
 
   private:
-    const QueueId id_;
+    QueueId id_ = 0;
     std::shared_ptr<vvl::Queue> queue_state_;
-    mutable std::atomic<uint64_t> submit_index_ = 0;
+    uint64_t submit_index_ = 0;
 
-    QueueBatchContext::Ptr last_batch_;
+    BatchContextPtr last_batch_;
 
     // The first batch in the unresolved batches list is always due to the wait-before-signal dependency.
     // All subsequent batches from the same queue must also be stored here because they can't be processed
@@ -430,19 +423,6 @@ class QueueSyncState {
     // is resolved, we start processing other queued batches until we uncoutner a batch with unresolved
     // wait-before-signal (it becomes the new head of the list) or the list is empty.
     std::vector<UnresolvedBatch> unresolved_batches_;
-};
-
-struct QueueSubmitCmdState {
-    std::shared_ptr<QueueSyncState> queue;
-    SignalsUpdate signals_update;
-    QueueSubmitCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}
-};
-
-struct QueuePresentCmdState {
-    std::shared_ptr<QueueSyncState> queue;
-    SignalsUpdate signals_update;
-    PresentedImages presented_images;
-    QueuePresentCmdState(const SyncValidator& sync_validator) : signals_update(sync_validator) {}
 };
 
 }  // namespace syncval
