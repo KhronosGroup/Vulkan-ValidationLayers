@@ -19,6 +19,7 @@
 #include "test_icd.h"
 #include "test_icd_helper.h"
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
 #include <cstddef>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -1584,6 +1585,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(
         pPhysicalDeviceGroupProperties->subsetAllocation = VK_FALSE;
     }
     return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                               VkDeviceFaultInfoKHR* pFaultInfo) {
+    return timeout == 0 ? VK_SUCCESS : VK_TIMEOUT;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR

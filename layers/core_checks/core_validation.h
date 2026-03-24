@@ -2911,6 +2911,8 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
                                               VkDeviceFaultInfoEXT* pFaultInfo, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
+                                                   const ErrorObject& error_obj) const override;
 
     bool PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
                                           VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const override;

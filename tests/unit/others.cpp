@@ -1299,14 +1299,25 @@ TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
 }
 
 TEST_F(VkLayerTest, GetDeviceFaultInfoEXT) {
-    TEST_DESCRIPTION("Call vkGetDeviceFaultInfoEXT when no device is lost");
     AddRequiredExtensions(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::deviceFault);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceFaultFeaturesEXT ext_features = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(ext_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     VkDeviceFaultCountsEXT fault_count = vku::InitStructHelper();
     VkDeviceFaultInfoEXT fault_info = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetDeviceFaultInfoEXT-device-07336");
     vk::GetDeviceFaultInfoEXT(device(), &fault_count, &fault_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, GetDeviceFaultDebugInfo) {
+    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceFault);
+    RETURN_IF_SKIP(Init());
+    VkDeviceFaultDebugInfoKHR debug_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkGetDeviceFaultDebugInfoKHR-device-12383");
+    vk::GetDeviceFaultDebugInfoKHR(device(), &debug_info);
     m_errorMonitor->VerifyFound();
 }
 
