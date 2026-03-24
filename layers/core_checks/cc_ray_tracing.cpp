@@ -1437,15 +1437,15 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
 
     auto src_as_state = Get<vvl::AccelerationStructureKHR>(as_info.src);
     if (src_as_state) {
-        if (src_as_state->UsesCreateInfo1()) {
-            if (auto as_buffer = src_as_state->GetFirstValidBuffer(*device_state)) {
-                skip |= ValidateMemoryIsBoundToBuffer(device, *as_buffer.state, info_loc.dot(Field::src),
-                                                      "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
-            }
+        const vvl::BufferAndOffset src_as_buffer = src_as_state->GetFirstValidBuffer(*device_state);
+        if (!src_as_buffer || src_as_buffer.state->Destroyed()) {
+            skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718", as_info.src,
+                             info_loc.dot(Field::srcAccelerationStructure), "is backed by %s buffer.",
+                             (!src_as_buffer ? "an invalid" : "a destroyed"));
         } else {
-            BufferAddressValidation<0> buffer_address_validator = {};
-            skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::src), LogObjectList(handle),
-                                                                   src_as_state->GetEffectiveDeviceAddressRange().address);
+            skip |= ValidateMemoryIsBoundToBuffer(LogObjectList(as_info.src, src_as_buffer.state->VkHandle()), *src_as_buffer.state,
+                                                  info_loc.dot(Field::srcAccelerationStructure),
+                                                  "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
         }
 
         if (as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR && src_as_state->GetBuildInfo().has_value()) {
@@ -1459,9 +1459,15 @@ bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerati
         }
     }
     auto dst_as_state = Get<vvl::AccelerationStructureKHR>(as_info.dst);
-    if (dst_as_state && dst_as_state->UsesCreateInfo1()) {
-        if (auto dst_as_buffer = dst_as_state->GetFirstValidBuffer(*device_state)) {
-            skip |= ValidateMemoryIsBoundToBuffer(device, *dst_as_buffer.state, info_loc.dot(Field::dst),
+    if (dst_as_state) {
+        const vvl::BufferAndOffset dst_as_buffer = dst_as_state->GetFirstValidBuffer(*device_state);
+        if (!dst_as_buffer || dst_as_buffer.state->Destroyed()) {
+            skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719", as_info.dst,
+                             info_loc.dot(Field::dstAccelerationStructure), "is backed by %s buffer.",
+                             (!dst_as_buffer ? "an invalid" : "a destroyed"));
+        } else {
+            skip |= ValidateMemoryIsBoundToBuffer(LogObjectList(as_info.dst, dst_as_buffer.state->VkHandle()), *dst_as_buffer.state,
+                                                  info_loc.dot(Field::dstAccelerationStructure),
                                                   "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
         }
     }
@@ -1572,16 +1578,17 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
     skip |= ValidateCmd(*cb_state, error_obj.location);
     const Location info_loc = error_obj.location.dot(Field::pInfo);
 
-    if (auto src_as = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        if (src_as->UsesCreateInfo1()) {
-            if (auto src_as_buffer = src_as->GetFirstValidBuffer(*device_state)) {
-                skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_as_buffer.state, info_loc.dot(Field::src),
-                                                      "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
-            }
+    if (auto src_as_state = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
+        const vvl::BufferAndOffset src_as_buffer = src_as_state->GetFirstValidBuffer(*device_state);
+        if (!src_as_buffer || src_as_buffer.state->Destroyed()) {
+            const LogObjectList objlist(commandBuffer, pInfo->src);
+            skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559", objlist,
+                             info_loc.dot(Field::srcAccelerationStructure), "is backed by %s buffer.",
+                             (!src_as_buffer ? "an invalid" : "a destroyed"));
         } else {
-            BufferAddressValidation<0> buffer_address_validator = {};
-            skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::src), LogObjectList(commandBuffer),
-                                                                   src_as->GetEffectiveDeviceAddressRange().address);
+            skip |= ValidateMemoryIsBoundToBuffer(LogObjectList(commandBuffer, pInfo->src, src_as_buffer.state->VkHandle()),
+                                                  *src_as_buffer.state, info_loc.dot(Field::srcAccelerationStructure),
+                                                  "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
         }
     }
 
