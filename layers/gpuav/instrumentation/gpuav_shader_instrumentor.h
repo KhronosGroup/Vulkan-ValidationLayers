@@ -112,7 +112,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                                              const RecordObject &record_obj, chassis::ShaderBinaryData &chassis_state) override;
     bool PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT& modified_create_info,
                                                   const Location& create_info_loc,
-                                                  chassis::ShaderObjectInstrumentationData& shader_instrumentation_data);
+                                                  chassis::ShaderObjectInstrumentationData& shader_instrumentation_data,
+                                                  const vvl::DescriptorMode descriptor_mode);
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;

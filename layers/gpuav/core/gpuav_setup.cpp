@@ -470,15 +470,6 @@ void Validator::InitSettings(const Location& loc) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     }
 
-    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) || IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-        AdjustmentWarning(
-            device, loc,
-            "VK_EXT_descriptor_buffer or VK_EXT_descriptor_heap is enabled. Currently tracking descriptors is not "
-            "fully supported yet. [Disabling gpuav_descriptor_checks] [Disabling gpuav_post_process_descriptor_indexing]");
-        gpuav_settings.shader_instrumentation.descriptor_checks = false;
-        gpuav_settings.shader_instrumentation.post_process_descriptor_indexing = false;
-    }
-
     // If we have turned off all the possible things to instrument, turn off everything fully
     if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();

@@ -18,6 +18,7 @@
 #include <vulkan/vulkan_core.h>
 #include <string>
 #include <vector>
+#include "state_tracker/descriptor_mode.h"
 
 // The goal is to keep instrumentation a seperate library to draw a strong line where the GPU-AV SPIR-V logic is.
 // This header is designed as the interface that can be shared between the instrumentation passes and the rest of GPU-AV
@@ -87,6 +88,8 @@ struct InstrumentationInterface {
 
     // Used for MeshPass to know if a task will be used as well
     bool has_task_shader = false;
+
+    vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeUnknown;
 
     const Location& loc;
 
