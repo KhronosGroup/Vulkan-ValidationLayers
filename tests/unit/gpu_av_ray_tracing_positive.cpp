@@ -1694,3 +1694,38 @@ TEST_F(PositiveGpuAVRayTracing, AabbStatus) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(PositiveGpuAVRayTracing, EmptyTlas) {
+    TEST_DESCRIPTION("Empty TLAS");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin();
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    m_command_buffer.Begin();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
+    // NULL blas instances address, but primitiveCount is 0 so it's valid
+    tlas.GetGeometries()[0].GetVkObj().geometry.instances.data.deviceAddress = 0;
+    tlas.GetBuildRanges()[0].primitiveCount = 0;
+    tlas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+}
