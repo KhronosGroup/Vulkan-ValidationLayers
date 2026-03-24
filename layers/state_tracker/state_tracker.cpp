@@ -4369,8 +4369,11 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     // VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue operations are still considered
     // to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will execute when the corresponding queue
     // operation is complete.
-    if (record_obj.result == VK_ERROR_OUT_OF_HOST_MEMORY || record_obj.result == VK_ERROR_OUT_OF_DEVICE_MEMORY ||
-        record_obj.result == VK_ERROR_DEVICE_LOST) {
+    //
+    // VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT is used to "poll" when we are presenting faster than results are coming in
+    // (More information only found in proposals/VK_EXT_present_timing.adoc)
+    if (IsValueIn(record_obj.result, {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST,
+                                      VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT})) {
         return;
     }
 
