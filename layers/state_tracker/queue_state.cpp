@@ -132,10 +132,10 @@ void vvl::Queue::Wait(const Location& loc, uint64_t until_seq) {
     }
     auto wait_status = waiter.wait_until(GetCondWaitTimeout());
     if (wait_status != std::future_status::ready) {
-        dev_data_.LogError("INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
-                           "The Validation Layers hit a timeout waiting for queue state to update."
-                           " seq=%" PRIu64 " until=%" PRIu64,
-                           seq_.load(), until_seq);
+        device_state_.LogError("INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
+                               "The Validation Layers hit a timeout waiting for queue state to update."
+                               " seq=%" PRIu64 " until=%" PRIu64,
+                               seq_.load(), until_seq);
     }
 }
 
@@ -304,7 +304,7 @@ void vvl::Queue::Retire(QueueSubmission& submission) {
     // When device is lost skip updating substates which might access destroyed/garbage objects.
     // NOTE: we still need to run semaphore/fence retire routines which do not work with Vulkan
     // handles but ensure correct invariants (for example, Fence::Retire sets its std::promise)
-    if (!dev_data_.is_device_lost) {
+    if (!device_state_.is_device_lost) {
         for (auto& item : sub_states_) {
             item.second->Retire(submission);
         }

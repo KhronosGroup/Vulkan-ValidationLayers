@@ -701,8 +701,8 @@ ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag
     ResourceUsageInfo info = GetResourceUsageInfoFromRecord(tag_ex, record, access.debug_name_provider);
 
     const BatchAccessLog::BatchRecord& batch = *access.batch;
-    if (batch.queue) {
-        info.queue = batch.queue->GetQueueState();
+    if (batch.queue_state) {
+        info.queue = batch.queue_state->GetQueue();
         info.submit_index = batch.submit_index;
         info.batch_index = batch.batch_index;
         info.batch_base_tag = batch.base_tag;

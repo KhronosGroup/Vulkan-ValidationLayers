@@ -60,7 +60,7 @@ void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const 
         }
     }
     // Register signal
-    const VkQueueFlags queue_flags = batch->GetQueueSyncState()->GetQueueFlags();
+    const VkQueueFlags queue_flags = batch->GetQueueFlags();
     const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
     binary_signal_requests.emplace(semaphore, SignalInfo(semaphore_state.shared_from_this(), batch, exec_scope, 0));
 }
@@ -83,7 +83,7 @@ bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, cons
     }
 
     // Register signal
-    const VkQueueFlags queue_flags = batch->GetQueueSyncState()->GetQueueFlags();
+    const VkQueueFlags queue_flags = batch->GetQueueFlags();
     const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
     signals.emplace_back(SignalInfo(semaphore_state.shared_from_this(), batch, exec_scope, submit_signal.value));
     return true;
@@ -268,8 +268,8 @@ void LastSynchronizedPresent::OnDestroySwapchain(VkSwapchainKHR swapchain) {
     }
 }
 
-QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state)
-    : CommandExecutionContext(sync_state, queue_state.GetQueueFlags()),
+QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueState& queue_state)
+    : CommandExecutionContext(sync_state, queue_state.GetQueue()->GetQueueFlags()),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       access_context_(sync_state),
@@ -307,7 +307,7 @@ void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext& recor
     GetCurrentAccessContext()->ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
 }
 
-VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handle(); }
+VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->GetQueue()->Handle(); }
 
 template <typename Predicate>
 void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
@@ -389,7 +389,7 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
 
     // SwapChain acquire batch contexts have no queue
     if (queue_state_ && queue_id == GetQueueId()) {
-        events_context_.ApplyTaggedWait(queue_state_->GetQueueFlags(), tag);
+        events_context_.ApplyTaggedWait(GetQueueFlags(), tag);
     }
 }
 
@@ -399,7 +399,7 @@ void QueueBatchContext::ApplyDeviceWait(const LastSynchronizedPresent& last_sync
 
     // SwapChain acquire batch contexts have no queue
     if (queue_state_) {
-        events_context_.ApplyTaggedWait(queue_state_->GetQueueFlags(), ResourceUsageRecord::kMaxIndex);
+        events_context_.ApplyTaggedWait(GetQueueFlags(), ResourceUsageRecord::kMaxIndex);
     }
 }
 
@@ -414,7 +414,7 @@ void QueueBatchContext::OnResourceDestroyed(const AccessRange& resource_range) {
 }
 
 void QueueBatchContext::BeginRenderPassReplaySetup(ReplayState& replay, const SyncOpBeginRenderPass& begin_op) {
-    current_access_context_ = replay.ReplayStateRenderPassBegin(queue_state_->GetQueueFlags(), begin_op, access_context_);
+    current_access_context_ = replay.ReplayStateRenderPassBegin(GetQueueFlags(), begin_op, access_context_);
 }
 
 void QueueBatchContext::NextSubpassReplaySetup(ReplayState& replay) {
@@ -432,7 +432,7 @@ void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_inf
     const AccessContext& from_context = signal_info.batch->access_context_;
     const SemaphoreScope& signal_scope = signal_info.first_scope;
     const QueueId queue_id = GetQueueId();
-    const VkQueueFlags queue_flags = queue_state_->GetQueueFlags();
+    const VkQueueFlags queue_flags = GetQueueFlags();
     SemaphoreScope wait_scope{queue_id, SyncExecScope::MakeDst(queue_flags, VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL)};
 
     // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the present accesses
@@ -480,7 +480,7 @@ void QueueBatchContext::ResolveSubmitSemaphoreWait(const SignalInfo& signal_info
     assert(signal_info.batch);
 
     const SemaphoreScope& signal_scope = signal_info.first_scope;
-    const VkQueueFlags queue_flags = queue_state_->GetQueueFlags();
+    const VkQueueFlags queue_flags = GetQueueFlags();
     SemaphoreScope wait_scope{GetQueueId(), SyncExecScope::MakeDst(queue_flags, wait_mask)};
 
     const AccessContext& from_context = signal_info.batch->access_context_;
@@ -564,7 +564,7 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             const VulkanTypedHandle swapchain_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
             const VulkanTypedHandle image_handle = vvl::StateObject::Handle(presented.image);
 
-            LogObjectList objlist(queue_state_->Handle(), swapchain_handle, image_handle);
+            LogObjectList objlist(queue_state_->GetQueue()->Handle(), swapchain_handle, image_handle);
 
             std::ostringstream ss;
             ss << "swapchain image " << presented.image_index << " (";
@@ -776,8 +776,8 @@ VkSwapchainKHR QueueBatchContext::AcquireResourceRecord::GetSwapchainHandle() co
 
 std::vector<BatchContextPtr> SyncValidator::GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const {
     std::vector<BatchContextPtr> snapshot;
-    for (const QueueSyncState& queue_sync_state : queue_sync_states_) {
-        auto batch = queue_sync_state.LastBatch();
+    for (const QueueState& queue_state : queue_states_) {
+        auto batch = queue_state.LastBatch();
         if (batch && filter(batch)) {
             snapshot.emplace_back(std::move(batch));
         }
@@ -785,18 +785,12 @@ std::vector<BatchContextPtr> SyncValidator::GetLastBatches(std::function<bool(co
     return snapshot;
 }
 
-// Note that function is const, but updates mutable submit_index to allow Validate to create correct tagging for command invocation
-// scope state.
-// Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
-// atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
-uint64_t QueueSyncState::ReserveSubmitId() { return submit_index_++; }
-
-const LastSynchronizedPresent& QueueSyncState::GetLastSynchronizedPresent() const {
+const LastSynchronizedPresent& QueueState::GetLastSynchronizedPresent() const {
     static const LastSynchronizedPresent empty;
     return last_batch_ ? last_batch_->last_synchronized_present : empty;
 }
 
-void QueueSyncState::SetLastBatch(BatchContextPtr&& last) {
+void QueueState::SetLastBatch(BatchContextPtr&& last) {
     if (last) {
         // Clean up the events data in the previous last batch on queue, as only the subsequent
         // batches have valid use for them and the QueueBatchContext::Setup calls have be copying
@@ -809,7 +803,7 @@ void QueueSyncState::SetLastBatch(BatchContextPtr&& last) {
     }
 }
 
-void QueueSyncState::SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches) {
+void QueueState::SetUnresolvedBatches(std::vector<UnresolvedBatch>&& unresolved_batches) {
     unresolved_batches_ = std::move(unresolved_batches);
 }
 
