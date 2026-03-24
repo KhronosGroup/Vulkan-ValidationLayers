@@ -60,7 +60,7 @@ class SyncValidator : public vvl::DeviceProxy {
     mutable std::atomic<ResourceUsageTag> tag_limit_{1};  // This is reserved in Validation phase, thus mutable and atomic
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
 
-    std::vector<QueueSyncState> queue_sync_states_;
+    std::vector<QueueState> queue_states_;
     QueueId queue_id_limit_ = 0;
 
     mutable std::mutex queue_mutex_;
@@ -116,7 +116,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
 
     QueueId GetQueueId(VkQueue queue) const;
-    QueueSyncState& GetQueueSyncState(QueueId queue_id);
+    QueueState& GetQueueState(QueueId queue_id);
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     std::vector<BatchContextPtr> GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const;

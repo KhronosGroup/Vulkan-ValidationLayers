@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -136,19 +136,20 @@ struct PreSubmitResult {
 
 class Queue : public StateObject, public SubStateManager<QueueSubState> {
   public:
-    Queue(DeviceState &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties &queueFamilyProperties)
+    Queue(DeviceState& device_state, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties& queue_family_properties)
         : StateObject(handle, kVulkanObjectTypeQueue),
           queue_family_index(family_index),
           queue_index(queue_index),
           create_flags(flags),
-          queue_family_properties(queueFamilyProperties),
-          dev_data_(dev_data) {}
+          device_state_(device_state),
+          queue_family_properties_(queue_family_properties) {}
 
     ~Queue() { Destroy(); }
     void Destroy() override;
 
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
+    VkQueueFlags GetQueueFlags() const { return queue_family_properties_.queueFlags; }
 
     // called from the various PreCallRecordQueueSubmit() methods
     PreSubmitResult PreSubmit(std::vector<QueueSubmission> &&submissions);
@@ -180,7 +181,6 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     const uint32_t queue_index;
 
     const VkDeviceQueueCreateFlags create_flags;
-    const VkQueueFamilyProperties queue_family_properties;
 
     // Track command buffer label stack accross all command buffers submitted to this queue.
     // Access to this variable relies on external queue synchronization.
@@ -211,12 +211,12 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     void Retire(QueueSubmission &submission);
 
   private:
+    DeviceState& device_state_;
+    const VkQueueFamilyProperties queue_family_properties_;
     uint32_t timeline_wait_count_ = 0;
 
     void ThreadFunc();
     QueueSubmission *NextSubmission();
-
-    DeviceState &dev_data_;
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held

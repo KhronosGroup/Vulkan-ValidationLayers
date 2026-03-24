@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -400,8 +400,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto queue_state = Get<vvl::Queue>(queue);
-        if (queue_state &&
-            queue_state->queue_family_properties.queueFlags != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
+        if (queue_state && queue_state->GetQueueFlags() != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
             skip |= LogPerformanceWarning("BestPractices-NVIDIA-QueueBindSparse-NotAsync", queue, error_obj.location,
                                           "issued on queue %s. All binds should happen on an asynchronous copy "
                                           "queue to hide the OS scheduling and submit costs.",

@@ -166,7 +166,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     auto queue_state = Get<vvl::Queue>(queue);
     ASSERT_AND_RETURN_SKIP(queue_state);
     CommandBufferSubmitState cb_submit_state(*this, *queue_state);
-    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queue_family_properties.queueFlags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->GetQueueFlags());
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -353,7 +353,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     auto queue_state = Get<vvl::Queue>(queue);
     ASSERT_AND_RETURN_SKIP(queue_state);
     CommandBufferSubmitState cb_submit_state(*this, *queue_state);
-    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->queue_family_properties.queueFlags);
+    SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->GetQueueFlags());
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
@@ -698,7 +698,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     if (skip) return skip;
 
     auto queue_state = Get<vvl::Queue>(queue);
-    const VkQueueFlags queue_flags = queue_state->queue_family_properties.queueFlags;
+    const VkQueueFlags queue_flags = queue_state->GetQueueFlags();
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, error_obj.location,
                          "queueFamilyIndex %" PRIu32 " queueFlags are %s.", queue_state->queue_family_index,
