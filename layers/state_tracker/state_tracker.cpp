@@ -117,6 +117,26 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
+small_vector<vvl::Buffer*, 2> DeviceState::GetBuffersByAddressRange(const VkDeviceAddressRangeKHR& address_range,
+                                                                    const BufferFilter& filter) const {
+    small_vector<vvl::Buffer*, 2> ret_buffers;
+
+    vvl::span<vvl::Buffer* const> buffers = GetBuffersByAddress(address_range.address);
+    for (vvl::Buffer* const buffer : buffers) {
+        // address_range.address already belongs to buffer by definition,
+        // just check that end address of address_range is inferior to buffer's end address
+        if (buffer->deviceAddress + buffer->safe_create_info.size < address_range.address + address_range.size) {
+            continue;
+        }
+
+        if (filter(buffer)) {
+            ret_buffers.emplace_back(buffer);
+        }
+    }
+
+    return ret_buffers;
+}
+
 void DeviceState::TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, const vvl::range<VkDeviceAddress> range,
                                           VkBufferUsageFlags2 usage) {
     if (disabled[command_buffer_state]) {
