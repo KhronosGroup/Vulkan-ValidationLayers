@@ -424,78 +424,117 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 
 void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
                                                  const RecordObject& record_obj) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11981
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
-    for (const auto buffer_state : buffer_states) {
-        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
-            continue;
+    if (buffer_states.size() > 1) {
+        if (!device_addr_cmds_warning) {
+            device_addr_cmds_warning = true;
+            LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                       "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                       "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                       "when a device address belongs to multiple VkBuffer.");
         }
-        const VkBuffer buffer = buffer_state->VkHandle();
-        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
-        const uint32_t draw_count = pInfo->drawCount;
-        auto& sub_state = SubState(*cb_state);
-
-        const LastBound& last_bound = cb_state->GetLastBoundGraphics();
-        valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, draw_count,
-                                                     VK_NULL_HANDLE, 0);
-        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
         return;
     }
+
+    if ((buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+        return;
+    }
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    const uint32_t draw_count = pInfo->drawCount;
+    auto& sub_state = SubState(*cb_state);
+
+    const LastBound& last_bound = cb_state->GetLastBoundGraphics();
+    valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, draw_count,
+                                                 VK_NULL_HANDLE, 0);
+    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+    return;
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
                                                         const RecordObject& record_obj) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11981
+
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
-    for (const auto buffer_state : buffer_states) {
-        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
-            continue;
+    if (buffer_states.size() > 1) {
+        if (!device_addr_cmds_warning) {
+            device_addr_cmds_warning = true;
+            LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                       "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                       "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                       "when a device address belongs to multiple VkBuffer.");
         }
-        const VkBuffer buffer = buffer_state->VkHandle();
-        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
-        const uint32_t draw_count = pInfo->drawCount;
-        const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
-
-        auto& sub_state = SubState(*cb_state);
-
-        const LastBound& last_bound = cb_state->GetLastBoundGraphics();
-        valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride,
-                                               draw_count, VK_NULL_HANDLE, 0,
-                                               "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
-
-        valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
-                                                            draw_count, VK_NULL_HANDLE, 0);
-        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
         return;
     }
+
+    if ((buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+        return;
+    }
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    const uint32_t draw_count = pInfo->drawCount;
+    const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+
+    auto& sub_state = SubState(*cb_state);
+
+    const LastBound& last_bound = cb_state->GetLastBoundGraphics();
+    valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride, draw_count,
+                                           VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+
+    valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset,
+                                                        draw_count, VK_NULL_HANDLE, 0);
+    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+    return;
 }
 
 void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                       const RecordObject& record_obj) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11981
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
+    if (buffer_states.size() > 1) {
+        if (!device_addr_cmds_warning) {
+            device_addr_cmds_warning = true;
+            LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                       "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                       "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                       "when a device address belongs to multiple VkBuffer.");
+        }
+        return;
+    }
     // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
     const auto count_buffer_states = GetBuffersByAddress(pInfo->countAddressRange.address);
-    for (const auto buffer_state : buffer_states) {
-        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
-            continue;
+    if (count_buffer_states.size() > 1) {
+        if (!device_addr_cmds_warning) {
+            device_addr_cmds_warning = true;
+            LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                       "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                       "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                       "when a device address belongs to multiple VkBuffer.");
         }
-        for (const auto count_buffer_state : count_buffer_states) {
-            if ((count_buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
-                continue;
-            }
-            const VkBuffer buffer = buffer_state->VkHandle();
-            const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
-            const VkBuffer countBuffer = count_buffer_state->VkHandle();
-            const VkDeviceSize countBufferOffset = pInfo->countAddressRange.address - count_buffer_state->deviceAddress;
-            const uint32_t maxDrawCount = pInfo->maxDrawCount;
-            const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
-            PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                              record_obj);
-            return;
-        }
+        return;
     }
+
+    if ((buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+        return;
+    }
+
+    if ((count_buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+        return;
+    }
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    const VkBuffer countBuffer = count_buffer_states[0]->VkHandle();
+    const VkDeviceSize countBufferOffset = pInfo->countAddressRange.address - count_buffer_states[0]->deviceAddress;
+    const uint32_t maxDrawCount = pInfo->maxDrawCount;
+    const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+    PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                                      record_obj);
+    return;
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
@@ -652,20 +691,31 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
 
 void Validator::PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
                                                      const RecordObject& record_obj) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11981
+
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     auto& sub_state = SubState(*cb_state);
     const LastBound& last_bound = cb_state->GetLastBoundCompute();
     const auto buffer_states = GetBuffersByAddress(pInfo->addressRange.address);
-    for (const auto buffer_state : buffer_states) {
-        if ((buffer_state->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
-            continue;
+    if (buffer_states.size() > 1) {
+        if (!device_addr_cmds_warning) {
+            device_addr_cmds_warning = true;
+            LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                       "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                       "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                       "when a device address belongs to multiple VkBuffer.");
         }
-        const VkBuffer buffer = buffer_state->VkHandle();
-        const VkDeviceSize offset = pInfo->addressRange.address - buffer_state->deviceAddress;
-        valcmd::DispatchIndirect(*this, record_obj.location, sub_state, last_bound, buffer, offset);
-        PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
+        return;
     }
+
+    if ((buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) == 0) {
+        return;
+    }
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    valcmd::DispatchIndirect(*this, record_obj.location, sub_state, last_bound, buffer, offset);
+    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
 void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
@@ -818,29 +868,41 @@ void Validator::PreCallRecordCmdCopyMemoryToImageIndirectKHR(
 void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
                                                      const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
                                                      const RecordObject& record_obj) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11981
+
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
         const auto buffer_states = GetBuffersByAddress(pCopyMemoryInfo->pRegions[i].addressRange.address);
-        for (const auto buffer_state : buffer_states) {
-            if (buffer_state->create_info.usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT) {
-                VkBufferImageCopy2 region = vku::InitStructHelper();
-                region.bufferOffset = pCopyMemoryInfo->pRegions[i].addressRange.address - buffer_state->deviceAddress;
-                region.bufferImageHeight = pCopyMemoryInfo->pRegions[i].addressImageHeight;
-                region.imageSubresource = pCopyMemoryInfo->pRegions[i].imageSubresource;
-                region.imageOffset = pCopyMemoryInfo->pRegions[i].imageOffset;
-                region.imageExtent = pCopyMemoryInfo->pRegions[i].imageExtent;
-
-                VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();
-                copy_buffer_to_image_info.srcBuffer = buffer_state->VkHandle();
-                copy_buffer_to_image_info.dstImage = pCopyMemoryInfo->image;
-                copy_buffer_to_image_info.dstImageLayout = pCopyMemoryInfo->pRegions[i].imageLayout;
-                copy_buffer_to_image_info.regionCount = 1u;
-                copy_buffer_to_image_info.pRegions = &region;
-                valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*GetWrite<vvl::CommandBuffer>(commandBuffer)),
-                                          &copy_buffer_to_image_info);
-                break;
+        if (buffer_states.size() > 1) {
+            if (!device_addr_cmds_warning) {
+                device_addr_cmds_warning = true;
+                LogWarning("WARNING-GPU-AV-VK_KHR_device_address_commands", commandBuffer, record_obj.location,
+                           "Validation by GPU-AV is not yet performed for vkCmdDrawIndirect2KHR, vkCmdDrawIndexedIndirect2KHR, "
+                           "vkCmdDrawIndirectCount2KHR, vkCmdDispatchIndirect2KHR, and vkCmdCopyMemoryToImageKHR "
+                           "when a device address belongs to multiple VkBuffer.");
             }
+            continue;
         }
+
+        if (!(buffer_states[0]->create_info.usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT)) {
+            continue;
+        }
+
+        VkBufferImageCopy2 region = vku::InitStructHelper();
+        region.bufferOffset = pCopyMemoryInfo->pRegions[i].addressRange.address - buffer_states[0]->deviceAddress;
+        region.bufferImageHeight = pCopyMemoryInfo->pRegions[i].addressImageHeight;
+        region.imageSubresource = pCopyMemoryInfo->pRegions[i].imageSubresource;
+        region.imageOffset = pCopyMemoryInfo->pRegions[i].imageOffset;
+        region.imageExtent = pCopyMemoryInfo->pRegions[i].imageExtent;
+
+        VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();
+        copy_buffer_to_image_info.srcBuffer = buffer_states[0]->VkHandle();
+        copy_buffer_to_image_info.dstImage = pCopyMemoryInfo->image;
+        copy_buffer_to_image_info.dstImageLayout = pCopyMemoryInfo->pRegions[i].imageLayout;
+        copy_buffer_to_image_info.regionCount = 1u;
+        copy_buffer_to_image_info.pRegions = &region;
+        valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*GetWrite<vvl::CommandBuffer>(commandBuffer)),
+                                  &copy_buffer_to_image_info);
     }
 }
 

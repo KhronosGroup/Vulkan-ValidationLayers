@@ -308,7 +308,8 @@ class Validator : public GpuShaderInstrumentor {
     std::string instrumented_shader_cache_path_{};
 
     // Make sure we call the right versions of any timeline semaphore functions.
-    bool timeline_khr_{false};
+    bool timeline_khr_ = false;
+    bool device_addr_cmds_warning = false;
 
   public:
     vko::GpuResourcesManager gpu_resources_manager_;
