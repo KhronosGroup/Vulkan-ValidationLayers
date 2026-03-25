@@ -89,8 +89,8 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandShaderStageBinding) {
 
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
-    CreatePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.CreateGraphicsPipeline();
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.CreateComputePipeline();
 
     vkt::PipelineLayout pipeline_layout(*m_device, {});
     VkIndirectExecutionSetPipelineInfoEXT exe_set_pipeline_info = vku::InitStructHelper();
