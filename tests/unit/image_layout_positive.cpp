@@ -1369,7 +1369,7 @@ TEST_F(PositiveImageLayout, CopyColorToDepthOnTransferQueue) {
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent = {1, 1, 1};
+    copy_region.extent = {32, 32, 1};
 
     vk::CmdCopyImage(cb, src_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
