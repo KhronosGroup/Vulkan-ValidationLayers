@@ -118,6 +118,8 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     const bool skip_checking_limit =
         // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
         (vuid_hash == 0x4fe1fef9) ||
+        // DEBUG-DUMP-DESCRIPTOR
+        (vuid_hash == 0xc039618c) ||
         // GPU-AV gives lots of warnings on setup to inform user which settings we are adjusting under them
         (vuid_hash == 0x86fe6721);
 

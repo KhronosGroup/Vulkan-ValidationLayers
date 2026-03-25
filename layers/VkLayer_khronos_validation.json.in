@@ -1169,6 +1169,14 @@
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "key": "debug_dump_descriptors",
+                            "label": "Dump Descriptors",
+                            "view": "DEBUG",
+                            "description": "Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays",
+                            "type": "BOOL",
+                            "default": false
                         }
                     ]
                 },
