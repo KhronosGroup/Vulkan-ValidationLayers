@@ -1691,6 +1691,11 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
+    // If the pipeline is not using any descriptors, then any descriptor state set can be ignored
+    if (pipeline.active_slots.empty()) {
+        return skip;
+    }
+
     if (pipeline.descriptor_heap_mode) {
         for (const ShaderStageState& stage_state : pipeline.stage_states) {
             if (!stage_state.HasSpirv()) {
@@ -1707,15 +1712,13 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
         }
     }
 
-    // If the pipeline is not using any descriptors, then any descriptor state set can be ignored
-    if (pipeline.active_slots.empty()) {
-        return skip;
-    }
-
+    bool has_bound_descriptor_buffer = false;
     for (const auto& ds_slot : last_bound_state.ds_slots) {
-        // TODO - This currently implicitly is checking for VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT being set
         if (pipeline.descriptor_buffer_mode) {
-            if (ds_slot.ds_state && !ds_slot.ds_state->IsPushDescriptor()) {
+            if (!ds_slot.ds_state) {
+                continue;
+            }
+            if (!ds_slot.ds_state->IsPushDescriptor()) {
                 LogObjectList objlist = cb_state.GetObjectList(bind_point);
                 objlist.add(ds_slot.ds_state->Handle());
                 skip |= LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, vuid.loc(),
@@ -1725,7 +1728,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
                                  last_bound_state.DescribeInvalidDescriptorMode().c_str());
                 break;
             }
-
+            has_bound_descriptor_buffer |= ds_slot.descriptor_buffer_binding.has_value() || ds_slot.ds_state->IsPushDescriptor();
         } else if (ds_slot.descriptor_buffer_binding.has_value()) {
             skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, cb_state.GetObjectList(bind_point), vuid.loc(),
                              "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
@@ -1735,6 +1738,15 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
                              ds_slot.descriptor_buffer_binding->offset, last_bound_state.DescribeInvalidDescriptorMode().c_str());
             break;
         }
+    }
+
+    if (pipeline.descriptor_buffer_mode && !has_bound_descriptor_buffer) {
+        // While it is totally normal to not call vkCmdBindDescriptorBuffersEXT on all the sets if you are not going to use
+        // them, if there are no sets bound with an offset, this is highly likly a bug, and we should warn early
+        skip |= LogWarning("WARNING-Missing-vkCmdSetDescriptorBufferOffsets", cb_state.GetObjectList(bind_point), vuid.loc(),
+                           "the bound pipeline is statically accessing descriptors, but there has never been a call to "
+                           "vkCmdSetDescriptorBufferOffsetsEXT for %s since the last vkCmdBindDescriptorBuffersEXT call.",
+                           string_VkPipelineBindPoint(bind_point));
     }
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
@@ -1992,6 +2004,11 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound& las
         }
         const vvl::ShaderObject& shader_object = *shader_object_ptr;
 
+        // If the shader is not using any descriptors, then any descriptor state set can be ignored
+        if (shader_object.active_slots.empty()) {
+            continue;
+        }
+
         if (shader_object.descriptor_heap_mode) {
             if (shader_object.stage.HasSpirv()) {
                 const bool has_embedded_samplers = shader_object.descriptor_heap_embedded_samplers_count != 0;
@@ -2003,11 +2020,6 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound& las
                     skip |= ValidateActionStateDescriptorHeapSamplers(cb_state, shader_object.stage, bind_point, vuid.loc());
                 }
             }
-            continue;
-        }
-
-        // If the shader is not using any descriptors, then any descriptor state set can be ignored
-        if (shader_object.active_slots.empty()) {
             continue;
         }
 
