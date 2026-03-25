@@ -29,6 +29,7 @@
 #include "device_state.h"
 #include "chassis/dispatch_object.h"
 #include "error_message/logging.h"
+#include "external/inplace_function.h"
 #include "containers/span.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
@@ -699,6 +700,10 @@ class DeviceState : public vvl::base::Device {
         }
         return found_it->second;
     }
+
+    using BufferFilter = stdext::inplace_function<bool(vvl::Buffer*)>;
+    small_vector<vvl::Buffer*, 2> GetBuffersByAddressRange(const VkDeviceAddressRangeKHR& address_range,
+                                                           const BufferFilter& filter) const;
 
     void TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, const vvl::range<VkDeviceAddress> range, VkBufferUsageFlags2 usage);
     void TrackDeviceAddressRange(vvl::CommandBuffer& cb_state, VkDeviceAddress address, VkDeviceSize size,
@@ -2318,6 +2323,11 @@ class DeviceProxy : public vvl::base::Device {
 
     vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
         return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddress(address);
+    }
+
+    small_vector<vvl::Buffer*, 2> GetBuffersByAddressRange(const VkDeviceAddressRangeKHR& address_range,
+                                                           const DeviceState::BufferFilter& filter) const {
+        return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddressRange(address_range, filter);
     }
 
     NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {
