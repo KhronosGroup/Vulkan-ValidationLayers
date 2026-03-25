@@ -427,7 +427,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
                     skip |= LogPerformanceWarning(
                         "WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
                         "(SPIR-V Interface) %s has an Output value declared at Location %" PRIu32 " Component %" PRIu32
-                        ", but there is no corresponding Input declared in %s.\nThis is not invalid, but might the write to to the "
+                        ", but there is no corresponding Input declared in %s.\nThis is not invalid, but the write to the "
                         "unused Output is discarded.\nThe Output variable is:\n  %s",
                         producer_entrypoint.Describe().c_str(), location, component, consumer_entrypoint.Describe().c_str(),
                         producer_module.DescribeType(output_var->type_id).c_str());
