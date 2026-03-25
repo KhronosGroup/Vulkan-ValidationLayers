@@ -716,9 +716,9 @@ TEST_F(NegativeMesh, DrawCmds) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    uint32_t max_group_count_x = mesh_shader_properties.maxTaskWorkGroupCount[0];
-    uint32_t max_group_count_y = mesh_shader_properties.maxTaskWorkGroupCount[1];
-    uint32_t max_group_count_z = mesh_shader_properties.maxTaskWorkGroupCount[2];
+    uint32_t max_group_count_x = mesh_shader_properties.maxMeshWorkGroupCount[0];
+    uint32_t max_group_count_y = mesh_shader_properties.maxMeshWorkGroupCount[1];
+    uint32_t max_group_count_z = mesh_shader_properties.maxMeshWorkGroupCount[2];
 
     if (max_group_count_x < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07326");
