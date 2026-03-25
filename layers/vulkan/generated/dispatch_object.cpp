@@ -37,6 +37,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "gpuav/core/gpuav.h"
 #include "sync/sync_validation.h"
+#include "gpu_dump/gpu_dump.h"
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
@@ -73,6 +74,9 @@ void Instance::InitValidationObjects() {
     }
     if (settings.enabled[sync_validation]) {
         object_dispatch.emplace_back(new syncval::Instance(this));
+    }
+    if (settings.enabled[gpu_dump]) {
+        object_dispatch.emplace_back(new gpudump::Instance(this));
     }
 }
 
@@ -115,6 +119,10 @@ void Device::InitValidationObjects() {
     if (settings.enabled[sync_validation]) {
         object_dispatch.emplace_back(new syncval::SyncValidator(
             this, static_cast<syncval::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeSyncValidation))));
+    }
+    if (settings.enabled[gpu_dump]) {
+        object_dispatch.emplace_back(new gpudump::GpuDump(
+            this, static_cast<gpudump::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeGpuDump))));
     }
 }
 

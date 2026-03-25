@@ -704,7 +704,8 @@ Instance::Instance(const VkInstanceCreateInfo* pCreateInfo) : HandleWrapper(new 
                                                       debug_report,
                                                       &settings.global_settings,
                                                       &settings.gpuav_settings,
-                                                      &settings.syncval_settings};
+                                                      &settings.syncval_settings,
+                                                      &settings.gpu_dump_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
 
     if (settings.disabled[handle_wrapping]) {

@@ -41,6 +41,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "gpuav/core/gpuav.h"
 #include "sync/sync_validation.h"
+#include "gpu_dump/gpu_dump.h"
 
 namespace vvl {
 namespace dispatch {
@@ -51,84 +52,88 @@ void Device::InitObjectDispatchVectors() {
                                 typeid(&stateless::Device::name), typeid(&legacy::Device::name),                          \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&syncval::SyncValidator::name), false);
+                                typeid(&syncval::SyncValidator::name), typeid(&gpudump::GpuDump::name), false);
 #define BUILD_DESTROY_DISPATCH_VECTOR(name)                                                                               \
     init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
                                 typeid(&stateless::Device::name), typeid(&legacy::Device::name),                          \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&syncval::SyncValidator::name), true);
+                                typeid(&syncval::SyncValidator::name), typeid(&gpudump::GpuDump::name), true);
 
-    auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& t_typeid,
-                                              const std::type_info& pv_typeid, const std::type_info& l_typeid,
-                                              const std::type_info& ot_typeid, const std::type_info& st_typeid,
-                                              const std::type_info& cv_typeid, const std::type_info& bp_typeid,
-                                              const std::type_info& ga_typeid, const std::type_info& sv_typeid, bool is_destroy) {
-        vvl::base::Device* state_tracker = nullptr;
-        auto* intercept_vector = &this->intercept_vectors[id];
-        for (auto& vo : this->object_dispatch) {
-            auto* item = vo.get();
-            switch (item->container_type) {
-                case LayerObjectTypeThreading:
-                    if (t_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+    auto init_object_dispatch_vector =
+        [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& t_typeid, const std::type_info& pv_typeid,
+               const std::type_info& l_typeid, const std::type_info& ot_typeid, const std::type_info& st_typeid,
+               const std::type_info& cv_typeid, const std::type_info& bp_typeid, const std::type_info& ga_typeid,
+               const std::type_info& sv_typeid, const std::type_info& gd_typeid, bool is_destroy) {
+            vvl::base::Device* state_tracker = nullptr;
+            auto* intercept_vector = &this->intercept_vectors[id];
+            for (auto& vo : this->object_dispatch) {
+                auto* item = vo.get();
+                switch (item->container_type) {
+                    case LayerObjectTypeThreading:
+                        if (t_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeParameterValidation:
-                    if (pv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeParameterValidation:
+                        if (pv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeLegacy:
-                    if (l_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeLegacy:
+                        if (l_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeObjectTracker:
-                    if (ot_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeObjectTracker:
+                        if (ot_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeStateTracker:
-                    if (st_typeid != vo_typeid) {
-                        // For destroy/free commands, the state tracker must run last so that
-                        // other validation objects can still access the state object which
-                        // is being destroyed.
-                        if (is_destroy) {
-                            state_tracker = item;
-                        } else {
-                            intercept_vector->push_back(item);
+                    case LayerObjectTypeStateTracker:
+                        if (st_typeid != vo_typeid) {
+                            // For destroy/free commands, the state tracker must run last so that
+                            // other validation objects can still access the state object which
+                            // is being destroyed.
+                            if (is_destroy) {
+                                state_tracker = item;
+                            } else {
+                                intercept_vector->push_back(item);
+                            }
                         }
-                    }
-                    break;
+                        break;
 
-                case LayerObjectTypeCoreValidation:
-                    if (cv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeCoreValidation:
+                        if (cv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeBestPractices:
-                    if (bp_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeBestPractices:
+                        if (bp_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeGpuAssisted:
-                    if (ga_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeGpuAssisted:
+                        if (ga_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeSyncValidation:
-                    if (sv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
+                    case LayerObjectTypeSyncValidation:
+                        if (sv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                case LayerObjectTypeMaxEnum:
-                    /* Chassis codegen needs to be updated for unknown validation object type */
-                    assert(0);
-                    break;
+                    case LayerObjectTypeGpuDump:
+                        if (gd_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
 
-                default:
-                    /* Handle unsupported layer types (e.g. Vulkan SC does not support GPU AV or best practices) */
-                    assert(0);
-                    break;
+                    case LayerObjectTypeMaxEnum:
+                        /* Chassis codegen needs to be updated for unknown validation object type */
+                        assert(0);
+                        break;
+
+                    default:
+                        /* Handle unsupported layer types (e.g. Vulkan SC does not support GPU AV or best practices) */
+                        assert(0);
+                        break;
+                }
             }
-        }
-        if (state_tracker) {
-            intercept_vector->push_back(state_tracker);
-        }
-    };
+            if (state_tracker) {
+                intercept_vector->push_back(state_tracker);
+            }
+        };
 
     intercept_vectors.resize(InterceptIdCount);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceQueue);

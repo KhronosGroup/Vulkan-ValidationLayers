@@ -31,8 +31,9 @@
 #include <vulkan/layer/vk_layer_settings.hpp>
 
 #include "gpuav/core/gpuav_settings.h"
-
 #include "sync/sync_settings.h"
+#include "gpu_dump/gpu_dump_settings.h"
+
 #include "vk_layer_config.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
@@ -120,6 +121,7 @@ const std::vector<std::string>& GetEnableFlagNameHelper() {
         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
         "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
         "VK_VALIDATION_LEGACY_DETECTION",                                      // legacy_detection,
+        "VK_VALIDATION_GPU_DUMP",                                              // gpu_dump,
     };
     return enable_flag_name_helper;
 }
@@ -173,12 +175,6 @@ const char* VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char* VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 // Debug settings used for internal development
 const char* VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
-
-// Used for working with VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
-// Every draw/dispatch/traceRays dump out information about the bound descriptor buffer/heap
-// Currently done inside core validation (PreCallValidate) and state_tracker.
-// (This allows for testing with GPU-AV + self_validation).
-const char* VK_LAYER_DEBUG_DUMP_DESCRIPTORS = "debug_dump_descriptors";
 
 // DebugPrintf (which is now part of GPU-AV internally)
 // ---
@@ -240,6 +236,14 @@ const char* VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_d
 const char* VK_LAYER_LOG_FILENAME = "log_filename";
 const char* VK_LAYER_DEBUG_ACTION = "debug_action";
 const char* VK_LAYER_REPORT_FLAGS = "report_flags";
+
+// GPU Dump
+// ---
+// Used for working with VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
+// Every draw/dispatch/traceRays dump out information about the bound descriptor buffer/heap
+const char* VK_LAYER_GPU_DUMP_DESCRIPTORS = "gpu_dump_descriptors";
+// Print to stdout
+const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
 
 // Don't need any setting helper when using self vvl and don't want unused function warnings
 #if !defined(BUILD_SELF_VVL)
@@ -723,8 +727,23 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
         report_flags |= kWarningBit;
     }
 
-    if (settings_data->global_settings->debug_dump_descriptors) {
-        report_flags |= kInformationBit;
+    if (settings_data->enabled[gpu_dump]) {
+        if (settings_data->gpu_dump_settings->to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
+            if (is_stdout) {
+                setting_warnings.emplace_back(
+                    "The debug callback is already logging to stdout, but " + std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) +
+                    " is also enabled. GPU Dump will skip the debug callback in favor of a direct stdout write.");
+            } else {
+                setting_warnings.emplace_back("The logging to " + log_filename + " will not contain any GPU Dump info because " +
+                                              std::string(VK_LAYER_GPU_DUMP_TO_STDOUT) + " is enabled.");
+            }
+        }
+        if (!settings_data->gpu_dump_settings->to_stdout && ((report_flags & kInformationBit) == 0)) {
+            setting_warnings.emplace_back(
+                "GPU Dump logs to the Information message severity, enabling Information level logging otherwise the message "
+                "will not be seen.");
+            report_flags |= kInformationBit;
+        }
     }
 
     // Flag as default if these settings are not from a vk_layer_settings.txt file
@@ -956,10 +975,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL, global_settings.debug_disable_spirv_val);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DUMP_DESCRIPTORS)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DUMP_DESCRIPTORS, global_settings.debug_dump_descriptors);
-    }
-
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST, GetCustomStypeInfo());
     }
@@ -1164,6 +1179,15 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
                                 syncval_settings.message_extra_properties);
     }
 
+    GpuDumpSettings& gpu_dump_settings = *settings_data->gpu_dump_settings;
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_DESCRIPTORS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_DESCRIPTORS, gpu_dump_settings.descriptors);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT, gpu_dump_settings.to_stdout);
+    }
+
     const char* REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT = "syncval_message_extra_properties_pretty_print";
     if (vkuHasLayerSetting(layer_setting_set, REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT)) {
         setting_warnings.emplace_back(std::string(REMOVED_VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT) +
@@ -1193,6 +1217,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enabled, sync_validation, VK_LAYER_VALIDATE_SYNC);
         SetValidationSetting(layer_setting_set, settings_data->enabled, legacy_detection, VK_LAYER_LEGACY_DETECTION);
+
+        settings_data->enabled[gpu_dump] = gpu_dump_settings.EnableLayer();
     }
 
     // Only read the legacy disables flags when used, not their replacement.

@@ -55,6 +55,16 @@ khronos_validation.enable_message_limit = true
 # Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.
 khronos_validation.fine_grained_locking = true
 
+# Dump Descriptors
+# =====================
+# Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays
+khronos_validation.gpu_dump_descriptors = false
+
+# Redirect all GPU Dump to stdout
+# =====================
+# Instead of using the debug callback with information severity, redirect to stdout instead.
+khronos_validation.gpu_dump_to_stdout = false
+
 # Acceleration structures builds
 # =====================
 # Validate acceleration structures references in TLAS build commands.

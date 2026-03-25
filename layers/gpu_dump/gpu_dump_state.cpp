@@ -1,0 +1,34 @@
+/* Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include "gpu_dump/gpu_dump_state.h"
+#include "gpu_dump/gpu_dump.h"
+
+namespace gpudump {
+
+void GpuDump::Created(vvl::CommandBuffer& cb_state) {
+    cb_state.SetSubState(container_type, std::make_unique<gpudump::CommandBufferSubState>(cb_state, *this));
+}
+
+CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb, GpuDump& dev_data)
+    : vvl::CommandBufferSubState(cb), dev_data(dev_data) {}
+
+void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location& loc) {
+    if (dev_data.gpu_dump_settings.descriptors) {
+        DumpDescriptors(last_bound, loc);
+    }
+}
+
+}  // namespace gpudump

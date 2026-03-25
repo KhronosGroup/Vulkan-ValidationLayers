@@ -1519,9 +1519,6 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 void CommandBuffer::RecordDraw(const Location& loc) {
     RecordCommand(loc);
     LastBound& last_bound = lastBound[vvl::BindPointGraphics];
-    if (dev_data.global_settings.debug_dump_descriptors) {
-        DebugDumpDescriptors(last_bound, loc);
-    }
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
     }
@@ -1531,9 +1528,6 @@ void CommandBuffer::RecordDraw(const Location& loc) {
 void CommandBuffer::RecordDispatch(const Location& loc) {
     RecordCommand(loc);
     LastBound& last_bound = lastBound[vvl::BindPointCompute];
-    if (dev_data.global_settings.debug_dump_descriptors) {
-        DebugDumpDescriptors(last_bound, loc);
-    }
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
     }
@@ -1543,9 +1537,6 @@ void CommandBuffer::RecordDispatch(const Location& loc) {
 void CommandBuffer::RecordTraceRay(const Location& loc) {
     RecordCommand(loc);
     LastBound& last_bound = lastBound[vvl::BindPointRayTracing];
-    if (dev_data.global_settings.debug_dump_descriptors) {
-        DebugDumpDescriptors(last_bound, loc);
-    }
     for (auto& item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
     }
