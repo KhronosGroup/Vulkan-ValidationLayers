@@ -254,7 +254,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_KHR_cooperative_matrix : enable
-        layout(local_size_x = 32) in;
+        layout(local_size_x = 64) in;
         void main() {
             coopmat<bfloat16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> cmA = coopmat<bfloat16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA>(3.0);
         }
