@@ -110,6 +110,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
     if (message_flags & error_monitor->GetMessageFlags()) {
         return error_monitor->CheckForDesiredMsg(vuid, error_message.c_str());
     }
+
+    // DEBUG-DUMP-DESCRIPTOR
+    // Want to always print it if running tests, as it otherwise gets silenced
+    if (callback_data->messageIdNumber == 0xc039618c) {
+        std::cout << error_message;
+    }
+
     return VK_FALSE;
 }
 

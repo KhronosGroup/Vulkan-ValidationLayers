@@ -368,6 +368,7 @@ target_sources(vvl PRIVATE
     state_tracker/descriptor_set_layouts.h
     state_tracker/descriptor_sets.cpp
     state_tracker/descriptor_sets.h
+    state_tracker/debug_descriptor_dump.cpp
     state_tracker/device_generated_commands_state.cpp
     state_tracker/device_generated_commands_state.h
     state_tracker/device_memory_state.cpp

@@ -174,6 +174,12 @@ const char* VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 // Debug settings used for internal development
 const char* VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
 
+// Used for working with VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
+// Every draw/dispatch/traceRays dump out information about the bound descriptor buffer/heap
+// Currently done inside core validation (PreCallValidate) and state_tracker.
+// (This allows for testing with GPU-AV + self_validation).
+const char* VK_LAYER_DEBUG_DUMP_DESCRIPTORS = "debug_dump_descriptors";
+
 // DebugPrintf (which is now part of GPU-AV internally)
 // ---
 // Quick, single setting to turn on DebugPrintf
@@ -717,6 +723,10 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
         report_flags |= kWarningBit;
     }
 
+    if (settings_data->global_settings->debug_dump_descriptors) {
+        report_flags |= kInformationBit;
+    }
+
     // Flag as default if these settings are not from a vk_layer_settings.txt file
     const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
 
@@ -944,6 +954,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL, global_settings.debug_disable_spirv_val);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DUMP_DESCRIPTORS)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DUMP_DESCRIPTORS, global_settings.debug_dump_descriptors);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
