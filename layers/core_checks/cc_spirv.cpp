@@ -3096,8 +3096,7 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module& module_spirv, c
             const Location vk_constant_loc = dg_shader_ci_loc.dot(Field::pConstants, vk_index);
             if (auto* tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(vk_constant.pNext)) {
                 const spirv::Instruction& element_type_instr = *module_spirv.FindDef(tensor_type_instr.Word(2));
-                const VkFormat spirv_vk_format = module_spirv.GetTensorFormat(element_type_instr);
-                if (tensor_desc->format != spirv_vk_format) {
+                if (!module_spirv.IsTensorFormatCompatible(tensor_desc->format, element_type_instr)) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                      vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
                                      "(%s) is incompatible with the element type (%s) of the spirv definition (%s)",

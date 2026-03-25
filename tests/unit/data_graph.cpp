@@ -1408,8 +1408,11 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongFormat) {
     vkt::dg::HelperParameters params;
     params.spirv_source = spirv_string.c_str();
 
-    // try a few different formats, different for sign, bit width, and type
-    for (auto format : {VK_FORMAT_R8_SINT, VK_FORMAT_R32_UINT, VK_FORMAT_R32_SFLOAT}) {
+    // try a few different formats, different for bit width, float encoding and type
+    // NOTE: VK_FORMAT_R8_SINT included as a sanity check: it is different only by sign from the actual format,
+    // meaning it is compatible, and it must NOT trigger the VU
+    for (auto format :
+         {VK_FORMAT_R8_SINT, VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
         VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
@@ -1418,9 +1421,14 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongFormat) {
         pipeline.shader_module_ci_.constantCount = 1;
         pipeline.shader_module_ci_.pConstants = &constant;
 
-        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
-        pipeline.CreateDataGraphPipeline();
-        m_errorMonitor->VerifyFound();
+        if (format == VK_FORMAT_R8_SINT) {
+            // INT check must not consider the sign, as required by TOSA function specifications
+            pipeline.CreateDataGraphPipeline();
+        } else {
+            m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+            pipeline.CreateDataGraphPipeline();
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
@@ -1590,17 +1598,24 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongFormat) {
     RETURN_IF_SKIP(Init());
 
     // try a few different formats, different for bit width, type and float encoding
+    // NOTE: VK_FORMAT_R8_SINT included as a sanity check: it is different only by sign from the actual format,
+    // meaning it is compatible, and it must NOT trigger the VU
     for (auto format :
-         {VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
+         {VK_FORMAT_R8_SINT, VK_FORMAT_R8_BOOL_ARM, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_SFLOAT_FPENCODING_FLOAT8E4M3_ARM}) {
         vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
         auto* desc =
             const_cast<VkTensorDescriptionARM*>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
         desc->format = format;
 
-        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
-        pipeline.CreateDataGraphPipeline();
-        m_errorMonitor->VerifyFound();
+        if (format == VK_FORMAT_R8_SINT) {
+            // INT check must not consider the sign, as required by TOSA function specifications
+            pipeline.CreateDataGraphPipeline();
+        } else {
+            m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
+            pipeline.CreateDataGraphPipeline();
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
