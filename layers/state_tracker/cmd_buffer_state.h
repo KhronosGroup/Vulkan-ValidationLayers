@@ -594,8 +594,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } descriptor_heap;
 
-    void DebugDumpDescriptors(const LastBound& last_bound, const Location& loc) const;
-
     void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function);
     void InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::Func function);
 

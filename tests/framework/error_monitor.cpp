@@ -111,9 +111,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
         return error_monitor->CheckForDesiredMsg(vuid, error_message.c_str());
     }
 
-    // DEBUG-DUMP-DESCRIPTOR
+    // GPU-DUMP
     // Want to always print it if running tests, as it otherwise gets silenced
-    if (callback_data->messageIdNumber == 0xc039618c) {
+    if (callback_data->messageIdNumber == 0xe5c5edc1) {
         std::cout << error_message;
     }
 

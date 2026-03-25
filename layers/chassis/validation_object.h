@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -68,6 +68,7 @@ class Pipeline;
 struct GlobalSettings;
 struct GpuAVSettings;
 struct SyncValSettings;
+struct GpuDumpSettings;
 
 // Because of GPL, we currently create our Pipeline state objects before the PreCallValidate
 // Each chassis layer will need to track its own state
@@ -92,6 +93,7 @@ class Instance : public Logger {
     const GlobalSettings& global_settings;
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
+    const GpuDumpSettings& gpu_dump_settings;
 
     const ValidationDisabled& disabled;
     const ValidationEnabled& enabled;
@@ -107,6 +109,7 @@ class Instance : public Logger {
           global_settings(instance->settings.global_settings),
           gpuav_settings(instance->settings.gpuav_settings),
           syncval_settings(instance->settings.syncval_settings),
+          gpu_dump_settings(instance->settings.gpu_dump_settings),
           disabled(instance->settings.disabled),
           enabled(instance->settings.enabled),
           instance(instance->instance),
@@ -151,6 +154,7 @@ class Device : public Logger {
     const GlobalSettings& global_settings;
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
+    const GpuDumpSettings& gpu_dump_settings;
 
     const ValidationDisabled& disabled;
     const ValidationEnabled& enabled;
@@ -185,6 +189,7 @@ class Device : public Logger {
           global_settings(dispatch_dev->settings.global_settings),
           gpuav_settings(dispatch_dev->settings.gpuav_settings),
           syncval_settings(dispatch_dev->settings.syncval_settings),
+          gpu_dump_settings(dispatch_dev->settings.gpu_dump_settings),
           disabled(dispatch_dev->settings.disabled),
           enabled(dispatch_dev->settings.enabled),
           instance(instance->instance),

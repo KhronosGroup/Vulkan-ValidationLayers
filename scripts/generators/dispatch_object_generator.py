@@ -108,7 +108,14 @@ class APISpecific:
                         'instance': 'syncval::Instance',
                         'type': 'LayerObjectTypeSyncValidation',
                         'enabled': 'settings.enabled[sync_validation]'
-                    }
+                    },
+                    {
+                        'include': 'gpu_dump/gpu_dump.h',
+                        'device': 'gpudump::GpuDump',
+                        'instance': 'gpudump::Instance',
+                        'type': 'LayerObjectTypeGpuDump',
+                        'enabled': 'settings.enabled[gpu_dump]'
+                    },
                 ]
 
 

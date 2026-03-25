@@ -1320,6 +1320,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     pipe.gp_ci_.layout = pipeline_layout;
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();

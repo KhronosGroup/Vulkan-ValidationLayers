@@ -1169,12 +1169,31 @@
                                     }
                                 }
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    "key": "gpu_dump",
+                    "label": "GPU Dump",
+                    "view": "DEBUG",
+                    "description": "Similar to API Dump, but using all the state tracking information, print out information about GPU centric API usages.",
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "type": "GROUP",
+                    "expanded": true,
+                    "settings": [
                         {
-                            "key": "debug_dump_descriptors",
+                            "key": "gpu_dump_descriptors",
                             "label": "Dump Descriptors",
                             "view": "DEBUG",
                             "description": "Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays",
+                            "type": "BOOL",
+                            "default": false
+                        },
+                        {
+                            "key": "gpu_dump_to_stdout",
+                            "label": "Redirect all GPU Dump to stdout",
+                            "view": "DEBUG",
+                            "description": "Instead of using the debug callback with information severity, redirect to stdout instead.",
                             "type": "BOOL",
                             "default": false
                         }

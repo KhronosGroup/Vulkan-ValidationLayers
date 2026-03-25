@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -32,5 +32,6 @@ enum LayerObjectTypeId {
     LayerObjectTypeBestPractices,        // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,          // Instance or device gpu assisted validation layer object
     LayerObjectTypeSyncValidation,       // Instance or device synchronization validation layer object
+    LayerObjectTypeGpuDump,              // Instance or device gpu dump layer object
     LayerObjectTypeMaxEnum,              // Max enum count
 };

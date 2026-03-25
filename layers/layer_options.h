@@ -72,6 +72,7 @@ enum EnableFlags {
     debug_printf_validation,
     sync_validation,
     legacy_detection,
+    gpu_dump,
     // Insert new enables above this line
     kMaxEnableFlags,
 };
@@ -84,8 +85,6 @@ struct GlobalSettings {
     bool fine_grained_locking = true;
 
     bool debug_disable_spirv_val = false;
-
-    bool debug_dump_descriptors = false;
 
     // Have quick way to know if user only has requsted errors as we can skip larger, expensive parts of the code if the user will
     // never see the message
@@ -109,6 +108,7 @@ struct GlobalSettings {
 class DebugReport;
 struct GpuAVSettings;
 struct SyncValSettings;
+struct GpuDumpSettings;
 struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
     // Matches up with what is passed down to VK_EXT_layer_settings
@@ -129,6 +129,7 @@ struct ConfigAndEnvSettings {
     // Individual settings for different internal layers
     GpuAVSettings *gpuav_settings;
     SyncValSettings *syncval_settings;
+    GpuDumpSettings* gpu_dump_settings;
 };
 const std::vector<std::string> &GetDisableFlagNameHelper();
 const std::vector<std::string> &GetEnableFlagNameHelper();

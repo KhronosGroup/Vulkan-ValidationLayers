@@ -353,6 +353,12 @@ target_sources(vvl PRIVATE
     gpuav/shaders/gpuav_error_header.h
     gpuav/shaders/gpuav_shaders_constants.h
     gpuav/shaders/validation_cmd/push_data.h
+    gpu_dump/gpu_dump.h
+    gpu_dump/gpu_dump.cpp
+    gpu_dump/gpu_dump_descriptor.cpp
+    gpu_dump/gpu_dump_settings.h
+    gpu_dump/gpu_dump_state.h
+    gpu_dump/gpu_dump_state.cpp
     legacy/legacy_manual.cpp
     object_tracker/object_lifetime_validation.cpp
     object_tracker/object_lifetime_validation.h
@@ -368,7 +374,6 @@ target_sources(vvl PRIVATE
     state_tracker/descriptor_set_layouts.h
     state_tracker/descriptor_sets.cpp
     state_tracker/descriptor_sets.h
-    state_tracker/debug_descriptor_dump.cpp
     state_tracker/device_generated_commands_state.cpp
     state_tracker/device_generated_commands_state.h
     state_tracker/device_memory_state.cpp
