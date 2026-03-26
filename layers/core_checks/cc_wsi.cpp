@@ -231,40 +231,34 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
 
         if ((scaling_caps.supportedPresentScaling != 0) && (pres_scale_ci->scalingBehavior != 0) &&
             (scaling_caps.supportedPresentScaling & pres_scale_ci->scalingBehavior) == 0) {
-            if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
-                         "(%s) is not among the scaling methods for the surface as returned in "
-                         "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for the specified presentMode: (%s).",
-                         string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
-                         string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
-                skip |= true;
-            }
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
+                             "(%s) is not among the scaling methods for the surface as returned in "
+                             "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for the specified presentMode: (%s).",
+                             string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
+                             string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str());
         }
 
         if ((scaling_caps.supportedPresentGravityX != 0) && (pres_scale_ci->presentGravityX != 0) &&
             (scaling_caps.supportedPresentGravityX & pres_scale_ci->presentGravityX) == 0) {
-            if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
-                         "(%s) must "
-                         "be a valid present gravity for the surface as returned in "
-                         "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX for the given presentMode (%s).",
-                         string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityX).c_str(),
-                         string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityX).c_str())) {
-                skip |= true;
-            }
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
+                             "(%s) must "
+                             "be a valid present gravity for the surface as returned in "
+                             "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX for the given presentMode (%s).",
+                             string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityX).c_str(),
+                             string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityX).c_str());
         }
 
         if ((scaling_caps.supportedPresentGravityY != 0) && (pres_scale_ci->presentGravityY != 0) &&
             (scaling_caps.supportedPresentGravityY & pres_scale_ci->presentGravityY) == 0) {
-            if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774", device,
-                         create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
-                         "(%s) must "
-                         "be a valid present gravity for the surface as returned in "
-                         "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY for the given presentMode (%s).",
-                         string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityY).c_str(),
-                         string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityY).c_str())) {
-                skip |= true;
-            }
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
+                             "(%s) must "
+                             "be a valid present gravity for the surface as returned in "
+                             "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY for the given presentMode (%s).",
+                             string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityY).c_str(),
+                             string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityY).c_str());
         }
 
         // Further validation for when a VkSwapchainPresentModesCreateInfoKHR struct is *also* in the pNext chain
@@ -278,41 +272,38 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
 
                 if ((scaling_caps.supportedPresentScaling != 0) && (pres_scale_ci->scalingBehavior != 0) &&
                     (scaling_caps.supportedPresentScaling & pres_scale_ci->scalingBehavior) == 0) {
-                    if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771", device,
-                                 create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
-                                 "(%s) is not a valid present scaling benavior as returned in "
-                                 "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for %s (%s).",
-                                 string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
-                                 present_mode_loc.Fields().c_str(),
-                                 string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str())) {
-                        skip |= true;
-                    }
+                    skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771", device,
+                                     create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
+                                     "(%s) is not a valid present scaling benavior as returned in "
+                                     "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for %s (%s).",
+                                     string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
+                                     present_mode_loc.Fields().c_str(),
+                                     string_VkPresentScalingFlagsKHR(scaling_caps.supportedPresentScaling).c_str());
+                    break;
                 }
 
                 if ((scaling_caps.supportedPresentGravityX != 0) && (pres_scale_ci->presentGravityX != 0) &&
                     (scaling_caps.supportedPresentGravityX & pres_scale_ci->presentGravityX) == 0) {
-                    if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773", device,
-                                 create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
-                                 "(%s) is not a valid x-axis present gravity as returned in "
-                                 "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX for %s (%s).",
-                                 string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityX).c_str(),
-                                 present_mode_loc.Fields().c_str(),
-                                 string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityX).c_str())) {
-                        skip |= true;
-                    }
+                    skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773", device,
+                                     create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
+                                     "(%s) is not a valid x-axis present gravity as returned in "
+                                     "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX for %s (%s).",
+                                     string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityX).c_str(),
+                                     present_mode_loc.Fields().c_str(),
+                                     string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityX).c_str());
+                    break;
                 }
 
                 if ((scaling_caps.supportedPresentGravityY != 0) && (pres_scale_ci->presentGravityY != 0) &&
                     (scaling_caps.supportedPresentGravityY & pres_scale_ci->presentGravityY) == 0) {
-                    if (LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775", device,
-                                 create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
-                                 "(%s) is not a valid y-axis present gravity as returned in "
-                                 "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY for %s (%s).",
-                                 string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityY).c_str(),
-                                 present_mode_loc.Fields().c_str(),
-                                 string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityY).c_str())) {
-                        skip |= true;
-                    }
+                    skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775", device,
+                                     create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
+                                     "(%s) is not a valid y-axis present gravity as returned in "
+                                     "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY for %s (%s).",
+                                     string_VkPresentGravityFlagsKHR(pres_scale_ci->presentGravityY).c_str(),
+                                     present_mode_loc.Fields().c_str(),
+                                     string_VkPresentGravityFlagsKHR(scaling_caps.supportedPresentGravityY).c_str());
+                    break;
                 }
             }
         }
