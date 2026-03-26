@@ -21,7 +21,11 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<
     : device_{device}, layout_(*device, bindings, layout_flags, layout_pnext) {
     std::vector<VkDescriptorPoolSize> pool_sizes;
     for (const auto& b : bindings) {
-        pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
+        uint32_t count = std::max(1u, b.descriptorCount);
+        if (b.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+            count *= 2;
+        }
+        pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, count});
     }
 
     VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper(create_pool_pnext);
