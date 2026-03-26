@@ -4279,6 +4279,22 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
                                                            swapchain_images[i], image_ci.format, image_ci.tiling);
                 auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
 
+                // Detect image resuse from the old swapchain
+                //
+                // NOTE: The device image map uses VkImage as a key, so only one state object
+                // can exist per VkImage handle. In case of handle reuse:
+                //  * The image state for the new swapchain replaces the old state in the device map
+                //  * The old swapchain's image is updated to point to the new state object
+                if (old_swapchain_state) {
+                    for (auto& old_swapchain_image : old_swapchain_state->images) {
+                        const vvl::Image* old_image_state = old_swapchain_image.image_state;
+                        if (old_image_state && old_image_state->VkHandle() == image_state->VkHandle()) {
+                            old_swapchain_image.image_state = image_state.get();
+                            break;
+                        }
+                    }
+                }
+
                 // Create a copy since image state is needed after move. SetSwapchain modifies image substates.
                 auto image_state_ptr_copy = image_state;
                 Add(std::move(image_state_ptr_copy));
@@ -4290,6 +4306,7 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
         }
         if (old_swapchain_state) {
             old_swapchain_state->new_swapchain = swapchain;
+            swapchain->old_swapchain = old_swapchain_state->shared_from_this();
         }
         Add(std::move(swapchain));
     } else {

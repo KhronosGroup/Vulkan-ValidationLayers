@@ -64,7 +64,7 @@ class Swapchain;
 enum class AcquireSyncStatus { NotSpecified, Signaled, WasWaitedOn };
 
 struct SwapchainImage {
-    vvl::Image *image_state = nullptr;
+    vvl::Image* image_state = nullptr;
 
     // Acquire state
     bool acquired = false;
@@ -136,6 +136,7 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     // New swapchain state:
     // Present wait semaphores from the the old swapchain presentations.
     std::vector<std::shared_ptr<vvl::Semaphore>> old_swapchain_present_wait_semaphores;
+    std::weak_ptr<Swapchain> old_swapchain;
 
     // Number of bits set in VkPresentTimingInfoEXT::presentStageQueries for each present that hasn't been completed
     struct PresentTimingInfo {
