@@ -2124,7 +2124,7 @@ TEST_F(PositiveWsi, CreateSwapchainImagesWithExclusiveSharingMode) {
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 }
 
-TEST_F(PositiveWsi, CreateSwapchainWithOldSwapchain) {
+TEST_F(PositiveWsi, CreateWithOldSwapchain) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
@@ -2148,6 +2148,171 @@ TEST_F(PositiveWsi, CreateSwapchainWithOldSwapchain) {
 
     swapchain_ci.oldSwapchain = swapchain1;
     vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+}
+
+TEST_F(PositiveWsi, CreateWithOldSwapchainUniqueHandles) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11939
+    // Test is non-deterministic, in case of regression it might take multiple runs to detect the issue
+    // (also depends on whether windowing system reuses images). Tested on nvidia hardware.
+    TEST_DESCRIPTION("Test reuse of swapchain images from oldSwapchain with unique handles enabled");
+    VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "unique_handles", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = 1;
+    layer_settings_ci.pSettings = &layer_settings;
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.pNext = &layer_settings_ci;
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &validation_features));
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = surface_caps.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+
+    swapchain.Destroy();
+    swapchain2.Destroy();
+}
+
+TEST_F(PositiveWsi, CreateWithOldSwapchainUniqueHandles2) {
+    TEST_DESCRIPTION("Test reuse of swapchain images from oldSwapchain with unique handles enabled");
+    VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "unique_handles", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = 1;
+    layer_settings_ci.pSettings = &layer_settings;
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.pNext = &layer_settings_ci;
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &validation_features));
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = surface_caps.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+
+    // Reverse destruction order comparing to CreateWithOldSwapchainUniqueHandles
+    swapchain2.Destroy();
+    swapchain.Destroy();
+}
+
+TEST_F(PositiveWsi, CreateWithOldSwapchainUniqueHandlesAndGetImages) {
+    TEST_DESCRIPTION("Test reuse of swapchain images from oldSwapchain with unique handles enabled");
+    VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "unique_handles", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = 1;
+    layer_settings_ci.pSettings = &layer_settings;
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.pNext = &layer_settings_ci;
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &validation_features));
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = surface_caps.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    // Get images to trigger swapchain image tracking functionality in various validation objects
+    auto swapchain_images = swapchain.GetImages();
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+    auto swapchain2_images = swapchain2.GetImages();
+
+    swapchain.Destroy();
+    swapchain2.Destroy();
+}
+
+TEST_F(PositiveWsi, CreateWithOldSwapchainUniqueHandlesAndGetImages2) {
+    TEST_DESCRIPTION("Test reuse of swapchain images from oldSwapchain with unique handles enabled");
+    VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "unique_handles", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = 1;
+    layer_settings_ci.pSettings = &layer_settings;
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.pNext = &layer_settings_ci;
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &validation_features));
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = surface_caps.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    // Get images to trigger swapchain image tracking functionality in various validation objects
+    auto swapchain_images = swapchain.GetImages();
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+    auto swapchain2_images = swapchain2.GetImages();
+
+    // Reverse destruction order comparing to CreateWithOldSwapchainUniqueHandlesAndGetImages
+    swapchain2.Destroy();
+    swapchain.Destroy();
 }
 
 TEST_F(PositiveWsi, OldSwapchainFromAnotherSurface) {

@@ -475,9 +475,28 @@ void Device::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
     DestroyObject(swapchain);
     // Host access to swapchain must be externally synchronized
     auto lock = WriteLockGuard(thread_safety_lock);
-    for (auto& image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
+    for (VkImage image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
         FinishWriteObject(image_handle, record_obj.location);
-        DestroyObject(image_handle);
+
+        // Swapchain can resue images from oldSwapchain.
+        // When deleting either new swapchain or old swapchain we need to check
+        // if the image can still be in use by the surviving swapchain
+        bool swapchain_image_reuse = false;
+        for (auto& [current_swapchain, images] : swapchain_wrapped_image_handle_map) {
+            if (current_swapchain == swapchain) {
+                continue;
+            }
+            for (VkImage another_swapchain_image : images) {
+                if (another_swapchain_image == image_handle) {
+                    swapchain_image_reuse = true;
+                    break;
+                }
+            }
+        }
+
+        if (!swapchain_image_reuse) {
+            DestroyObject(image_handle);
+        }
     }
     swapchain_wrapped_image_handle_map.erase(swapchain);
 }

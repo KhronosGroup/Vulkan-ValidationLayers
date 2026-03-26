@@ -214,8 +214,32 @@ void Swapchain::Destroy() {
     for (auto& swapchain_image : images) {
         swapchain_image.ResetPresentWaitSemaphores();
         RemoveParent(swapchain_image.image_state);
-        dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
-        // NOTE: We don't have access to dev_data.fake_memory.Free() here, but it is currently a no-op
+
+        bool destroy_image_state = true;
+        {
+            // A. We are destroying old swapchain, but the image state is still used by the new swapchain
+            if (new_swapchain) {
+                for (const SwapchainImage& new_swapchain_image : new_swapchain->images) {
+                    if (new_swapchain_image.image_state == swapchain_image.image_state) {
+                        destroy_image_state = false;
+                        break;
+                    }
+                }
+            }
+            // B. We are destroying new swapchain, but the image state is still used by the old swapchain
+            // (old swapchain is allowed to outlive new swapchain)
+            if (auto p_old_swapchain = old_swapchain.lock()) {
+                for (const SwapchainImage& old_swapchain_image : p_old_swapchain->images) {
+                    if (old_swapchain_image.image_state == swapchain_image.image_state) {
+                        destroy_image_state = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if (destroy_image_state) {
+            dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
+        }
     }
     images.clear();
 
