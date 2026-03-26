@@ -2425,6 +2425,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1UnsupportedScaling2) {
     swapchain_ci.presentMode = surface_present_modes[0];
     swapchain_ci.pNext = &present_modes_ci;
 
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770");
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771");
     m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
