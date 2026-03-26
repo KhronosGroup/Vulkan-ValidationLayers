@@ -427,8 +427,7 @@ void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddressRange(
-        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size},
-        [](vvl::Buffer* buffer) { return buffer->safe_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT; });
+        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (buffer_states.empty()) {
         return;
     }
@@ -450,8 +449,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandB
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddressRange(
-        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size},
-        [](vvl::Buffer* buffer) { return buffer->safe_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT; });
+        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (buffer_states.empty()) {
         return;
     }
@@ -476,16 +474,13 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandB
 void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                       const RecordObject& record_obj) {
     const auto buffer_states = GetBuffersByAddressRange(
-        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size},
-        [](vvl::Buffer* buffer) { return buffer->safe_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT; });
+        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (buffer_states.empty()) {
         return;
     }
 
     // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
-    const auto count_buffer_states = GetBuffersByAddressRange(pInfo->countAddressRange, [](vvl::Buffer* buffer) {
-        return buffer->safe_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    });
+    const auto count_buffer_states = GetBuffersByAddressRange(pInfo->countAddressRange, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (count_buffer_states.empty()) {
         return;
     }
@@ -660,9 +655,7 @@ void Validator::PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuff
     auto& sub_state = SubState(*cb_state);
     const LastBound& last_bound = cb_state->GetLastBoundCompute();
 
-    const auto buffer_states = GetBuffersByAddressRange(pInfo->addressRange, [](vvl::Buffer* buffer) {
-        return buffer->safe_create_info.usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    });
+    const auto buffer_states = GetBuffersByAddressRange(pInfo->addressRange, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (buffer_states.empty()) {
         return;
     }
@@ -825,9 +818,8 @@ void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuff
                                                      const RecordObject& record_obj) {
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
-        const auto buffer_states = GetBuffersByAddressRange(pCopyMemoryInfo->pRegions[i].addressRange, [](vvl::Buffer* buffer) {
-            return buffer->safe_create_info.usage & VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        });
+        const auto buffer_states =
+            GetBuffersByAddressRange(pCopyMemoryInfo->pRegions[i].addressRange, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         if (buffer_states.empty()) {
             continue;
         }

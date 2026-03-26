@@ -1207,7 +1207,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                         gid * index_type_byte_size,
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryTrianglesDataKHR(gpuav, error_info.geom.triangles).c_str(),
+                    string_VkAccelerationStructureGeometryTrianglesDataKHR(*gpuav.device_state, error_info.geom.triangles).c_str(),
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
                 break;
@@ -1262,7 +1262,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                         gid * error_info.geom.aabbs.stride,
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryAabbsDataKHR(gpuav, error_info.geom.aabbs).c_str(),
+                    string_VkAccelerationStructureGeometryAabbsDataKHR(*gpuav.device_state, error_info.geom.aabbs).c_str(),
 
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
@@ -1279,7 +1279,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     "VkAccelerationStructureBuildRangeInfoKHR[%" PRIu32 "][%" PRIu32 "] was:\n%s\n",
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryTrianglesDataKHR(gpuav, error_info.geom.triangles).c_str(),
+                    string_VkAccelerationStructureGeometryTrianglesDataKHR(*gpuav.device_state, error_info.geom.triangles).c_str(),
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
                 break;
@@ -1361,7 +1361,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     error_info.info_i, string_VkAccelerationStructureBuildGeometryInfoKHR(gpuav, error_info.info).c_str(),
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryTrianglesDataKHR(gpuav, error_info.geom.triangles).c_str(),
+                    string_VkAccelerationStructureGeometryTrianglesDataKHR(*gpuav.device_state, error_info.geom.triangles).c_str(),
 
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
@@ -1397,7 +1397,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     error_info.info_i, string_VkAccelerationStructureBuildGeometryInfoKHR(gpuav, error_info.info).c_str(),
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryTrianglesDataKHR(gpuav, error_info.geom.triangles).c_str(),
+                    string_VkAccelerationStructureGeometryTrianglesDataKHR(*gpuav.device_state, error_info.geom.triangles).c_str(),
 
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
@@ -1428,7 +1428,7 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                         gid * error_info.geom.aabbs.stride,
 
                     error_info.info_i, error_info.geom_i,
-                    string_VkAccelerationStructureGeometryAabbsDataKHR(gpuav, error_info.geom.aabbs).c_str(),
+                    string_VkAccelerationStructureGeometryAabbsDataKHR(*gpuav.device_state, error_info.geom.aabbs).c_str(),
 
                     error_info.info_i, error_info.geom_i,
                     string_VkAccelerationStructureBuildRangeInfoKHR(error_info.build_range_info).c_str());
