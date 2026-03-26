@@ -21,6 +21,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <string>
+
 namespace vvl {
 class Buffer;
 class DeviceState;
@@ -73,6 +75,7 @@ class VertexBufferBinding {
 
     VkBuffer Buffer() const { return buffer; }
     VkDeviceSize BufferOffset() const { return offset; }
+    std::string String(const vvl::DeviceState& device) const;
 
   private:
     // Only |buffer| or |address| can be non-null
@@ -106,6 +109,7 @@ class IndexBufferBinding {
 
     VkBuffer Buffer() const { return buffer; }
     VkDeviceSize BufferOffset() const { return offset; }
+    std::string String(const vvl::DeviceState& device) const;
 
   private:
     // Only |buffer| or |address| can be non-null

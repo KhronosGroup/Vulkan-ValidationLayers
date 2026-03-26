@@ -22,7 +22,7 @@
 
 class Logger;
 namespace vvl {
-class DeviceProxy;
+class DeviceState;
 }
 
 [[maybe_unused]] static std::string string_Attachment(uint32_t attachment) {
@@ -236,10 +236,12 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
     return ss.str();
 }
 
+std::string string_BuffersFromAddress(const vvl::DeviceState &device, VkDeviceAddress address);
+
 std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger &logger,
                                                                const VkAccelerationStructureBuildGeometryInfoKHR &info);
 std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
-    const vvl::DeviceProxy &validator, const VkAccelerationStructureGeometryTrianglesDataKHR &triangles);
-std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceProxy &validator,
+    const vvl::DeviceState &device_state, const VkAccelerationStructureGeometryTrianglesDataKHR &triangles);
+std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceState &device_state,
                                                                const VkAccelerationStructureGeometryAabbsDataKHR aabb);
 std::string string_VkAccelerationStructureBuildRangeInfoKHR(const VkAccelerationStructureBuildRangeInfoKHR &bri);

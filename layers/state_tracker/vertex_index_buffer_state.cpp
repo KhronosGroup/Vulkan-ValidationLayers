@@ -16,8 +16,12 @@
  */
 
 #include "vertex_index_buffer_state.h"
+
+#include "error_message/error_strings.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/state_tracker.h"
+
+#include <sstream>
 
 namespace vvl {
 
@@ -45,6 +49,44 @@ VkBuffer IndexBufferBinding::Handle(const vvl::DeviceState& device) const {
         }
     }
     return buffer;  // acts as "null" if |address| isn't set
+}
+
+std::string VertexBufferBinding::String(const vvl::DeviceState& device) const {
+    std::stringstream ss;
+    ss << "Vertex buffer binding info:\n";
+    if (buffer) {
+        ss << "- Buffer: " << device.FormatHandle(buffer) << '\n';
+        ss << "- Binding offset: " << offset << '\n';
+    } else {
+        ss << "- Address: 0x" << std::hex << address << std::dec << '\n';
+        std::string buffers_list_str = string_BuffersFromAddress(device, address);
+        if (!buffers_list_str.empty()) {
+            ss << "Pertains to the following buffers:\n" << buffers_list_str << '\n';
+        }
+    }
+    ss << "- Effective size: " << effective_size << " bytes\n";
+    ss << "- Stride: " << stride << " bytes\n";
+
+    return ss.str();
+}
+
+std::string IndexBufferBinding::String(const vvl::DeviceState& device) const {
+    std::stringstream ss;
+    ss << "Index buffer binding info:\n";
+    ss << "- Index type: " << string_VkIndexType(index_type) << '\n';
+    if (buffer) {
+        ss << "- Buffer: " << device.FormatHandle(buffer) << '\n';
+        ss << "- Binding offset: " << offset << '\n';
+    } else {
+        ss << "- Address: 0x" << std::hex << address << std::dec << '\n';
+        std::string buffers_list_str = string_BuffersFromAddress(device, address);
+        if (!buffers_list_str.empty()) {
+            ss << "Pertains to the following buffers:\n" << buffers_list_str << '\n';
+        }
+    }
+    ss << "- Binding size: " << size << " bytes\n";
+
+    return ss.str();
 }
 
 }  // namespace vvl

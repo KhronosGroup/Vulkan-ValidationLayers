@@ -973,43 +973,43 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
                 const uint32_t first_index = error_record[kValCmd_ErrorPayloadDword_1];
                 const uint32_t index_count = error_record[kValCmd_ErrorPayloadDword_2];
                 const uint32_t highest_accessed_index = first_index + index_count;
-                const uint32_t index_byte_size = IndexTypeByteSize(index_buffer_binding.index_type);
-                assert(index_byte_size != 0);  // Should never be VK_INDEX_TYPE_NONE_KHR
-                const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / index_byte_size);
 
-                skip |= gpuav.LogError(
-                    vuid, objlist, loc_with_debug_region,
-                    "Index %" PRIu32 " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[%" PRIu32
-                    "] (.firstIndex = %" PRIu32 ", .indexCount = %" PRIu32
-                    ")\n"
+                std::stringstream indirect_buffer_info;
+                indirect_buffer_info << "VkDrawIndexedIndirectCommand buffer:\n";
+                if (loc_with_debug_region.function == vvl::Func::vkCmdDrawIndexedIndirect2KHR) {
+                    auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
+                    if (!draw_buffer_state) {
+                        gpuav.InternalError(api_buffer, loc_with_debug_region,
+                                            "Could not retrieve buffer state during error logging - most likely a GPU-AV bug.");
+                        return skip;
+                    }
 
-                    "VkDrawIndexedIndirectCommand buffer:\n"
-                    "- Buffer: %s\n"
-                    "- Buffer offset: %" PRIu64
-                    "\n"
+                    indirect_buffer_info << "- Offset address: 0x" << std::hex << draw_buffer_state->deviceAddress + api_offset
+                                         << '\n';
+                } else {
+                    indirect_buffer_info << "- Buffer: " << gpuav.FormatHandle(api_buffer) << '\n';
+                    indirect_buffer_info << "- Buffer offset: " << api_offset << '\n';
+                }
+                indirect_buffer_info << "- Stride: " << api_stride << '\n';
 
-                    "Index buffer binding info:\n"
-                    "- Buffer: %s\n"
-                    "- Index type: %s\n"
-                    "- Binding offset: %" PRIu64
-                    "\n"
-                    "- Binding size: %" PRIu64 " bytes (or %" PRIu32
-                    " %s)\n"
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
+                                       "Index %" PRIu32
+                                       " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[%" PRIu32
+                                       "] (.firstIndex = %" PRIu32 ", .indexCount = %" PRIu32
+                                       ")\n"
 
-                    "Supplied buffer parameters in indirect command: offset = %" PRIu64 ", stride = %" PRIu32 " bytes.",
-                    // OOB index info
-                    highest_accessed_index, draw_i, first_index, index_count,
+                                       "%s\n"
 
-                    // Draw parameters buffer
-                    gpuav.FormatHandle(api_buffer).c_str(), api_offset,
+                                       "%s\n",
 
-                    // Index buffer binding info
-                    gpuav.FormatHandle(index_buffer_binding.Buffer()).c_str(), string_VkIndexType(index_buffer_binding.index_type),
-                    index_buffer_binding.BufferOffset(), index_buffer_binding.size, max_indices_in_buffer,
-                    string_VkIndexType(index_buffer_binding.index_type),
+                                       // OOB index info
+                                       highest_accessed_index, draw_i, first_index, index_count,
 
-                    // VkDrawIndexedIndirectCommand info
-                    api_offset, api_stride);
+                                       // Draw parameters buffer
+                                       indirect_buffer_info.str().c_str(),
+
+                                       // Index buffer binding info
+                                       index_buffer_binding.String(*gpuav.device_state).c_str());
                 break;
             }
 

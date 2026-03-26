@@ -220,16 +220,16 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
     return "event was set with " + set.str() + " and is being waited on with " + wait.str();
 }
 
-static std::string BuffersFromAddressStr(const vvl::DeviceProxy& validator, VkDeviceAddress address) {
+std::string string_BuffersFromAddress(const vvl::DeviceState& device, VkDeviceAddress address) {
     std::string buffers_str;
-    vvl::span<vvl::Buffer* const> buffers = validator.GetBuffersByAddress(address);
+    vvl::span<vvl::Buffer* const> buffers = device.GetBuffersByAddress(address);
     for (vvl::Buffer* const buffer : buffers) {
         if (!buffers_str.empty()) {
             buffers_str += '\n';
         }
         buffers_str += indent;
         buffers_str += indent;
-        buffers_str += buffer->Describe(validator);
+        buffers_str += buffer->Describe(device);
     }
     return buffers_str;
 }
@@ -253,7 +253,7 @@ std::string string_VkAccelerationStructureBuildGeometryInfoKHR(const Logger& log
 }
 
 std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
-    const vvl::DeviceProxy& validator, const VkAccelerationStructureGeometryTrianglesDataKHR& triangles) {
+    const vvl::DeviceState& device_state, const VkAccelerationStructureGeometryTrianglesDataKHR& triangles) {
     std::string pertains = indent;
     pertains += indent;
     pertains += "Pertains to the following buffer(s):\n";
@@ -261,7 +261,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     std::stringstream ss;
     ss << indent << "vertexFormat: " << string_VkFormat(triangles.vertexFormat) << '\n';
     ss << indent << "vertexData: 0x" << std::hex << triangles.vertexData.deviceAddress << '\n';
-    std::string vertex_buffers_list_str = BuffersFromAddressStr(validator, triangles.vertexData.deviceAddress);
+    std::string vertex_buffers_list_str = string_BuffersFromAddress(device_state, triangles.vertexData.deviceAddress);
     if (!vertex_buffers_list_str.empty()) {
         std::string vertex_buffers_str = pertains;
         vertex_buffers_str += vertex_buffers_list_str;
@@ -272,7 +272,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     ss << indent << "indexType: " << string_VkIndexType(triangles.indexType) << '\n';
     ss << indent << "indexData: " << std::hex << triangles.indexData.deviceAddress << '\n';
     if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
-        std::string index_buffers_list_str = BuffersFromAddressStr(validator, triangles.indexData.deviceAddress);
+        std::string index_buffers_list_str = string_BuffersFromAddress(device_state, triangles.indexData.deviceAddress);
         if (!index_buffers_list_str.empty()) {
             std::string index_buffers_str = pertains;
             index_buffers_str += index_buffers_list_str;
@@ -281,7 +281,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     }
     ss << indent << "transformData: " << triangles.transformData.deviceAddress << '\n';
     if (triangles.transformData.deviceAddress != 0) {
-        std::string transform_buffers_list_str = BuffersFromAddressStr(validator, triangles.transformData.deviceAddress);
+        std::string transform_buffers_list_str = string_BuffersFromAddress(device_state, triangles.transformData.deviceAddress);
         if (!transform_buffers_list_str.empty()) {
             std::string transform_buffers_str = pertains;
             transform_buffers_str += transform_buffers_list_str;
@@ -293,7 +293,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     return ss_str;
 }
 
-std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceProxy& validator,
+std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::DeviceState& device_state,
                                                                const VkAccelerationStructureGeometryAabbsDataKHR aabb) {
     std::string pertains = indent;
     pertains += indent;
@@ -302,7 +302,7 @@ std::string string_VkAccelerationStructureGeometryAabbsDataKHR(const vvl::Device
     std::stringstream ss;
     ss << indent << "pNext: " << aabb.pNext << '\n';
     ss << indent << "data: 0x" << std::hex << aabb.data.deviceAddress << '\n';
-    std::string aabb_buffers_list_str = BuffersFromAddressStr(validator, aabb.data.deviceAddress);
+    std::string aabb_buffers_list_str = string_BuffersFromAddress(device_state, aabb.data.deviceAddress);
     if (!aabb_buffers_list_str.empty()) {
         std::string data_buffers_str = pertains;
         data_buffers_str += aabb_buffers_list_str;

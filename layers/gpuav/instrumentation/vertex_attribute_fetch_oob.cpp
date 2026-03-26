@@ -188,8 +188,14 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
                 case vvl::Func::vkCmdDrawIndexedIndirectCountKHR:
                     out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
                     break;
+                case vvl::Func::vkCmdDrawIndexedIndirectCount2KHR:
+                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-02721";
+                    break;
                 case vvl::Func::vkCmdDrawIndexedIndirect:
                     out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect-None-02721";
+                    break;
+                case vvl::Func::vkCmdDrawIndexedIndirect2KHR:
+                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect2KHR-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawMultiIndexedEXT:
                     out_vuid_msg = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
@@ -204,24 +210,10 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
 
             auto add_vertex_buffer_binding_info =
                 [&gpuav, error_sub_code](const VertexAttributeFetchLimit& vertex_attribute_fetch_limit, std::string& out) {
-                    out += "Vertex Buffer (";
-                    out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.Buffer());
-                    out += ") binding info:\n";
-                    out += "  - Binding: ";
-                    out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
-                    out += '\n';
-                    out += "  - Offset: ";
-                    out += std::to_string(vertex_attribute_fetch_limit.binding_info.BufferOffset());
-                    out += " bytes\n";
-                    out += "  - Effective Size: ";
-                    out += std::to_string(vertex_attribute_fetch_limit.binding_info.effective_size);
-                    out += " bytes\n";
-                    out += "  - Vertices Count: ";
+                    out += vertex_attribute_fetch_limit.binding_info.String(*gpuav.device_state);
+                    out += "- Vertices count: ";
                     out += std::to_string(vertex_attribute_fetch_limit.max_vertex_attributes_count);
                     out += '\n';
-                    out += "  - Stride: ";
-                    out += std::to_string(vertex_attribute_fetch_limit.binding_info.stride);
-                    out += " bytes\n";
                     if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
                         if (vertex_attribute_fetch_limit.instance_rate_divisor != vvl::kNoIndex32) {
                             out += "  - Instance rate divisor: ";
