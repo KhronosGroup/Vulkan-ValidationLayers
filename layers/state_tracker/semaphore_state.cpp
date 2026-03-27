@@ -59,8 +59,9 @@ vvl::Semaphore::Semaphore(DeviceState& device, VkSemaphore handle, const VkSemap
 
 const VulkanTypedHandle* vvl::Semaphore::InUse() const {
     auto guard = ReadLock();
-    // Semaphore does not have a parent (in the sense of a VVL state object), and the value returned
-    // by the base class InUse is not useful for reporting (it is the semaphore's own handle)
+    // Semaphore does not have a parent (in the sense of VVL state object hierarchy).
+    // The typed handle returned by the base class InUse is not useful for reporting
+    // (it is the semaphore's own handle). Use it only to get boolean in use status.
     const bool in_use = RefcountedStateObject::InUse() != nullptr;
     if (!in_use) {
         return nullptr;

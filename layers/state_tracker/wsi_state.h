@@ -87,10 +87,10 @@ struct SwapchainImage {
 // Parent -> child relationships in the object usage tree:
 //    vvl::Swapchain [N] -> [1] vvl::Surface
 //    However, only 1 swapchain for each surface can be !retired.
-class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> {
+class Swapchain : public RefcountedStateObject, public SubStateManager<SwapchainSubState> {
   public:
     const vku::safe_VkSwapchainCreateInfoKHR safe_create_info;
-    const VkSwapchainCreateInfoKHR &create_info;
+    const VkSwapchainCreateInfoKHR& create_info;
 
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<SwapchainImage> images;
