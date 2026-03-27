@@ -226,36 +226,24 @@ TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
 TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     TEST_DESCRIPTION("Basic descriptor heap test with graphics pipeline and push data");
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
     const uint32_t expected_value = 3;
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
-    CreateResourceHeap(resource_stride * 4);
-    // Test needs sizeof(uint32_t), but AS require align to 256 bytes
+    CreateResourceHeap(resource_stride);
+
     const VkDeviceSize data_buffer_size = 256;
+    vkt::Buffer out_buffer(*m_device, data_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkHostAddressRangeEXT out_descriptor{resource_heap_data_, static_cast<size_t>(resource_stride)};
+    VkDeviceAddressRangeEXT out_address_range = {out_buffer.Address(), data_buffer_size};
+    VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
+    out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    out_descriptor_info.data.pAddressRange = &out_address_range;
 
-    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
-    push_data_info.offset = 0;
-    push_data_info.data.size = sizeof(expected_value);
-    push_data_info.data.address = &expected_value;
-
-    vkt::Buffer out_buffer(*m_device, data_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
-    // Input buffer descriptor
-    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT in_descriptor{resource_heap_data_ + resource_stride, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT input_address_range = {in_buffer.Address(), data_buffer_size};
-    VkResourceDescriptorInfoEXT in_descriptor_info = vku::InitStructHelper();
-    in_descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    in_descriptor_info.data.pAddressRange = &input_address_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &in_descriptor_info, &in_descriptor);
-
-    uint32_t* in_buffer_ptr = (uint32_t*)in_buffer.Memory().Map();
-    in_buffer_ptr[0] = expected_value;
+    vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 20);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -268,7 +256,14 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 
     char const* vert_source = R"glsl(
         #version 450
+        layout(set = 0, binding = 20) buffer ssbo { uint data; };
+        layout(push_constant) uniform PushConstant {
+            uint data1;
+        };
         void main() {
+            if (gl_VertexIndex == 0) {
+                data = data1;
+            }
             gl_Position = vec4(vec3(0),1);
         }
     )glsl";
@@ -276,7 +271,6 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     char const* frag_source = R"glsl(
         #version 450
         layout(location = 0) out vec4 result;
-        layout(set = 0, binding = 20) uniform UniformBuffer0 { int data; };
         void main() {
             result = vec4(0.66);
         }
@@ -298,44 +292,26 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     pipe.gp_ci_.pStages = stages;
     pipe.CreateGraphicsPipeline(false);
 
-    vkt::Buffer vertex_buffer(*m_device, 12, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    const VkDeviceSize offset = 0;
+    VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
+    push_data_info.offset = 0;
+    push_data_info.data.size = sizeof(expected_value);
+    push_data_info.data.address = &expected_value;
 
     m_command_buffer.Begin();
     vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
     BindResourceHeap();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &offset);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
-    VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
-    image_memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_memory_barrier.image = m_renderTargets[0]->handle();
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-    image_memory_barrier.subresourceRange.levelCount = 1u;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_memory_barrier.subresourceRange.layerCount = 1u;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
-
-    VkBufferImageCopy copy_region = {};
-    copy_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.imageOffset.x = 1;
-    copy_region.imageOffset.y = 1;
-    copy_region.imageExtent = {1, 1, 1};
-
-    vk::CmdCopyImageToBuffer(m_command_buffer, m_renderTargets[0]->handle(), VK_IMAGE_LAYOUT_GENERAL, out_buffer, 1u, &copy_region);
-
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        uint32_t* data = static_cast<uint32_t*>(out_buffer.Memory().Map());
+        ASSERT_EQ(*data, expected_value);
+    }
 }
 
 TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
