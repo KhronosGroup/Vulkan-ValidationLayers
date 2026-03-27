@@ -321,7 +321,7 @@ TEST_F(PositiveYcbcr, ImageLayoutUpdate) {
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     ci.extent = {256, 256, 1};
