@@ -96,7 +96,7 @@ void SwapchainImage::ResetPresentWaitSemaphores() {
 }
 
 Swapchain::Swapchain(vvl::DeviceState& dev_data_, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle)
-    : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
+    : RefcountedStateObject(handle, kVulkanObjectTypeSwapchainKHR),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       images(),

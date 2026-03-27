@@ -732,6 +732,16 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
                                    error_obj.location.dot(Field::pCreateInfo));
 }
 
+bool CoreChecks::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+    const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (auto swapchain_state = Get<vvl::Swapchain>(swapchain)) {
+        skip |= ValidateObjectNotInUse(swapchain_state.get(), error_obj.location, "VUID-vkDestroySwapchainKHR-swapchain-01282");
+    }
+    return skip;
+}
+
 void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     if (auto swapchain_state = Get<vvl::Swapchain>(swapchain)) {

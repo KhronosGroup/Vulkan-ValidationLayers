@@ -39,6 +39,9 @@ void vvl::QueueSubmission::BeginUse() {
     if (fence) {
         fence->BeginUse();
     }
+    if (swapchain) {
+        swapchain->BeginUse();
+    }
 }
 
 void vvl::QueueSubmission::EndUse() {
@@ -53,6 +56,9 @@ void vvl::QueueSubmission::EndUse() {
     }
     if (fence) {
         fence->EndUse();
+    }
+    if (swapchain) {
+        swapchain->EndUse();
     }
 }
 
@@ -211,8 +217,8 @@ void vvl::Queue::UpdatePresentOnlyQueueProgress(const DeviceState& device_state)
         assert(is_used_for_presentation && !is_used_for_regular_submits);
         small_unordered_map<VkSwapchainKHR, uint32_t, 4> active_presentations;
         for (const QueueSubmission& submission : submissions_) {
-            assert(submission.swapchain != VK_NULL_HANDLE);
-            active_presentations[submission.swapchain]++;
+            assert(submission.swapchain);
+            active_presentations[submission.swapchain->VkHandle()]++;
         }
         // Search for the swapchain with too many enqueued presentation requests
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
@@ -227,7 +233,7 @@ void vvl::Queue::UpdatePresentOnlyQueueProgress(const DeviceState& device_state)
         // Get seq to retire the oldest presentation submissions.
         if (swapchain != VK_NULL_HANDLE) {
             for (const QueueSubmission& submission : submissions_) {
-                if (submission.swapchain == swapchain) {
+                if (submission.swapchain->VkHandle() == swapchain) {
                     seq_to_advance_to = submission.seq;
                     break;
                 }

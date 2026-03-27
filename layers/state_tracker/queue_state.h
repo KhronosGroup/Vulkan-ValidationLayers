@@ -69,8 +69,9 @@ struct QueueSubmission {
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
     bool has_external_fence = false;
-    // Swapchain handle if this submission represents QueuePresent request
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
+    // Swapchain is not null if this submission represents QueuePresent request
+    std::shared_ptr<Swapchain> swapchain;
     std::shared_ptr<const vvl::Image> swapchain_image;
 
     LocationCapture loc;

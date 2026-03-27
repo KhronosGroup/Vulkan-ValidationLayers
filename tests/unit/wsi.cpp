@@ -4969,6 +4969,8 @@ TEST_F(NegativeWsi, PresentWait2Features) {
     m_errorMonitor->SetDesiredError("VUID-vkWaitForPresent2KHR-presentWait2-10814");
     vk::WaitForPresent2KHR(device(), swapchain, &present_wait_2_info);
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, PresentId2SurfaceNotSupported) {
@@ -5253,6 +5255,8 @@ TEST_F(NegativeWsi, PresentWait2SwapchainMissingFlags) {
     m_errorMonitor->SetDesiredError("VUID-vkWaitForPresent2KHR-None-10816");
     vk::WaitForPresent2KHR(device(), swapchain, &present_wait_2_info);
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, PresentId2InvalidEntry) {
@@ -5369,6 +5373,8 @@ TEST_F(NegativeWsi, PresentIdWait2) {
     m_errorMonitor->SetDesiredError("VUID-vkWaitForPresent2KHR-presentId-10817");
     vk::WaitForPresent2KHR(device(), swapchain, &present_wait_2_info);
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, PresentTimingsSwapchainCount) {
@@ -6060,6 +6066,8 @@ TEST_F(NegativeWsi, PresentTimingsOutOfOrder) {
     m_errorMonitor->SetDesiredError("VUID-vkGetPastPresentationTimingEXT-flags-12230");
     vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, PresentTimingsStageCount) {
@@ -6190,6 +6198,8 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
     m_errorMonitor->SetDesiredError("VUID-vkGetPastPresentationTimingEXT-flags-12231");
     vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
     m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeWsi, TimeDomain) {
@@ -6596,4 +6606,82 @@ TEST_F(NegativeWsi, InvalidTimeDomainId) {
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentTimingInfoEXT-timeDomainId");
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, DestroySwapchainInUse) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11994
+    TEST_DESCRIPTION("Delete swapchain whose image is still in use");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    const auto swapchain_images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    // Swapchain image is in use by the submitted command buffer
+    m_errorMonitor->SetDesiredError("VUID-vkDestroySwapchainKHR-swapchain-01282");
+    vk::DestroySwapchainKHR(*m_device, swapchain, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeWsi, DestroySwapchainInUse2) {
+    TEST_DESCRIPTION("Delete swapchain that has pending present opeation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    const auto swapchain_images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore);
+
+    // Swapchain is in use by the present operation
+    m_errorMonitor->SetDesiredError("VUID-vkDestroySwapchainKHR-swapchain-01282");
+    vk::DestroySwapchainKHR(*m_device, swapchain, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
