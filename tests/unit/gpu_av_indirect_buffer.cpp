@@ -174,9 +174,9 @@ TEST_F(NegativeGpuAVIndirectBuffer, DeviceAddressCommandsDrawCountDeviceLimit) {
 
     VkDrawIndirectCount2InfoKHR info = vku::InitStructHelper();
     info.addressRange = draw_buffer.StridedAddressRange(sizeof(VkDrawIndirectCommand));
-    info.addressFlags = 0u;
+    info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
     info.countAddressRange = count_buffer.AddressRange();
-    info.countAddressFlags = 0u;
+    info.countAddressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
     info.maxDrawCount = 2u;
     vk::CmdDrawIndirectCount2KHR(m_command_buffer, &info);
 
