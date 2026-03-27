@@ -5907,3 +5907,23 @@ TEST_F(NegativeRayTracing, CreateInfo2DestroyBuffer) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeRayTracing, GeometryMotionTrianglesDataNV) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingMotionBlur);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkAccelerationStructureGeometryMotionTrianglesDataNV motion_triangles = vku::InitStructHelper();
+    motion_triangles.vertexData.deviceAddress = 0xbaadbeef;
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetGeometries()[0].GetVkObj().geometry.triangles.pNext = &motion_triangles;
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
