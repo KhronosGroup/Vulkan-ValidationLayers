@@ -89,10 +89,11 @@ TEST_F(NegativeGpuAVCopies, MemoryToImageD32) {
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_command_buffer.Begin();
+    copy_dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     VkDeviceMemoryImageCopyKHR region = vku::InitStructHelper();
     region.addressRange = copy_src_buffer.AddressRange();
-    region.addressFlags = 0u;
+    region.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
     region.addressRowLength = 0u;
     region.addressImageHeight = 0u;
     region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
