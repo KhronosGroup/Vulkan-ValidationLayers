@@ -758,6 +758,12 @@ const char* unimplementable_validation[] = {
     "VUID-VkMemoryDedicatedAllocateInfo-image-01878",
     "VUID-VkMemoryDedicatedAllocateInfo-buffer-01879",
     "VUID-VkMemoryDedicatedAllocateInfoTensorARM-tensor-09859",
+
+    // VUID-VkDeviceAddress-size-11364 is used instead
+    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11845",
+    // TODO - these should be removed from the spec
+    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11845",
+    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11845",
 };
 
 // These are things that "could be done" but require a crazy amount of work, for no real usecase
