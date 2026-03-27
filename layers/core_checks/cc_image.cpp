@@ -2036,14 +2036,17 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                              string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
             }
         }
-    } else {
-        // Format MUST be IDENTICAL to the format the image was created with
-        // Unless it is a multi-planar color bit aspect
-        if ((image_format != view_format) && (!multiplane_image || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
+    }
+
+    if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0 ||
+        (multiplane_image && (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT))) {
+        if (image_format != view_format) {
+            const char* msg = (multiplane_image && (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT))
+                                  ? "unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation"
+                                  : "when format is a multiplanar format and aspect is VK_IMAGE_ASPECT_COLOR_BIT";
             skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
-                             "%s is different from %s format (%s). Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT "
-                             "BIT was set on image creation.",
-                             string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
+                             "%s is different from %s format (%s). Formats MUST be IDENTICAL %s.", string_VkFormat(view_format),
+                             FormatHandle(create_info.image).c_str(), string_VkFormat(image_format), msg);
         }
     }
 
