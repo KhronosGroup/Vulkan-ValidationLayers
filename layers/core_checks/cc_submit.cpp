@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,9 +85,7 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
     }
 
     // Check that image being presented has correct layout
-    // NOTE: Do separate check that swapchain and its images are not destroyed at this point.
-    //       For example, you can destroy swapchain after it was used as the old swapchain.
-    if (submission.swapchain && !submission.swapchain_image->Destroyed()) {
+    if (submission.swapchain) {
         std::vector<VkImageLayout> layouts;
         if (submission.swapchain_image && FindLayouts(*submission.swapchain_image, layouts)) {
             for (auto layout : layouts) {
