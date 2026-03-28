@@ -352,6 +352,7 @@ enum class ActionVUID {
     INVALID_DESCRIPTOR_08114,
     DESCRIPTOR_INDEX_OOB_10068,
     INDIRECT_COUNT_LIMIT,
+    HEAP_USAGE_11438,
 };
 
 std::string CreateActionVuid(vvl::Func function, const ActionVUID id);

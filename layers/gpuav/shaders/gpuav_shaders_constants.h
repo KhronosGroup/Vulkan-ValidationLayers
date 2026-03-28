@@ -30,6 +30,7 @@ using uint = unsigned int;
 // This value only matters for host code, but it is defined here so it can be used
 // in unit tests.
 const uint kDebugInputBindlessMaxDescriptors = 1024u * 1024u * 4u;
+const uint kDebugMaxDescSetAndBindings = 32 * 32;
 
 #endif
 
@@ -62,7 +63,9 @@ const int kBindingInstActionIndex = 5;
 const int kBindingInstCmdResourceIndex = 6;
 const int kBindingInstCmdErrorsCount = 7;
 const int kBindingInstVertexAttributeFetchLimits = 8;
-const int kTotalBindings = 9;
+const int kBindingInstDescriptorHeapPostProcess = 9;
+const int kBindingInstDescriptorHeapValidDescriptors = 10;
+const int kTotalBindings = 11;
 
 // Validation pipelines
 // ---
@@ -144,6 +147,22 @@ const int kDebugInputBuffAddrLengthOffset = 0;
 const uint kPostProcessMetaMaskAccessed = 1u << 31;
 const uint kPostProcessMetaShiftErrorLoggerIndex = 18;
 const uint kPostProcessMetaMaskErrorLoggerIndex = 0x1FFF << kPostProcessMetaShiftErrorLoggerIndex;
+
+const uint kDescriptorHeapUniformBuffer = 1 << 0;
+const uint kDescriptorHeapStorageBuffer = 1 << 1;
+const uint kDescriptorHeapSampler = 1 << 2;
+const uint kDescriptorHeapImage = 1 << 3;
+const uint kDescriptorHeapTexelPointer = 1 << 4;
+const uint kDescriptorHeapUnregisteredCustomBorder = 1 << 5;
+const uint kDescriptorHeapCustomBorderDifferentColor = 1 << 6;
+const uint kDescriptorHeapImageArrayed = 1 << 7;
+const uint kDescriptorHeapImageMultiSampled = 1 << 8;
+const uint kDescriptorHeapImageSampledMask = 0x3;
+const uint kDescriptorHeapImageSampledShift = 9;
+const uint kDescriptorHeapImageDimMask = 0x7;
+const uint kDescriptorHeapImageDimShift = 11;
+const uint kDescriptorHeapImageFormatMask = 0x3F;
+const uint kDescriptorHeapImageFormatShift = 14;
 
 #ifdef __cplusplus
 }  // namespace glsl

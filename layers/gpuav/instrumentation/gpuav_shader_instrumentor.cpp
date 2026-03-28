@@ -56,6 +56,7 @@
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
 #include "gpuav/spirv/sanitizer_pass.h"
+#include "gpuav/spirv/descriptor_heap_pass.h"
 
 #include <cassert>
 #include <string>
@@ -204,7 +205,8 @@ void GpuShaderInstrumentor::SetupDescriptorHeap(const Location& loc) {
 
     resource_heap_reserved_bytes_ = bytes_to_reserve;
     buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
-    buffer_descriptor_alignment_ = descriptor_heap_props.bufferDescriptorAlignment;
+    image_descriptor_size_ = descriptor_heap_props.imageDescriptorSize;
+    sampler_descriptor_size_ = descriptor_heap_props.samplerDescriptorSize;
     push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 
@@ -1702,6 +1704,17 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     if (gpuav_settings.shader_instrumentation.sanitizer && gpuav_settings.safe_mode) {
         spirv::SanitizerPass pass(module);
         modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.descriptor_heap) {
+        if (interface.descriptor_mode == vvl::DescriptorModeHeap) {
+            VkPhysicalDeviceDescriptorHeapTensorPropertiesARM heap_tensor_props = vku::InitStructHelper();
+            VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper(&heap_tensor_props);
+            VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
+            DispatchGetPhysicalDeviceProperties2(physical_device, &props2);
+            spirv::DescriptorHeapPass descriptor_heap_pass(module, heap_props, heap_tensor_props);
+            modified |= descriptor_heap_pass.Run();
+        }
     }
 
     // If we have passes that require inject LogError before the shader end we do it now.

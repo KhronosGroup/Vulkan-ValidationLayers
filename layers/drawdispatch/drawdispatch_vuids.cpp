@@ -1202,6 +1202,8 @@ std::string CreateActionVuid(vvl::Func function, const ActionVUID id) {
         case ActionVUID::DESCRIPTOR_INDEX_OOB_10068: suffix = "None-10068"; break;
         // ### VUID-vkCmdDrawIndirectCount-countBuffer-02717
         case ActionVUID::INDIRECT_COUNT_LIMIT: suffix = "countBuffer-02717"; break;
+        // ### VUID-vkCmdDraw-None-11438
+        case ActionVUID::HEAP_USAGE_11438: suffix = "None-11438"; break;
     }
     // clang-format on
 
