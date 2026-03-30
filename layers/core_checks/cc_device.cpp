@@ -668,21 +668,37 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
     return skip;
 }
 
-// For given obj node, if it is use, flag a validation error and return callback result, else return false
 bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const {
-    if (disabled[object_in_use]) {
-        return false;
-    } else if (is_device_lost) {
-        return false;  // In case of DEVICE_LOST, all execution is considered over
-    }
     bool skip = false;
-
-    const VulkanTypedHandle& obj_struct = obj_node->Handle();
-    const VulkanTypedHandle* used_handle = obj_node->InUse();
-    if (used_handle) {
-        skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by %s.",
-                         FormatHandle(obj_struct).c_str(), FormatHandle(*used_handle).c_str());
+    if (disabled[object_in_use]) {
+        return skip;
     }
+    if (is_device_lost) {
+        return skip;  // In case of DEVICE_LOST, all execution is considered over
+    }
+    const VulkanTypedHandle* user_handle = obj_node->InUse();
+    if (!user_handle) {
+        return skip;
+    }
+
+    const VulkanTypedHandle& obj_handle = obj_node->Handle();
+
+    // Special case for a swapchain when there are no pending present queue operations,
+    // but a swapchain image is still in use by a submitted command buffer.
+    // NOTE: the common scenario where a swapchain is used by queue present operations
+    // is handled by the general error message below (the user handle has type Queue then).
+    if (obj_handle.type == kVulkanObjectTypeSwapchainKHR && user_handle->type == kVulkanObjectTypeImage) {
+        if (auto swapchain_image = Get<vvl::Image>(user_handle->Cast<VkImage>())) {
+            const VulkanTypedHandle* image_user_handle = swapchain_image->InUse();
+            skip |= LogError(error_code, device, loc, "can't be called on %s that has its %s in use by %s.",
+                             FormatHandle(obj_handle).c_str(), FormatHandle(*user_handle).c_str(),
+                             FormatHandle(*image_user_handle).c_str());
+            return skip;
+        }
+    }
+
+    skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by %s.",
+                     FormatHandle(obj_handle).c_str(), FormatHandle(*user_handle).c_str());
     return skip;
 }
 

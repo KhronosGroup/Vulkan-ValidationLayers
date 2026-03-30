@@ -6634,7 +6634,7 @@ TEST_F(NegativeWsi, InvalidTimeDomainId) {
 
 TEST_F(NegativeWsi, DestroySwapchainInUse) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11994
-    TEST_DESCRIPTION("Delete swapchain whose image is still in use");
+    TEST_DESCRIPTION("Delete swapchain whose acquired image is in use by submitted command buffer");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -6662,7 +6662,7 @@ TEST_F(NegativeWsi, DestroySwapchainInUse) {
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
 
-    // Swapchain image is in use by the submitted command buffer
+    // There is no presentation but swapchain image is in use by the submitted command buffer
     m_errorMonitor->SetDesiredError("VUID-vkDestroySwapchainKHR-swapchain-01282");
     vk::DestroySwapchainKHR(*m_device, swapchain, nullptr);
     m_errorMonitor->VerifyFound();
@@ -6671,7 +6671,7 @@ TEST_F(NegativeWsi, DestroySwapchainInUse) {
 }
 
 TEST_F(NegativeWsi, DestroySwapchainInUse2) {
-    TEST_DESCRIPTION("Delete swapchain that has pending present opeation");
+    TEST_DESCRIPTION("Delete swapchain that has pending present operation");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -6702,7 +6702,7 @@ TEST_F(NegativeWsi, DestroySwapchainInUse2) {
 
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore);
 
-    // Swapchain is in use by the present operation
+    // Swapchain is in use by the present queue operation
     m_errorMonitor->SetDesiredError("VUID-vkDestroySwapchainKHR-swapchain-01282");
     vk::DestroySwapchainKHR(*m_device, swapchain, nullptr);
     m_errorMonitor->VerifyFound();
