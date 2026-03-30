@@ -300,8 +300,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityDotProductFloat8AccFloat32VALVE, {0, &DeviceFeatures::shaderMixedFloatDotProductFloat8AccFloat32, nullptr, ""}},
         // Not found in current SPIR-V Headers
         // {spv::CapabilityConstantDataKHR, {0, &DeviceFeatures::shaderConstantData, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
+        {spv::CapabilityAbortKHR, {0, &DeviceFeatures::shaderAbort, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -686,8 +685,14 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "BFloat16DotProductKHR";
         case spv::CapabilityBFloat16CooperativeMatrixKHR:
             return "BFloat16CooperativeMatrixKHR";
+        case spv::CapabilityAbortKHR:
+            return "AbortKHR";
         case spv::CapabilityDescriptorHeapEXT:
             return "DescriptorHeapEXT";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::CapabilityPoisonFreezeKHR:
+            return "PoisonFreezeKHR";
+#endif
         case spv::CapabilitySampleMaskOverrideCoverageNV:
             return "SampleMaskOverrideCoverageNV";
         case spv::CapabilityGeometryShaderPassthroughNV:
@@ -1274,6 +1279,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityDotProductFloat16AccFloat16VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat16AccFloat16"},
     {spv::CapabilityDotProductBFloat16AccVALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductBFloat16Acc"},
     {spv::CapabilityDotProductFloat8AccFloat32VALVE, "VkPhysicalDeviceShaderMixedFloatDotProductFeaturesVALVE::shaderMixedFloatDotProductFloat8AccFloat32"},
+    {spv::CapabilityAbortKHR, "VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort"},
     };
 
     // VUs before catch unknown capabilities

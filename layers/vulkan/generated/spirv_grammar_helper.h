@@ -476,6 +476,8 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFinishWritingNodePayloadAMDX:
         case spv::OpNodePayloadArrayLengthAMDX:
         case spv::OpIsNodePayloadValidAMDX:
+        case spv::OpPoisonKHR:
+        case spv::OpFreezeKHR:
         case spv::OpSpecConstantTargetINTEL:
         case spv::OpSpecConstantArchitectureINTEL:
         case spv::OpSpecConstantCapabilitiesINTEL:
@@ -960,6 +962,8 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpIsNodePayloadValidAMDX:
         case spv::OpConstantStringAMDX:
         case spv::OpSpecConstantStringAMDX:
+        case spv::OpPoisonKHR:
+        case spv::OpFreezeKHR:
         case spv::OpSpecConstantTargetINTEL:
         case spv::OpSpecConstantArchitectureINTEL:
         case spv::OpSpecConstantCapabilitiesINTEL:

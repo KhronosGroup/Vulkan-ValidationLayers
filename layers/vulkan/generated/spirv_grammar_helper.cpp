@@ -759,6 +759,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeBufferEXT";
         case spv::OpBufferPointerEXT:
             return "OpBufferPointerEXT";
+        case spv::OpAbortKHR:
+            return "OpAbortKHR";
         case spv::OpUntypedImageTexelPointerEXT:
             return "OpUntypedImageTexelPointerEXT";
         case spv::OpMemberDecorateIdEXT:
@@ -1191,6 +1193,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConstantStringAMDX";
         case spv::OpSpecConstantStringAMDX:
             return "OpSpecConstantStringAMDX";
+        case spv::OpPoisonKHR:
+            return "OpPoisonKHR";
+        case spv::OpFreezeKHR:
+            return "OpFreezeKHR";
         case spv::OpConditionalExtensionINTEL:
             return "OpConditionalExtensionINTEL";
         case spv::OpConditionalEntryPointINTEL:
@@ -1527,6 +1533,8 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "MaxNumWorkgroupsAMDX";
         case spv::ExecutionModeSharesInputWithAMDX:
             return "SharesInputWithAMDX";
+        case spv::ExecutionModeArithmeticPoisonKHR:
+            return "ArithmeticPoisonKHR";
 #endif
         default:
             return "Unknown Execution Mode";
@@ -2546,6 +2554,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGroupNonUniformQuadAnyKHR, {{OperandKind::Id}}},
         {spv::OpTypeBufferEXT, {{OperandKind::ValueEnum}}},
         {spv::OpBufferPointerEXT, {{OperandKind::Id}}},
+        {spv::OpAbortKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpUntypedImageTexelPointerEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpMemberDecorateIdEXT, {{OperandKind::Id, OperandKind::Literal, OperandKind::ValueEnum}}},
         {spv::OpConstantSizeOfEXT, {{OperandKind::Id}}},
