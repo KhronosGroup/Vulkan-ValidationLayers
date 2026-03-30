@@ -159,6 +159,7 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
         }
     }
 
+    const VulkanTypedHandle* InUse() const override;
     VkSwapchainKHR VkHandle() const { return handle_.Cast<VkSwapchainKHR>(); }
 
     void PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,

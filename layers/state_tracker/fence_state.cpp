@@ -37,8 +37,9 @@ vvl::Fence::Fence(Logger& logger, VkFence handle, const VkFenceCreateInfo* pCrea
 
 const VulkanTypedHandle* vvl::Fence::InUse() const {
     auto guard = ReadLock();
-    // Fence does not have a parent (in the sense of a VVL state object), and the value returned
-    // by the base class InUse is not useful for reporting (it is the fence's own handle)
+    // Fence does not have a parent (in the sense of VVL state object hierarchy).
+    // The typed handle returned by the base class InUse is not useful for reporting
+    // (it is the fence's own handle). Use it only to get boolean in use status.
     const bool in_use = RefcountedStateObject::InUse() != nullptr;
     if (!in_use) {
         return nullptr;

@@ -22,6 +22,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/fence_state.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "generated/dispatch_functions.h"
 
@@ -119,6 +120,31 @@ Swapchain::Swapchain(vvl::DeviceState& dev_data_, const VkSwapchainCreateInfoKHR
         present_at_absolute_time_supported = present_timing_surface_capabilities.presentAtAbsoluteTimeSupported;
         present_at_relative_time_supported = present_timing_surface_capabilities.presentAtRelativeTimeSupported;
     }
+}
+
+const VulkanTypedHandle* Swapchain::InUse() const {
+    // Swapchain's parents are swapchain images (in the sense of VVL state object hierarchy).
+    // The typed handle returned by the base class InUse is not useful for reporting
+    // (it is swapchain image). Use it only to get boolean in use status.
+    const bool in_use = RefcountedStateObject::InUse() != nullptr;
+    if (!in_use) {
+        return nullptr;
+    }
+
+    // a) either there is a queue with pending present operations
+    for (const SwapchainImage& image : images) {
+        if (image.present_submission_ref.has_value()) {
+            return &image.present_submission_ref->queue->Handle();
+        }
+    }
+    // b) or acquired swapchain image is in use (e.g. layout transition was recorded and submitted)
+    for (const SwapchainImage& image : images) {
+        if (image.image_state->InUse()) {
+            return &image.image_state->Handle();
+        }
+    }
+    assert(false && "Can't find queue that uses the swapchain or another usage of swapchain image");
+    return nullptr;
 }
 
 void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference& present_submission_ref,
