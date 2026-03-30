@@ -210,8 +210,8 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                     continue;  // duplicate detected
                 }
 
-                if (IsMaxInstrumentationsCount()) {
-                    continue;
+                if (MaxInstrumentationsCountReached()) {
+                    return instrumentations_count_ != 0;
                 }
                 instrumentations_count_++;
 

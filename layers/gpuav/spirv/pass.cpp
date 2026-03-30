@@ -811,7 +811,7 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block, const Instruction& 
     return block.instructions_.end();
 }
 
-bool Pass::IsMaxInstrumentationsCount() const {
+bool Pass::MaxInstrumentationsCountReached() const {
     return (module_.settings_.max_instrumentations_count != 0) &&
            (instrumentations_count_ >= module_.settings_.max_instrumentations_count);
 }

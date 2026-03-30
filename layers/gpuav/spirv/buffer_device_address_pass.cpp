@@ -267,8 +267,8 @@ bool BufferDeviceAddressPass::Instrument() {
                     continue;
                 }
 
-                if (IsMaxInstrumentationsCount()) {
-                    continue;
+                if (MaxInstrumentationsCountReached()) {
+                    return instrumentations_count_ != 0;
                 }
                 instrumentations_count_++;
 

@@ -74,7 +74,7 @@ class Pass {
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
 
-    bool IsMaxInstrumentationsCount() const;
+    bool MaxInstrumentationsCountReached() const;
 
     InjectConditionalData InjectFunctionPre(Function& function, const BasicBlockIt original_block_it, InstructionIt inst_it);
     void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
