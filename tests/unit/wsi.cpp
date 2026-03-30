@@ -4520,6 +4520,30 @@ TEST_F(NegativeWsi, DISABLED_InitSwapchainInvalidOldSwapchain) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, PresentNullFence) {
+    TEST_DESCRIPTION("Specify null present fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Fence acquire_fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_fence, kWaitTimeout);
+    acquire_fence.Wait(kWaitTimeout);
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    SetPresentImageLayout(swapchain_images[image_index]);
+
+    VkSwapchainPresentFenceInfoKHR present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = 1;
+    present_fence_info.pFences = nullptr;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-pFences-parameter");
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_fence_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, PresentSignaledFence) {
     TEST_DESCRIPTION("Use a sigled fence in VkSwapchainPresentFenceInfoEXT");
     AddSurfaceExtension();

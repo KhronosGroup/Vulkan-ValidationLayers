@@ -3606,6 +3606,10 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                       AllVkPipelineLayoutCreateFlagBits, structure->flags, kOptionalFlags,
                                       "VUID-VkPipelineLayoutCreateInfo-flags-parameter", nullptr, false);
 
+                skip |= ValidateArray(pNext_loc.dot(Field::setLayoutCount), pNext_loc.dot(Field::pSetLayouts),
+                                      structure->setLayoutCount, &structure->pSetLayouts, false, true, kVUIDUndefined,
+                                      "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
+
                 skip |= ValidateArray(pNext_loc.dot(Field::pushConstantRangeCount), pNext_loc.dot(Field::pPushConstantRanges),
                                       structure->pushConstantRangeCount, &structure->pPushConstantRanges, false, true,
                                       kVUIDUndefined, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-parameter");
@@ -5400,10 +5404,10 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainPresentFenceInfoKHR);
                 VkSwapchainPresentFenceInfoKHR* structure = (VkSwapchainPresentFenceInfoKHR*)header;
-                skip |= ValidateArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pFences),
-                                      structure->swapchainCount, &structure->pFences, true, false,
-                                      "VUID-VkSwapchainPresentFenceInfoKHR-swapchainCount-arraylength",
-                                      "VUID-VkSwapchainPresentFenceInfoKHR-pFences-parameter");
+                skip |=
+                    ValidateArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pFences), structure->swapchainCount,
+                                  &structure->pFences, true, true, "VUID-VkSwapchainPresentFenceInfoKHR-swapchainCount-arraylength",
+                                  "VUID-VkSwapchainPresentFenceInfoKHR-pFences-parameter");
             }
         } break;
 
@@ -6903,7 +6907,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 VkWriteDescriptorSetAccelerationStructureNV* structure = (VkWriteDescriptorSetAccelerationStructureNV*)header;
                 skip |=
                     ValidateArray(pNext_loc.dot(Field::accelerationStructureCount), pNext_loc.dot(Field::pAccelerationStructures),
-                                  structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false,
+                                  structure->accelerationStructureCount, &structure->pAccelerationStructures, true, true,
                                   "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
                                   "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter");
             }
@@ -8023,7 +8027,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkWriteDescriptorSetTensorARM);
                 VkWriteDescriptorSetTensorARM* structure = (VkWriteDescriptorSetTensorARM*)header;
                 skip |= ValidateArray(pNext_loc.dot(Field::tensorViewCount), pNext_loc.dot(Field::pTensorViews),
-                                      structure->tensorViewCount, &structure->pTensorViews, true, false,
+                                      structure->tensorViewCount, &structure->pTensorViews, true, true,
                                       "VUID-VkWriteDescriptorSetTensorARM-tensorViewCount-arraylength",
                                       "VUID-VkWriteDescriptorSetTensorARM-pTensorViews-parameter");
             }
@@ -8437,7 +8441,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                     (VkWriteDescriptorSetPartitionedAccelerationStructureNV*)header;
                 skip |= ValidateArray(
                     pNext_loc.dot(Field::accelerationStructureCount), pNext_loc.dot(Field::pAccelerationStructures),
-                    structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false,
+                    structure->accelerationStructureCount, &structure->pAccelerationStructures, true, true,
                     "VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-accelerationStructureCount-arraylength",
                     "VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-pAccelerationStructures-parameter");
             }
@@ -8561,7 +8565,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 VkWriteDescriptorSetAccelerationStructureKHR* structure = (VkWriteDescriptorSetAccelerationStructureKHR*)header;
                 skip |=
                     ValidateArray(pNext_loc.dot(Field::accelerationStructureCount), pNext_loc.dot(Field::pAccelerationStructures),
-                                  structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false,
+                                  structure->accelerationStructureCount, &structure->pAccelerationStructures, true, true,
                                   "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
                                   "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter");
             }
@@ -10706,6 +10710,10 @@ bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipeli
                                       AllVkPipelineLayoutCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
                                       "VUID-VkPipelineLayoutCreateInfo-flags-parameter", nullptr, false);
 
+        skip |= context.ValidateArray(pCreateInfo_loc.dot(Field::setLayoutCount), pCreateInfo_loc.dot(Field::pSetLayouts),
+                                      pCreateInfo->setLayoutCount, &pCreateInfo->pSetLayouts, false, true, kVUIDUndefined,
+                                      "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
+
         skip |= context.ValidateArray(pCreateInfo_loc.dot(Field::pushConstantRangeCount),
                                       pCreateInfo_loc.dot(Field::pPushConstantRanges), pCreateInfo->pushConstantRangeCount,
                                       &pCreateInfo->pPushConstantRanges, false, true, kVUIDUndefined,
@@ -11087,7 +11095,7 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
                                        "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-parameter");
     skip |= context.ValidateRequiredHandle(loc.dot(Field::layout), layout);
     skip |= context.ValidateArray(loc.dot(Field::descriptorSetCount), loc.dot(Field::pDescriptorSets), descriptorSetCount,
-                                  &pDescriptorSets, true, false, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength",
+                                  &pDescriptorSets, true, true, "VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength",
                                   "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter");
     skip |= context.ValidateArray(loc.dot(Field::dynamicOffsetCount), loc.dot(Field::pDynamicOffsets), dynamicOffsetCount,
                                   &pDynamicOffsets, false, true, kVUIDUndefined,
@@ -11714,7 +11722,7 @@ bool Device::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, 
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    skip |= context.ValidateArray(loc.dot(Field::bindingCount), loc.dot(Field::pBuffers), bindingCount, &pBuffers, true, false,
+    skip |= context.ValidateArray(loc.dot(Field::bindingCount), loc.dot(Field::pBuffers), bindingCount, &pBuffers, true, true,
                                   "VUID-vkCmdBindVertexBuffers-bindingCount-arraylength",
                                   "VUID-vkCmdBindVertexBuffers-pBuffers-parameter");
     skip |= context.ValidateArray(loc.dot(Field::bindingCount), loc.dot(Field::pOffsets), bindingCount, &pOffsets, true, true,
