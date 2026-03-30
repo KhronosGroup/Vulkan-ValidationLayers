@@ -31,7 +31,7 @@ namespace device_profile_api {
 
 static std::mutex global_lock;
 
-static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+[[maybe_unused]] static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 struct layer_data {
     VkInstance instance;

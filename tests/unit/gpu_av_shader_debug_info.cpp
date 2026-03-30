@@ -912,6 +912,7 @@ void main() {
           %5 = OpTypeFunction %void
        %uint = OpTypeInt 32 0
      %uint_0 = OpConstant %uint 0
+     %uint_2 = OpConstant %uint 2
      %uint_3 = OpConstant %uint 3
          %18 = OpExtInst %void %1 DebugSource %2 %19
     %uint_10 = OpConstant %uint 10
@@ -935,7 +936,7 @@ void main() {
 %_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
        %main = OpFunction %void None %5
          %15 = OpLabel
-         %64 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_12 %uint_11 %uint_11
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_12 %uint_11 %uint_2
          %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
          %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
          %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
@@ -947,160 +948,6 @@ void main() {
     )";
 
     BasicSingleStorageBufferComputeOOB(shader_source, "10: void main() {\n11:     x = data.indices[16];\n12: }");
-}
-
-TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineStart) {
-    TEST_DESCRIPTION("DebugLine Line Start has bad value");
-    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-
-    const char* shader_source = R"(
-               OpCapability Shader
-               OpCapability PhysicalStorageBufferAddresses
-               OpExtension "SPV_KHR_non_semantic_info"
-          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
-          %3 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel PhysicalStorageBuffer64 GLSL450
-               OpEntryPoint GLCompute %main "main" %_
-               OpExecutionMode %main LocalSize 1 1 1
-          %2 = OpString "a.comp"
-         %16 = OpString "main"
-         %19 = OpString "#version 450
-#extension GL_EXT_buffer_reference : enable
-layout(buffer_reference, std430) readonly buffer IndexBuffer {
-    int indices[];
-};
-layout(set = 0, binding = 0) buffer foo {
-    IndexBuffer data;
-    int x;
-};
-void main() {
-    x = data.indices[16];
-}"
-               OpDecorate %foo Block
-               OpMemberDecorate %foo 0 Offset 0
-               OpMemberDecorate %foo 1 Offset 8
-               OpDecorate %_runtimearr_int ArrayStride 4
-               OpDecorate %IndexBuffer Block
-               OpMemberDecorate %IndexBuffer 0 NonWritable
-               OpMemberDecorate %IndexBuffer 0 Offset 0
-               OpDecorate %_ Binding 0
-               OpDecorate %_ DescriptorSet 0
-       %void = OpTypeVoid
-          %5 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-     %uint_0 = OpConstant %uint 0
-     %uint_3 = OpConstant %uint 3
-         %18 = OpExtInst %void %1 DebugSource %2 %19
-    %uint_11 = OpConstant %uint 11
-    %uint_20 = OpConstant %uint 20
-     %uint_1 = OpConstant %uint 1
-               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
-  %uint_5349 = OpConstant %uint 5349
-        %int = OpTypeInt 32 1
-        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
-%_runtimearr_int = OpTypeRuntimeArray %int
-%IndexBuffer = OpTypeStruct %_runtimearr_int
-%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
-%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
-          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
-      %int_1 = OpConstant %int 1
-      %int_0 = OpConstant %int 0
-%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
-     %int_16 = OpConstant %int 16
-%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
-%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
-       %main = OpFunction %void None %5
-         %15 = OpLabel
-         %64 = OpExtInst %void %1 DebugLine %18 %uint_20 %uint_20 %uint_11 %uint_11
-         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
-         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
-         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
-         %70 = OpLoad %int %69 Aligned 4
-         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
-               OpStore %73 %70
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    BasicSingleStorageBufferComputeOOB(shader_source, "20: [No line found in source]");
-}
-
-TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineEnd) {
-    TEST_DESCRIPTION("DebugLine Line End has bad value");
-    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-
-    const char* shader_source = R"(
-               OpCapability Shader
-               OpCapability PhysicalStorageBufferAddresses
-               OpExtension "SPV_KHR_non_semantic_info"
-          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
-          %3 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel PhysicalStorageBuffer64 GLSL450
-               OpEntryPoint GLCompute %main "main" %_
-               OpExecutionMode %main LocalSize 1 1 1
-          %2 = OpString "a.comp"
-         %16 = OpString "main"
-         %19 = OpString "#version 450
-#extension GL_EXT_buffer_reference : enable
-layout(buffer_reference, std430) readonly buffer IndexBuffer {
-    int indices[];
-};
-layout(set = 0, binding = 0) buffer foo {
-    IndexBuffer data;
-    int x;
-};
-void main() {
-    x = data.indices[16];
-}"
-               OpDecorate %foo Block
-               OpMemberDecorate %foo 0 Offset 0
-               OpMemberDecorate %foo 1 Offset 8
-               OpDecorate %_runtimearr_int ArrayStride 4
-               OpDecorate %IndexBuffer Block
-               OpMemberDecorate %IndexBuffer 0 NonWritable
-               OpMemberDecorate %IndexBuffer 0 Offset 0
-               OpDecorate %_ Binding 0
-               OpDecorate %_ DescriptorSet 0
-       %void = OpTypeVoid
-          %5 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-     %uint_0 = OpConstant %uint 0
-     %uint_3 = OpConstant %uint 3
-         %18 = OpExtInst %void %1 DebugSource %2 %19
-    %uint_10 = OpConstant %uint 10
-    %uint_11 = OpConstant %uint 11
-    %uint_20 = OpConstant %uint 20
-     %uint_1 = OpConstant %uint 1
-               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
-  %uint_5349 = OpConstant %uint 5349
-        %int = OpTypeInt 32 1
-        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
-%_runtimearr_int = OpTypeRuntimeArray %int
-%IndexBuffer = OpTypeStruct %_runtimearr_int
-%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
-%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
-          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
-      %int_1 = OpConstant %int 1
-      %int_0 = OpConstant %int 0
-%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
-     %int_16 = OpConstant %int 16
-%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
-%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
-       %main = OpFunction %void None %5
-         %15 = OpLabel
-         %64 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_20 %uint_11 %uint_11
-         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
-         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
-         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
-         %70 = OpLoad %int %69 Aligned 4
-         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
-               OpStore %73 %70
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    BasicSingleStorageBufferComputeOOB(shader_source,
-                                       "10: void main() {\n11:     x = data.indices[16];\n12: }\n13: [No line found in source]");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, BasicDXC) {

@@ -289,6 +289,8 @@ static void GetSourceLines(std::ostringstream& ss, const std::vector<std::string
         ss << '\n';
         for (uint32_t line_index = logging_info.line_number_start; line_index <= logging_info.line_number_end; line_index++) {
             if (line_index > source_lines.size()) {
+                // Note - we use to test this, but now spirv-val will detect if the line is bogus
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/12008
                 ss << line_index << ": [No line found in source]";
                 break;
             }
