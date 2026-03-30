@@ -883,7 +883,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 counValueRequired = 'true'  # Count value cannot be 0
                 countRequiredVuid = None # If there is a count required VUID to check
                 # Generate required/optional parameter strings for the pointer and count values
-                if member.optional or member.optionalPointer:
+                if member.optional:
                     arrayRequired = 'false'
                 if member.length:
                     # The parameter is an array with an explicit count parameter

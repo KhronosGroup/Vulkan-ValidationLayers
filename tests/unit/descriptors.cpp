@@ -6146,11 +6146,16 @@ TEST_F(NegativeDescriptors, PartitionedAccelerationStructureTypeMismatch) {
     // Try to update with VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV when the layout expects UNIFORM_BUFFER
     VkWriteDescriptorSetPartitionedAccelerationStructureNV accel_struct_info = vku::InitStructHelper();
     accel_struct_info.accelerationStructureCount = 1;
+    // We need AS count is 1 but don't need actual AS for this test
+    m_errorMonitor->SetAllowedFailureMsg(
+        "VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-pAccelerationStructures-parameter");
+
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&accel_struct_info);
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
