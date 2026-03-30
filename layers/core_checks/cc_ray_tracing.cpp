@@ -624,12 +624,12 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
             if (const auto* micromap =
                     vku::FindStructInPNextChain<VkAccelerationStructureTrianglesOpacityMicromapEXT>(triangles.pNext)) {
                 if (micromap->indexType == VK_INDEX_TYPE_NONE_KHR) {
-                    if (!micromap->indexBuffer.deviceAddress) {
+                    if (micromap->indexBuffer.deviceAddress != 0) {
                         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-10904", device,
                                          p_geom_geom_triangles_loc
                                              .pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapEXT, Field::indexBuffer)
                                              .dot(Field::deviceAddress),
-                                         "is 0x%" PRIx64 " but indexType is VK_INDEX_TYPE_NONE_KHR.",
+                                         "is 0x%" PRIx64 " (non-zero) but indexType is VK_INDEX_TYPE_NONE_KHR.",
                                          micromap->indexBuffer.deviceAddress);
                     }
                 } else {
