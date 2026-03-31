@@ -42,6 +42,9 @@ struct InjectConditionalData {
     BasicBlockIt merge_block_it;
 };
 
+// If the pass has no linking and it is all done inplace at instrumentation time
+[[maybe_unused]] static const OfflineModule kNullOffline{nullptr, 0};
+
 // Common helpers for all passes
 // The pass takes the Module object and modifies it as needed
 class Pass {

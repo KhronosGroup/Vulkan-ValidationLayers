@@ -86,6 +86,7 @@
                         { "key": "thread_safety", "value": false },
                         { "key": "validate_sync", "value": false },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error", "warn" ] },
@@ -113,6 +114,7 @@
                         { "key": "thread_safety", "value": false },
                         { "key": "validate_sync", "value": false },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
@@ -140,6 +142,7 @@
                         { "key": "thread_safety", "value": false },
                         { "key": "validate_sync", "value": false },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "validate_best_practices", "value": true },
                         { "key": "report_flags", "value": [ "error", "warn", "perf" ] },
@@ -167,6 +170,7 @@
                         { "key": "thread_safety", "value": true },
                         { "key": "validate_sync", "value": true },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
@@ -194,6 +198,7 @@
                         { "key": "thread_safety", "value": false },
                         { "key": "validate_sync", "value": false },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "gpuav_enable", "value": true },
                         { "key": "gpuav_shader_instrumentation", "value": true },
                         { "key": "gpuav_select_instrumented_shaders", "value": false },
@@ -225,6 +230,7 @@
                         { "key": "validate_sync", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "printf_enable", "value": true },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags",  "value": [ "error", "warn", "info" ] },
                         { "key": "debug_action",  "value": [] },
@@ -252,6 +258,7 @@
                         { "key": "validate_sync", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "printf_enable", "value": false },
+                        { "key": "debug_descriptor", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags",  "value": [ "warn" ] },
                         { "key": "debug_action",  "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
@@ -617,6 +624,79 @@
                                     "conditions": [
                                         { "setting": { "key": "printf_enable", "value": true }},
                                         { "setting": { "key": "printf_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "key": "debug_descriptor",
+                            "label": "Debug Descriptor",
+                            "description": "[Used for VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap] Enable DebugDescriptor and will print anything that uses NonSemantic.DebugDescriptor in their SPIR-V",
+                            "view": "DEBUG",
+                            "type": "BOOL",
+                            "default": false,
+                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "settings": [
+                                {
+                                    "key": "debug_descriptor_to_stdout",
+                                    "label": "Redirect DebugDescriptor messages to stdout",
+                                    "description": "Enable redirection of Debug Descriptor messages from the debug callback to stdout",
+                                    "view": "DEBUG",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "debug_descriptor", "value": true }
+                                        ]
+                                    },
+                                    "messages": [
+                                        {
+                                            "key": "debug_descriptor_msg3",
+                                            "title": "Debug Descriptor without 'info' level message severity flag",
+                                            "version": 1,
+                                            "description": "Enabling Debug Descriptor output redirection to the debug callback, but 'info' level message severity is disabled, so messages won't be shown.",
+                                            "informative": "Adding 'info' level to 'Message Severity'",
+                                            "severity": "INFORMATION",
+                                            "conditions": [
+                                                { "setting": { "key": "debug_descriptor", "value": true }},
+                                                { "setting": { "key": "debug_descriptor_to_stdout", "value": false }},
+                                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                            ],
+                                            "actions": {
+                                                "default": "BUTTON0",
+                                                "BUTTON0": {
+                                                    "type": "OK",
+                                                    "changes": [
+                                                        { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "APPEND" }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "debug_descriptor_msg1",
+                                    "title": "Warning: Debug Descriptor without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling Debug Descriptor, with output directed to the debug callback, but info level message severity is disabled, so messages won't be shown.",
+                                    "informative": "Adding 'info' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "debug_descriptor", "value": true }},
+                                        { "setting": { "key": "debug_descriptor_to_stdout", "value": false }},
                                         { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
                                     ],
                                     "actions": {

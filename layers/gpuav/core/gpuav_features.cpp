@@ -375,10 +375,11 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         }
     }
 
-    if (gpuav_settings.debug_printf_enabled) {
+    if (gpuav_settings.debug_printf_enabled || gpuav_settings.debug_descriptor_enabled) {
         if (!IsExtensionAvailable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, available_extensions)) {
             adjustment_warnings +=
-                "\tVK_KHR_shader_non_semantic_info is not available on selected device, Debug Printf may produce SPIR-V "
+                "\tVK_KHR_shader_non_semantic_info is not available on selected device, DebugPrintf/DebugDescriptor may produce "
+                "SPIR-V "
                 "that could fail to compile the shader\n";
         } else {
             vku::AddExtension(*modified_create_info, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);

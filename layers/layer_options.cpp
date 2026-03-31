@@ -186,6 +186,13 @@ const char* VK_LAYER_PRINTF_TO_STDOUT = "printf_to_stdout";
 const char* VK_LAYER_PRINTF_VERBOSE = "printf_verbose";
 const char* VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 
+// DebugDescriptor
+// ---
+// TODO - Add a VK_LAYER_PRINTF_ONLY_PRESET equivalent
+// These only start with "debug" because it matches the "NonSemantic.Debug" naming scheme
+const char* VK_LAYER_DEBUG_DESCRIPTOR = "debug_descriptor";
+const char* VK_LAYER_DEBUG_DESCRIPTOR_TO_STDOUT = "debug_descriptor_to_stdout";
+
 // GPU-AV
 // ---
 const char* VK_LAYER_GPUAV_ENABLE = "gpuav_enable";
@@ -720,6 +727,27 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings* settings_data, VkuL
         }
     }
 
+    if (settings_data->gpuav_settings->debug_descriptor_enabled) {
+        if (settings_data->gpuav_settings->debug_descriptor_to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
+            if (is_stdout) {
+                setting_warnings.emplace_back(
+                    "The debug callback is already logging to stdout, but " + std::string(VK_LAYER_DEBUG_DESCRIPTOR_TO_STDOUT) +
+                    " is also enabled. DebugDescriptor will skip the debug callback in favor of a direct stdout write.");
+            } else {
+                setting_warnings.emplace_back("The logging to " + log_filename +
+                                              " will not contain any DebugDescriptor info because " +
+                                              std::string(VK_LAYER_DEBUG_DESCRIPTOR_TO_STDOUT) + " is enabled.");
+            }
+        }
+        if (!settings_data->gpuav_settings->debug_descriptor_to_stdout && ((report_flags & kInformationBit) == 0)) {
+            setting_warnings.emplace_back(
+                "DebugDescriptor logs to the Information message severity, enabling Information level logging otherwise the "
+                "message "
+                "will not be seen.");
+            report_flags |= kInformationBit;
+        }
+    }
+
     if (settings_data->enabled[legacy_detection] && ((report_flags & kWarningBit) == 0)) {
         setting_warnings.emplace_back(
             "Legacy Detection logs to the Warning message severity, enabling Warning level logging otherwise the message "
@@ -1158,6 +1186,14 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
         }
     }
 
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DESCRIPTOR)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DESCRIPTOR, gpuav_settings.debug_descriptor_enabled);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DESCRIPTOR_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DESCRIPTOR_TO_STDOUT, gpuav_settings.debug_descriptor_to_stdout);
+    }
+
     SyncValSettings& syncval_settings = *settings_data->syncval_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION,
@@ -1303,6 +1339,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
             "Both GPU Assisted Validation and Normal Core Check Validation are enabled, this is not recommend as it  will be very "
             "slow. Once all "
             "errors in Core Check are solved, please disable, then only use GPU-AV for best performance.");
+    }
+
+    // This has got a bit tricky, but if using DebugDescriptor, we want to turn on GPU-AV, but in a way it doesn't trip up the above
+    // logic/warnigs
+    if (gpuav_settings.debug_descriptor_enabled) {
+        settings_data->enabled[gpu_validation] = true;
     }
 
     // Set at the end once we decide what settings are actually on

@@ -35,7 +35,9 @@ bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
            shader_instrumentation.post_process_descriptor_indexing || shader_instrumentation.vertex_attribute_fetch_oob ||
            shader_instrumentation.sanitizer || shader_instrumentation.shared_memory_data_race;
 }
-bool GpuAVSettings::IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
+bool GpuAVSettings::IsSpirvModified() const {
+    return IsShaderInstrumentationEnabled() || debug_printf_enabled || debug_descriptor_enabled;
+}
 
 // Also disables shader caching and select shader instrumentation
 void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
@@ -137,6 +139,8 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_to_stdout);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_verbose);
     VVL_TRACY_PRINT_GPUAV_SETTING(debug_printf_buffer_size);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_descriptor_enabled);
+    VVL_TRACY_PRINT_GPUAV_SETTING(debug_descriptor_to_stdout);
 #undef VVL_TRACY_PRINT_GPUAV_SETTING
 #undef VVL_TRACY_PRINT_INSTRUMENTATION_SETTING
 #endif

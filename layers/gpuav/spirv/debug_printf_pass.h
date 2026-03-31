@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2024-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@
 
 namespace gpuav {
 namespace spirv {
-
-// This pass has no linking, it is all done inplace at runtime
-static const OfflineModule kNullOffline{nullptr, 0};
 
 struct Type;
 
