@@ -290,6 +290,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                  chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
         }
+        skip |= submit_time_tracker.ProcessSubmissionBatch(submit);
     }
 
     return skip;
