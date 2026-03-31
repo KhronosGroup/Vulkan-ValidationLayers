@@ -43,6 +43,7 @@
 
 namespace vvl {
 struct AllocateDescriptorSetsData;
+struct SubmissionBatch;
 class Fence;
 class DescriptorPool;
 class DescriptorSet;
@@ -2350,6 +2351,15 @@ class DeviceProxy : public vvl::BaseDevice {
     virtual void Created(vvl::DescriptorSet& state) {}
     virtual void Created(vvl::ShaderObject& state) {}
     virtual void Created(vvl::Pipeline& state){};
+
+    // Validate submission batch and update state if necessary.
+    // Called by SubmitTimeTracker and protected by the mutex. Only one batch is processed at a time.
+    //
+    // NOTE: Classic Validate/Record split made it a challenge to synchronize threaded queues,
+    // especialy when timeline signal resolves pending work on another queue.
+    // This became increasingly important after the spec allowed internally synchronized queues,
+    // meaning the same queue can be used from multiple threads.
+    virtual bool ProcessSubmissionBatch(SubmissionBatch& batch) { return false; }
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     // TODO - It would be nice to have a way to not need a duplicate copy in both CoreChecks and GPU-AV code

@@ -345,6 +345,8 @@ vvl_sources = [
   "layers/state_tracker/state_tracker.cpp",
   "layers/state_tracker/state_tracker.h",
   "layers/state_tracker/submission_reference.h",
+  "layers/state_tracker/submit_time_tracker.cpp",
+  "layers/state_tracker/submit_time_tracker.h",
   "layers/state_tracker/subresource_adapter.cpp",
   "layers/state_tracker/subresource_adapter.h",
   "layers/state_tracker/tensor_state.cpp",

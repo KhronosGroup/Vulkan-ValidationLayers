@@ -427,6 +427,8 @@ target_sources(vvl PRIVATE
     state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
     state_tracker/submission_reference.h
+    state_tracker/submit_time_tracker.cpp
+    state_tracker/submit_time_tracker.h
     state_tracker/subresource_adapter.cpp
     state_tracker/subresource_adapter.h
     state_tracker/vertex_index_buffer_state.cpp

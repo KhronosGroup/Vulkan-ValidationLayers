@@ -32,6 +32,7 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "state_tracker/event_map.h"
+#include "state_tracker/submit_time_tracker.h"
 #include "state_tracker/subresource_adapter.h"
 
 #include "containers/custom_containers.h"
@@ -226,9 +227,13 @@ class CoreChecks : public vvl::DeviceProxy {
     spv_target_env spirv_environment;
     stateless::SpirvValidator stateless_spirv_validator;
 
+    // Tracks submission batches for submit time validation
+    vvl::SubmitTimeTracker submit_time_tracker;
+
     CoreChecks(vvl::DispatchDevice* dev, core::Instance* instance_vo)
         : vvl::DeviceProxy(dev, instance_vo, LayerObjectTypeCoreValidation),
-          stateless_spirv_validator(dev->debug_report, dev->stateless_device_data, dev->settings.disabled[shader_validation]) {}
+          stateless_spirv_validator(dev->debug_report, dev->stateless_device_data, dev->settings.disabled[shader_validation]),
+          submit_time_tracker(*this) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
