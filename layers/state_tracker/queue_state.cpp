@@ -62,14 +62,14 @@ void vvl::QueueSubmission::EndUse() {
     }
 }
 
-vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) {
+uint64_t vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& submissions) {
     if (!submissions.empty()) {
         submissions.back().is_last_submission = true;
     }
     for (auto& item : sub_states_) {
         item.second->PreSubmit(submissions);
     }
-    PreSubmitResult result;
+    uint64_t last_batch_seq = 0;
     for (QueueSubmission& submission : submissions) {
         for (CommandBufferSubmission& cb_submission : submission.cb_submissions) {
             auto cb_guard = cb_submission.cb->WriteLock();
@@ -84,7 +84,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& s
         // Note that this relies on the external synchonization requirements for the
         // VkQueue
         submission.seq = ++seq_;
-        result.submission_seq = submission.seq;
+        last_batch_seq = submission.seq;
         submission.BeginUse();
         for (SemaphoreInfo& wait : submission.wait_semaphores) {
             wait.semaphore->EnqueueWait(SubmissionReference(this, submission.seq), wait.payload);
@@ -108,7 +108,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission>&& s
             }
         }
     }
-    return result;
+    return last_batch_seq;
 }
 
 void vvl::Queue::Notify(uint64_t until_seq) {
@@ -266,20 +266,14 @@ void vvl::Queue::Destroy() {
 void vvl::Queue::PostSubmit() {
     auto guard = Lock();
     if (!submissions_.empty()) {
-        PostSubmit(submissions_.back());
-    }
-}
-
-void vvl::Queue::PostSubmit(QueueSubmission& submission) {
-    for (auto& item : sub_states_) {
-        item.second->PostSubmit(submissions_);
-    }
-
-    // If dealing with external fences, the app might call vkWaitForFences, but might not and we might not know when the queue
-    // submission is done. If we find adding a "big lock" here is slow for real cases, we could have something run in a background
-    // thread calling vkGetFenceStatus to check for us. (This would require a good thing to test against)
-    if (submission.has_external_fence) {
-        submission.fence->NotifyAndWait(submission.loc.Get());
+        for (auto& item : sub_states_) {
+            item.second->PostSubmit(submissions_);
+        }
+        // Wait on the external fence because we may not be able to track when it's signaled
+        QueueSubmission& submission = submissions_.back();
+        if (submission.has_external_fence) {
+            submission.fence->NotifyAndWait(submission.loc.Get());
+        }
     }
 }
 
