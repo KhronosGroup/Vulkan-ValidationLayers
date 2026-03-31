@@ -18,6 +18,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
+#include "gpuav/debug_descriptor/debug_descriptor.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/descriptor_checks.h"
@@ -168,6 +169,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     RegisterSharedMemoryDataRaceValidation(*this, gpuav_cb_state);
     RegisterSanitizer(*this, gpuav_cb_state);
     debug_printf::RegisterDebugPrintf(*this, gpuav_cb_state);
+    debug_descriptor::RegisterDebugDescriptor(*this, gpuav_cb_state);
 }
 
 // Dedicated warning VUID that likely can be ignored.

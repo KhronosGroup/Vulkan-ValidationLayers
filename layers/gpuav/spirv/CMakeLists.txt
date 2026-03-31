@@ -33,6 +33,8 @@ target_sources(gpu_av_spirv PRIVATE
     sanitizer_pass.cpp
     shared_memory_data_race_pass.h
     shared_memory_data_race_pass.cpp
+    debug_descriptor_pass.h
+    debug_descriptor_pass.cpp
     debug_printf_pass.h
     debug_printf_pass.cpp
     post_process_descriptor_indexing_pass.h

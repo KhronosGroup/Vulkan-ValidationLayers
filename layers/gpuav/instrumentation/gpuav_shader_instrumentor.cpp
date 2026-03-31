@@ -53,6 +53,7 @@
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
+#include "gpuav/spirv/debug_descriptor_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
 #include "gpuav/spirv/sanitizer_pass.h"
@@ -1709,6 +1710,13 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     if (module.need_log_error_) {
         spirv::LogErrorPass log_error_pass(module);
         modified |= log_error_pass.Run();
+    }
+
+    // Currently we don't link anything in this pass, could move after linking if desired
+    // If we do decide to link things, we need to add ABOVE the LogErrorPass
+    if (gpuav_settings.debug_descriptor_enabled) {
+        spirv::DebugDescriptorPass pass(module, glsl::kBindingInstDebugDescriptor);
+        modified |= pass.Run();
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here

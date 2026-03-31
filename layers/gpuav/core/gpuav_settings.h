@@ -90,5 +90,8 @@ struct GpuAVSettings {
     bool debug_printf_verbose = false;
     uint32_t debug_printf_buffer_size = 1024;
 
+    bool debug_descriptor_enabled = false;
+    bool debug_descriptor_to_stdout = false;
+
     void TracyLogSettings() const;
 };

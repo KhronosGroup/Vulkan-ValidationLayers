@@ -231,6 +231,8 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Vertex attribute fetch limits
         {glsl::kBindingInstVertexAttributeFetchLimits, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        // DebugDescriptor Output buffer
+        {glsl::kBindingInstDebugDescriptor, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     assert(instrumentation_bindings_.size() == glsl::kTotalBindings);
 
@@ -468,6 +470,14 @@ void Validator::InitSettings(const Location& loc) {
             "1\nCurrently the limiation to support VK_EXT_descriptor_buffer is to use our own internal binding to inject a buffer into the shader. [Disabling debug_printf] [Disabling gpuav_shader_instrumentation]");
         gpuav_settings.debug_printf_enabled = false;
         gpuav_settings.DisableShaderInstrumentationAndOptions();
+    }
+
+    if (gpuav_settings.debug_descriptor_enabled && !IsExtEnabled(extensions.vk_ext_descriptor_buffer) &&
+        !IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        AdjustmentWarning(device, loc,
+                          "VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap were both not enabled, there is no need/reason to "
+                          "use DebugDescriptor. [Disabling debug_descriptor_enabled]");
+        gpuav_settings.debug_descriptor_enabled = false;
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully
