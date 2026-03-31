@@ -2004,24 +2004,30 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                          string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
     }
 
-    // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
         const auto view_class = vkuFormatCompatibilityClass(view_format);
         if (multiplane_image) {
-            const VkFormat compat_format =
+            // Multiplane format can only be different (with MUTABLE_FORMAT) if it is taking a plane view
+            // If taking a COLOR_ASPECT view, then it must be the same
+            if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
+                skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
+                         "%s is different from %s format (%s). Multiplane formats taking a view with VK_IMAGE_ASPECT_COLOR_BIT must have identical formats.\nIf a VK_IMAGE_ASPECT_PLANE_*_BIT aspect mask is used, it can be a different format that matches the plane.",
+                         string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
+            } else {
+                const VkFormat compat_format =
                 vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(aspect_mask));
-            const auto image_class = vkuFormatCompatibilityClass(compat_format);
-            // Need valid aspect mask otherwise will throw extra error when getting compatible format
-            // Also this can be VK_IMAGE_ASPECT_COLOR_BIT
-            const bool has_valid_aspect = IsOnlyOneValidPlaneAspect(image_format, aspect_mask);
-            if (has_valid_aspect && ((image_class != view_class) || (image_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE))) {
-                // Need to only check if one is NONE to handle edge case both are NONE
-                // View format must match the multiplane compatible format
-                skip |= LogError("VUID-VkImageViewCreateInfo-image-01586", create_info.image, create_info_loc.dot(Field::format),
+                const auto image_class = vkuFormatCompatibilityClass(compat_format);
+                // Need valid aspect mask otherwise will throw extra error when getting compatible format
+                const bool has_valid_aspect = IsOnlyOneValidPlaneAspect(image_format, aspect_mask);
+                if (has_valid_aspect && ((image_class != view_class) || (image_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE))) {
+                    // Need to only check if one is NONE to handle edge case both are NONE
+                    // View format must match the multiplane compatible format
+                    skip |= LogError("VUID-VkImageViewCreateInfo-image-01586", create_info.image, create_info_loc.dot(Field::format),
                                  "(%s) is not compatible with plane %" PRIu32 " of the %s format %s, must be compatible with %s.",
                                  string_VkFormat(view_format), vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(aspect_mask)),
                                  FormatHandle(create_info.image).c_str(), string_VkFormat(image_format),
                                  string_VkFormat(compat_format));
+                                }
             }
         } else if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
             // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
@@ -2036,15 +2042,10 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                              string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
             }
         }
-    } else {
-        // Format MUST be IDENTICAL to the format the image was created with
-        // Unless it is a multi-planar color bit aspect
-        if ((image_format != view_format) && (!multiplane_image || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
-            skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
-                             "%s is different from %s format (%s). Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT "
-                             "BIT was set on image creation.",
-                             string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
-        }
+    } else if (image_format != view_format) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
+                         "%s is different from %s format (%s). Formats must be identical unless VK_IMAGE_CREATE_MUTABLE_FORMAT was set on image creation.",
+                         string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
     }
 
     if (image_state.create_info.samples != VK_SAMPLE_COUNT_1_BIT && view_type != VK_IMAGE_VIEW_TYPE_2D &&

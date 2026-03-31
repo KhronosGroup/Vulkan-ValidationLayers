@@ -2242,3 +2242,41 @@ TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeYcbcr, MutableFullImageView) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT) &&
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+    auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, features)) {
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+
+    auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&conversion_info);
+    ivci.image = image;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01762");
+    vkt::ImageView view(*m_device, ivci);
+    m_errorMonitor->VerifyFound();
+}

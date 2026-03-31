@@ -228,13 +228,13 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     vkt::Image depth_image(*m_device, 64, 64, f_depth, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image depth_image2(*m_device, 64, 64, f_depth2, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {64, 64, 1};
-    blitRegion.dstOffsets[0] = {0, 0, 0};
-    blitRegion.dstOffsets[1] = {32, 32, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {64, 64, 1};
+    blit_region.dstOffsets[0] = {0, 0, 0};
+    blit_region.dstOffsets[1] = {32, 32, 1};
 
     m_command_buffer.Begin();
 
@@ -243,14 +243,15 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     if (usrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (fdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
     vk::CmdBlitImage(m_command_buffer, unsigned_image, VK_IMAGE_LAYOUT_GENERAL, float_image, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkImageBlit2 blit_region_2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blit_region.srcSubresource,         {blit_region.srcOffsets[0], blit_region.srcOffsets[1]},
+            blit_region.dstSubresource,         {blit_region.dstOffsets[0], blit_region.dstOffsets[1]}};
         const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
                                                    NULL,
                                                    unsigned_image,
@@ -258,7 +259,7 @@ TEST_F(NegativeImage, BlitFormatTypes) {
                                                    float_image,
                                                    VK_IMAGE_LAYOUT_GENERAL,
                                                    1,
-                                                   &blitRegion2,
+                                                   &blit_region_2,
                                                    VK_FILTER_NEAREST};
         // Unsigned int vs not an int
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00230");
@@ -272,14 +273,15 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (udst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
     vk::CmdBlitImage(m_command_buffer, float_image, VK_IMAGE_LAYOUT_GENERAL, unsigned_image, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkImageBlit2 blit_region_2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blit_region.srcSubresource,         {blit_region.srcOffsets[0], blit_region.srcOffsets[1]},
+            blit_region.dstSubresource,         {blit_region.dstOffsets[0], blit_region.dstOffsets[1]}};
         const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
                                                    NULL,
                                                    float_image,
@@ -287,7 +289,7 @@ TEST_F(NegativeImage, BlitFormatTypes) {
                                                    unsigned_image,
                                                    VK_IMAGE_LAYOUT_GENERAL,
                                                    1,
-                                                   &blitRegion2,
+                                                   &blit_region_2,
                                                    VK_FILTER_NEAREST};
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00230");
         if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-srcImage-01999");
@@ -300,15 +302,16 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00229");
     if (ssrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (fdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
-    vk::CmdBlitImage(m_command_buffer, signed_image, VK_IMAGE_LAYOUT_GENERAL, float_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, signed_image, VK_IMAGE_LAYOUT_GENERAL, float_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkImageBlit2 blit_region_2 = {
+            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+            blit_region.srcSubresource,         {blit_region.srcOffsets[0], blit_region.srcOffsets[1]},
+            blit_region.dstSubresource,         {blit_region.dstOffsets[0], blit_region.dstOffsets[1]}};
         const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
                                                    NULL,
                                                    signed_image,
@@ -316,7 +319,7 @@ TEST_F(NegativeImage, BlitFormatTypes) {
                                                    float_image,
                                                    VK_IMAGE_LAYOUT_GENERAL,
                                                    1,
-                                                   &blitRegion2,
+                                                   &blit_region_2,
                                                    VK_FILTER_NEAREST};
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00229");
         if (ssrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-srcImage-01999");
@@ -328,7 +331,7 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00229");
     if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (sdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
-    vk::CmdBlitImage(m_command_buffer, float_image, VK_IMAGE_LAYOUT_GENERAL, signed_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, float_image, VK_IMAGE_LAYOUT_GENERAL, signed_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
@@ -338,14 +341,14 @@ TEST_F(NegativeImage, BlitFormatTypes) {
     if (ssrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (udst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
     vk::CmdBlitImage(m_command_buffer, signed_image, VK_IMAGE_LAYOUT_GENERAL, unsigned_image, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00229");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00230");
     if (usrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (sdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
     vk::CmdBlitImage(m_command_buffer, unsigned_image, VK_IMAGE_LAYOUT_GENERAL, signed_image, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     if (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) &&
@@ -362,7 +365,7 @@ TEST_F(NegativeImage, BlitFormatTypes) {
         if (ycbcrsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
         if (ycbcrdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
         vk::CmdBlitImage(m_command_buffer, ycbcr_image, VK_IMAGE_LAYOUT_GENERAL, ycbcr_image_2, VK_IMAGE_LAYOUT_GENERAL, 1,
-                         &blitRegion, VK_FILTER_NEAREST);
+                         &blit_region, VK_FILTER_NEAREST);
         m_errorMonitor->VerifyFound();
     } else {
         printf("Requested ycbcr format not supported - skipping test case.\n");
@@ -370,11 +373,11 @@ TEST_F(NegativeImage, BlitFormatTypes) {
 
     // Depth vs any non-identical depth format
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00231");
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     if (d2src) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
     if (d1dst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
-    vk::CmdBlitImage(m_command_buffer, depth_image2, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, depth_image2, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
@@ -407,20 +410,20 @@ TEST_F(NegativeImage, BlitFilters) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     vkt::Image src3D(*m_device, ci, vkt::set_layout);
 
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {48, 48, 1};
-    blitRegion.dstOffsets[0] = {0, 0, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {48, 48, 1};
+    blit_region.dstOffsets[0] = {0, 0, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
 
     // UINT format should not support linear filtering, but check to be sure
     if (!FormatFeaturesAreSupported(Gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-filter-02001");
-        vk::CmdBlitImage(m_command_buffer, src2D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+        vk::CmdBlitImage(m_command_buffer, src2D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                          VK_FILTER_LINEAR);
         m_errorMonitor->VerifyFound();
     }
@@ -429,14 +432,14 @@ TEST_F(NegativeImage, BlitFilters) {
         !FormatFeaturesAreSupported(Gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG)) {
         // Invalid filter CUBIC_IMG
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-filter-02002");
-        vk::CmdBlitImage(m_command_buffer, src2D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+        vk::CmdBlitImage(m_command_buffer, src2D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                          VK_FILTER_CUBIC_IMG);
         m_errorMonitor->VerifyFound();
 
         // Invalid filter CUBIC_IMG + invalid 2D source image
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-filter-02002");
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-filter-00237");
-        vk::CmdBlitImage(m_command_buffer, src3D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+        vk::CmdBlitImage(m_command_buffer, src3D, VK_IMAGE_LAYOUT_GENERAL, dst2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                          VK_FILTER_CUBIC_IMG);
         m_errorMonitor->VerifyFound();
     }
@@ -637,88 +640,88 @@ TEST_F(NegativeImage, MiscBlitTests) {
     ci.extent = {64, 64, 8};
     vkt::Image color_3D_img(*m_device, ci);
 
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {16, 16, 1};
-    blitRegion.dstOffsets[0] = {32, 32, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
 
     // Blit with aspectMask errors
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-aspectMask-00241");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-aspectMask-00242");
-    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid src mip level
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.mipLevel = ci.mipLevels;
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.srcSubresource.mipLevel = ci.mipLevels;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01705");  // invalid srcSubresource.mipLevel
     // Redundant unavoidable errors
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00243");  // out-of-bounds srcOffset.x
-    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid dst mip level
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.mipLevel = ci.mipLevels;
+    blit_region.srcSubresource.mipLevel = 0;
+    blit_region.dstSubresource.mipLevel = ci.mipLevels;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstSubresource-01706");  // invalid dstSubresource.mipLevel
     // Redundant unavoidable errors
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00248");  // out-of-bounds dstOffset.x
-    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid src array layer
-    blitRegion.dstSubresource.mipLevel = 0;
-    blitRegion.srcSubresource.baseArrayLayer = ci.arrayLayers;
+    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcSubresource.baseArrayLayer = ci.arrayLayers;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01707");  // invalid srcSubresource layer range
-    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid dst array layer
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.baseArrayLayer = ci.arrayLayers;
+    blit_region.srcSubresource.baseArrayLayer = 0;
+    blit_region.dstSubresource.baseArrayLayer = ci.arrayLayers;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstSubresource-01708");  // invalid dstSubresource layer range
                                                                                   // Redundant unavoidable errors
-    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blit_region.dstSubresource.baseArrayLayer = 0;
 
     // Blit multi-sample image
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00233");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00234");
-    vk::CmdBlitImage(m_command_buffer, ms_img, VK_IMAGE_LAYOUT_GENERAL, ms_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, ms_img, VK_IMAGE_LAYOUT_GENERAL, ms_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit 3D with baseArrayLayer != 0 or layerCount != 1
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 1;
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.srcSubresource.baseArrayLayer = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01707");  // base+count > total layer count
-    vk::CmdBlitImage(m_command_buffer, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 0;
+    blit_region.srcSubresource.baseArrayLayer = 0;
+    blit_region.srcSubresource.layerCount = 0;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
     m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-layerCount-01700");  // layer count == 0 (src)
     m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08800");               // src/dst layer count mismatch
-    vk::CmdBlitImage(m_command_buffer, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, color_3D_img, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -775,21 +778,21 @@ TEST_F(NegativeImage, BlitRemainingArrayLayers) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image image(*m_device, ci);
 
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 1;
-    blitRegion.dstSubresource.layerCount = 3;  // should be 2
-    blitRegion.dstSubresource.mipLevel = 0;
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {16, 16, 1};
-    blitRegion.dstOffsets[0] = {32, 32, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_region.dstSubresource.baseArrayLayer = 1;
+    blit_region.dstSubresource.layerCount = 3;  // should be 2
+    blit_region.dstSubresource.mipLevel = 0;
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08801");
-    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 }
@@ -806,15 +809,8 @@ TEST_F(NegativeImage, BlitBothRemainingArrayLayers) {
         GTEST_SKIP() << "No blit feature format support";
     }
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = f_color;
-    ci.extent = {64, 64, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 4;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageCreateInfo ci =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 4, f_color, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, ci);
 
     VkImageBlit blit_region = {};
@@ -850,21 +846,21 @@ TEST_F(NegativeImage, BlitToDepth) {
     // 2D depth image
     vkt::Image depth_img(*m_device, 64, 64, f_depth, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {16, 16, 1};
-    blitRegion.dstOffsets[0] = {32, 32, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {16, 16, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
+    blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
 
     // Blit depth image - has SRC_BIT but not DST_BIT
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blit_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-02000");
-    vk::CmdBlitImage(m_command_buffer, depth_img, VK_IMAGE_LAYOUT_GENERAL, depth_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer, depth_img, VK_IMAGE_LAYOUT_GENERAL, depth_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
@@ -1137,7 +1133,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         "VUID-VkImageViewCreateInfo-usage-02277",  // Needs to be last since needs special format
     };
 
-    VkFormatProperties formatProps;
+    VkFormatProperties format_props;
 
     // All but one test in this loop and do last test after for special format case
     uint32_t i = 0;
@@ -1145,16 +1141,16 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         // Modify formats to have mismatched features
 
         // Format for image
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
-        formatProps.optimalTilingFeatures |= features[i];
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
+        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &format_props);
+        format_props.optimalTilingFeatures |= features[i];
+        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, format_props);
 
-        memset(&formatProps, 0, sizeof(formatProps));
+        memset(&format_props, 0, sizeof(format_props));
 
         // Format for view
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &formatProps);
-        formatProps.optimalTilingFeatures = features[(i + 1) % feature_count];
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, formatProps);
+        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &format_props);
+        format_props.optimalTilingFeatures = features[(i + 1) % feature_count];
+        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, format_props);
 
         // Create image with modified format
         auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT, usages[i]);
@@ -1181,16 +1177,16 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     // Modify formats to have mismatched features
 
     // Format for image
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, &formatProps);
-    formatProps.optimalTilingFeatures |= features[i];
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, &format_props);
+    format_props.optimalTilingFeatures |= features[i];
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, format_props);
 
-    memset(&formatProps, 0, sizeof(formatProps));
+    memset(&format_props, 0, sizeof(format_props));
 
     // Format for view
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, &formatProps);
-    formatProps.optimalTilingFeatures = features[(i + 1) % feature_count];
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, &format_props);
+    format_props.optimalTilingFeatures = features[(i + 1) % feature_count];
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, format_props);
 
     // Create image with modified format
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_D24_UNORM_S8_UINT, usages[i]);
@@ -1222,14 +1218,14 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    VkFormatProperties formatProps;
+    VkFormatProperties format_props;
 
     // Ensure image format claims support for sampled and storage, excludes color attachment
-    memset(&formatProps, 0, sizeof(formatProps));
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
-    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
+    memset(&format_props, 0, sizeof(format_props));
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &format_props);
+    format_props.optimalTilingFeatures |= (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+    format_props.optimalTilingFeatures = format_props.optimalTilingFeatures & ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, format_props);
 
     // Create image with sampled and storage usages
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT,
@@ -1238,11 +1234,11 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     // Force the imageview format to exclude storage feature, include color attachment
-    memset(&formatProps, 0, sizeof(formatProps));
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, formatProps);
+    memset(&format_props, 0, sizeof(format_props));
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &format_props);
+    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    format_props.optimalTilingFeatures = (format_props.optimalTilingFeatures & ~VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, format_props);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image;
@@ -1665,23 +1661,22 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
 
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
-    VkFormatProperties formatProps;
+    VkFormatProperties format_props;
 
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, &format_props);
+    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, format_props);
 
     vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.image = image;
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.format = depth_format;
-    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.image = image;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = depth_format;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // Can't use depth format for view into color image - Expect INVALID_FORMAT
-    CreateImageViewTest(imgViewInfo,
-                        "Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01762");
 }
 
 TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
@@ -1696,21 +1691,21 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
 
     vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    VkFormatProperties formatProps;
+    VkFormatProperties format_props;
 
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, &format_props);
+    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, format_props);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.image = image;
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UINT;
-    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.image = image;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_B8G8R8A8_UINT;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // Same compatibility class but no MUTABLE_FORMAT bit - Expect
     // VIEW_CREATE_ERROR
-    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01762");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01762");
 }
 
 TEST_F(NegativeImage, ImageViewDifferentClass) {
@@ -1726,12 +1721,12 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;  // different than createImage
-    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    imgViewInfo.image = mutImage;
-    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;  // different than createImage
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    view_ci.image = mutImage;
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01761");
 
     // Use CUBE_ARRAY without feature enabled
     {
@@ -1739,11 +1734,11 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
         image_ci.arrayLayers = 6;
         vkt::Image cubeImage(*m_device, image_ci);
 
-        imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-        imgViewInfo.format = VK_FORMAT_R8_UINT;  // compatiable format
-        imgViewInfo.image = cubeImage;
+        view_ci.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        view_ci.format = VK_FORMAT_R8_UINT;  // compatiable format
+        view_ci.image = cubeImage;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-viewType-02961");
-        CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
+        CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-viewType-01004");
     }
 }
 
@@ -2740,15 +2735,15 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    imgViewInfo.image = mutImage;
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    view_ci.image = mutImage;
 
     // The Image's format is non-planar and incompatible with the ImageView's format, which should trigger
     // VUID-VkImageViewCreateInfo-image-01761
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
+    view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01761");
 }
 
 TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
@@ -2763,13 +2758,13 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
-    imgViewInfo.image = mutImage;
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    view_ci.image = mutImage;
     // "Each depth/stencil format is only compatible with itself."
-    imgViewInfo.format = depthOnlyFormat;
-    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
+    view_ci.format = depthOnlyFormat;
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01761");
 }
 
 TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
