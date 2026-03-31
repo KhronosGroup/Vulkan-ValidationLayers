@@ -160,6 +160,9 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV
         // so they can be re-used
         VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
+        // We need to lock the pipelines when doig GPL
+        // while we have one in vvl::ShaderModule GPL needs it also at the pipeline library scope
+        std::mutex mutex;
     } instrumentation_data;
 
     Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
