@@ -117,6 +117,8 @@ class Validator : public GpuShaderInstrumentor {
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj,
                                                   chassis::CmdBindDescriptorBuffers& chassis_state) final;
+    void PreCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
+                                     const RecordObject& record_obj) final;
 
     void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound, const Location& loc);
 
@@ -294,7 +296,7 @@ class Validator : public GpuShaderInstrumentor {
     // VK_EXT_descriptor_heap global tracking
     struct ResourceHeap {
         const vvl::Buffer* buffer_state_ = nullptr;
-        VkDeviceSize reserved_offset_ = 0;
+        VkDeviceSize size_ = 0;
     } resource_heap;
 
     vko::Buffer& GetGlobalDescriptorBuffer();

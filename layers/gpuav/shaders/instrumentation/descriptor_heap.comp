@@ -1,0 +1,125 @@
+// Copyright (c) 2025-2026 The Khronos Group Inc.
+// Copyright (c) 2025-2026 Valve Corporation
+// Copyright (c) 2025-2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+struct Data {
+    uint meta;
+    uint variable_id;
+    uint inst_offset;
+    uint byte_offset;
+};
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeapPostProcess, scalar) buffer PostProcessSSBO {
+    Data slot[]; // PostProcessDescriptorHeapSlot
+} gpuav;
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorHeapValidDescriptors, scalar) buffer ValidDescriptors {
+    uint resource_heap_size;
+    uint resource_reserved_offset;
+    uint resource_reserved_size;
+    uint sampler_heap_size;
+    uint sampler_reserved_offset;
+    uint sampler_reserved_size;
+    uint descriptors[];
+} heap;
+
+void inst_descriptor_heap(const uint inst_offset, const uint byte_offset, const uint slot_index, const uint variable_id) {
+    const uint cmd_id = inst_error_logger_index_buffer.index[0] << kPostProcessMetaShiftErrorLoggerIndex;
+    gpuav.slot[slot_index].meta = kPostProcessMetaMaskAccessed | cmd_id | SpecConstantLinkShaderId;
+    gpuav.slot[slot_index].variable_id = variable_id;
+    gpuav.slot[slot_index].inst_offset = inst_offset;
+    gpuav.slot[slot_index].byte_offset = byte_offset;
+}
+
+void inst_descriptor(const uint inst_offset, const uint descriptor_type, const int array_stride, const int offset, const uint alignment, const uint descriptor_error, const uint alignment_error) {
+    if (((array_stride * offset) % alignment) != 0) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (alignment_error << kErrorSubCode_Shift),
+                            array_stride,
+                            offset,
+                            alignment
+                        );
+    } else if ((heap.descriptors[offset] & descriptor_type) != descriptor_type) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (descriptor_error << kErrorSubCode_Shift),
+                            offset,
+                            descriptor_type,
+                            heap.descriptors[offset]
+                        );
+    }
+    if ((descriptor_type & kDescriptorHeapSampler) != 0) {
+	    uint heap_offset = array_stride * offset;
+	    if (heap_offset >= heap.sampler_heap_size) {
+            error_payload = ErrorPayload(
+                                inst_offset,
+                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (kErrorSubCode_HeapSamplerOOB << kErrorSubCode_Shift),
+                                heap_offset,
+                                heap.sampler_heap_size,
+                                0
+            );
+		} else if (heap_offset >= heap.sampler_reserved_offset && heap_offset < heap.sampler_reserved_offset + heap.sampler_reserved_size) {
+            error_payload = ErrorPayload(
+                                inst_offset,
+                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (kErrorSubCode_HeapSamplerReservedRange << kErrorSubCode_Shift),
+                                heap_offset,
+                                heap.sampler_reserved_offset,
+                                heap.sampler_reserved_size
+            );
+		}
+    } else {
+	    uint heap_offset = array_stride * offset;
+	    if (heap_offset >= heap.resource_heap_size) {
+            error_payload = ErrorPayload(
+                                inst_offset,
+                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (kErrorSubCode_HeapResourceOOB << kErrorSubCode_Shift),
+                                heap_offset,
+                                heap.resource_heap_size,
+                                0
+            );
+		} else if (heap_offset >= heap.resource_reserved_offset && heap_offset < heap.resource_reserved_offset + heap.resource_reserved_size) {
+            error_payload = ErrorPayload(
+                                inst_offset,
+                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (kErrorSubCode_HeapResourceReservedRange << kErrorSubCode_Shift),
+                                heap_offset,
+                                heap.resource_reserved_offset,
+                                heap.resource_reserved_size
+            );
+		}
+	}
+    if ((heap.descriptors[offset] & (kDescriptorHeapUnregisteredCustomBorder | kDescriptorHeapCustomBorderDifferentColor)) != 0) {
+        uint error_sub_code = 0;
+        if ((heap.descriptors[offset] & kDescriptorHeapUnregisteredCustomBorder) != 0) {
+            error_sub_code = kErrorSubCode_HeapUnregisteredCustomBorderColor;
+        } else {
+            error_sub_code = kErrorSubCode_HeapDifferentCustomBorderColor;
+        }
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorHeap << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift),
+                            offset,
+                            0,
+                            0
+        );
+    }
+}

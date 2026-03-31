@@ -33,7 +33,8 @@ bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
     return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
            shader_instrumentation.ray_query || shader_instrumentation.ray_hit_object || shader_instrumentation.mesh_shading ||
            shader_instrumentation.post_process_descriptor_indexing || shader_instrumentation.vertex_attribute_fetch_oob ||
-           shader_instrumentation.sanitizer || shader_instrumentation.shared_memory_data_race;
+           shader_instrumentation.sanitizer || shader_instrumentation.shared_memory_data_race ||
+           shader_instrumentation.descriptor_heap;
 }
 bool GpuAVSettings::IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
 
@@ -48,6 +49,7 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
     shader_instrumentation.vertex_attribute_fetch_oob = false;
     shader_instrumentation.sanitizer = false;
     shader_instrumentation.shared_memory_data_race = false;
+    shader_instrumentation.descriptor_heap = false;
     // Because of this setting, cannot really have an "enabled" parameter to pass to this method
     select_instrumented_shaders = false;
 }

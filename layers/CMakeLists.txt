@@ -256,6 +256,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_vuid_maps.h
     core_checks/cc_wsi.cpp
     core_checks/cc_ycbcr.cpp
+    drawdispatch/descriptor_heap_validator.cpp
+    drawdispatch/descriptor_heap_validator.h
     drawdispatch/descriptor_validator.cpp
     drawdispatch/descriptor_validator.h
     drawdispatch/drawdispatch_vuids.cpp
@@ -338,6 +340,8 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/descriptor_checks.cpp
     gpuav/instrumentation/mesh_shading.cpp
     gpuav/instrumentation/post_process_descriptor_indexing.cpp
+    gpuav/instrumentation/post_process_descriptor_heap.h
+    gpuav/instrumentation/post_process_descriptor_heap.cpp
     gpuav/instrumentation/ray_query.cpp
     gpuav/instrumentation/ray_hit_object.cpp
     gpuav/instrumentation/register_validation.h

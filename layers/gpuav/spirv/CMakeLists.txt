@@ -23,6 +23,8 @@ target_sources(gpu_av_spirv PRIVATE
     descriptor_class_general_buffer_pass.cpp
     descriptor_class_texel_buffer_pass.h
     descriptor_class_texel_buffer_pass.cpp
+    descriptor_heap_pass.h
+    descriptor_heap_pass.cpp
     buffer_device_address_pass.h
     buffer_device_address_pass.cpp
     ray_query_pass.h

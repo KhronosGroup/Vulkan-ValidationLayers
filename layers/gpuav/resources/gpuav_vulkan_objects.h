@@ -21,6 +21,7 @@
 
 #include <typeinfo>
 #include <vector>
+#include <memory>
 #include "containers/custom_containers.h"
 #include "containers/range.h"
 
@@ -323,6 +324,26 @@ class SharedResourcesCache {
     vvl::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
 };
+
+struct IndirectKey {
+    bool shader_record;
+    uint32_t push_offset;
+    uint32_t address_offset;
+    bool operator==(const IndirectKey &other) const noexcept {
+        return shader_record == other.shader_record && push_offset == other.push_offset && address_offset == other.address_offset;
+    }
+};
+
+struct IndirectKeyHash {
+    size_t operator()(const gpuav::vko::IndirectKey &k) const noexcept {
+        size_t h1 = std::hash<bool>{}(k.shader_record);
+        size_t h2 = std::hash<uint32_t>{}(k.push_offset);
+        size_t h3 = std::hash<uint32_t>{}(k.address_offset);
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
+};
+
+using IndirectAccessMap = std::shared_ptr<vvl::unordered_map<gpuav::vko::IndirectKey, gpuav::vko::StagingBuffer, IndirectKeyHash>>;
 
 }  // namespace vko
 
