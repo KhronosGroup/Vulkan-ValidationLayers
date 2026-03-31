@@ -1374,6 +1374,10 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             continue;
         }
 
+        // without this, would get ASAN for things like
+        //   modified_lib->instrumentation_data.shader_modules.emplace_back()
+        std::unique_lock<std::mutex> lib_lock(modified_lib->instrumentation_data.mutex);
+
         // If a library is used to create multiple executable pipelines, we don't want to instrument it again.
         // Check that there is indeed an instrumented_pipeline_lib:
         // The library could be considered instrumented if itself it was made up of instrumented libraries,
