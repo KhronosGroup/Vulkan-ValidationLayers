@@ -4453,8 +4453,8 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 
     auto queue_state = Get<Queue>(queue);
     queue_state->is_used_for_presentation = true;
-    PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
-    const SubmissionReference present_submission_ref(queue_state.get(), result.submission_seq);
+    const uint64_t last_present_seq = queue_state->PreSubmit(std::move(present_submissions));
+    const SubmissionReference present_submission_ref(queue_state.get(), last_present_seq);
 
     if (!queue_state->is_used_for_regular_submits) {
         queue_state->UpdatePresentOnlyQueueProgress(*this);
@@ -4476,7 +4476,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         // If the present timing queue reports as full, any waits would have been enqueued and therefore need to
         // be tracked here, however the presentation will be dropped
         if (local_result == VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT) {
-            queue_state->Notify(result.submission_seq);
+            queue_state->Notify(last_present_seq);
             for (const auto& semaphore : present_wait_semaphores) {
                 semaphore->ClearSwapchainWaitInfo();
             }
@@ -4511,9 +4511,9 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref, present_wait_semaphores);
     }
 
-    // wait on fence as we don't know when it will be signaled if external
+    // Wait on the external fence because we may not be able to track when it's signaled
     if (has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
+        queue_state->NotifyAndWait(record_obj.location, last_present_seq);
     }
 }
 

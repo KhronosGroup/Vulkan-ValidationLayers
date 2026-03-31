@@ -130,11 +130,6 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
     return std::chrono::steady_clock::now() + std::chrono::seconds(timeout_seconds);
 }
 
-struct PreSubmitResult {
-    uint64_t last_submission_seq = 0;
-    uint64_t submission_seq = 0;
-};
-
 class Queue : public StateObject, public SubStateManager<QueueSubState> {
   public:
     Queue(DeviceState& device_state, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
@@ -152,9 +147,11 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
     VkQueueFlags GetQueueFlags() const { return queue_family_properties_.queueFlags; }
 
-    // called from the various PreCallRecordQueueSubmit() methods
-    PreSubmitResult PreSubmit(std::vector<QueueSubmission> &&submissions);
-    // called from the various PostCallRecordQueueSubmit() methods
+    // Called from the various PreCallRecordQueueSubmit() methods.
+    // Returns seq number associated with the last QueueSubmission batch
+    uint64_t PreSubmit(std::vector<QueueSubmission>&& submissions);
+
+    // Called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit();
 
     // Tell the queue thread that submissions up to and including the submission with
@@ -205,9 +202,6 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     const std::deque<QueueSubmission> &Submissions() { return submissions_; }
 
   protected:
-    // called from the various PostCallRecordQueueSubmit() methods
-    void PostSubmit(QueueSubmission &submission);
-
     // called when the worker thread decides a submissions has finished executing
     void Retire(QueueSubmission &submission);
 
