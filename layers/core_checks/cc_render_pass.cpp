@@ -3061,20 +3061,6 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                 }
             }
         }
-
-        if (resolve_view_state->normalized_subresource_range.layerCount !=
-            image_view_state.normalized_subresource_range.layerCount) {
-            const LogObjectList objlist(commandBuffer, attachment_info.imageView, attachment_info.resolveImageView);
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8173
-            skip |= LogError(
-                "UNASSIGNED-VkRenderingAttachmentInfo-layerCount", commandBuffer, attachment_loc.dot(Field::imageView),
-                "(%s) was created with layerCount %s which is not equal to resolveImageView (%s) layerCount %s",
-                FormatHandle(attachment_info.imageView).c_str(),
-                string_LayerCount(image_view_state.image_state->create_info, image_view_state.create_info.subresourceRange).c_str(),
-                FormatHandle(attachment_info.resolveImageView).c_str(),
-                string_LayerCount(resolve_view_state->image_state->create_info, resolve_view_state->create_info.subresourceRange)
-                    .c_str());
-        }
     }
 
     if (attachment_info.resolveImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
