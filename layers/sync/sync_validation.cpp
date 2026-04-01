@@ -39,7 +39,7 @@ static bool GetShowStatsEnvVar() {
     return !show_stats_str.empty() && std::atoi(show_stats_str.c_str()) != 0;
 }
 
-SyncValidator::SyncValidator(vvl::dispatch::Device* dev, syncval::Instance* instance_vo)
+SyncValidator::SyncValidator(vvl::DispatchDevice* dev, syncval::Instance* instance_vo)
     : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this), report_stats_(GetShowStatsEnvVar()) {}
 
 SyncValidator::~SyncValidator() {

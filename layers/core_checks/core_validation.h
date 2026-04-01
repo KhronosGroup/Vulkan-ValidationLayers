@@ -68,14 +68,12 @@ class ValidationCache;
 
 namespace core {
 class Instance : public vvl::InstanceProxy {
-    using BaseClass = vvl::InstanceProxy;
-
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeCoreValidation) {}
+    Instance(vvl::DispatchInstance* dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeCoreValidation) {}
 
     bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
                                           const ErrorObject& error_obj) const override;
@@ -209,8 +207,6 @@ bool ValidateVideoProfileListInfo(const StateObject& state, const VkVideoProfile
 }  // namespace core
 
 class CoreChecks : public vvl::DeviceProxy {
-    using BaseClass = vvl::DeviceProxy;
-
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;
@@ -230,8 +226,8 @@ class CoreChecks : public vvl::DeviceProxy {
     spv_target_env spirv_environment;
     stateless::SpirvValidator stateless_spirv_validator;
 
-    CoreChecks(vvl::dispatch::Device* dev, core::Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeCoreValidation),
+    CoreChecks(vvl::DispatchDevice* dev, core::Instance* instance_vo)
+        : vvl::DeviceProxy(dev, instance_vo, LayerObjectTypeCoreValidation),
           stateless_spirv_validator(dev->debug_report, dev->stateless_device_data, dev->settings.disabled[shader_validation]) {}
 
     ReadLockGuard ReadLock() const override;

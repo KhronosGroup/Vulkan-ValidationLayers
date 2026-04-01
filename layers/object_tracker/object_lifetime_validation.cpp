@@ -29,7 +29,7 @@ namespace object_lifetimes {
 static std::shared_mutex lifetime_set_mutex;
 static vvl::unordered_set<Tracker*> lifetime_set;
 
-Instance::Instance(vvl::dispatch::Instance* dispatch)
+Instance::Instance(vvl::DispatchInstance* dispatch)
     : BaseInstance(dispatch, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
@@ -40,7 +40,7 @@ Instance::~Instance() {
     lifetime_set.erase(&tracker);
 }
 
-Device::Device(vvl::dispatch::Device* dev, Instance* instance)
+Device::Device(vvl::DispatchDevice* dev, Instance* instance)
     : BaseDevice(dev, instance, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
@@ -726,7 +726,7 @@ bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAlloc
                      string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
-        auto device_data = vvl::dispatch::GetData(device);
+        auto device_data = vvl::GetDispatchDevice(device);
         auto obj_lifetimes_data = static_cast<Device*>(device_data->GetValidationObject(container_type));
         skip |= obj_lifetimes_data->ReportUndestroyedObjects(error_obj.location);
 

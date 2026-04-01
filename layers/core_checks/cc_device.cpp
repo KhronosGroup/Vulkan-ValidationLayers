@@ -319,7 +319,7 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
 }
 
 void CoreChecks::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
-    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
+    vvl::DeviceProxy::FinishDeviceSetup(pCreateInfo, loc);
 
     spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
     AdjustValidatorOptions(extensions, enabled_features, spirv_environment, spirv_val_options, &spirv_val_option_hash,
@@ -357,7 +357,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
                                             const RecordObject& record_obj) {
     if (!device) return;
 
-    BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    vvl::DeviceProxy::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
     if (core_validation_cache) {
         Location loc(Func::vkDestroyDevice);

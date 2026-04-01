@@ -23,18 +23,16 @@ namespace gpudump {
 
 class Instance : public vvl::InstanceProxy {
   public:
-    Instance(vvl::dispatch::Instance* dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeGpuDump) {}
+    Instance(vvl::DispatchInstance* dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeGpuDump) {}
 };
 
 class GpuDump : public vvl::DeviceProxy {
-    using BaseClass = vvl::DeviceProxy;
-
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    GpuDump(vvl::dispatch::Device* dev, gpudump::Instance* instance_vo);
+    GpuDump(vvl::DispatchDevice* dev, gpudump::Instance* instance_vo);
     ~GpuDump();
 
     void Created(vvl::CommandBuffer& cb_state) override;

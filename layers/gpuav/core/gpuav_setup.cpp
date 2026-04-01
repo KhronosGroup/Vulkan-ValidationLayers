@@ -194,7 +194,7 @@ static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical
 void Instance::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                          vku::safe_VkDeviceCreateInfo* modified_create_info) {
-    BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
+    InstanceProxy::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
 
     // GPU-AV requirements not met, exit early or future Vulkan calls may be invalid
     if (api_version < VK_API_VERSION_1_1) {
@@ -238,7 +238,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
 
     // TODO - Now that GPU-AV and DebugPrintf are merged, we should just have a single FinishDeviceSetup if possible (or at least
     // better divide what belongs where as it is easy to mess)
-    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
+    GpuShaderInstrumentor::FinishDeviceSetup(pCreateInfo, loc);
     // We might fail in parent class device creation if global requirements are not met
     if (aborted_) {
         return;

@@ -87,7 +87,7 @@ namespace vvl {
 class BaseInstance : public Logger {
   public:
     const APIVersion api_version;
-    vvl::dispatch::Instance* dispatch_instance_{};
+    DispatchInstance* dispatch_instance_{};
 
     DeviceExtensions extensions;
     const GlobalSettings& global_settings;
@@ -101,7 +101,7 @@ class BaseInstance : public Logger {
     VkInstance instance = VK_NULL_HANDLE;
     const LayerObjectTypeId container_type;
 
-    BaseInstance(vvl::dispatch::Instance* instance, LayerObjectTypeId type_id)
+    BaseInstance(DispatchInstance* instance, LayerObjectTypeId type_id)
         : Logger(instance->debug_report),
           api_version(instance->api_version),
           dispatch_instance_(instance),
@@ -140,8 +140,8 @@ class BaseInstance : public Logger {
 class BaseDevice : public Logger {
   public:
     const APIVersion api_version;
-    vvl::dispatch::Instance* dispatch_instance_{};
-    vvl::dispatch::Device* dispatch_device_{};
+    DispatchInstance* dispatch_instance_{};
+    DispatchDevice* dispatch_device_{};
 
     DeviceExtensions extensions;
     const DeviceFeatures& enabled_features;
@@ -173,7 +173,7 @@ class BaseDevice : public Logger {
     // the lock that protects Record itself in order to avoid mutual waiting.
     static thread_local WriteLockGuard* record_guard;
 
-    BaseDevice(vvl::dispatch::Device* dispatch_dev, BaseInstance* instance, LayerObjectTypeId type_id)
+    BaseDevice(DispatchDevice* dispatch_dev, BaseInstance* instance, LayerObjectTypeId type_id)
         : Logger(dispatch_dev->debug_report),
           api_version(dispatch_dev->api_version),
           dispatch_instance_(dispatch_dev->dispatch_instance),

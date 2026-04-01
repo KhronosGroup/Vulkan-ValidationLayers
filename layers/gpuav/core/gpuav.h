@@ -43,10 +43,8 @@ class QueueSubState;
 namespace gpuav {
 
 class Instance : public vvl::InstanceProxy {
-    using BaseClass = vvl::InstanceProxy;
-
   public:
-    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}
+    Instance(vvl::DispatchInstance* dispatch) : InstanceProxy(dispatch, LayerObjectTypeGpuAssisted) {}
 
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
@@ -66,14 +64,13 @@ class Instance : public vvl::InstanceProxy {
 };
 
 class Validator : public GpuShaderInstrumentor {
-    using BaseClass = GpuShaderInstrumentor;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
   public:
-    Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted),
+    Validator(vvl::DispatchDevice* dev, Instance* instance_vo)
+        : GpuShaderInstrumentor(dev, instance_vo, LayerObjectTypeGpuAssisted),
           global_indices_buffer_(*this),
           global_resource_descriptor_buffer_(*this),
           global_resource_descriptor_heap_(*this),

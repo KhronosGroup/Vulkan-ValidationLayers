@@ -91,14 +91,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     }
 
     assert(physicalDevice);
-    auto layer_data = vvl::dispatch::GetData(physicalDevice);
+    auto layer_data = vvl::GetDispatchInstance(physicalDevice);
     return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
 }
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                         VkPhysicalDevice* pPhysicalDevices) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDevices, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -142,7 +142,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -185,7 +185,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
                                                              VkFormatProperties* pFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -230,7 +230,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
                                                                       VkImageFormatProperties* pImageFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -279,7 +279,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -323,7 +323,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
                                                                   VkQueueFamilyProperties* pQueueFamilyProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -370,7 +370,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
                                                              VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -412,7 +412,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceQueue, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -459,7 +459,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyI
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -527,7 +527,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
 VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueWaitIdle, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -580,7 +580,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
 VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDeviceWaitIdle, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -634,7 +634,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAll
                                               const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -681,7 +681,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAll
 VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -726,7 +726,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory,
                                          VkMemoryMapFlags flags, void** ppData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -773,7 +773,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory,
 VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnmapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -818,7 +818,7 @@ VKAPI_ATTR VkResult VKAPI_CALL FlushMappedMemoryRanges(VkDevice device, uint32_t
                                                        const VkMappedMemoryRange* pMemoryRanges) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFlushMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -866,7 +866,7 @@ VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(VkDevice device, uin
                                                             const VkMappedMemoryRange* pMemoryRanges) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkInvalidateMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -914,7 +914,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(VkDevice device, VkDeviceMe
                                                      VkDeviceSize* pCommittedMemoryInBytes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryCommitment, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -959,7 +959,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer
                                                 VkDeviceSize memoryOffset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1006,7 +1006,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1054,7 +1054,7 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
                                                        VkMemoryRequirements* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1098,7 +1098,7 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1143,7 +1143,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
                                                             VkSparseImageMemoryRequirements* pSparseMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1194,7 +1194,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
                                                                         VkSparseImageFormatProperties* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -1241,7 +1241,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
                                                VkFence fence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueBindSparse, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -1295,7 +1295,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
                                            const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateFence, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1342,7 +1342,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
 VKAPI_ATTR void VKAPI_CALL DestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyFence, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1386,7 +1386,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyFence(VkDevice device, VkFence fence, const Vk
 VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetFences, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1433,7 +1433,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount,
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceStatus, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1487,7 +1487,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
                                              uint64_t timeout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitForFences, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1541,7 +1541,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
                                                const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1588,7 +1588,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
 VKAPI_ATTR void VKAPI_CALL DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1633,7 +1633,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
                                                const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1680,7 +1680,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
 VKAPI_ATTR void VKAPI_CALL DestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1725,7 +1725,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
                                                    size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueryPoolResults, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1781,7 +1781,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
 VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1826,7 +1826,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
                                            const VkAllocationCallbacks* pAllocator, VkImage* pImage) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1873,7 +1873,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
 VKAPI_ATTR void VKAPI_CALL DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1918,7 +1918,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout(VkDevice device, VkImage im
                                                      VkSubresourceLayout* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -1963,7 +1963,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
                                                const VkAllocationCallbacks* pAllocator, VkImageView* pView) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImageView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2010,7 +2010,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
 VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyImageView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2055,7 +2055,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
                                                  const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2102,7 +2102,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
 VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2146,7 +2146,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2194,7 +2194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
                                                       VkCommandBuffer* pCommandBuffers) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateCommandBuffers, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2242,7 +2242,7 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
                                               const VkCommandBuffer* pCommandBuffers) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeCommandBuffers, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -2286,7 +2286,7 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
 VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEndCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2333,7 +2333,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetCommandBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2381,7 +2381,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer
                                          uint32_t regionCount, const VkBufferCopy* pRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2427,7 +2427,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage s
                                         const VkImageCopy* pRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2476,7 +2476,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, V
                                                 const VkBufferImageCopy* pRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2524,7 +2524,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, V
                                                 VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2572,7 +2572,7 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
                                            VkDeviceSize dataSize, const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdUpdateBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2617,7 +2617,7 @@ VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer
                                          VkDeviceSize size, uint32_t data) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdFillBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2665,7 +2665,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2718,7 +2718,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
                                          VkQueryControlFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2762,7 +2762,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
 VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2807,7 +2807,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQu
                                              uint32_t queryCount) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetQueryPool, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2852,7 +2852,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
                                              VkQueryPool queryPool, uint32_t query) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2898,7 +2898,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer
                                                    VkDeviceSize stride, VkQueryResultFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyQueryPoolResults, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2947,7 +2947,7 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
                                               const VkCommandBuffer* pCommandBuffers) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdExecuteCommands, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -2992,7 +2992,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
                                            const VkAllocationCallbacks* pAllocator, VkEvent* pEvent) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3039,7 +3039,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
 VKAPI_ATTR void VKAPI_CALL DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3083,7 +3083,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyEvent(VkDevice device, VkEvent event, const Vk
 VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetEventStatus, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3136,7 +3136,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
 VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3183,7 +3183,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
 VKAPI_ATTR VkResult VKAPI_CALL ResetEvent(VkDevice device, VkEvent event) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetEvent, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3231,7 +3231,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
                                                 const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBufferView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3278,7 +3278,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
 VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBufferView, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3323,7 +3323,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule s
                                                const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3368,7 +3368,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineCache(VkDevice device, const VkPipe
                                                    const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineCache, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3416,7 +3416,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineCache(VkDevice device, VkPipelineCache
                                                 const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipelineCache, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3461,7 +3461,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineCacheData(VkDevice device, VkPipelineC
                                                     void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineCacheData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3509,7 +3509,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCa
                                                    const VkPipelineCache* pSrcCaches) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMergePipelineCaches, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3556,7 +3556,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MergePipelineCaches(VkDevice device, VkPipelineCa
 VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipeline, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3601,7 +3601,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayo
                                                  const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3646,7 +3646,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
                                              const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSampler, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3693,7 +3693,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
 VKAPI_ATTR void VKAPI_CALL DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySampler, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3739,7 +3739,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
                                                          VkDescriptorSetLayout* pSetLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorSetLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3787,7 +3787,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorSetLayout(VkDevice device, VkDescrip
                                                       const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorSetLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3832,7 +3832,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3880,7 +3880,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPo
                                                  const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3925,7 +3925,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
                                                    VkDescriptorPoolResetFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetDescriptorPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -3973,7 +3973,7 @@ VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorP
                                                   const VkDescriptorSet* pDescriptorSets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkFreeDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4022,7 +4022,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
                                                 const VkCopyDescriptorSet* pDescriptorCopies) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4071,7 +4071,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
                                            VkPipeline pipeline) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindPipeline, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4118,7 +4118,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, 
                                                  const uint32_t* pDynamicOffsets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4168,7 +4168,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(VkCommandBuffer commandBuffer, VkI
                                               const VkImageSubresourceRange* pRanges) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearColorImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4214,7 +4214,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t g
                                        uint32_t groupCountZ) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatch, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4258,7 +4258,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t g
 VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4302,7 +4302,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, Vk
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4346,7 +4346,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent ev
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4394,7 +4394,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4447,7 +4447,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
                                             uint32_t offset, uint32_t size, const void* pValues) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4492,7 +4492,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
                                                  const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateFramebuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4539,7 +4539,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
 VKAPI_ATTR void VKAPI_CALL DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyFramebuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4584,7 +4584,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
                                                 const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4631,7 +4631,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyRenderPass, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4675,7 +4675,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass rende
 VKAPI_ATTR void VKAPI_CALL GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRenderAreaGranularity, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -4720,7 +4720,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
                                           const VkViewport* pViewports) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewport, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4765,7 +4765,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
                                          const VkRect2D* pScissors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissor, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4809,7 +4809,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
 VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineWidth, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4854,7 +4854,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float 
                                            float depthBiasSlopeFactor) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBias, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4901,7 +4901,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float 
 VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetBlendConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4945,7 +4945,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, c
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBounds, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -4990,7 +4990,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
                                                     uint32_t compareMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilCompareMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5034,7 +5034,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilWriteMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5078,7 +5078,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilReference, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5123,7 +5123,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
                                               VkIndexType indexType) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5168,7 +5168,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
                                                 const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5214,7 +5214,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t verte
                                    uint32_t firstVertex, uint32_t firstInstance) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDraw, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5259,7 +5259,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_
                                           uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexed, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5307,7 +5307,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuff
                                            uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5352,7 +5352,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
                                                   uint32_t drawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5398,7 +5398,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage(VkCommandBuffer commandBuffer, VkImage s
                                         const VkImageBlit* pRegions, VkFilter filter) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5448,7 +5448,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(VkCommandBuffer commandBuff
                                                      const VkImageSubresourceRange* pRanges) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearDepthStencilImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5497,7 +5497,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, ui
                                                const VkClearRect* pRects) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdClearAttachments, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5544,7 +5544,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage(VkCommandBuffer commandBuffer, VkImag
                                            const VkImageResolve* pRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5592,7 +5592,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
                                               VkSubpassContents contents) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5636,7 +5636,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5680,7 +5680,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5725,7 +5725,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindI
                                                  const VkBindBufferMemoryInfo* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -5772,7 +5772,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindI
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -5821,7 +5821,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
                                                             VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeatures, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -5869,7 +5869,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDeviceMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -5914,7 +5914,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
                                                              VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceGroups, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -5963,7 +5963,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const Vk
                                                        VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6008,7 +6008,7 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const V
                                                         VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6054,7 +6054,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
                                                              VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6101,7 +6101,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6143,7 +6143,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6186,7 +6186,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
                                                               VkFormatProperties2* pFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6230,7 +6230,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
                                                                        VkImageFormatProperties2* pImageFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6281,7 +6281,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
                                                                    VkQueueFamilyProperties2* pQueueFamilyProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6328,7 +6328,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
                                                               VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6373,7 +6373,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
                                                                          VkSparseImageFormatProperties2* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6418,7 +6418,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
 VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTrimCommandPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6462,7 +6462,7 @@ VKAPI_ATTR void VKAPI_CALL TrimCommandPool(VkDevice device, VkCommandPool comman
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceQueue2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6511,7 +6511,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
                                                                      VkExternalBufferProperties* pExternalBufferProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6559,7 +6559,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
                                                                     VkExternalFenceProperties* pExternalFenceProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalFenceProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6606,7 +6606,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphoreProperties,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -6653,7 +6653,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(VkCommandBuffer commandBuffer, uint32
                                            uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchBase, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -6703,7 +6703,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                               VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorUpdateTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6753,7 +6753,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDe
                                                            const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorUpdateTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6798,7 +6798,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
                                                            VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSetWithTemplate, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6844,7 +6844,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, const 
                                                          VkDescriptorSetLayoutSupport* pSupport) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSupport, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6890,7 +6890,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, con
                                                             VkSamplerYcbcrConversion* pYcbcrConversion) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSamplerYcbcrConversion, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6938,7 +6938,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamp
                                                          const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySamplerYcbcrConversion, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -6982,7 +6982,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamp
 VKAPI_ATTR void VKAPI_CALL ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetQueryPool, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7026,7 +7026,7 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPool(VkDevice device, VkQueryPool queryPool
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreCounterValue, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7079,7 +7079,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
 VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitSemaphores, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7132,7 +7132,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
 VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSignalSemaphore, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7179,7 +7179,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphor
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7226,7 +7226,7 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, co
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7273,7 +7273,7 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(VkDevice devi
                                                                    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7321,7 +7321,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(VkCommandBuffer commandBuffer, V
                                                 uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7370,7 +7370,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount(VkCommandBuffer commandBu
                                                        uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCount,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -7420,7 +7420,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2(VkDevice device, const VkRender
                                                  const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7468,7 +7468,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(VkCommandBuffer commandBuffer, co
                                                const VkSubpassBeginInfo* pSubpassBeginInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7513,7 +7513,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(VkCommandBuffer commandBuffer, const 
                                            const VkSubpassEndInfo* pSubpassEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7557,7 +7557,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(VkCommandBuffer commandBuffer, const 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7602,7 +7602,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlot(VkDevice device, const VkPr
                                                      const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePrivateDataSlot, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7650,7 +7650,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlot(VkDevice device, VkPrivateData
                                                   const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPrivateDataSlot, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7695,7 +7695,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateData(VkDevice device, VkObjectType obje
                                               VkPrivateDataSlot privateDataSlot, uint64_t data) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetPrivateData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7743,7 +7743,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateData(VkDevice device, VkObjectType objectTy
                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPrivateData, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -7787,7 +7787,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateData(VkDevice device, VkObjectType objectTy
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7832,7 +7832,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
                                               uint32_t query) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7876,7 +7876,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkP
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit2, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -7944,7 +7944,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -7988,7 +7988,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(VkCommandBuffer commandBuffer, const V
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8033,7 +8033,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                  const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8078,7 +8078,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8123,7 +8123,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirements(VkDevice device, co
                                                              VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceBufferMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -8168,7 +8168,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirements(VkDevice device, con
                                                             VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -8214,7 +8214,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice devic
                                                                   VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -8263,7 +8263,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice devic
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8307,7 +8307,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent e
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8352,7 +8352,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_
                                           const VkDependencyInfo* pDependencyInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8396,7 +8396,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8440,7 +8440,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(VkCommandBuffer commandBuffer, const Vk
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8484,7 +8484,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(VkCommandBuffer commandBuffer, const
 VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8528,7 +8528,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, cons
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8572,7 +8572,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
 VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCullMode, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8616,7 +8616,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullM
 VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFrontFace, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8660,7 +8660,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFron
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveTopology, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8705,7 +8705,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(VkCommandBuffer commandBuffer
                                                    const VkViewport* pViewports) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8749,7 +8749,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(VkCommandBuffer commandBuffer
 VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissorWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8795,7 +8795,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, 
                                                  const VkDeviceSize* pStrides) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8842,7 +8842,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8886,7 +8886,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthWriteEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8930,7 +8930,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthCompareOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -8974,7 +8974,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, V
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBoundsTestEnable,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9019,7 +9019,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBu
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9064,7 +9064,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(VkCommandBuffer commandBuffer, VkSten
                                            VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9108,7 +9108,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(VkCommandBuffer commandBuffer, VkSten
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizerDiscardEnable,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9153,7 +9153,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(VkCommandBuffer command
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBiasEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9197,7 +9197,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveRestartEnable,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9242,7 +9242,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(VkCommandBuffer commandB
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMapMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9289,7 +9289,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2(VkDevice device, const VkMemoryMapInfo
 VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnmapMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9337,7 +9337,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayout(VkDevice device, cons
                                                            VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSubresourceLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9382,7 +9382,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2(VkDevice device, VkImage i
                                                       VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9426,7 +9426,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2(VkDevice device, VkImage i
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9473,7 +9473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImage(VkDevice device, const VkCopyMe
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9520,7 +9520,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemory(VkDevice device, const VkCopyIm
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9568,7 +9568,7 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayout(VkDevice device, uint32_t t
                                                      const VkHostImageLayoutTransitionInfo* pTransitions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTransitionImageLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -9617,7 +9617,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet(VkCommandBuffer commandBuffer, V
                                                 const VkWriteDescriptorSet* pDescriptorWrites) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9667,7 +9667,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate(VkCommandBuffer comm
                                                             VkPipelineLayout layout, uint32_t set, const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9716,7 +9716,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                   const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9760,7 +9760,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushConstants2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9805,7 +9805,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
                                                  const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9850,7 +9850,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate2,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -9897,7 +9897,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStipple(VkCommandBuffer commandBuffer, uint
                                              uint16_t lineStipplePattern) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStipple, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9942,7 +9942,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize size, VkIndexType indexType) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -9987,7 +9987,7 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularity(VkDevice device, const Vk
                                                        VkExtent2D* pGranularity) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRenderingAreaGranularity, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10032,7 +10032,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocations(VkCommandBuffer co
                                                               const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingAttachmentLocations,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10078,7 +10078,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndices(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndices,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -10123,7 +10123,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndices(
 VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -10165,7 +10165,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
                                                                   VkSurfaceKHR surface, VkBool32* pSupported) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceSupportKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10212,7 +10212,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
                                                                        VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10260,7 +10260,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
                                                                   VkSurfaceFormatKHR* pSurfaceFormats) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10311,7 +10311,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
                                                                        VkPresentModeKHR* pPresentModes) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10361,7 +10361,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
                                                   const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSwapchainKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10414,7 +10414,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
 VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySwapchainKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10459,7 +10459,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
                                                      VkImage* pSwapchainImages) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainImagesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10507,7 +10507,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
                                                    VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireNextImageKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10561,7 +10561,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 GetDeviceGroupPresentCapabilitiesKHR(VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPresentCapabilitiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10609,7 +10609,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModesKHR(VkDevice dev
                                                                     VkDeviceGroupPresentModeFlagsKHR* pModes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10657,7 +10657,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
                                                                      uint32_t* pRectCount, VkRect2D* pRects) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDevicePresentRectanglesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10704,7 +10704,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
                                                     uint32_t* pImageIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireNextImage2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -10758,7 +10758,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
                                                                      VkDisplayPropertiesKHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10805,7 +10805,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
                                                                           VkDisplayPlanePropertiesKHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10852,7 +10852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
                                                                    uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneSupportedDisplaysKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10899,7 +10899,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
                                                            uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayModePropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -10946,7 +10946,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
                                                     const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDisplayModeKHR, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -10991,7 +10991,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
                                                               uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneCapabilitiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11037,7 +11037,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDisplayPlaneSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11083,7 +11083,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSharedSwapchainsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11139,7 +11139,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateXlibSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11185,7 +11185,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
                                                                            VisualID visualID) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceXlibPresentationSupportKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11235,7 +11235,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateXcbSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11281,7 +11281,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
                                                                           xcb_visualid_t visual_id) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceXcbPresentationSupportKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11332,7 +11332,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateWaylandSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11378,7 +11378,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
                                                                               struct wl_display* display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceWaylandPresentationSupportKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11426,7 +11426,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAndroidSurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11473,7 +11473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateWin32SurfaceKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -11518,7 +11518,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
                                                                             uint32_t queueFamilyIndex) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceWin32PresentationSupportKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11565,7 +11565,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
                                                                      VkVideoCapabilitiesKHR* pCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoCapabilitiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11614,7 +11614,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
                                                                          VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -11664,7 +11664,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionKHR(VkDevice device, const VkVi
                                                      const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateVideoSessionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11712,7 +11712,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionKHR(VkDevice device, VkVideoSessio
                                                   const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyVideoSessionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11758,7 +11758,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetVideoSessionMemoryRequirementsKHR(VkDevice dev
                                                                     VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetVideoSessionMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11811,7 +11811,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindVideoSessionMemoryKHR(VkDevice device, VkVide
                                                          const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindVideoSessionMemoryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11865,7 +11865,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateVideoSessionParametersKHR(VkDevice device,
                                                                VkVideoSessionParametersKHR* pVideoSessionParameters) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11914,7 +11914,7 @@ VKAPI_ATTR VkResult VKAPI_CALL UpdateVideoSessionParametersKHR(VkDevice device, 
                                                                const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -11962,7 +11962,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(VkDevice device, VkV
                                                             const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -12006,7 +12006,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyVideoSessionParametersKHR(VkDevice device, VkV
 VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12050,7 +12050,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12095,7 +12095,7 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(VkCommandBuffer commandBuffe
                                                     const VkVideoCodingControlInfoKHR* pCodingControlInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdControlVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12139,7 +12139,7 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12183,7 +12183,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, cons
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12227,7 +12227,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, c
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12271,7 +12271,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFeatures2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12314,7 +12314,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
                                                            VkPhysicalDeviceProperties2* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12357,7 +12357,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
                                                                  VkFormatProperties2* pFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFormatProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12401,7 +12401,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
                                                                           VkImageFormatProperties2* pImageFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceImageFormatProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12452,7 +12452,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
                                                                       VkQueueFamilyProperties2* pQueueFamilyProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12499,7 +12499,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
                                                                  VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMemoryProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12543,7 +12543,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkSparseImageFormatProperties2* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSparseImageFormatProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12591,7 +12591,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, 
                                                                VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupPeerMemoryFeaturesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -12639,7 +12639,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, 
 VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDeviceMaskKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12685,7 +12685,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uin
                                               uint32_t groupCountZ) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchBaseKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -12733,7 +12733,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uin
 VKAPI_ATTR void VKAPI_CALL TrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTrimCommandPoolKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -12778,7 +12778,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
                                                                 VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceGroupsKHR, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -12828,7 +12828,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
     VkExternalBufferProperties* pExternalBufferProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalBufferPropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -12876,7 +12876,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleKHR(VkDevice device, const Vk
                                                        HANDLE* pHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -12925,7 +12925,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device
                                                                  VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandlePropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -12976,7 +12976,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandlePropertiesKHR(VkDevice device
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13024,7 +13024,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryFdPropertiesKHR(VkDevice device, VkExter
                                                         VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryFdPropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13073,7 +13073,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalSemaphorePropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -13121,7 +13121,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13170,7 +13170,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
                                                           HANDLE* pHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13218,7 +13218,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13265,7 +13265,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImp
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13314,7 +13314,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer
                                                    const VkWriteDescriptorSet* pDescriptorWrites) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -13364,7 +13364,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
                                                                VkPipelineLayout layout, uint32_t set, const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -13415,7 +13415,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                  VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDescriptorUpdateTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13466,7 +13466,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device, V
                                                               const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDescriptorUpdateTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13512,7 +13512,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
                                                               const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateDescriptorSetWithTemplateKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13559,7 +13559,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRen
                                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRenderPass2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13607,7 +13607,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                   const VkSubpassBeginInfo* pSubpassBeginInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -13652,7 +13652,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
                                               const VkSubpassEndInfo* pSubpassEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdNextSubpass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -13696,7 +13696,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -13740,7 +13740,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, c
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainStatusKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13795,7 +13795,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
                                                                        VkExternalFenceProperties* pExternalFenceProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalFencePropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -13843,7 +13843,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
                                                          const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportFenceWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13891,7 +13891,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
                                                       HANDLE* pHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceWin32HandleKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13939,7 +13939,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportFenceFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -13986,7 +13986,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportF
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFenceFdKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14035,7 +14035,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
     VkPerformanceCounterDescriptionKHR* pCounterDescriptions) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14085,7 +14085,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
     VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14131,7 +14131,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
 VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireProfilingLockKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14178,7 +14178,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireProfilingLockKHR(VkDevice device, const Vk
 VKAPI_ATTR void VKAPI_CALL ReleaseProfilingLockKHR(VkDevice device) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseProfilingLockKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14224,7 +14224,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
                                                                         VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14275,7 +14275,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
                                                                    VkSurfaceFormat2KHR* pSurfaceFormats) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceFormats2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14325,7 +14325,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
                                                                       VkDisplayProperties2KHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14373,7 +14373,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
                                                                            VkDisplayPlaneProperties2KHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14420,7 +14420,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
                                                             uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayModeProperties2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14468,7 +14468,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
                                                                VkDisplayPlaneCapabilities2KHR* pCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDisplayPlaneCapabilities2KHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -14514,7 +14514,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const
                                                           VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14559,7 +14559,7 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, cons
                                                            VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14605,7 +14605,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
                                                                 VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSparseMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14656,7 +14656,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                VkSamplerYcbcrConversion* pYcbcrConversion) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSamplerYcbcrConversionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14705,7 +14705,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkS
                                                             const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroySamplerYcbcrConversionKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14750,7 +14750,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bi
                                                     const VkBindBufferMemoryInfo* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindBufferMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14798,7 +14798,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
                                                    const VkBindImageMemoryInfo* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindImageMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14846,7 +14846,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(VkDevice device, con
                                                             VkDescriptorSetLayoutSupport* pSupport) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSupportKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -14892,7 +14892,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
                                                    uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -14942,7 +14942,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
                                                           uint32_t maxDrawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -14991,7 +14991,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreCounterValueKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15044,7 +15044,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
 VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitSemaphoresKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15097,7 +15097,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
 VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSignalSemaphoreKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15146,7 +15146,7 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
                                          VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceFragmentShadingRatesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -15196,7 +15196,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(VkCommandBuffer commandB
                                                         const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFragmentShadingRateKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15242,7 +15242,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer
                                                                  const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingAttachmentLocationsKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15288,7 +15288,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndicesKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -15335,7 +15335,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
 VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitForPresentKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15388,7 +15388,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15435,7 +15435,7 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device,
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15482,7 +15482,7 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice d
                                                                       const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15530,7 +15530,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDeferredOperationKHR(VkDevice device, const
                                                           VkDeferredOperationKHR* pDeferredOperation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDeferredOperationKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15578,7 +15578,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(VkDevice device, VkDeferr
                                                        const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDeferredOperationKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15622,7 +15622,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDeferredOperationKHR(VkDevice device, VkDeferr
 VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeferredOperationMaxConcurrencyKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15668,7 +15668,7 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetDeferredOperationMaxConcurrencyKHR(VkDevice de
 VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeferredOperationResultKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15715,7 +15715,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeferredOperationResultKHR(VkDevice device, Vk
 VKAPI_ATTR VkResult VKAPI_CALL DeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKHR operation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDeferredOperationJoinKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15764,7 +15764,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(VkDevice devic
                                                                   VkPipelineExecutablePropertiesKHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutablePropertiesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15815,7 +15815,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableStatisticsKHR(VkDevice devic
                                                                   VkPipelineExecutableStatisticKHR* pStatistics) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutableStatisticsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15865,7 +15865,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineExecutableInternalRepresentationsKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -15920,7 +15920,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkMapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -15967,7 +15967,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapI
 VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnmapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -16016,7 +16016,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -16067,7 +16067,7 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
                                     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetEncodedVideoSessionParametersKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -16118,7 +16118,7 @@ GetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionP
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEncodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16162,7 +16162,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, cons
 VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16206,7 +16206,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEven
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16251,7 +16251,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint
                                              const VkDependencyInfo* pDependencyInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWaitEvents2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16295,7 +16295,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPipelineBarrier2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16340,7 +16340,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, 
                                                  uint32_t query) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteTimestamp2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16384,7 +16384,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSubmit2KHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -16452,7 +16452,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer3KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16497,7 +16497,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffe
                                                     const VkBindVertexBuffer3InfoKHR* pBindingInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers3KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16542,7 +16542,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16586,7 +16586,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, co
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirect2KHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -16631,7 +16631,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuf
 VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16675,7 +16675,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16720,7 +16720,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer
                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToImageKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16765,7 +16765,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer
                                                    const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16810,7 +16810,7 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, con
                                               VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdUpdateMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16855,7 +16855,7 @@ VKAPI_ATTR void VKAPI_CALL CmdFillMemoryKHR(VkCommandBuffer commandBuffer, const
                                             VkAddressCommandFlagsKHR dstFlags, uint32_t data) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdFillMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16903,7 +16903,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer co
                                                               VkQueryResultFlags queryResultFlags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyQueryPoolResultsToMemoryKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -16952,7 +16952,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer co
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCount2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -16997,7 +16997,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer comma
                                                            const VkDrawIndirectCount2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCount2KHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17043,7 +17043,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRendering2EXT(VkCommandBuffer comm
                                                             const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginConditionalRendering2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17090,7 +17090,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer c
                                                                const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindTransformFeedbackBuffers2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17140,7 +17140,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedback2EXT(VkCommandBuffer command
                                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginTransformFeedback2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17190,7 +17190,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedback2EXT(VkCommandBuffer commandBu
                                                        const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndTransformFeedback2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17241,7 +17241,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCount2EXT(VkCommandBuffer commandB
                                                         uint32_t counterOffset, uint32_t vertexStride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectByteCount2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17290,7 +17290,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCount2EXT(VkCommandBuffer commandB
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirect2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17336,7 +17336,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer com
                                                              const VkDrawIndirectCount2InfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -17381,7 +17381,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer com
 VKAPI_ATTR void VKAPI_CALL CmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteMarkerToMemoryAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17428,7 +17428,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructure2KHR(VkDevice device,
                                                                VkAccelerationStructureKHR* pAccelerationStructure) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAccelerationStructure2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -17476,7 +17476,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructure2KHR(VkDevice device,
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17520,7 +17520,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, cons
 VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17565,7 +17565,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffe
                                                     const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyBufferToImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17610,7 +17610,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffe
                                                     const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyImageToBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17654,7 +17654,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBlitImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17698,7 +17698,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const
 VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdResolveImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17742,7 +17742,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(VkCommandBuffer commandBuffer, co
 VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17787,7 +17787,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(VkDevice device,
                                                                 VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceBufferMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -17832,7 +17832,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(VkDevice device, 
                                                                VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -17878,7 +17878,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(VkDevice de
                                                                      VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSparseMemoryRequirementsKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -17929,7 +17929,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
                                                   VkDeviceSize size, VkIndexType indexType) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -17974,7 +17974,7 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const
                                                           VkExtent2D* pGranularity) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRenderingAreaGranularityKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18019,7 +18019,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, c
                                                               VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceImageSubresourceLayoutKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18064,7 +18064,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImag
                                                          VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18109,7 +18109,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresent2KHR(VkDevice device, VkSwapchainKH
                                                   const VkPresentWait2InfoKHR* pPresentWait2Info) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWaitForPresent2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18164,7 +18164,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device, const 
                                                          VkPipelineBinaryHandlesInfoKHR* pBinaries) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineBinariesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18212,7 +18212,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(VkDevice device, VkPipelineB
                                                     const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPipelineBinaryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18257,7 +18257,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineKeyKHR(VkDevice device, const VkPipeli
                                                  VkPipelineBinaryKeyKHR* pPipelineKey) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineKeyKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18306,7 +18306,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, const V
                                                         void* pPipelineBinaryData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineBinaryDataKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18358,7 +18358,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device, c
                                                               const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseCapturedPipelineDataKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18405,7 +18405,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device, c
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseSwapchainImagesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18454,7 +18454,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
                                                                                VkCooperativeMatrixPropertiesKHR* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -18503,7 +18503,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, u
                                                 uint16_t lineStipplePattern) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -18549,7 +18549,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
                                                                             VkTimeDomainKHR* pTimeDomains) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsKHR,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -18599,7 +18599,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint3
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCalibratedTimestampsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -18650,7 +18650,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuff
                                                      const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -18694,7 +18694,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuff
 VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushConstants2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -18739,7 +18739,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffe
                                                     const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -18784,7 +18784,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate2KHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -18831,7 +18831,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDescriptorBufferOffsets2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -18877,7 +18877,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplers2EXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -18927,7 +18927,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffe
                                                     const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -18972,7 +18972,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -19018,7 +19018,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(VkDevice device, uint64_
                                                         VkDeviceFaultInfoKHR* pFaultInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceFaultReportsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19065,7 +19065,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(VkDevice device, uint64_
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceFaultDebugInfoKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19112,7 +19112,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultDebugInfoKHR(VkDevice device, VkDev
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRendering2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19159,7 +19159,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             VkDebugReportCallbackEXT* pCallback) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDebugReportCallbackEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -19205,7 +19205,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
                                                          const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDebugReportCallbackEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -19249,7 +19249,7 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
                                                  int32_t messageCode, const char* pLayerPrefix, const char* pMessage) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugReportMessageEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -19294,7 +19294,7 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugMarkerSetObjectTagEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19341,7 +19341,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDebugMarkerSetObjectNameEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19389,7 +19389,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, cons
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerBeginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19433,7 +19433,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerEndEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19477,7 +19477,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
 VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDebugMarkerInsertEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19523,7 +19523,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer co
                                                               const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -19573,7 +19573,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(VkCommandBuffer commandB
                                                         const VkDeviceSize* pCounterBufferOffsets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginTransformFeedbackEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -19624,7 +19624,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuf
                                                       const VkDeviceSize* pCounterBufferOffsets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndTransformFeedbackEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -19674,7 +19674,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer
                                                    VkQueryControlFlags flags, uint32_t index) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19719,7 +19719,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, 
                                                  uint32_t index) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -19766,7 +19766,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBu
                                                        uint32_t vertexStride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectByteCountEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -19816,7 +19816,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuModuleNVX(VkDevice device, const VkCuModu
                                                  const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCuModuleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19864,7 +19864,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFu
                                                    const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCuFunctionNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19911,7 +19911,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCuFunctionNVX(VkDevice device, const VkCuFu
 VKAPI_ATTR void VKAPI_CALL DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCuModuleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -19956,7 +19956,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX
                                                 const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCuFunctionNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20000,7 +20000,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX
 VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCuLaunchKernelNVX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -20044,7 +20044,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, c
 VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewHandleNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20090,7 +20090,7 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkIm
 VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewHandle64NVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20137,7 +20137,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageVi
                                                       VkImageViewAddressPropertiesNVX* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewAddressNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20185,7 +20185,7 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceCombinedImageSamplerIndexNVX(VkDevice de
                                                                      uint64_t samplerIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceCombinedImageSamplerIndexNVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20233,7 +20233,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer
                                                    uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -20283,7 +20283,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(VkCommandBuffer comman
                                                           uint32_t maxDrawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -20333,7 +20333,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInfoAMD(VkDevice device, VkPipeline pipe
                                                 VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderInfoAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20383,7 +20383,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateStreamDescriptorSurfaceGGP, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -20431,7 +20431,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalImageFormatPropertiesNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -20482,7 +20482,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryWin32HandleNV(VkDevice device, VkDeviceM
                                                       VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryWin32HandleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20532,7 +20532,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateViSurfaceNN, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -20578,7 +20578,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer comma
                                                            const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginConditionalRenderingEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -20623,7 +20623,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(VkCommandBuffer comma
 VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndConditionalRenderingEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -20669,7 +20669,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(VkCommandBuffer commandBuffe
                                                     const VkViewportWScalingNV* pViewportWScalings) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWScalingNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -20714,7 +20714,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(VkCommandBuffer commandBuffe
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -20759,7 +20759,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
 VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireXlibDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -20804,7 +20804,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
                                                         VkDisplayKHR* pDisplay) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRandROutputDisplayEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -20851,7 +20851,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
                                                                         VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -20898,7 +20898,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(VkDevice device, VkDisplay
                                                       const VkDisplayPowerInfoEXT* pDisplayPowerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDisplayPowerControlEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20946,7 +20946,7 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDeviceEventEXT(VkDevice device, const VkD
                                                       const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkRegisterDeviceEventEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -20995,7 +20995,7 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterDisplayEventEXT(VkDevice device, VkDispla
                                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkRegisterDisplayEventEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21043,7 +21043,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
                                                       VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainCounterEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21097,7 +21097,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
                                                              VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRefreshCycleDurationGOOGLE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21152,7 +21152,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
                                                                VkPastPresentationTimingGOOGLE* pPresentationTimings) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPastPresentationTimingGOOGLE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21210,7 +21210,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
                                                      uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -21257,7 +21257,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
 VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -21303,7 +21303,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(VkCommandBuffer command
                                                          VkDiscardRectangleModeEXT discardRectangleMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDiscardRectangleModeEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -21349,7 +21349,7 @@ VKAPI_ATTR void VKAPI_CALL SetHdrMetadataEXT(VkDevice device, uint32_t swapchain
                                              const VkHdrMetadataEXT* pMetadata) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetHdrMetadataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21395,7 +21395,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIOSSurfaceMVK, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -21442,7 +21442,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMacOSSurfaceMVK, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -21487,7 +21487,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDebugUtilsObjectNameEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21535,7 +21535,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDebugUtilsObjectTagEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -21582,7 +21582,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueBeginDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -21627,7 +21627,7 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkD
 VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueEndDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -21672,7 +21672,7 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
 VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueInsertDebugUtilsLabelEXT, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -21717,7 +21717,7 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
 VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -21762,7 +21762,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuf
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -21806,7 +21806,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -21854,7 +21854,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
                                                             VkDebugUtilsMessengerEXT* pMessenger) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDebugUtilsMessengerEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -21900,7 +21900,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
                                                          const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDebugUtilsMessengerEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -21944,7 +21944,7 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
                                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSubmitDebugUtilsMessageEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -21988,7 +21988,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevic
                                                                          VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAndroidHardwareBufferPropertiesANDROID,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -22039,7 +22039,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
                                                                      struct AHardwareBuffer** pBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryAndroidHardwareBufferANDROID, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22091,7 +22091,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateExecutionGraphPipelinesAMDX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22143,7 +22143,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(VkDevice
                                                                         VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetExecutionGraphPipelineScratchSizeAMDX,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -22194,7 +22194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice d
                                                                       uint32_t* pNodeIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetExecutionGraphPipelineNodeIndexAMDX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22244,7 +22244,7 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
                                                                VkDeviceAddress scratch, VkDeviceSize scratchSize) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -22291,7 +22291,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -22336,7 +22336,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
                                                         VkDeviceSize scratchSize, const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphIndirectAMDX,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -22382,7 +22382,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
                                                              VkDeviceSize scratchSize, VkDeviceAddress countInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -22430,7 +22430,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteSamplerDescriptorsEXT(VkDevice device, uint3
                                                           const VkHostAddressRangeEXT* pDescriptors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteSamplerDescriptorsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22479,7 +22479,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteResourceDescriptorsEXT(VkDevice device, uint
                                                            const VkHostAddressRangeEXT* pDescriptors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteResourceDescriptorsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22526,7 +22526,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteResourceDescriptorsEXT(VkDevice device, uint
 VKAPI_ATTR void VKAPI_CALL CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindSamplerHeapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -22570,7 +22570,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR void VKAPI_CALL CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindResourceHeapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -22614,7 +22614,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer,
 VKAPI_ATTR void VKAPI_CALL CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPushDataEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -22659,7 +22659,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDataEXT(VkDevice device, uin
                                                             VkHostAddressRangeEXT* pDatas) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageOpaqueCaptureDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22707,7 +22707,7 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetPhysicalDeviceDescriptorSizeEXT(VkPhysical
                                                                       VkDescriptorType descriptorType) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDescriptorSizeEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -22753,7 +22753,7 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterCustomBorderColorEXT(VkDevice device,
                                                             VkBool32 requestIndex, uint32_t* pIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkRegisterCustomBorderColorEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22800,7 +22800,7 @@ VKAPI_ATTR VkResult VKAPI_CALL RegisterCustomBorderColorEXT(VkDevice device,
 VKAPI_ATTR void VKAPI_CALL UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUnregisterCustomBorderColorEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22845,7 +22845,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDataARM(VkDevice device, ui
                                                              VkHostAddressRangeEXT* pDatas) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetTensorOpaqueCaptureDataARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -22893,7 +22893,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
                                                     const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleLocationsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -22938,7 +22938,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
                                                                      VkMultisamplePropertiesEXT* pMultisampleProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceMultisamplePropertiesEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -22983,7 +22983,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageDrmFormatModifierPropertiesEXT(VkDevice d
                                                                       VkImageDrmFormatModifierPropertiesEXT* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageDrmFormatModifierPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23032,7 +23032,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuff
                                                      VkImageLayout imageLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindShadingRateImageNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -23078,7 +23078,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer co
                                                               const VkShadingRatePaletteNV* pShadingRatePalettes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -23128,7 +23128,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuff
                                                      const VkCoarseSampleOrderCustomNV* pCustomSampleOrders) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoarseSampleOrderNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -23178,7 +23178,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureNV(VkDevice device,
                                                              VkAccelerationStructureNV* pAccelerationStructure) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAccelerationStructureNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23227,7 +23227,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(VkDevice device, VkAcc
                                                           const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyAccelerationStructureNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23272,7 +23272,7 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureMemoryRequirementsNV,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -23319,7 +23319,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindAccelerationStructureMemoryNV(VkDevice device
                                                                  const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindAccelerationStructureMemoryNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23370,7 +23370,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(VkCommandBuffer comma
                                                            VkBuffer scratch, VkDeviceSize scratchOffset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructureNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -23420,7 +23420,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(VkCommandBuffer comman
                                                           VkAccelerationStructureNV src, VkCopyAccelerationStructureModeKHR mode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -23471,7 +23471,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffe
                                           uint32_t width, uint32_t height, uint32_t depth) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -23532,7 +23532,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesKHR(VkDevice devic
                                                                   uint32_t groupCount, size_t dataSize, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23583,7 +23583,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingShaderGroupHandlesNV(VkDevice device
                                                                  uint32_t groupCount, size_t dataSize, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupHandlesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23634,7 +23634,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureHandleNV(VkDevice device,
                                                                 size_t dataSize, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureHandleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23685,7 +23685,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(VkCommandB
                                                                       uint32_t firstQuery) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -23735,7 +23735,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(VkCommandB
 VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCompileDeferredNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23784,7 +23784,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryHostPointerPropertiesEXT(VkDevice device
                                                                  VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryHostPointerPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -23835,7 +23835,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer
                                                    VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarkerAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -23881,7 +23881,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffe
                                                     VkDeviceSize dstOffset, uint32_t marker) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -23927,7 +23927,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
                                                                             VkTimeDomainKHR* pTimeDomains) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -23977,7 +23977,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint3
                                                           uint64_t* pTimestamps, uint64_t* pMaxDeviation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCalibratedTimestampsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24027,7 +24027,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(VkDevice device, uint3
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -24072,7 +24072,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuf
                                                       uint32_t drawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24119,7 +24119,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comma
                                                            uint32_t maxDrawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24170,7 +24170,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(VkCommandBuffer comman
                                                           const VkBool32* pExclusiveScissorEnables) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExclusiveScissorEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24220,7 +24220,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
                                                     uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExclusiveScissorNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -24267,7 +24267,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCheckpointNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -24312,7 +24312,7 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCh
                                                     VkCheckpointDataNV* pCheckpointData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointDataNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -24357,7 +24357,7 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
                                                      VkCheckpointData2NV* pCheckpointData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointData2NV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -24401,7 +24401,7 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
 VKAPI_ATTR VkResult VKAPI_CALL SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetSwapchainPresentTimingQueueSizeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24450,7 +24450,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimingPropertiesEXT(VkDevice device, 
                                                                uint64_t* pSwapchainTimingPropertiesCounter) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainTimingPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24503,7 +24503,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
     uint64_t* pTimeDomainsCounter) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSwapchainTimeDomainPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24556,7 +24556,7 @@ GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfo
                              VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPastPresentationTimingEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24614,7 +24614,7 @@ VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                              const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkInitializePerformanceApiINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24661,7 +24661,7 @@ VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
 VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUninitializePerformanceApiINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24706,7 +24706,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(VkCommandBuffer comm
                                                             const VkPerformanceMarkerInfoINTEL* pMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceMarkerINTEL,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24755,7 +24755,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffe
                                                                   const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24804,7 +24804,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(VkCommandBuffer co
                                                               const VkPerformanceOverrideInfoINTEL* pOverrideInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPerformanceOverrideINTEL,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -24854,7 +24854,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquirePerformanceConfigurationINTEL(VkDevice dev
                                                                     VkPerformanceConfigurationINTEL* pConfiguration) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquirePerformanceConfigurationINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24902,7 +24902,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(VkDevice dev
                                                                     VkPerformanceConfigurationINTEL configuration) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleasePerformanceConfigurationINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -24949,7 +24949,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleasePerformanceConfigurationINTEL(VkDevice dev
 VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueSetPerformanceConfigurationINTEL, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -24997,7 +24997,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(VkDevice device, VkP
                                                             VkPerformanceValueINTEL* pValue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPerformanceParameterINTEL, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25044,7 +25044,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPerformanceParameterINTEL(VkDevice device, VkP
 VKAPI_ATTR void VKAPI_CALL SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLocalDimmingAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25091,7 +25091,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateImagePipeSurfaceFUCHSIA, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -25138,7 +25138,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMetalSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -25183,7 +25183,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25232,7 +25232,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
                                                                               VkCooperativeMatrixPropertiesNV* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -25281,7 +25281,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
     VkPhysicalDevice physicalDevice, uint32_t* pCombinationCount, VkFramebufferMixedSamplesCombinationNV* pCombinations) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -25334,7 +25334,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
                                                                         VkPresentModeKHR* pPresentModes) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceSurfacePresentModes2EXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -25383,7 +25383,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
 VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireFullScreenExclusiveModeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25430,7 +25430,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireFullScreenExclusiveModeEXT(VkDevice device
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseFullScreenExclusiveModeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25479,7 +25479,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice de
                                                                      VkDeviceGroupPresentModeFlagsKHR* pModes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceGroupSurfacePresentModes2EXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25528,7 +25528,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateHeadlessSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -25573,7 +25573,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u
                                                 uint16_t lineStipplePattern) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25617,7 +25617,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u
 VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkResetQueryPoolEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -25661,7 +25661,7 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(VkDevice device, VkQueryPool queryP
 VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCullModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25705,7 +25705,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCu
 VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFrontFaceEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25749,7 +25749,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkF
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveTopologyEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -25795,7 +25795,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(VkCommandBuffer commandBuf
                                                       const VkViewport* pViewports) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWithCountEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -25841,7 +25841,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(VkCommandBuffer commandBuff
                                                      const VkRect2D* pScissors) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetScissorWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25887,7 +25887,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffe
                                                     const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindVertexBuffers2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25934,7 +25934,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -25978,7 +25978,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -26022,7 +26022,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuff
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthCompareOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -26066,7 +26066,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -26111,7 +26111,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer comman
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilTestEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -26157,7 +26157,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
                                               VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetStencilOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -26202,7 +26202,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
 VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToImageEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26249,7 +26249,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCop
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToMemoryEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26296,7 +26296,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCop
 VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyImageToImageEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26344,7 +26344,7 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_
                                                         const VkHostImageLayoutTransitionInfo* pTransitions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkTransitionImageLayoutEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26392,7 +26392,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImag
                                                          VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2EXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26436,7 +26436,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImag
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkReleaseSwapchainImagesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26485,7 +26485,7 @@ VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(VkDevice dev
                                                                     VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetGeneratedCommandsMemoryRequirementsNV,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -26532,7 +26532,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(VkCommandBuffer comm
                                                             const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -26578,7 +26578,7 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(VkCommandBuffer command
                                                          const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdExecuteGeneratedCommandsNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -26625,7 +26625,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(VkCommandBuffer commandB
                                                         VkPipeline pipeline, uint32_t groupIndex) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindPipelineShaderGroupNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -26674,7 +26674,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutNV(VkDevice device,
                                                               VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIndirectCommandsLayoutNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26723,7 +26723,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(VkDevice device, VkIn
                                                            const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyIndirectCommandsLayoutNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26767,7 +26767,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(VkDevice device, VkIn
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBias2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -26811,7 +26811,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, co
 VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireDrmDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -26856,7 +26856,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
                                                 VkDisplayKHR* display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDrmDisplayEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -26902,7 +26902,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePrivateDataSlotEXT(VkDevice device, const V
                                                         VkPrivateDataSlot* pPrivateDataSlot) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePrivateDataSlotEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26950,7 +26950,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateD
                                                      const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyPrivateDataSlotEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -26995,7 +26995,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetPrivateDataEXT(VkDevice device, VkObjectType o
                                                  VkPrivateDataSlot privateDataSlot, uint64_t data) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetPrivateDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27043,7 +27043,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPrivateDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27089,7 +27089,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaM
                                                   const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27136,7 +27136,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaM
 VKAPI_ATTR VkResult VKAPI_CALL GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetCudaModuleCacheNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27184,7 +27184,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(VkDevice device, const VkCud
                                                     const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27231,7 +27231,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCudaFunctionNV(VkDevice device, const VkCud
 VKAPI_ATTR void VKAPI_CALL DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCudaModuleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27276,7 +27276,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(VkDevice device, VkCudaFunction
                                                  const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyCudaFunctionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27320,7 +27320,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCudaFunctionNV(VkDevice device, VkCudaFunction
 VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCudaLaunchKernelNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -27365,7 +27365,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchTileQCOM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -27410,7 +27410,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandB
                                                         const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginPerTileExecutionQCOM,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -27455,7 +27455,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandB
 VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndPerTileExecutionQCOM,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -27501,7 +27501,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuf
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkExportMetalObjectsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27547,7 +27547,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDesc
                                                          VkDeviceSize* pLayoutSizeInBytes) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutSizeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27592,7 +27592,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutBindingOffsetEXT(VkDevice devic
                                                                   VkDeviceSize* pOffset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutBindingOffsetEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27638,7 +27638,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorEXT(VkDevice device, const VkDescriptorG
                                             void* pDescriptor) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27684,7 +27684,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer comm
                                                             const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -27735,7 +27735,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandB
                                                                       VkPipelineLayout layout, uint32_t set) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -27784,7 +27784,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice 
                                                                        void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferOpaqueCaptureDescriptorDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27834,7 +27834,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageOpaqueCaptureDescriptorDataEXT(VkDevice d
                                                                       void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageOpaqueCaptureDescriptorDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -27884,7 +27884,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevi
                                                                           void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetImageViewOpaqueCaptureDescriptorDataEXT,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -27935,7 +27935,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice
                                                                         void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSamplerOpaqueCaptureDescriptorDataEXT,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -27985,7 +27985,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAccelerationStructureOpaqueCaptureDescriptorDa
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -28037,7 +28037,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(VkCommandBuffer comma
                                                            const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -28083,7 +28083,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFa
                                                      VkDeviceFaultInfoEXT* pFaultInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceFaultInfoEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28131,7 +28131,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFa
 VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAcquireWinrtDisplayNV, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -28176,7 +28176,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
                                                  VkDisplayKHR* pDisplay) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetWinrtDisplayNV, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
     {
@@ -28223,7 +28223,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDirectFBSurfaceEXT, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -28268,7 +28268,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
                                                                                uint32_t queueFamilyIndex, IDirectFB* dfb) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceDirectFBPresentationSupportEXT,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -28317,7 +28317,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u
                                                 const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetVertexInputEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -28369,7 +28369,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryZirconHandleFUCHSIA(VkDevice device,
                                                             zx_handle_t* pZirconHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28418,7 +28418,7 @@ GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTy
                                        VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryZirconHandlePropertiesFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28471,7 +28471,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkImportSemaphoreZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28520,7 +28520,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                zx_handle_t* pZirconHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetSemaphoreZirconHandleFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28570,7 +28570,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferCollectionFUCHSIA(VkDevice device,
                                                              VkBufferCollectionFUCHSIA* pCollection) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBufferCollectionFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28618,7 +28618,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetBufferCollectionImageConstraintsFUCHSIA,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -28669,7 +28669,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetBufferCollectionBufferConstraintsFUCHSIA,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -28720,7 +28720,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferCollectionFUCHSIA(VkDevice device, VkBuf
                                                           const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyBufferCollectionFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28765,7 +28765,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetBufferCollectionPropertiesFUCHSIA(VkDevice dev
                                                                     VkBufferCollectionPropertiesFUCHSIA* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetBufferCollectionPropertiesFUCHSIA, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -28814,7 +28814,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkD
                                                                              VkExtent2D* pMaxWorkgroupSize) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -28865,7 +28865,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkD
 VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSubpassShadingHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -28910,7 +28910,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBu
                                                        VkImageLayout imageLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindInvocationMaskHUAWEI,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -28957,7 +28957,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(VkDevice device,
                                                         VkRemoteAddressNV* pAddress) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryRemoteAddressNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29005,7 +29005,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(VkDevice device, const V
                                                         VkBaseOutStructure* pPipelineProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelinePropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29052,7 +29052,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(VkDevice device, const V
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPatchControlPointsEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -29097,7 +29097,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(VkCommandBuffer commandBu
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -29142,7 +29142,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer comm
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthBiasEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29186,7 +29186,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLogicOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29230,7 +29230,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLog
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -29277,7 +29277,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateScreenSurfaceQNX, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -29323,7 +29323,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
                                                                              struct _screen_window* window) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceScreenPresentationSupportQNX,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -29370,7 +29370,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuff
                                                      const VkBool32* pColorWriteEnables) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29415,7 +29415,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32
                                            uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMultiEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29464,7 +29464,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer,
                                                   uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMultiIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29513,7 +29513,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicrom
                                                  const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29560,7 +29560,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(VkDevice device, const VkMicrom
 VKAPI_ATTR void VKAPI_CALL DestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29605,7 +29605,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, u
                                                 const VkMicromapBuildInfoEXT* pInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildMicromapsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29650,7 +29650,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BuildMicromapsEXT(VkDevice device, VkDeferredOper
                                                  const VkMicromapBuildInfoEXT* pInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBuildMicromapsEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29698,7 +29698,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapEXT(VkDevice device, VkDeferredOperat
                                                const VkCopyMicromapInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29746,7 +29746,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMicromapToMemoryEXT(VkDevice device, VkDeferr
                                                        const VkCopyMicromapToMemoryInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMicromapToMemoryEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29794,7 +29794,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToMicromapEXT(VkDevice device, VkDeferr
                                                        const VkCopyMemoryToMicromapInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToMicromapEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29842,7 +29842,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(VkDevice device, uint
                                                            VkQueryType queryType, size_t dataSize, void* pData, size_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteMicromapsPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -29893,7 +29893,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteMicromapsPropertiesEXT(VkDevice device, uint
 VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -29937,7 +29937,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, con
 VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMicromapToMemoryEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -29982,7 +29982,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuf
 VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToMicromapEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30029,7 +30029,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(VkCommandBuffer comman
                                                           VkQueryPool queryPool, uint32_t firstQuery) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30078,7 +30078,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMicromapCompatibilityEXT(VkDevice device, co
                                                              VkAccelerationStructureCompatibilityKHR* pCompatibility) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceMicromapCompatibilityEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30124,7 +30124,7 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(VkDevice device, VkAccelerat
                                                     VkMicromapBuildSizesInfoEXT* pSizeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMicromapBuildSizesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30169,7 +30169,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, u
                                                 uint32_t groupCountZ) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawClusterHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -30213,7 +30213,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, u
 VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30258,7 +30258,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandB
 VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetDeviceMemoryPriorityEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30304,7 +30304,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice d
                                                                       VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetLayoutHostMappingInfoVALVE,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -30351,7 +30351,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice d
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDescriptorSetHostMappingVALVE, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30396,7 +30396,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer
                                                    uint32_t copyCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -30443,7 +30443,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(VkCommandBuffer comman
                                                           const VkImageSubresourceLayers* pImageSubresources) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30493,7 +30493,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, 
                                                  const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -30540,7 +30540,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(VkCommandBuffer co
                                                               VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30590,7 +30590,7 @@ VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(VkDevice devi
                                                                    VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineIndirectMemoryRequirementsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30636,7 +30636,7 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer com
                                                              VkPipeline pipeline) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30682,7 +30682,7 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevic
                                                                          const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPipelineIndirectDeviceAddressNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30731,7 +30731,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetNativeBufferPropertiesOHOS(VkDevice device, co
                                                              VkNativeBufferPropertiesOHOS* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetNativeBufferPropertiesOHOS, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30779,7 +30779,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(VkDevice device, const 
                                                          struct OH_NativeBuffer** pBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryNativeBufferOHOS, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -30827,7 +30827,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(VkDevice device, const 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClampEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -30871,7 +30871,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuff
 VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetPolygonModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -30916,7 +30916,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(VkCommandBuffer command
                                                          VkSampleCountFlagBits rasterizationSamples) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizationSamplesEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -30962,7 +30962,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, Vk
                                                const VkSampleMask* pSampleMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31006,7 +31006,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, Vk
 VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31051,7 +31051,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer comman
 VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAlphaToOneEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31095,7 +31095,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuff
 VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLogicOpEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31140,7 +31140,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuff
                                                      uint32_t attachmentCount, const VkBool32* pColorBlendEnables) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31189,7 +31189,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(VkCommandBuffer commandBu
                                                        const VkColorBlendEquationEXT* pColorBlendEquations) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendEquationEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31238,7 +31238,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer
                                                    uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorWriteMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31285,7 +31285,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(VkCommandBuffer com
                                                              VkTessellationDomainOrigin domainOrigin) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetTessellationDomainOriginEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31330,7 +31330,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(VkCommandBuffer com
 VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRasterizationStreamEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31376,7 +31376,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
     VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31424,7 +31424,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBu
                                                                      float extraPrimitiveOverestimationSize) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31472,7 +31472,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBu
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClipEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31516,7 +31516,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffe
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetSampleLocationsEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31563,7 +31563,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBu
                                                        const VkColorBlendAdvancedEXT* pColorBlendAdvanced) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetColorBlendAdvancedEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31612,7 +31612,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(VkCommandBuffer commandB
                                                         VkProvokingVertexModeEXT provokingVertexMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetProvokingVertexModeEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31658,7 +31658,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(VkCommandBuffer comman
                                                           VkLineRasterizationModeEXT lineRasterizationMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineRasterizationModeEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31703,7 +31703,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(VkCommandBuffer comman
 VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetLineStippleEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31748,7 +31748,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuf
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31793,7 +31793,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer co
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportWScalingEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31839,7 +31839,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer
                                                    const VkViewportSwizzleNV* pViewportSwizzles) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetViewportSwizzleNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -31884,7 +31884,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageToColorEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31929,7 +31929,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(VkCommandBuffer command
 VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageToColorLocationNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -31975,7 +31975,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(VkCommandBuffer comman
                                                           VkCoverageModulationModeNV coverageModulationMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationModeNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32021,7 +32021,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(VkCommandBuffer
                                                                  VkBool32 coverageModulationTableEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32068,7 +32068,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(VkCommandBuffer comma
                                                            const float* pCoverageModulationTable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageModulationTableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32116,7 +32116,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(VkCommandBuffer comma
 VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetShadingRateImageEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32162,7 +32162,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuf
                                                                     VkBool32 representativeFragmentTestEnable) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32210,7 +32210,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer command
                                                          VkCoverageReductionModeNV coverageReductionMode) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetCoverageReductionModeNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -32256,7 +32256,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateTensorARM(VkDevice device, const VkTensorCr
                                                const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateTensorARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32303,7 +32303,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateTensorARM(VkDevice device, const VkTensorCr
 VKAPI_ATTR void VKAPI_CALL DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyTensorARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32348,7 +32348,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateTensorViewARM(VkDevice device, const VkTens
                                                    const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateTensorViewARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32396,7 +32396,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyTensorViewARM(VkDevice device, VkTensorViewARM
                                                 const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyTensorViewARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32441,7 +32441,7 @@ VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const
                                                           VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetTensorMemoryRequirementsARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32486,7 +32486,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindTensorMemoryARM(VkDevice device, uint32_t bin
                                                    const VkBindTensorMemoryInfoARM* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindTensorMemoryARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32534,7 +32534,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(VkDevice device,
                                                                 VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceTensorMemoryRequirementsARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32578,7 +32578,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(VkDevice device,
 VKAPI_ATTR void VKAPI_CALL CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyTensorARM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -32624,7 +32624,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
     VkExternalTensorPropertiesARM* pExternalTensorProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceExternalTensorPropertiesARM,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -32672,7 +32672,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDescriptorDataARM(VkDevice 
                                                                        void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetTensorOpaqueCaptureDescriptorDataARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32722,7 +32722,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetTensorViewOpaqueCaptureDescriptorDataARM(VkDev
                                                                            void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetTensorViewOpaqueCaptureDescriptorDataARM,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -32772,7 +32772,7 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShade
                                                         VkShaderModuleIdentifierEXT* pIdentifier) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderModuleIdentifierEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32817,7 +32817,7 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice devic
                                                                   VkShaderModuleIdentifierEXT* pIdentifier) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderModuleCreateInfoIdentifierEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32864,7 +32864,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -32915,7 +32915,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateOpticalFlowSessionNV(VkDevice device, const
                                                           VkOpticalFlowSessionNV* pSession) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateOpticalFlowSessionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -32963,7 +32963,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyOpticalFlowSessionNV(VkDevice device, VkOptica
                                                        const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyOpticalFlowSessionNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33009,7 +33009,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindOpticalFlowSessionImageNV(VkDevice device, Vk
                                                              VkImageLayout layout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindOpticalFlowSessionImageNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33057,7 +33057,7 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer
                                                    const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdOpticalFlowExecuteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -33101,7 +33101,7 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer
 VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAntiLagUpdateAMD, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33145,7 +33145,7 @@ VKAPI_ATTR void VKAPI_CALL AntiLagUpdateAMD(VkDevice device, const VkAntiLagData
 VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyShaderEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33190,7 +33190,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint
                                              const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindShadersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -33235,7 +33235,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffe
                                                     const VkDepthClampRangeEXT* pDepthClampRange) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetDepthClampRangeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -33280,7 +33280,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(VkDevice device,
                                                                 uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetFramebufferTilePropertiesQCOM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33329,7 +33329,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
                                                                      VkTilePropertiesQCOM* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDynamicRenderingTilePropertiesQCOM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33378,7 +33378,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(Vk
                                                                               VkCooperativeVectorPropertiesNV* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeVectorPropertiesNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -33427,7 +33427,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ConvertCooperativeVectorMatrixNV(VkDevice device,
                                                                 const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkConvertCooperativeVectorMatrixNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33475,7 +33475,7 @@ VKAPI_ATTR void VKAPI_CALL CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer c
                                                                const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdConvertCooperativeVectorMatrixNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -33521,7 +33521,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchai
                                                      const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencySleepModeNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33568,7 +33568,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchai
 VKAPI_ATTR VkResult VKAPI_CALL LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkLatencySleepNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33616,7 +33616,7 @@ VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR sw
                                               const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkSetLatencyMarkerNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33661,7 +33661,7 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetLatencyTimingsNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33705,7 +33705,7 @@ VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR s
 VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(queue);
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueueNotifyOutOfBandNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
@@ -33752,7 +33752,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device
                                                                  VkDataGraphPipelineSessionARM* pSession) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDataGraphPipelineSessionARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33801,7 +33801,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineSessionBindPointRequirementsA
     VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineSessionBindPointRequirementsARM,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -33857,7 +33857,7 @@ VKAPI_ATTR void VKAPI_CALL GetDataGraphPipelineSessionMemoryRequirementsARM(
     VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineSessionMemoryRequirementsARM,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -33907,7 +33907,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindDataGraphPipelineSessionMemoryARM(
     VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBindDataGraphPipelineSessionMemoryARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -33955,7 +33955,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDataGraphPipelineSessionARM(VkDevice device, V
                                                               const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyDataGraphPipelineSessionARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -34000,7 +34000,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer
                                                    const VkDataGraphPipelineDispatchInfoARM* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDispatchDataGraphARM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -34047,7 +34047,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineAvailablePropertiesARM(VkDevi
                                                                           VkDataGraphPipelinePropertyARM* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineAvailablePropertiesARM,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -34101,7 +34101,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelinePropertiesARM(VkDevice device
                                                                  VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelinePropertiesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -34151,7 +34151,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesAR
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -34203,7 +34203,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphProcessingEngine
     VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -34252,7 +34252,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphProcessingEngine
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34299,7 +34299,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
                                                             VkScreenBufferPropertiesQNX* pProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetScreenBufferPropertiesQNX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -34348,7 +34348,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
                                                  const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBindTileMemoryQCOM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -34393,7 +34393,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
                                                   const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -34441,7 +34441,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountEXT(VkCommandBuffer c
                                                                uint32_t maxDecompressionCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDecompressMemoryIndirectCountEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34495,7 +34495,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device, con
                                                             VkExternalComputeQueueNV* pExternalQueue) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateExternalComputeQueueNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -34543,7 +34543,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyExternalComputeQueueNV(VkDevice device, VkExte
                                                          const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyExternalComputeQueueNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -34588,7 +34588,7 @@ VKAPI_ATTR void VKAPI_CALL GetExternalComputeQueueDataNV(VkExternalComputeQueueN
                                                          VkExternalComputeQueueDataParamsNV* params, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(externalQueue);
+    auto device_dispatch = vvl::GetDispatchDevice(externalQueue);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetExternalComputeQueueDataNV,
                           VulkanTypedHandle(externalQueue, kVulkanObjectTypeExternalComputeQueueNV));
@@ -34635,7 +34635,7 @@ VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice 
                                                                        VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetClusterAccelerationStructureBuildSizesNV,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -34682,7 +34682,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
     VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildClusterAccelerationStructureIndirectNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34732,7 +34732,7 @@ GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartit
                                                  VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPartitionedAccelerationStructuresBuildSizesNV,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -34781,7 +34781,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildPartitionedAccelerationStructuresNV(
     VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildPartitionedAccelerationStructuresNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34829,7 +34829,7 @@ VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsEXT(VkDevice de
                                                                      VkMemoryRequirements2* pMemoryRequirements) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetGeneratedCommandsMemoryRequirementsEXT,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -34877,7 +34877,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer com
                                                              VkCommandBuffer stateCommandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdPreprocessGeneratedCommandsEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34926,7 +34926,7 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsEXT(VkCommandBuffer comman
                                                           const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdExecuteGeneratedCommandsEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -34975,7 +34975,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutEXT(VkDevice device,
                                                                VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIndirectCommandsLayoutEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35024,7 +35024,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutEXT(VkDevice device, VkI
                                                             const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyIndirectCommandsLayoutEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35071,7 +35071,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectExecutionSetEXT(VkDevice device,
                                                              VkIndirectExecutionSetEXT* pIndirectExecutionSet) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateIndirectExecutionSetEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35120,7 +35120,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectExecutionSetEXT(VkDevice device, VkInd
                                                           const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyIndirectExecutionSetEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35166,7 +35166,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetPipelineEXT(
     const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateIndirectExecutionSetPipelineEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35216,7 +35216,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(VkDevice device, 
                                                                const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkUpdateIndirectExecutionSetShaderEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35266,7 +35266,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, const VkSu
                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateSurfaceOHOS, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -35312,7 +35312,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensi
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -35363,7 +35363,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandleEXT(VkDevice device, const Vk
                                                        void** pHandle) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryMetalHandleEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35412,7 +35412,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(VkDevice device
                                                                  VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetMemoryMetalHandlePropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35465,7 +35465,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCoun
     VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -35515,7 +35515,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceShaderInstrumentationMetri
     VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -35567,7 +35567,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(VkDevice device,
                                                               VkShaderInstrumentationARM* pInstrumentation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShaderInstrumentationARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35615,7 +35615,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyShaderInstrumentationARM(VkDevice device, VkSh
                                                            const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyShaderInstrumentationARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35660,7 +35660,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(VkCommandBuffer comm
                                                             VkShaderInstrumentationARM instrumentation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginShaderInstrumentationARM,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -35705,7 +35705,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(VkCommandBuffer comm
 VKAPI_ATTR void VKAPI_CALL CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndShaderInstrumentationARM,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -35752,7 +35752,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(VkDevice device
                                                                  VkShaderInstrumentationValuesFlagsARM flags) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetShaderInstrumentationValuesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35803,7 +35803,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(VkDevice device
 VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkClearShaderInstrumentationMetricsARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -35847,7 +35847,7 @@ VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(VkDevice device,
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdEndRendering2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -35892,7 +35892,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffe
                                                     const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBeginCustomResolveEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -35937,7 +35937,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer comm
                                                             const VkComputeOccupancyPriorityParametersNV* pParameters) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetComputeOccupancyPriorityNV,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -35984,7 +35984,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(VkInstance instance, const Vk
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    auto instance_dispatch = vvl::GetDispatchInstance(instance);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateUbmSurfaceSEC, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
     {
@@ -36029,7 +36029,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
                                                                           uint32_t queueFamilyIndex, struct ubm_device* device) {
     VVL_ZoneScoped;
 
-    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceUbmPresentationSupportSEC,
                           VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
@@ -36078,7 +36078,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               VkAccelerationStructureKHR* pAccelerationStructure) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36127,7 +36127,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(VkDevice device, VkAc
                                                            const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkDestroyAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36173,7 +36173,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36223,7 +36223,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBu
                                                                      const uint32_t* const* ppMaxPrimitiveCounts) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36276,7 +36276,7 @@ BuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredO
                                const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkBuildAccelerationStructuresKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36327,7 +36327,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureKHR(VkDevice device, VkD
                                                             const VkCopyAccelerationStructureInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36375,7 +36375,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyAccelerationStructureToMemoryKHR(VkDevice dev
                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyAccelerationStructureToMemoryKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36423,7 +36423,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToAccelerationStructureKHR(VkDevice dev
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCopyMemoryToAccelerationStructureKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36473,7 +36473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WriteAccelerationStructuresPropertiesKHR(VkDevice
                                                                         size_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkWriteAccelerationStructuresPropertiesKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -36527,7 +36527,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(VkCommandBuffer comma
                                                            const VkCopyAccelerationStructureInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36573,7 +36573,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuff
                                                                    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36620,7 +36620,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuff
                                                                    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36667,7 +36667,7 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL
 GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureDeviceAddressKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -36720,7 +36720,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(VkCommand
                                                                        uint32_t firstQuery) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -36772,7 +36772,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceAccelerationStructureCompatibilityKHR(VkDevi
                                                                           VkAccelerationStructureCompatibilityKHR* pCompatibility) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetDeviceAccelerationStructureCompatibilityKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -36824,7 +36824,7 @@ VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(VkDevice device
                                                                  VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetAccelerationStructureBuildSizesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -36876,7 +36876,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                            uint32_t height, uint32_t depth) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -36928,7 +36928,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRayTracingCaptureReplayShaderGroupHandlesKHR(V
                                                                                size_t dataSize, void* pData) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingCaptureReplayShaderGroupHandlesKHR,
                           VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -36988,7 +36988,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer
                                                    VkDeviceAddress indirectDeviceAddress) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdTraceRaysIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -37040,7 +37040,7 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(VkDevice
                                                                         VkShaderGroupShaderKHR groupShader) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(device);
+    auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkGetRayTracingShaderGroupStackSizeKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     {
@@ -37086,7 +37086,7 @@ VKAPI_ATTR VkDeviceSize VKAPI_CALL GetRayTracingShaderGroupStackSizeKHR(VkDevice
 VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -37132,7 +37132,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, ui
                                                uint32_t groupCountZ) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     {
@@ -37177,7 +37177,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBu
                                                        uint32_t drawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
@@ -37224,7 +37224,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
                                                             uint32_t maxDrawCount, uint32_t stride) {
     VVL_ZoneScoped;
 
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT,
                           VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));

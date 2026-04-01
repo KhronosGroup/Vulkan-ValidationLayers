@@ -19,8 +19,8 @@
 
 namespace gpudump {
 
-GpuDump::GpuDump(vvl::dispatch::Device* dev, gpudump::Instance* instance_vo)
-    : BaseClass(dev, instance_vo, LayerObjectTypeGpuDump) {}
+GpuDump::GpuDump(vvl::DispatchDevice* dev, gpudump::Instance* instance_vo)
+    : vvl::DeviceProxy(dev, instance_vo, LayerObjectTypeGpuDump) {}
 
 GpuDump::~GpuDump() {}
 

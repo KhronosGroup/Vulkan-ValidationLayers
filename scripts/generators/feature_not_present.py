@@ -60,9 +60,8 @@ class FeatureNotPresentGenerator(BaseGenerator):
             #include "error_message/error_location.h"
 
             namespace vvl {
-            namespace dispatch {
 
-            void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo &create_info) {
+            void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo &create_info) {
                 std::ostringstream ss;
                 ss << "returned VK_ERROR_FEATURE_NOT_PRESENT because the following features were not supported on this physical device:\\n";
 
@@ -120,7 +119,6 @@ class FeatureNotPresentGenerator(BaseGenerator):
                     Location loc(vvl::Func::vkCreateDevice);
                     LogWarning("WARNING-vkCreateDevice-FeatureNotPresent", instance, loc, "%s", ss.str().c_str());
                 }  // ReportErrorFeatureNotPresent
-                }  // namespace dispatch
                 }  // namespace vvl
                 ''')
         return "".join(out)

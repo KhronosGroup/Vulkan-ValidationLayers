@@ -42,9 +42,8 @@
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
 namespace vvl {
-namespace dispatch {
 
-void Instance::InitValidationObjects() {
+void DispatchInstance::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
     if (!settings.disabled[thread_safety]) {
@@ -80,7 +79,7 @@ void Instance::InitValidationObjects() {
     }
 }
 
-void Device::InitValidationObjects() {
+void DispatchDevice::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
     if (!settings.disabled[thread_safety]) {
@@ -672,71 +671,72 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
     }
 }
 
-VkResult Instance::EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                            VkPhysicalDevice* pPhysicalDevices) {
+VkResult DispatchInstance::EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+                                                    VkPhysicalDevice* pPhysicalDevices) {
     VkResult result = instance_dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
+void DispatchInstance::GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
     instance_dispatch_table.GetPhysicalDeviceFeatures(physicalDevice, pFeatures);
 }
 
-void Instance::GetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                 VkFormatProperties* pFormatProperties) {
+void DispatchInstance::GetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                         VkFormatProperties* pFormatProperties) {
     instance_dispatch_table.GetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties);
 }
 
-VkResult Instance::GetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type,
-                                                          VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags,
-                                                          VkImageFormatProperties* pImageFormatProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                  VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
+                                                                  VkImageCreateFlags flags,
+                                                                  VkImageFormatProperties* pImageFormatProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage,
                                                                                      flags, pImageFormatProperties);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties) {
+void DispatchInstance::GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceProperties(physicalDevice, pProperties);
 }
 
-void Instance::GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                      VkQueueFamilyProperties* pQueueFamilyProperties) {
+void DispatchInstance::GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                              VkQueueFamilyProperties* pQueueFamilyProperties) {
     instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                    pQueueFamilyProperties);
 }
 
-void Instance::GetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
-                                                 VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
+void DispatchInstance::GetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
+                                                         VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
     instance_dispatch_table.GetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
 }
 
-PFN_vkVoidFunction Instance::GetInstanceProcAddr(VkInstance instance, const char* pName) {
+PFN_vkVoidFunction DispatchInstance::GetInstanceProcAddr(VkInstance instance, const char* pName) {
     PFN_vkVoidFunction result = instance_dispatch_table.GetInstanceProcAddr(instance, pName);
 
     return result;
 }
 
-PFN_vkVoidFunction Device::GetDeviceProcAddr(VkDevice device, const char* pName) {
+PFN_vkVoidFunction DispatchDevice::GetDeviceProcAddr(VkDevice device, const char* pName) {
     PFN_vkVoidFunction result = device_dispatch_table.GetDeviceProcAddr(device, pName);
 
     return result;
 }
 
-VkResult Instance::EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
-                                                      uint32_t* pPropertyCount, VkExtensionProperties* pProperties) {
+VkResult DispatchInstance::EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
+                                                              uint32_t* pPropertyCount, VkExtensionProperties* pProperties) {
     VkResult result =
         instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties);
 
     return result;
 }
 
-void Device::GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+void DispatchDevice::GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
     device_dispatch_table.GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
 }
 
-VkResult Device::QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
+VkResult DispatchDevice::QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
     if (!wrap_handles) return device_dispatch_table.QueueSubmit(queue, submitCount, pSubmits, fence);
     small_vector<vku::safe_VkSubmitInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSubmits;
     vku::safe_VkSubmitInfo* local_pSubmits = nullptr;
@@ -766,20 +766,20 @@ VkResult Device::QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmit
     return result;
 }
 
-VkResult Device::QueueWaitIdle(VkQueue queue) {
+VkResult DispatchDevice::QueueWaitIdle(VkQueue queue) {
     VkResult result = device_dispatch_table.QueueWaitIdle(queue);
 
     return result;
 }
 
-VkResult Device::DeviceWaitIdle(VkDevice device) {
+VkResult DispatchDevice::DeviceWaitIdle(VkDevice device) {
     VkResult result = device_dispatch_table.DeviceWaitIdle(device);
 
     return result;
 }
 
-VkResult Device::AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator,
-                                VkDeviceMemory* pMemory) {
+VkResult DispatchDevice::AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
     if (!wrap_handles) return device_dispatch_table.AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
     vku::safe_VkMemoryAllocateInfo var_local_pAllocateInfo;
     vku::safe_VkMemoryAllocateInfo* local_pAllocateInfo = nullptr;
@@ -798,14 +798,14 @@ VkResult Device::AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAl
     return result;
 }
 
-void Device::FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.FreeMemory(device, memory, pAllocator);
     memory = Erase(memory);
     device_dispatch_table.FreeMemory(device, memory, pAllocator);
 }
 
-VkResult Device::MapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags,
-                           void** ppData) {
+VkResult DispatchDevice::MapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
+                                   VkMemoryMapFlags flags, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.MapMemory(device, memory, offset, size, flags, ppData);
     {
         memory = Unwrap(memory);
@@ -815,7 +815,7 @@ VkResult Device::MapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize 
     return result;
 }
 
-void Device::UnmapMemory(VkDevice device, VkDeviceMemory memory) {
+void DispatchDevice::UnmapMemory(VkDevice device, VkDeviceMemory memory) {
     if (!wrap_handles) return device_dispatch_table.UnmapMemory(device, memory);
     {
         memory = Unwrap(memory);
@@ -823,7 +823,8 @@ void Device::UnmapMemory(VkDevice device, VkDeviceMemory memory) {
     device_dispatch_table.UnmapMemory(device, memory);
 }
 
-VkResult Device::FlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount, const VkMappedMemoryRange* pMemoryRanges) {
+VkResult DispatchDevice::FlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                 const VkMappedMemoryRange* pMemoryRanges) {
     if (!wrap_handles) return device_dispatch_table.FlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
     small_vector<vku::safe_VkMappedMemoryRange, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pMemoryRanges;
     vku::safe_VkMappedMemoryRange* local_pMemoryRanges = nullptr;
@@ -846,8 +847,8 @@ VkResult Device::FlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCo
     return result;
 }
 
-VkResult Device::InvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
-                                              const VkMappedMemoryRange* pMemoryRanges) {
+VkResult DispatchDevice::InvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                      const VkMappedMemoryRange* pMemoryRanges) {
     if (!wrap_handles) return device_dispatch_table.InvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
     small_vector<vku::safe_VkMappedMemoryRange, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pMemoryRanges;
     vku::safe_VkMappedMemoryRange* local_pMemoryRanges = nullptr;
@@ -870,7 +871,7 @@ VkResult Device::InvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRa
     return result;
 }
 
-void Device::GetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize* pCommittedMemoryInBytes) {
+void DispatchDevice::GetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize* pCommittedMemoryInBytes) {
     if (!wrap_handles) return device_dispatch_table.GetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
     {
         memory = Unwrap(memory);
@@ -878,7 +879,7 @@ void Device::GetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, V
     device_dispatch_table.GetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
 }
 
-VkResult Device::BindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
+VkResult DispatchDevice::BindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
     if (!wrap_handles) return device_dispatch_table.BindBufferMemory(device, buffer, memory, memoryOffset);
     {
         buffer = Unwrap(buffer);
@@ -889,7 +890,7 @@ VkResult Device::BindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemo
     return result;
 }
 
-VkResult Device::BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
+VkResult DispatchDevice::BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
     if (!wrap_handles) return device_dispatch_table.BindImageMemory(device, image, memory, memoryOffset);
     {
         image = Unwrap(image);
@@ -900,7 +901,7 @@ VkResult Device::BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory 
     return result;
 }
 
-void Device::GetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements) {
+void DispatchDevice::GetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
     {
         buffer = Unwrap(buffer);
@@ -908,7 +909,7 @@ void Device::GetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMem
     device_dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
 }
 
-void Device::GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements) {
+void DispatchDevice::GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
     {
         image = Unwrap(image);
@@ -916,8 +917,8 @@ void Device::GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemory
     device_dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
 }
 
-void Device::GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
-                                              VkSparseImageMemoryRequirements* pSparseMemoryRequirements) {
+void DispatchDevice::GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
+                                                      VkSparseImageMemoryRequirements* pSparseMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                                       pSparseMemoryRequirements);
@@ -927,15 +928,16 @@ void Device::GetImageSparseMemoryRequirements(VkDevice device, VkImage image, ui
     device_dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
-void Instance::GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type,
-                                                            VkSampleCountFlagBits samples, VkImageUsageFlags usage,
-                                                            VkImageTiling tiling, uint32_t* pPropertyCount,
-                                                            VkSparseImageFormatProperties* pProperties) {
+void DispatchInstance::GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                    VkImageType type, VkSampleCountFlagBits samples,
+                                                                    VkImageUsageFlags usage, VkImageTiling tiling,
+                                                                    uint32_t* pPropertyCount,
+                                                                    VkSparseImageFormatProperties* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                          pPropertyCount, pProperties);
 }
 
-VkResult Device::QueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence) {
+VkResult DispatchDevice::QueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence) {
     if (!wrap_handles) return device_dispatch_table.QueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
     small_vector<vku::safe_VkBindSparseInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfo;
     vku::safe_VkBindSparseInfo* local_pBindInfo = nullptr;
@@ -1014,8 +1016,8 @@ VkResult Device::QueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const Vk
     return result;
 }
 
-VkResult Device::CreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                             VkFence* pFence) {
+VkResult DispatchDevice::CreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                     VkFence* pFence) {
     if (!wrap_handles) return device_dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
 
     VkResult result = device_dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
@@ -1025,13 +1027,13 @@ VkResult Device::CreateFence(VkDevice device, const VkFenceCreateInfo* pCreateIn
     return result;
 }
 
-void Device::DestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyFence(device, fence, pAllocator);
     fence = Erase(fence);
     device_dispatch_table.DestroyFence(device, fence, pAllocator);
 }
 
-VkResult Device::ResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences) {
+VkResult DispatchDevice::ResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences) {
     if (!wrap_handles) return device_dispatch_table.ResetFences(device, fenceCount, pFences);
     small_vector<VkFence, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pFences;
     VkFence* local_pFences = nullptr;
@@ -1049,7 +1051,7 @@ VkResult Device::ResetFences(VkDevice device, uint32_t fenceCount, const VkFence
     return result;
 }
 
-VkResult Device::GetFenceStatus(VkDevice device, VkFence fence) {
+VkResult DispatchDevice::GetFenceStatus(VkDevice device, VkFence fence) {
     if (!wrap_handles) return device_dispatch_table.GetFenceStatus(device, fence);
     {
         fence = Unwrap(fence);
@@ -1059,7 +1061,8 @@ VkResult Device::GetFenceStatus(VkDevice device, VkFence fence) {
     return result;
 }
 
-VkResult Device::WaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout) {
+VkResult DispatchDevice::WaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
+                                       uint64_t timeout) {
     if (!wrap_handles) return device_dispatch_table.WaitForFences(device, fenceCount, pFences, waitAll, timeout);
     small_vector<VkFence, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pFences;
     VkFence* local_pFences = nullptr;
@@ -1077,8 +1080,8 @@ VkResult Device::WaitForFences(VkDevice device, uint32_t fenceCount, const VkFen
     return result;
 }
 
-VkResult Device::CreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                 VkSemaphore* pSemaphore) {
+VkResult DispatchDevice::CreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) {
     if (!wrap_handles) return device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
 
     VkResult result = device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
@@ -1088,14 +1091,14 @@ VkResult Device::CreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* p
     return result;
 }
 
-void Device::DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
     semaphore = Erase(semaphore);
     device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
 }
 
-VkResult Device::CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                 VkQueryPool* pQueryPool) {
+VkResult DispatchDevice::CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool) {
     if (!wrap_handles) return device_dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
 
     VkResult result = device_dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
@@ -1105,14 +1108,14 @@ VkResult Device::CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* p
     return result;
 }
 
-void Device::DestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
     queryPool = Erase(queryPool);
     device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
 }
 
-VkResult Device::GetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                     size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags) {
+VkResult DispatchDevice::GetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                             size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags) {
     if (!wrap_handles)
         return device_dispatch_table.GetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
     {
@@ -1124,8 +1127,8 @@ VkResult Device::GetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uin
     return result;
 }
 
-VkResult Device::CreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                              VkBuffer* pBuffer) {
+VkResult DispatchDevice::CreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) {
     if (!wrap_handles) return device_dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
     vku::safe_VkBufferCreateInfo var_local_pCreateInfo;
     vku::safe_VkBufferCreateInfo* local_pCreateInfo = nullptr;
@@ -1143,14 +1146,14 @@ VkResult Device::CreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreate
     return result;
 }
 
-void Device::DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
     buffer = Erase(buffer);
     device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
 }
 
-VkResult Device::CreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                             VkImage* pImage) {
+VkResult DispatchDevice::CreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                     VkImage* pImage) {
     if (!wrap_handles) return device_dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
     vku::safe_VkImageCreateInfo var_local_pCreateInfo;
     vku::safe_VkImageCreateInfo* local_pCreateInfo = nullptr;
@@ -1168,14 +1171,14 @@ VkResult Device::CreateImage(VkDevice device, const VkImageCreateInfo* pCreateIn
     return result;
 }
 
-void Device::DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyImage(device, image, pAllocator);
     image = Erase(image);
     device_dispatch_table.DestroyImage(device, image, pAllocator);
 }
 
-void Device::GetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
-                                       VkSubresourceLayout* pLayout) {
+void DispatchDevice::GetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
+                                               VkSubresourceLayout* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout(device, image, pSubresource, pLayout);
     {
         image = Unwrap(image);
@@ -1183,8 +1186,8 @@ void Device::GetImageSubresourceLayout(VkDevice device, VkImage image, const VkI
     device_dispatch_table.GetImageSubresourceLayout(device, image, pSubresource, pLayout);
 }
 
-VkResult Device::CreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                 VkImageView* pView) {
+VkResult DispatchDevice::CreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView) {
     if (!wrap_handles) return device_dispatch_table.CreateImageView(device, pCreateInfo, pAllocator, pView);
     vku::safe_VkImageViewCreateInfo var_local_pCreateInfo;
     vku::safe_VkImageViewCreateInfo* local_pCreateInfo = nullptr;
@@ -1207,14 +1210,14 @@ VkResult Device::CreateImageView(VkDevice device, const VkImageViewCreateInfo* p
     return result;
 }
 
-void Device::DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
     imageView = Erase(imageView);
     device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
 }
 
-VkResult Device::CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+VkResult DispatchDevice::CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
     if (!wrap_handles) return device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
 
     VkResult result = device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
@@ -1224,7 +1227,7 @@ VkResult Device::CreateCommandPool(VkDevice device, const VkCommandPoolCreateInf
     return result;
 }
 
-VkResult Device::ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+VkResult DispatchDevice::ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     if (!wrap_handles) return device_dispatch_table.ResetCommandPool(device, commandPool, flags);
     {
         commandPool = Unwrap(commandPool);
@@ -1234,20 +1237,20 @@ VkResult Device::ResetCommandPool(VkDevice device, VkCommandPool commandPool, Vk
     return result;
 }
 
-VkResult Device::EndCommandBuffer(VkCommandBuffer commandBuffer) {
+VkResult DispatchDevice::EndCommandBuffer(VkCommandBuffer commandBuffer) {
     VkResult result = device_dispatch_table.EndCommandBuffer(commandBuffer);
 
     return result;
 }
 
-VkResult Device::ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+VkResult DispatchDevice::ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     VkResult result = device_dispatch_table.ResetCommandBuffer(commandBuffer, flags);
 
     return result;
 }
 
-void Device::CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                           const VkBufferCopy* pRegions) {
+void DispatchDevice::CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                   const VkBufferCopy* pRegions) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
     {
         srcBuffer = Unwrap(srcBuffer);
@@ -1256,8 +1259,8 @@ void Device::CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, Vk
     device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-void Device::CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions) {
+void DispatchDevice::CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                  VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                   pRegions);
@@ -1268,8 +1271,8 @@ void Device::CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkIma
     device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void Device::CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout,
-                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+void DispatchDevice::CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount,
                                                           pRegions);
@@ -1280,8 +1283,8 @@ void Device::CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuf
     device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void Device::CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer,
-                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+void DispatchDevice::CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                          VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount,
                                                           pRegions);
@@ -1292,8 +1295,8 @@ void Device::CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImag
     device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 }
 
-void Device::CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize,
-                             const void* pData) {
+void DispatchDevice::CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                     VkDeviceSize dataSize, const void* pData) {
     if (!wrap_handles) return device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
     {
         dstBuffer = Unwrap(dstBuffer);
@@ -1301,8 +1304,8 @@ void Device::CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, 
     device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
 }
 
-void Device::CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                           uint32_t data) {
+void DispatchDevice::CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                   uint32_t data) {
     if (!wrap_handles) return device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
     {
         dstBuffer = Unwrap(dstBuffer);
@@ -1310,11 +1313,11 @@ void Device::CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, Vk
     device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 }
 
-void Device::CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                                const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                const VkImageMemoryBarrier* pImageMemoryBarriers) {
+void DispatchDevice::CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                        VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                        uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                        uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                        uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     if (!wrap_handles)
         return device_dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
                                                         memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
@@ -1353,7 +1356,8 @@ void Device::CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFl
                                              (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
 }
 
-void Device::CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags) {
+void DispatchDevice::CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                   VkQueryControlFlags flags) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
     {
         queryPool = Unwrap(queryPool);
@@ -1361,7 +1365,7 @@ void Device::CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
     device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
 }
 
-void Device::CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
+void DispatchDevice::CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
     if (!wrap_handles) return device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
     {
         queryPool = Unwrap(queryPool);
@@ -1369,7 +1373,8 @@ void Device::CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u
     device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
 }
 
-void Device::CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void DispatchDevice::CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                       uint32_t queryCount) {
     if (!wrap_handles) return device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
     {
         queryPool = Unwrap(queryPool);
@@ -1377,8 +1382,8 @@ void Device::CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryP
     device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
 }
 
-void Device::CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
-                               uint32_t query) {
+void DispatchDevice::CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
+                                       uint32_t query) {
     if (!wrap_handles) return device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
     {
         queryPool = Unwrap(queryPool);
@@ -1386,8 +1391,9 @@ void Device::CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFla
     device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 }
 
-void Device::CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                     VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags) {
+void DispatchDevice::CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                             uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+                                             VkQueryResultFlags flags) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
                                                              stride, flags);
@@ -1399,13 +1405,13 @@ void Device::CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool 
                                                   flags);
 }
 
-void Device::CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                const VkCommandBuffer* pCommandBuffers) {
+void DispatchDevice::CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                        const VkCommandBuffer* pCommandBuffers) {
     device_dispatch_table.CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
-VkResult Device::CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                             VkEvent* pEvent) {
+VkResult DispatchDevice::CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                     VkEvent* pEvent) {
     if (!wrap_handles) return device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
 
     VkResult result = device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
@@ -1415,13 +1421,13 @@ VkResult Device::CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateIn
     return result;
 }
 
-void Device::DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyEvent(device, event, pAllocator);
     event = Erase(event);
     device_dispatch_table.DestroyEvent(device, event, pAllocator);
 }
 
-VkResult Device::GetEventStatus(VkDevice device, VkEvent event) {
+VkResult DispatchDevice::GetEventStatus(VkDevice device, VkEvent event) {
     if (!wrap_handles) return device_dispatch_table.GetEventStatus(device, event);
     {
         event = Unwrap(event);
@@ -1431,7 +1437,7 @@ VkResult Device::GetEventStatus(VkDevice device, VkEvent event) {
     return result;
 }
 
-VkResult Device::SetEvent(VkDevice device, VkEvent event) {
+VkResult DispatchDevice::SetEvent(VkDevice device, VkEvent event) {
     if (!wrap_handles) return device_dispatch_table.SetEvent(device, event);
     {
         event = Unwrap(event);
@@ -1441,7 +1447,7 @@ VkResult Device::SetEvent(VkDevice device, VkEvent event) {
     return result;
 }
 
-VkResult Device::ResetEvent(VkDevice device, VkEvent event) {
+VkResult DispatchDevice::ResetEvent(VkDevice device, VkEvent event) {
     if (!wrap_handles) return device_dispatch_table.ResetEvent(device, event);
     {
         event = Unwrap(event);
@@ -1451,8 +1457,8 @@ VkResult Device::ResetEvent(VkDevice device, VkEvent event) {
     return result;
 }
 
-VkResult Device::CreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                  const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
+VkResult DispatchDevice::CreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
     if (!wrap_handles) return device_dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
     vku::safe_VkBufferViewCreateInfo var_local_pCreateInfo;
     vku::safe_VkBufferViewCreateInfo* local_pCreateInfo = nullptr;
@@ -1474,14 +1480,14 @@ VkResult Device::CreateBufferView(VkDevice device, const VkBufferViewCreateInfo*
     return result;
 }
 
-void Device::DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
     bufferView = Erase(bufferView);
     device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
 }
 
-VkResult Device::CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) {
+VkResult DispatchDevice::CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) {
     if (!wrap_handles) return device_dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     vku::safe_VkShaderModuleCreateInfo var_local_pCreateInfo;
     vku::safe_VkShaderModuleCreateInfo* local_pCreateInfo = nullptr;
@@ -1500,14 +1506,14 @@ VkResult Device::CreateShaderModule(VkDevice device, const VkShaderModuleCreateI
     return result;
 }
 
-void Device::DestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
     shaderModule = Erase(shaderModule);
     device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
 }
 
-VkResult Device::CreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache) {
+VkResult DispatchDevice::CreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache) {
     if (!wrap_handles) return device_dispatch_table.CreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
 
     VkResult result = device_dispatch_table.CreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
@@ -1517,13 +1523,13 @@ VkResult Device::CreatePipelineCache(VkDevice device, const VkPipelineCacheCreat
     return result;
 }
 
-void Device::DestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
     pipelineCache = Erase(pipelineCache);
     device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
 }
 
-VkResult Device::GetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData) {
+VkResult DispatchDevice::GetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetPipelineCacheData(device, pipelineCache, pDataSize, pData);
     {
         pipelineCache = Unwrap(pipelineCache);
@@ -1533,8 +1539,8 @@ VkResult Device::GetPipelineCacheData(VkDevice device, VkPipelineCache pipelineC
     return result;
 }
 
-VkResult Device::MergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
-                                     const VkPipelineCache* pSrcCaches) {
+VkResult DispatchDevice::MergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                             const VkPipelineCache* pSrcCaches) {
     if (!wrap_handles) return device_dispatch_table.MergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
     small_vector<VkPipelineCache, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSrcCaches;
     VkPipelineCache* local_pSrcCaches = nullptr;
@@ -1554,14 +1560,14 @@ VkResult Device::MergePipelineCaches(VkDevice device, VkPipelineCache dstCache, 
     return result;
 }
 
-void Device::DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
     pipeline = Erase(pipeline);
     device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
 }
 
-VkResult Device::CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout) {
+VkResult DispatchDevice::CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout) {
     if (!wrap_handles) return device_dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
     vku::safe_VkPipelineLayoutCreateInfo var_local_pCreateInfo;
     vku::safe_VkPipelineLayoutCreateInfo* local_pCreateInfo = nullptr;
@@ -1584,14 +1590,15 @@ VkResult Device::CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCre
     return result;
 }
 
-void Device::DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
+                                           const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
     pipelineLayout = Erase(pipelineLayout);
     device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
 }
 
-VkResult Device::CreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                               VkSampler* pSampler) {
+VkResult DispatchDevice::CreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) {
     if (!wrap_handles) return device_dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
     vku::safe_VkSamplerCreateInfo var_local_pCreateInfo;
     vku::safe_VkSamplerCreateInfo* local_pCreateInfo = nullptr;
@@ -1610,14 +1617,14 @@ VkResult Device::CreateSampler(VkDevice device, const VkSamplerCreateInfo* pCrea
     return result;
 }
 
-void Device::DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySampler(device, sampler, pAllocator);
     sampler = Erase(sampler);
     device_dispatch_table.DestroySampler(device, sampler, pAllocator);
 }
 
-VkResult Device::CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout) {
+VkResult DispatchDevice::CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout) {
     if (!wrap_handles) return device_dispatch_table.CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
     vku::safe_VkDescriptorSetLayoutCreateInfo var_local_pCreateInfo;
     vku::safe_VkDescriptorSetLayoutCreateInfo* local_pCreateInfo = nullptr;
@@ -1645,15 +1652,15 @@ VkResult Device::CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSe
     return result;
 }
 
-void Device::DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                        const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
     descriptorSetLayout = Erase(descriptorSetLayout);
     device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
 }
 
-VkResult Device::CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool) {
+VkResult DispatchDevice::CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool) {
     if (!wrap_handles) return device_dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
 
     VkResult result = device_dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
@@ -1663,8 +1670,9 @@ VkResult Device::CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCre
     return result;
 }
 
-void Device::UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
-                                  uint32_t descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies) {
+void DispatchDevice::UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                          const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                          const VkCopyDescriptorSet* pDescriptorCopies) {
     if (!wrap_handles)
         return device_dispatch_table.UpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                           pDescriptorCopies);
@@ -1736,7 +1744,7 @@ void Device::UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                                                descriptorCopyCount, (const VkCopyDescriptorSet*)local_pDescriptorCopies);
 }
 
-void Device::CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
+void DispatchDevice::CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
     if (!wrap_handles) return device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
     {
         pipeline = Unwrap(pipeline);
@@ -1744,9 +1752,10 @@ void Device::CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint 
     device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
-void Device::CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                   uint32_t firstSet, uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets,
-                                   uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) {
+void DispatchDevice::CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                           VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                           const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                           const uint32_t* pDynamicOffsets) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                            pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
@@ -1766,8 +1775,9 @@ void Device::CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBind
                                                 (const VkDescriptorSet*)local_pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
-void Device::CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges) {
+void DispatchDevice::CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                        const VkClearColorValue* pColor, uint32_t rangeCount,
+                                        const VkImageSubresourceRange* pRanges) {
     if (!wrap_handles)
         return device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
     {
@@ -1776,11 +1786,11 @@ void Device::CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, Vk
     device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
-void Device::CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void DispatchDevice::CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     device_dispatch_table.CmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void Device::CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+void DispatchDevice::CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     if (!wrap_handles) return device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
     {
         buffer = Unwrap(buffer);
@@ -1788,7 +1798,7 @@ void Device::CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
     device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
 }
 
-void Device::CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+void DispatchDevice::CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     if (!wrap_handles) return device_dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
     {
         event = Unwrap(event);
@@ -1796,7 +1806,7 @@ void Device::CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelin
     device_dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
 }
 
-void Device::CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+void DispatchDevice::CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     if (!wrap_handles) return device_dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
     {
         event = Unwrap(event);
@@ -1804,11 +1814,11 @@ void Device::CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipel
     device_dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
 }
 
-void Device::CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                           VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                           const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                           const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                           const VkImageMemoryBarrier* pImageMemoryBarriers) {
+void DispatchDevice::CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                   uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     if (!wrap_handles)
         return device_dispatch_table.CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask,
                                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
@@ -1856,8 +1866,8 @@ void Device::CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, c
                                         (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
 }
 
-void Device::CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                              uint32_t offset, uint32_t size, const void* pValues) {
+void DispatchDevice::CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                      uint32_t offset, uint32_t size, const void* pValues) {
     if (!wrap_handles) return device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
     {
         layout = Unwrap(layout);
@@ -1865,8 +1875,8 @@ void Device::CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout la
     device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
 
-VkResult Device::CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
+VkResult DispatchDevice::CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
     if (!wrap_handles) return device_dispatch_table.CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     vku::safe_VkFramebufferCreateInfo var_local_pCreateInfo;
     vku::safe_VkFramebufferCreateInfo* local_pCreateInfo = nullptr;
@@ -1893,13 +1903,13 @@ VkResult Device::CreateFramebuffer(VkDevice device, const VkFramebufferCreateInf
     return result;
 }
 
-void Device::DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
     framebuffer = Erase(framebuffer);
     device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
 }
 
-void Device::GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
+void DispatchDevice::GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
     if (!wrap_handles) return device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
     {
         renderPass = Unwrap(renderPass);
@@ -1907,45 +1917,47 @@ void Device::GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, 
     device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
 }
 
-void Device::CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                            const VkViewport* pViewports) {
+void DispatchDevice::CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                    const VkViewport* pViewports) {
     device_dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 }
 
-void Device::CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) {
+void DispatchDevice::CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                   const VkRect2D* pScissors) {
     device_dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 }
 
-void Device::CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+void DispatchDevice::CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     device_dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
 }
 
-void Device::CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
-                             float depthBiasSlopeFactor) {
+void DispatchDevice::CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                     float depthBiasSlopeFactor) {
     device_dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
 }
 
-void Device::CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+void DispatchDevice::CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
     device_dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
 }
 
-void Device::CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+void DispatchDevice::CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
     device_dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 }
 
-void Device::CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
+void DispatchDevice::CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
     device_dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 }
 
-void Device::CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+void DispatchDevice::CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
     device_dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 }
 
-void Device::CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+void DispatchDevice::CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
     device_dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
-void Device::CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) {
+void DispatchDevice::CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                        VkIndexType indexType) {
     if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
     {
         buffer = Unwrap(buffer);
@@ -1953,8 +1965,8 @@ void Device::CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, 
     device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
-void Device::CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
+void DispatchDevice::CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                          const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     small_vector<VkBuffer, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBuffers;
@@ -1972,18 +1984,18 @@ void Device::CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstB
                                                pOffsets);
 }
 
-void Device::CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                     uint32_t firstInstance) {
+void DispatchDevice::CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                             uint32_t firstInstance) {
     device_dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void Device::CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
-                            int32_t vertexOffset, uint32_t firstInstance) {
+void DispatchDevice::CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                                    int32_t vertexOffset, uint32_t firstInstance) {
     device_dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void Device::CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                             uint32_t stride) {
+void DispatchDevice::CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                                     uint32_t stride) {
     if (!wrap_handles) return device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
     {
         buffer = Unwrap(buffer);
@@ -1991,8 +2003,8 @@ void Device::CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkD
     device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void Device::CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                    uint32_t stride) {
+void DispatchDevice::CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                                            uint32_t stride) {
     if (!wrap_handles) return device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
     {
         buffer = Unwrap(buffer);
@@ -2000,8 +2012,9 @@ void Device::CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buff
     device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void Device::CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter) {
+void DispatchDevice::CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                  VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
+                                  VkFilter filter) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                   pRegions, filter);
@@ -2013,9 +2026,9 @@ void Device::CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkIma
                                        filter);
 }
 
-void Device::CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                       const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                       const VkImageSubresourceRange* pRanges) {
+void DispatchDevice::CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                               const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                               const VkImageSubresourceRange* pRanges) {
     if (!wrap_handles)
         return device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
                                                                pRanges);
@@ -2025,13 +2038,14 @@ void Device::CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage im
     device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 }
 
-void Device::CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkClearAttachment* pAttachments,
-                                 uint32_t rectCount, const VkClearRect* pRects) {
+void DispatchDevice::CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                         const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects) {
     device_dispatch_table.CmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 }
 
-void Device::CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                             VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve* pRegions) {
+void DispatchDevice::CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                     VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                     const VkImageResolve* pRegions) {
     if (!wrap_handles)
         return device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                      pRegions);
@@ -2042,8 +2056,8 @@ void Device::CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, Vk
     device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-void Device::CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                VkSubpassContents contents) {
+void DispatchDevice::CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                        VkSubpassContents contents) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     vku::safe_VkRenderPassBeginInfo var_local_pRenderPassBegin;
     vku::safe_VkRenderPassBeginInfo* local_pRenderPassBegin = nullptr;
@@ -2064,32 +2078,32 @@ void Device::CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPas
     device_dispatch_table.CmdBeginRenderPass(commandBuffer, (const VkRenderPassBeginInfo*)local_pRenderPassBegin, contents);
 }
 
-void Device::CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+void DispatchDevice::CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     device_dispatch_table.CmdNextSubpass(commandBuffer, contents);
 }
 
-void Device::CmdEndRenderPass(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRenderPass(commandBuffer); }
+void DispatchDevice::CmdEndRenderPass(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRenderPass(commandBuffer); }
 
-void Device::GetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
-                                              uint32_t remoteDeviceIndex, VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
+void DispatchDevice::GetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
+                                                      uint32_t remoteDeviceIndex, VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
     device_dispatch_table.GetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                            pPeerMemoryFeatures);
 }
 
-void Device::CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+void DispatchDevice::CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     device_dispatch_table.CmdSetDeviceMask(commandBuffer, deviceMask);
 }
 
-VkResult Instance::EnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                 VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+VkResult DispatchInstance::EnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                         VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     VkResult result =
         instance_dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 
     return result;
 }
 
-void Device::GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                         VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                 VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
     vku::safe_VkImageMemoryRequirementsInfo2 var_local_pInfo;
     vku::safe_VkImageMemoryRequirementsInfo2* local_pInfo = nullptr;
@@ -2107,8 +2121,8 @@ void Device::GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryReq
                                                       pMemoryRequirements);
 }
 
-void Device::GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                          VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
+                                                  VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
     vku::safe_VkBufferMemoryRequirementsInfo2 var_local_pInfo;
     vku::safe_VkBufferMemoryRequirementsInfo2* local_pInfo = nullptr;
@@ -2126,9 +2140,9 @@ void Device::GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryR
                                                        pMemoryRequirements);
 }
 
-void Device::GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                               uint32_t* pSparseMemoryRequirementCount,
-                                               VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void DispatchDevice::GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
+                                                       uint32_t* pSparseMemoryRequirementCount,
+                                                       VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                                        pSparseMemoryRequirements);
@@ -2148,47 +2162,47 @@ void Device::GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSpa
                                                             pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
-void Instance::GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
+void DispatchInstance::GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
     instance_dispatch_table.GetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
 }
 
-void Instance::GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
+void DispatchInstance::GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceProperties2(physicalDevice, pProperties);
 }
 
-void Instance::GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                  VkFormatProperties2* pFormatProperties) {
+void DispatchInstance::GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                          VkFormatProperties2* pFormatProperties) {
     instance_dispatch_table.GetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
 }
 
-VkResult Instance::GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                           const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                           VkImageFormatProperties2* pImageFormatProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                                   const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                                   VkImageFormatProperties2* pImageFormatProperties) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                       VkQueueFamilyProperties2* pQueueFamilyProperties) {
+void DispatchInstance::GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2* pQueueFamilyProperties) {
     instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                     pQueueFamilyProperties);
 }
 
-void Instance::GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
-                                                  VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+void DispatchInstance::GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
+                                                          VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
     instance_dispatch_table.GetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
 }
 
-void Instance::GetPhysicalDeviceSparseImageFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                             const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
-                                                             uint32_t* pPropertyCount,
-                                                             VkSparseImageFormatProperties2* pProperties) {
+void DispatchInstance::GetPhysicalDeviceSparseImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                                     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
+                                                                     uint32_t* pPropertyCount,
+                                                                     VkSparseImageFormatProperties2* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
 }
 
-void Device::TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
+void DispatchDevice::TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
     if (!wrap_handles) return device_dispatch_table.TrimCommandPool(device, commandPool, flags);
     {
         commandPool = Unwrap(commandPool);
@@ -2196,37 +2210,37 @@ void Device::TrimCommandPool(VkDevice device, VkCommandPool commandPool, VkComma
     device_dispatch_table.TrimCommandPool(device, commandPool, flags);
 }
 
-void Device::GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
+void DispatchDevice::GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
     device_dispatch_table.GetDeviceQueue2(device, pQueueInfo, pQueue);
 }
 
-void Instance::GetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
-                                                         const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-                                                         VkExternalBufferProperties* pExternalBufferProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+                                                                 VkExternalBufferProperties* pExternalBufferProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                       pExternalBufferProperties);
 }
 
-void Instance::GetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
-                                                        const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-                                                        VkExternalFenceProperties* pExternalFenceProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
+                                                                const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+                                                                VkExternalFenceProperties* pExternalFenceProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
 }
 
-void Instance::GetPhysicalDeviceExternalSemaphoreProperties(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-                                                            VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                          pExternalSemaphoreProperties);
 }
 
-void Device::CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                             uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void DispatchDevice::CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
+                                     uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     device_dispatch_table.CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
-void Device::GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                           VkDescriptorSetLayoutSupport* pSupport) {
+void DispatchDevice::GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                   VkDescriptorSetLayoutSupport* pSupport) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
     vku::safe_VkDescriptorSetLayoutCreateInfo var_local_pCreateInfo;
     vku::safe_VkDescriptorSetLayoutCreateInfo* local_pCreateInfo = nullptr;
@@ -2250,8 +2264,9 @@ void Device::GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSe
                                                         pSupport);
 }
 
-VkResult Device::CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkSamplerYcbcrConversion* pYcbcrConversion) {
+VkResult DispatchDevice::CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkSamplerYcbcrConversion* pYcbcrConversion) {
     if (!wrap_handles) return device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
 
     VkResult result = device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
@@ -2261,14 +2276,14 @@ VkResult Device::CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYc
     return result;
 }
 
-void Device::DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                           const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                   const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
     ycbcrConversion = Erase(ycbcrConversion);
     device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
 }
 
-void Device::ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void DispatchDevice::ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     if (!wrap_handles) return device_dispatch_table.ResetQueryPool(device, queryPool, firstQuery, queryCount);
     {
         queryPool = Unwrap(queryPool);
@@ -2276,7 +2291,7 @@ void Device::ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t fir
     device_dispatch_table.ResetQueryPool(device, queryPool, firstQuery, queryCount);
 }
 
-VkResult Device::GetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
+VkResult DispatchDevice::GetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
     if (!wrap_handles) return device_dispatch_table.GetSemaphoreCounterValue(device, semaphore, pValue);
     {
         semaphore = Unwrap(semaphore);
@@ -2286,7 +2301,7 @@ VkResult Device::GetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore
     return result;
 }
 
-VkResult Device::WaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
+VkResult DispatchDevice::WaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
     if (!wrap_handles) return device_dispatch_table.WaitSemaphores(device, pWaitInfo, timeout);
     vku::safe_VkSemaphoreWaitInfo var_local_pWaitInfo;
     vku::safe_VkSemaphoreWaitInfo* local_pWaitInfo = nullptr;
@@ -2306,7 +2321,7 @@ VkResult Device::WaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWai
     return result;
 }
 
-VkResult Device::SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
+VkResult DispatchDevice::SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
     if (!wrap_handles) return device_dispatch_table.SignalSemaphore(device, pSignalInfo);
     vku::safe_VkSemaphoreSignalInfo var_local_pSignalInfo;
     vku::safe_VkSemaphoreSignalInfo* local_pSignalInfo = nullptr;
@@ -2325,7 +2340,7 @@ VkResult Device::SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* p
     return result;
 }
 
-VkDeviceAddress Device::GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+VkDeviceAddress DispatchDevice::GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetBufferDeviceAddress(device, pInfo);
     vku::safe_VkBufferDeviceAddressInfo var_local_pInfo;
     vku::safe_VkBufferDeviceAddressInfo* local_pInfo = nullptr;
@@ -2344,7 +2359,7 @@ VkDeviceAddress Device::GetBufferDeviceAddress(VkDevice device, const VkBufferDe
     return result;
 }
 
-uint64_t Device::GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+uint64_t DispatchDevice::GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetBufferOpaqueCaptureAddress(device, pInfo);
     vku::safe_VkBufferDeviceAddressInfo var_local_pInfo;
     vku::safe_VkBufferDeviceAddressInfo* local_pInfo = nullptr;
@@ -2363,7 +2378,7 @@ uint64_t Device::GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDe
     return result;
 }
 
-uint64_t Device::GetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+uint64_t DispatchDevice::GetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
     vku::safe_VkDeviceMemoryOpaqueCaptureAddressInfo var_local_pInfo;
     vku::safe_VkDeviceMemoryOpaqueCaptureAddressInfo* local_pInfo = nullptr;
@@ -2383,8 +2398,8 @@ uint64_t Device::GetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDe
     return result;
 }
 
-void Device::CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+void DispatchDevice::CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                           maxDrawCount, stride);
@@ -2395,8 +2410,9 @@ void Device::CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer
     device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
 
-void Device::CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+void DispatchDevice::CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                 uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                  maxDrawCount, stride);
@@ -2408,8 +2424,8 @@ void Device::CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer
                                                       stride);
 }
 
-void Device::CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                 const VkSubpassBeginInfo* pSubpassBeginInfo) {
+void DispatchDevice::CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                         const VkSubpassBeginInfo* pSubpassBeginInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     vku::safe_VkRenderPassBeginInfo var_local_pRenderPassBegin;
     vku::safe_VkRenderPassBeginInfo* local_pRenderPassBegin = nullptr;
@@ -2431,17 +2447,17 @@ void Device::CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPa
                                               pSubpassBeginInfo);
 }
 
-void Device::CmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                             const VkSubpassEndInfo* pSubpassEndInfo) {
+void DispatchDevice::CmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                     const VkSubpassEndInfo* pSubpassEndInfo) {
     device_dispatch_table.CmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
-void Device::CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+void DispatchDevice::CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
     device_dispatch_table.CmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
 }
 
-VkResult Device::CreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
+VkResult DispatchDevice::CreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     if (!wrap_handles) return device_dispatch_table.CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 
     VkResult result = device_dispatch_table.CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
@@ -2451,14 +2467,15 @@ VkResult Device::CreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotC
     return result;
 }
 
-void Device::DestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
+                                            const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
     privateDataSlot = Erase(privateDataSlot);
     device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
 }
 
-VkResult Device::SetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
-                                uint64_t data) {
+VkResult DispatchDevice::SetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                        VkPrivateDataSlot privateDataSlot, uint64_t data) {
     if (!wrap_handles) return device_dispatch_table.SetPrivateData(device, objectType, objectHandle, privateDataSlot, data);
     {
         if (NotDispatchableHandle(objectType)) {
@@ -2471,8 +2488,8 @@ VkResult Device::SetPrivateData(VkDevice device, VkObjectType objectType, uint64
     return result;
 }
 
-void Device::GetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
-                            uint64_t* pData) {
+void DispatchDevice::GetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                    VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     if (!wrap_handles) return device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
     {
         if (NotDispatchableHandle(objectType)) {
@@ -2483,7 +2500,7 @@ void Device::GetPrivateData(VkDevice device, VkObjectType objectType, uint64_t o
     device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
-void Device::CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
+void DispatchDevice::CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPipelineBarrier2(commandBuffer, pDependencyInfo);
     vku::safe_VkDependencyInfo var_local_pDependencyInfo;
     vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
@@ -2513,7 +2530,8 @@ void Device::CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependen
     device_dispatch_table.CmdPipelineBarrier2(commandBuffer, (const VkDependencyInfo*)local_pDependencyInfo);
 }
 
-void Device::CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool, uint32_t query) {
+void DispatchDevice::CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
+                                        uint32_t query) {
     if (!wrap_handles) return device_dispatch_table.CmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
     {
         queryPool = Unwrap(queryPool);
@@ -2521,7 +2539,7 @@ void Device::CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFl
     device_dispatch_table.CmdWriteTimestamp2(commandBuffer, stage, queryPool, query);
 }
 
-VkResult Device::QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
+VkResult DispatchDevice::QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
     if (!wrap_handles) return device_dispatch_table.QueueSubmit2(queue, submitCount, pSubmits, fence);
     small_vector<vku::safe_VkSubmitInfo2, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSubmits;
     vku::safe_VkSubmitInfo2* local_pSubmits = nullptr;
@@ -2562,7 +2580,7 @@ VkResult Device::QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
     return result;
 }
 
-void Device::CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+void DispatchDevice::CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
     vku::safe_VkCopyBufferInfo2 var_local_pCopyBufferInfo;
     vku::safe_VkCopyBufferInfo2* local_pCopyBufferInfo = nullptr;
@@ -2582,7 +2600,7 @@ void Device::CmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInf
     device_dispatch_table.CmdCopyBuffer2(commandBuffer, (const VkCopyBufferInfo2*)local_pCopyBufferInfo);
 }
 
-void Device::CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+void DispatchDevice::CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyImage2(commandBuffer, pCopyImageInfo);
     vku::safe_VkCopyImageInfo2 var_local_pCopyImageInfo;
     vku::safe_VkCopyImageInfo2* local_pCopyImageInfo = nullptr;
@@ -2602,7 +2620,7 @@ void Device::CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2
     device_dispatch_table.CmdCopyImage2(commandBuffer, (const VkCopyImageInfo2*)local_pCopyImageInfo);
 }
 
-void Device::CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+void DispatchDevice::CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
     vku::safe_VkCopyBufferToImageInfo2 var_local_pCopyBufferToImageInfo;
     vku::safe_VkCopyBufferToImageInfo2* local_pCopyBufferToImageInfo = nullptr;
@@ -2622,7 +2640,7 @@ void Device::CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBu
     device_dispatch_table.CmdCopyBufferToImage2(commandBuffer, (const VkCopyBufferToImageInfo2*)local_pCopyBufferToImageInfo);
 }
 
-void Device::CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+void DispatchDevice::CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
     vku::safe_VkCopyImageToBufferInfo2 var_local_pCopyImageToBufferInfo;
     vku::safe_VkCopyImageToBufferInfo2* local_pCopyImageToBufferInfo = nullptr;
@@ -2642,24 +2660,24 @@ void Device::CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyIm
     device_dispatch_table.CmdCopyImageToBuffer2(commandBuffer, (const VkCopyImageToBufferInfo2*)local_pCopyImageToBufferInfo);
 }
 
-void Device::GetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                               VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                       VkMemoryRequirements2* pMemoryRequirements) {
     device_dispatch_table.GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
 }
 
-void Device::GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                              VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                      VkMemoryRequirements2* pMemoryRequirements) {
     device_dispatch_table.GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
 }
 
-void Device::GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                    uint32_t* pSparseMemoryRequirementCount,
-                                                    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void DispatchDevice::GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                            uint32_t* pSparseMemoryRequirementCount,
+                                                            VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     device_dispatch_table.GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
                                                                  pSparseMemoryRequirements);
 }
 
-void Device::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+void DispatchDevice::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdSetEvent2(commandBuffer, event, pDependencyInfo);
     vku::safe_VkDependencyInfo var_local_pDependencyInfo;
     vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
@@ -2690,7 +2708,7 @@ void Device::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const Vk
     device_dispatch_table.CmdSetEvent2(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
 }
 
-void Device::CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+void DispatchDevice::CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
     if (!wrap_handles) return device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
     {
         event = Unwrap(event);
@@ -2698,8 +2716,8 @@ void Device::CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipe
     device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
 }
 
-void Device::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                            const VkDependencyInfo* pDependencyInfos) {
+void DispatchDevice::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                    const VkDependencyInfo* pDependencyInfos) {
     if (!wrap_handles) return device_dispatch_table.CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
     small_vector<VkEvent, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pEvents;
     VkEvent* local_pEvents = nullptr;
@@ -2742,7 +2760,7 @@ void Device::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, 
                                          (const VkDependencyInfo*)local_pDependencyInfos);
 }
 
-void Device::CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+void DispatchDevice::CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBlitImage2(commandBuffer, pBlitImageInfo);
     vku::safe_VkBlitImageInfo2 var_local_pBlitImageInfo;
     vku::safe_VkBlitImageInfo2* local_pBlitImageInfo = nullptr;
@@ -2762,7 +2780,7 @@ void Device::CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2
     device_dispatch_table.CmdBlitImage2(commandBuffer, (const VkBlitImageInfo2*)local_pBlitImageInfo);
 }
 
-void Device::CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+void DispatchDevice::CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdResolveImage2(commandBuffer, pResolveImageInfo);
     vku::safe_VkResolveImageInfo2 var_local_pResolveImageInfo;
     vku::safe_VkResolveImageInfo2* local_pResolveImageInfo = nullptr;
@@ -2782,7 +2800,7 @@ void Device::CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImag
     device_dispatch_table.CmdResolveImage2(commandBuffer, (const VkResolveImageInfo2*)local_pResolveImageInfo);
 }
 
-void Device::CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+void DispatchDevice::CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginRendering(commandBuffer, pRenderingInfo);
     vku::safe_VkRenderingInfo var_local_pRenderingInfo;
     vku::safe_VkRenderingInfo* local_pRenderingInfo = nullptr;
@@ -2826,31 +2844,31 @@ void Device::CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingI
     device_dispatch_table.CmdBeginRendering(commandBuffer, (const VkRenderingInfo*)local_pRenderingInfo);
 }
 
-void Device::CmdEndRendering(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRendering(commandBuffer); }
+void DispatchDevice::CmdEndRendering(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRendering(commandBuffer); }
 
-void Device::CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+void DispatchDevice::CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     device_dispatch_table.CmdSetCullMode(commandBuffer, cullMode);
 }
 
-void Device::CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+void DispatchDevice::CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     device_dispatch_table.CmdSetFrontFace(commandBuffer, frontFace);
 }
 
-void Device::CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+void DispatchDevice::CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
     device_dispatch_table.CmdSetPrimitiveTopology(commandBuffer, primitiveTopology);
 }
 
-void Device::CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
+void DispatchDevice::CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
     device_dispatch_table.CmdSetViewportWithCount(commandBuffer, viewportCount, pViewports);
 }
 
-void Device::CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+void DispatchDevice::CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
     device_dispatch_table.CmdSetScissorWithCount(commandBuffer, scissorCount, pScissors);
 }
 
-void Device::CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                   const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
-                                   const VkDeviceSize* pStrides) {
+void DispatchDevice::CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                           const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
+                                           const VkDeviceSize* pStrides) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                            pStrides);
@@ -2869,44 +2887,44 @@ void Device::CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t first
                                                 pOffsets, pSizes, pStrides);
 }
 
-void Device::CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+void DispatchDevice::CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     device_dispatch_table.CmdSetDepthTestEnable(commandBuffer, depthTestEnable);
 }
 
-void Device::CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+void DispatchDevice::CmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     device_dispatch_table.CmdSetDepthWriteEnable(commandBuffer, depthWriteEnable);
 }
 
-void Device::CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+void DispatchDevice::CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     device_dispatch_table.CmdSetDepthCompareOp(commandBuffer, depthCompareOp);
 }
 
-void Device::CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+void DispatchDevice::CmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
     device_dispatch_table.CmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable);
 }
 
-void Device::CmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+void DispatchDevice::CmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     device_dispatch_table.CmdSetStencilTestEnable(commandBuffer, stencilTestEnable);
 }
 
-void Device::CmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp,
-                             VkStencilOp depthFailOp, VkCompareOp compareOp) {
+void DispatchDevice::CmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
+                                     VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
     device_dispatch_table.CmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
-void Device::CmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+void DispatchDevice::CmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
     device_dispatch_table.CmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable);
 }
 
-void Device::CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+void DispatchDevice::CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     device_dispatch_table.CmdSetDepthBiasEnable(commandBuffer, depthBiasEnable);
 }
 
-void Device::CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+void DispatchDevice::CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
     device_dispatch_table.CmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
 }
 
-VkResult Device::MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
+VkResult DispatchDevice::MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.MapMemory2(device, pMemoryMapInfo, ppData);
     vku::safe_VkMemoryMapInfo var_local_pMemoryMapInfo;
     vku::safe_VkMemoryMapInfo* local_pMemoryMapInfo = nullptr;
@@ -2925,7 +2943,7 @@ VkResult Device::MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapIn
     return result;
 }
 
-VkResult Device::UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
+VkResult DispatchDevice::UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     if (!wrap_handles) return device_dispatch_table.UnmapMemory2(device, pMemoryUnmapInfo);
     vku::safe_VkMemoryUnmapInfo var_local_pMemoryUnmapInfo;
     vku::safe_VkMemoryUnmapInfo* local_pMemoryUnmapInfo = nullptr;
@@ -2944,13 +2962,13 @@ VkResult Device::UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryU
     return result;
 }
 
-void Device::GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
-                                             VkSubresourceLayout2* pLayout) {
+void DispatchDevice::GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                     VkSubresourceLayout2* pLayout) {
     device_dispatch_table.GetDeviceImageSubresourceLayout(device, pInfo, pLayout);
 }
 
-void Device::GetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                        VkSubresourceLayout2* pLayout) {
+void DispatchDevice::GetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                VkSubresourceLayout2* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
     {
         image = Unwrap(image);
@@ -2958,7 +2976,7 @@ void Device::GetImageSubresourceLayout2(VkDevice device, VkImage image, const Vk
     device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
 }
 
-VkResult Device::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+VkResult DispatchDevice::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMemoryToImage(device, pCopyMemoryToImageInfo);
     vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
     vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
@@ -2977,7 +2995,7 @@ VkResult Device::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInf
     return result;
 }
 
-VkResult Device::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+VkResult DispatchDevice::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToMemory(device, pCopyImageToMemoryInfo);
     vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
     vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
@@ -2996,7 +3014,7 @@ VkResult Device::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInf
     return result;
 }
 
-VkResult Device::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+VkResult DispatchDevice::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToImage(device, pCopyImageToImageInfo);
     vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
     vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
@@ -3018,8 +3036,8 @@ VkResult Device::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo*
     return result;
 }
 
-VkResult Device::TransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                       const VkHostImageLayoutTransitionInfo* pTransitions) {
+VkResult DispatchDevice::TransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                               const VkHostImageLayoutTransitionInfo* pTransitions) {
     if (!wrap_handles) return device_dispatch_table.TransitionImageLayout(device, transitionCount, pTransitions);
     small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
     vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
@@ -3042,8 +3060,9 @@ VkResult Device::TransitionImageLayout(VkDevice device, uint32_t transitionCount
     return result;
 }
 
-void Device::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                  uint32_t set, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites) {
+void DispatchDevice::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                          const VkWriteDescriptorSet* pDescriptorWrites) {
     if (!wrap_handles)
         return device_dispatch_table.CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                           pDescriptorWrites);
@@ -3100,7 +3119,8 @@ void Device::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindP
                                                (const VkWriteDescriptorSet*)local_pDescriptorWrites);
 }
 
-void Device::CmdBindDescriptorSets2(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
+void DispatchDevice::CmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                            const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo);
     vku::safe_VkBindDescriptorSetsInfo var_local_pBindDescriptorSetsInfo;
     vku::safe_VkBindDescriptorSetsInfo* local_pBindDescriptorSetsInfo = nullptr;
@@ -3124,7 +3144,7 @@ void Device::CmdBindDescriptorSets2(VkCommandBuffer commandBuffer, const VkBindD
     device_dispatch_table.CmdBindDescriptorSets2(commandBuffer, (const VkBindDescriptorSetsInfo*)local_pBindDescriptorSetsInfo);
 }
 
-void Device::CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
+void DispatchDevice::CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushConstants2(commandBuffer, pPushConstantsInfo);
     vku::safe_VkPushConstantsInfo var_local_pPushConstantsInfo;
     vku::safe_VkPushConstantsInfo* local_pPushConstantsInfo = nullptr;
@@ -3142,7 +3162,7 @@ void Device::CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConsta
     device_dispatch_table.CmdPushConstants2(commandBuffer, (const VkPushConstantsInfo*)local_pPushConstantsInfo);
 }
 
-void Device::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
+void DispatchDevice::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo);
     vku::safe_VkPushDescriptorSetInfo var_local_pPushDescriptorSetInfo;
     vku::safe_VkPushDescriptorSetInfo* local_pPushDescriptorSetInfo = nullptr;
@@ -3207,12 +3227,12 @@ void Device::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDe
     device_dispatch_table.CmdPushDescriptorSet2(commandBuffer, (const VkPushDescriptorSetInfo*)local_pPushDescriptorSetInfo);
 }
 
-void Device::CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+void DispatchDevice::CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
     device_dispatch_table.CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
-void Device::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
-                                 VkIndexType indexType) {
+void DispatchDevice::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                         VkIndexType indexType) {
     if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
     {
         buffer = Unwrap(buffer);
@@ -3220,28 +3240,29 @@ void Device::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer,
     device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
 }
 
-void Device::GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo, VkExtent2D* pGranularity) {
+void DispatchDevice::GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                 VkExtent2D* pGranularity) {
     device_dispatch_table.GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
 }
 
-void Device::CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+void DispatchDevice::CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                        const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     device_dispatch_table.CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
 }
 
-void Device::CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
-                                                   const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+void DispatchDevice::CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                                           const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     device_dispatch_table.CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
 }
 
-void Instance::DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
+void DispatchInstance::DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
     surface = Erase(surface);
     instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
 }
 
-VkResult Instance::GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                      VkSurfaceKHR surface, VkBool32* pSupported) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                              VkSurfaceKHR surface, VkBool32* pSupported) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
     {
@@ -3253,8 +3274,8 @@ VkResult Instance::GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalD
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                   VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
     {
@@ -3266,8 +3287,8 @@ VkResult Instance::GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice phys
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                      uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                              uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount,
                                                                           pSurfaceFormats);
@@ -3280,8 +3301,8 @@ VkResult Instance::GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalD
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                   uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount,
                                                                                pPresentModes);
@@ -3294,8 +3315,8 @@ VkResult Instance::GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice phys
     return result;
 }
 
-VkResult Device::CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
+VkResult DispatchDevice::CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     if (!wrap_handles) return device_dispatch_table.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
     vku::safe_VkSwapchainCreateInfoKHR var_local_pCreateInfo;
     vku::safe_VkSwapchainCreateInfoKHR* local_pCreateInfo = nullptr;
@@ -3320,8 +3341,8 @@ VkResult Device::CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfo
     return result;
 }
 
-VkResult Device::AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                     VkFence fence, uint32_t* pImageIndex) {
+VkResult DispatchDevice::AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                             VkFence fence, uint32_t* pImageIndex) {
     if (!wrap_handles) return device_dispatch_table.AcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
     {
         swapchain = Unwrap(swapchain);
@@ -3333,15 +3354,15 @@ VkResult Device::AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, 
     return result;
 }
 
-VkResult Device::GetDeviceGroupPresentCapabilitiesKHR(VkDevice device,
-                                                      VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities) {
+VkResult DispatchDevice::GetDeviceGroupPresentCapabilitiesKHR(
+    VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities) {
     VkResult result = device_dispatch_table.GetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities);
 
     return result;
 }
 
-VkResult Device::GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
-                                                      VkDeviceGroupPresentModeFlagsKHR* pModes) {
+VkResult DispatchDevice::GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
+                                                              VkDeviceGroupPresentModeFlagsKHR* pModes) {
     if (!wrap_handles) return device_dispatch_table.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
     {
         surface = Unwrap(surface);
@@ -3351,8 +3372,8 @@ VkResult Device::GetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurface
     return result;
 }
 
-VkResult Instance::GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                         uint32_t* pRectCount, VkRect2D* pRects) {
+VkResult DispatchInstance::GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                 uint32_t* pRectCount, VkRect2D* pRects) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
     {
@@ -3363,7 +3384,8 @@ VkResult Instance::GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physic
     return result;
 }
 
-VkResult Device::AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex) {
+VkResult DispatchDevice::AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
+                                              uint32_t* pImageIndex) {
     if (!wrap_handles) return device_dispatch_table.AcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
     vku::safe_VkAcquireNextImageInfoKHR var_local_pAcquireInfo;
     vku::safe_VkAcquireNextImageInfoKHR* local_pAcquireInfo = nullptr;
@@ -3389,9 +3411,9 @@ VkResult Device::AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageI
     return result;
 }
 
-VkResult Instance::CreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                        const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                        VkDisplayModeKHR* pMode) {
+VkResult DispatchInstance::CreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                const VkDisplayModeCreateInfoKHR* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
     if (!wrap_handles) return instance_dispatch_table.CreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     {
         display = Unwrap(display);
@@ -3403,8 +3425,8 @@ VkResult Instance::CreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDispl
     return result;
 }
 
-VkResult Instance::GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                  VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
+VkResult DispatchInstance::GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
+                                                          uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
     if (!wrap_handles)
         return instance_dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
     {
@@ -3415,8 +3437,8 @@ VkResult Instance::GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevic
     return result;
 }
 
-VkResult Instance::CreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     vku::safe_VkDisplaySurfaceCreateInfoKHR var_local_pCreateInfo;
     vku::safe_VkDisplaySurfaceCreateInfoKHR* local_pCreateInfo = nullptr;
@@ -3438,8 +3460,9 @@ VkResult Instance::CreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDis
     return result;
 }
 
-VkResult Device::CreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
-                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
+VkResult DispatchDevice::CreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                                   const VkSwapchainCreateInfoKHR* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
     if (!wrap_handles)
         return device_dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
     small_vector<vku::safe_VkSwapchainCreateInfoKHR, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pCreateInfos;
@@ -3471,8 +3494,8 @@ VkResult Device::CreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
 }
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 
-VkResult Instance::CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
@@ -3482,8 +3505,8 @@ VkResult Instance::CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurface
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                               Display* dpy, VisualID visualID) {
+VkBool32 DispatchInstance::GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                       Display* dpy, VisualID visualID) {
     VkBool32 result =
         instance_dispatch_table.GetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID);
 
@@ -3492,8 +3515,8 @@ VkBool32 Instance::GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice 
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 
-VkResult Instance::CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
@@ -3503,8 +3526,8 @@ VkResult Instance::CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCr
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                              xcb_connection_t* connection, xcb_visualid_t visual_id) {
+VkBool32 DispatchInstance::GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                      xcb_connection_t* connection, xcb_visualid_t visual_id) {
     VkBool32 result =
         instance_dispatch_table.GetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
 
@@ -3513,8 +3536,8 @@ VkBool32 Instance::GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice p
 #endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
-VkResult Instance::CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
@@ -3524,8 +3547,8 @@ VkResult Instance::CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandS
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                  struct wl_display* display) {
+VkBool32 DispatchInstance::GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex, struct wl_display* display) {
     VkBool32 result =
         instance_dispatch_table.GetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
 
@@ -3534,8 +3557,8 @@ VkBool32 Instance::GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevi
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-VkResult Instance::CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
@@ -3547,8 +3570,8 @@ VkResult Instance::CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidS
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Instance::CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
@@ -3558,33 +3581,34 @@ VkResult Instance::CreateWin32SurfaceKHR(VkInstance instance, const VkWin32Surfa
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+VkBool32 DispatchInstance::GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                        uint32_t queueFamilyIndex) {
     VkBool32 result = instance_dispatch_table.GetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
 
     return result;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Instance::GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
-                                                         const VkVideoProfileInfoKHR* pVideoProfile,
-                                                         VkVideoCapabilitiesKHR* pCapabilities) {
+VkResult DispatchInstance::GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                 const VkVideoProfileInfoKHR* pVideoProfile,
+                                                                 VkVideoCapabilitiesKHR* pCapabilities) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities);
 
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                             const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
-                                                             uint32_t* pVideoFormatPropertyCount,
-                                                             VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                     const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
+                                                                     uint32_t* pVideoFormatPropertyCount,
+                                                                     VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceVideoFormatPropertiesKHR(
         physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
 
     return result;
 }
 
-VkResult Device::CreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession) {
+VkResult DispatchDevice::CreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession) {
     if (!wrap_handles) return device_dispatch_table.CreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
 
     VkResult result = device_dispatch_table.CreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
@@ -3594,15 +3618,16 @@ VkResult Device::CreateVideoSessionKHR(VkDevice device, const VkVideoSessionCrea
     return result;
 }
 
-void Device::DestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                            const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
     videoSession = Erase(videoSession);
     device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
 }
 
-VkResult Device::GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                      uint32_t* pMemoryRequirementsCount,
-                                                      VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) {
+VkResult DispatchDevice::GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                              uint32_t* pMemoryRequirementsCount,
+                                                              VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
                                                                           pMemoryRequirements);
@@ -3615,8 +3640,9 @@ VkResult Device::GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSe
     return result;
 }
 
-VkResult Device::BindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession, uint32_t bindSessionMemoryInfoCount,
-                                           const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) {
+VkResult DispatchDevice::BindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                   uint32_t bindSessionMemoryInfoCount,
+                                                   const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) {
     if (!wrap_handles)
         return device_dispatch_table.BindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount,
                                                                pBindSessionMemoryInfos);
@@ -3642,9 +3668,9 @@ VkResult Device::BindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR vi
     return result;
 }
 
-VkResult Device::CreateVideoSessionParametersKHR(VkDevice device, const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator,
-                                                 VkVideoSessionParametersKHR* pVideoSessionParameters) {
+VkResult DispatchDevice::CreateVideoSessionParametersKHR(VkDevice device, const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkVideoSessionParametersKHR* pVideoSessionParameters) {
     if (!wrap_handles)
         return device_dispatch_table.CreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
     vku::safe_VkVideoSessionParametersCreateInfoKHR var_local_pCreateInfo;
@@ -3670,8 +3696,8 @@ VkResult Device::CreateVideoSessionParametersKHR(VkDevice device, const VkVideoS
     return result;
 }
 
-VkResult Device::UpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
-                                                 const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) {
+VkResult DispatchDevice::UpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
+                                                         const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) {
     if (!wrap_handles) return device_dispatch_table.UpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
     {
         videoSessionParameters = Unwrap(videoSessionParameters);
@@ -3681,14 +3707,14 @@ VkResult Device::UpdateVideoSessionParametersKHR(VkDevice device, VkVideoSession
     return result;
 }
 
-void Device::DestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
-                                              const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
+                                                      const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
     videoSessionParameters = Erase(videoSessionParameters);
     device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 }
 
-void Device::CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) {
+void DispatchDevice::CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
     vku::safe_VkVideoBeginCodingInfoKHR var_local_pBeginInfo;
     vku::safe_VkVideoBeginCodingInfoKHR* local_pBeginInfo = nullptr;
@@ -3718,15 +3744,16 @@ void Device::CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideo
     device_dispatch_table.CmdBeginVideoCodingKHR(commandBuffer, (const VkVideoBeginCodingInfoKHR*)local_pBeginInfo);
 }
 
-void Device::CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
+void DispatchDevice::CmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
     device_dispatch_table.CmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
 }
 
-void Device::CmdControlVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoCodingControlInfoKHR* pCodingControlInfo) {
+void DispatchDevice::CmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                              const VkVideoCodingControlInfoKHR* pCodingControlInfo) {
     device_dispatch_table.CmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
 }
 
-void Device::CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
+void DispatchDevice::CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     vku::safe_VkVideoDecodeInfoKHR var_local_pDecodeInfo;
     vku::safe_VkVideoDecodeInfoKHR* local_pDecodeInfo = nullptr;
@@ -3765,7 +3792,7 @@ void Device::CmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecod
     device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, (const VkVideoDecodeInfoKHR*)local_pDecodeInfo);
 }
 
-void Device::CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+void DispatchDevice::CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
     vku::safe_VkRenderingInfo var_local_pRenderingInfo;
     vku::safe_VkRenderingInfo* local_pRenderingInfo = nullptr;
@@ -3809,66 +3836,68 @@ void Device::CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderi
     device_dispatch_table.CmdBeginRenderingKHR(commandBuffer, (const VkRenderingInfo*)local_pRenderingInfo);
 }
 
-void Device::CmdEndRenderingKHR(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRenderingKHR(commandBuffer); }
+void DispatchDevice::CmdEndRenderingKHR(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRenderingKHR(commandBuffer); }
 
-void Instance::GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
+void DispatchInstance::GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
     instance_dispatch_table.GetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
 }
 
-void Instance::GetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
+void DispatchInstance::GetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
 }
 
-void Instance::GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                     VkFormatProperties2* pFormatProperties) {
+void DispatchInstance::GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                             VkFormatProperties2* pFormatProperties) {
     instance_dispatch_table.GetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
 }
 
-VkResult Instance::GetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                              const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                              VkImageFormatProperties2* pImageFormatProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                      const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                                      VkImageFormatProperties2* pImageFormatProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
                                                                                          pImageFormatProperties);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                          VkQueueFamilyProperties2* pQueueFamilyProperties) {
+void DispatchInstance::GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                  uint32_t* pQueueFamilyPropertyCount,
+                                                                  VkQueueFamilyProperties2* pQueueFamilyProperties) {
     instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                        pQueueFamilyProperties);
 }
 
-void Instance::GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                     VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+void DispatchInstance::GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                             VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
     instance_dispatch_table.GetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
 }
 
-void Instance::GetPhysicalDeviceSparseImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
-                                                                uint32_t* pPropertyCount,
-                                                                VkSparseImageFormatProperties2* pProperties) {
+void DispatchInstance::GetPhysicalDeviceSparseImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                        const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
+                                                                        uint32_t* pPropertyCount,
+                                                                        VkSparseImageFormatProperties2* pProperties) {
     instance_dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                              pProperties);
 }
 
-void Device::GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
-                                                 uint32_t remoteDeviceIndex, VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
+void DispatchDevice::GetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
+                                                         uint32_t remoteDeviceIndex,
+                                                         VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
     device_dispatch_table.GetDeviceGroupPeerMemoryFeaturesKHR(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                               pPeerMemoryFeatures);
 }
 
-void Device::CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+void DispatchDevice::CmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     device_dispatch_table.CmdSetDeviceMaskKHR(commandBuffer, deviceMask);
 }
 
-void Device::CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                                uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void DispatchDevice::CmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                        uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     device_dispatch_table.CmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                              groupCountZ);
 }
 
-void Device::TrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
+void DispatchDevice::TrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags) {
     if (!wrap_handles) return device_dispatch_table.TrimCommandPoolKHR(device, commandPool, flags);
     {
         commandPool = Unwrap(commandPool);
@@ -3876,24 +3905,24 @@ void Device::TrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCo
     device_dispatch_table.TrimCommandPoolKHR(device, commandPool, flags);
 }
 
-VkResult Instance::EnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                    VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+VkResult DispatchInstance::EnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                            VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
                                                                                pPhysicalDeviceGroupProperties);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceExternalBufferPropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-                                                            VkExternalBufferProperties* pExternalBufferProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalBufferPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+                                                                    VkExternalBufferProperties* pExternalBufferProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                          pExternalBufferProperties);
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::GetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                         HANDLE* pHandle) {
+VkResult DispatchDevice::GetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                 HANDLE* pHandle) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     vku::safe_VkMemoryGetWin32HandleInfoKHR var_local_pGetWin32HandleInfo;
     vku::safe_VkMemoryGetWin32HandleInfoKHR* local_pGetWin32HandleInfo = nullptr;
@@ -3913,8 +3942,9 @@ VkResult Device::GetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32
     return result;
 }
 
-VkResult Device::GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
-                                                   VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
+VkResult DispatchDevice::GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                           HANDLE handle,
+                                                           VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties) {
     VkResult result =
         device_dispatch_table.GetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
 
@@ -3922,7 +3952,7 @@ VkResult Device::GetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMe
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
+VkResult DispatchDevice::GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryFdKHR(device, pGetFdInfo, pFd);
     vku::safe_VkMemoryGetFdInfoKHR var_local_pGetFdInfo;
     vku::safe_VkMemoryGetFdInfoKHR* local_pGetFdInfo = nullptr;
@@ -3941,23 +3971,23 @@ VkResult Device::GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGe
     return result;
 }
 
-VkResult Device::GetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
-                                          VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
+VkResult DispatchDevice::GetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
+                                                  VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
     VkResult result = device_dispatch_table.GetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
 
     return result;
 }
 
-void Instance::GetPhysicalDeviceExternalSemaphorePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                               const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-                                                               VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalSemaphorePropertiesKHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                             pExternalSemaphoreProperties);
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::ImportSemaphoreWin32HandleKHR(VkDevice device,
-                                               const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) {
+VkResult DispatchDevice::ImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                       const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) {
     if (!wrap_handles) return device_dispatch_table.ImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
     vku::safe_VkImportSemaphoreWin32HandleInfoKHR var_local_pImportSemaphoreWin32HandleInfo;
     vku::safe_VkImportSemaphoreWin32HandleInfoKHR* local_pImportSemaphoreWin32HandleInfo = nullptr;
@@ -3977,8 +4007,8 @@ VkResult Device::ImportSemaphoreWin32HandleKHR(VkDevice device,
     return result;
 }
 
-VkResult Device::GetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                            HANDLE* pHandle) {
+VkResult DispatchDevice::GetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                    HANDLE* pHandle) {
     if (!wrap_handles) return device_dispatch_table.GetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     vku::safe_VkSemaphoreGetWin32HandleInfoKHR var_local_pGetWin32HandleInfo;
     vku::safe_VkSemaphoreGetWin32HandleInfoKHR* local_pGetWin32HandleInfo = nullptr;
@@ -3999,7 +4029,7 @@ VkResult Device::GetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGe
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
+VkResult DispatchDevice::ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
     if (!wrap_handles) return device_dispatch_table.ImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
     vku::safe_VkImportSemaphoreFdInfoKHR var_local_pImportSemaphoreFdInfo;
     vku::safe_VkImportSemaphoreFdInfoKHR* local_pImportSemaphoreFdInfo = nullptr;
@@ -4019,7 +4049,7 @@ VkResult Device::ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFd
     return result;
 }
 
-VkResult Device::GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd) {
+VkResult DispatchDevice::GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd) {
     if (!wrap_handles) return device_dispatch_table.GetSemaphoreFdKHR(device, pGetFdInfo, pFd);
     vku::safe_VkSemaphoreGetFdInfoKHR var_local_pGetFdInfo;
     vku::safe_VkSemaphoreGetFdInfoKHR* local_pGetFdInfo = nullptr;
@@ -4038,8 +4068,9 @@ VkResult Device::GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKH
     return result;
 }
 
-void Device::CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                     uint32_t set, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites) {
+void DispatchDevice::CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                             VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                             const VkWriteDescriptorSet* pDescriptorWrites) {
     if (!wrap_handles)
         return device_dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                              pDescriptorWrites);
@@ -4096,8 +4127,8 @@ void Device::CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
                                                   (const VkWriteDescriptorSet*)local_pDescriptorWrites);
 }
 
-void Device::CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                    const VkSubpassBeginInfo* pSubpassBeginInfo) {
+void DispatchDevice::CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                            const VkSubpassBeginInfo* pSubpassBeginInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     vku::safe_VkRenderPassBeginInfo var_local_pRenderPassBegin;
     vku::safe_VkRenderPassBeginInfo* local_pRenderPassBegin = nullptr;
@@ -4119,16 +4150,16 @@ void Device::CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRende
                                                  pSubpassBeginInfo);
 }
 
-void Device::CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                const VkSubpassEndInfo* pSubpassEndInfo) {
+void DispatchDevice::CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                        const VkSubpassEndInfo* pSubpassEndInfo) {
     device_dispatch_table.CmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
-void Device::CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+void DispatchDevice::CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
     device_dispatch_table.CmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
-VkResult Device::GetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
+VkResult DispatchDevice::GetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
     if (!wrap_handles) return device_dispatch_table.GetSwapchainStatusKHR(device, swapchain);
     {
         swapchain = Unwrap(swapchain);
@@ -4138,15 +4169,16 @@ VkResult Device::GetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain
     return result;
 }
 
-void Instance::GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                           const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-                                                           VkExternalFenceProperties* pExternalFenceProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                   const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+                                                                   VkExternalFenceProperties* pExternalFenceProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                         pExternalFenceProperties);
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::ImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo) {
+VkResult DispatchDevice::ImportFenceWin32HandleKHR(VkDevice device,
+                                                   const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo) {
     if (!wrap_handles) return device_dispatch_table.ImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
     vku::safe_VkImportFenceWin32HandleInfoKHR var_local_pImportFenceWin32HandleInfo;
     vku::safe_VkImportFenceWin32HandleInfoKHR* local_pImportFenceWin32HandleInfo = nullptr;
@@ -4166,7 +4198,8 @@ VkResult Device::ImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceW
     return result;
 }
 
-VkResult Device::GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle) {
+VkResult DispatchDevice::GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                HANDLE* pHandle) {
     if (!wrap_handles) return device_dispatch_table.GetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     vku::safe_VkFenceGetWin32HandleInfoKHR var_local_pGetWin32HandleInfo;
     vku::safe_VkFenceGetWin32HandleInfoKHR* local_pGetWin32HandleInfo = nullptr;
@@ -4187,7 +4220,7 @@ VkResult Device::GetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32Ha
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo) {
+VkResult DispatchDevice::ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo) {
     if (!wrap_handles) return device_dispatch_table.ImportFenceFdKHR(device, pImportFenceFdInfo);
     vku::safe_VkImportFenceFdInfoKHR var_local_pImportFenceFdInfo;
     vku::safe_VkImportFenceFdInfoKHR* local_pImportFenceFdInfo = nullptr;
@@ -4206,7 +4239,7 @@ VkResult Device::ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR*
     return result;
 }
 
-VkResult Device::GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd) {
+VkResult DispatchDevice::GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd) {
     if (!wrap_handles) return device_dispatch_table.GetFenceFdKHR(device, pGetFdInfo, pFd);
     vku::safe_VkFenceGetFdInfoKHR var_local_pGetFdInfo;
     vku::safe_VkFenceGetFdInfoKHR* local_pGetFdInfo = nullptr;
@@ -4225,7 +4258,7 @@ VkResult Device::GetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetF
     return result;
 }
 
-VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+VkResult DispatchInstance::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
     VkPerformanceCounterDescriptionKHR* pCounterDescriptions) {
     VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
@@ -4234,23 +4267,23 @@ VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
     return result;
 }
 
-void Instance::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
+void DispatchInstance::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses) {
     instance_dispatch_table.GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
                                                                                   pNumPasses);
 }
 
-VkResult Device::AcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo) {
+VkResult DispatchDevice::AcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo) {
     VkResult result = device_dispatch_table.AcquireProfilingLockKHR(device, pInfo);
 
     return result;
 }
 
-void Device::ReleaseProfilingLockKHR(VkDevice device) { device_dispatch_table.ReleaseProfilingLockKHR(device); }
+void DispatchDevice::ReleaseProfilingLockKHR(VkDevice device) { device_dispatch_table.ReleaseProfilingLockKHR(device); }
 
-VkResult Instance::GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                            VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                    VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
     vku::safe_VkPhysicalDeviceSurfaceInfo2KHR var_local_pSurfaceInfo;
@@ -4271,9 +4304,10 @@ VkResult Instance::GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice phy
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                       const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                               const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                               uint32_t* pSurfaceFormatCount,
+                                                               VkSurfaceFormat2KHR* pSurfaceFormats) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
                                                                            pSurfaceFormats);
@@ -4295,8 +4329,9 @@ VkResult Instance::GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physical
     return result;
 }
 
-VkResult Instance::GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice, const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
-                                                   VkDisplayPlaneCapabilities2KHR* pCapabilities) {
+VkResult DispatchInstance::GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                           const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                           VkDisplayPlaneCapabilities2KHR* pCapabilities) {
     if (!wrap_handles)
         return instance_dispatch_table.GetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
     vku::safe_VkDisplayPlaneInfo2KHR var_local_pDisplayPlaneInfo;
@@ -4317,8 +4352,8 @@ VkResult Instance::GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevi
     return result;
 }
 
-void Device::GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                            VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                    VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
     vku::safe_VkImageMemoryRequirementsInfo2 var_local_pInfo;
     vku::safe_VkImageMemoryRequirementsInfo2* local_pInfo = nullptr;
@@ -4336,8 +4371,8 @@ void Device::GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemory
                                                          pMemoryRequirements);
 }
 
-void Device::GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                             VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
+                                                     VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
     vku::safe_VkBufferMemoryRequirementsInfo2 var_local_pInfo;
     vku::safe_VkBufferMemoryRequirementsInfo2* local_pInfo = nullptr;
@@ -4355,9 +4390,9 @@ void Device::GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemo
                                                           pMemoryRequirements);
 }
 
-void Device::GetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                                  uint32_t* pSparseMemoryRequirementCount,
-                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void DispatchDevice::GetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
+                                                          uint32_t* pSparseMemoryRequirementCount,
+                                                          VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                           pSparseMemoryRequirements);
@@ -4377,9 +4412,9 @@ void Device::GetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImage
                                                                pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
-VkResult Device::CreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator,
-                                                 VkSamplerYcbcrConversion* pYcbcrConversion) {
+VkResult DispatchDevice::CreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkSamplerYcbcrConversion* pYcbcrConversion) {
     if (!wrap_handles)
         return device_dispatch_table.CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
 
@@ -4390,15 +4425,15 @@ VkResult Device::CreateSamplerYcbcrConversionKHR(VkDevice device, const VkSample
     return result;
 }
 
-void Device::DestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                              const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                      const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
     ycbcrConversion = Erase(ycbcrConversion);
     device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
 }
 
-void Device::GetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                              VkDescriptorSetLayoutSupport* pSupport) {
+void DispatchDevice::GetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                      VkDescriptorSetLayoutSupport* pSupport) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
     vku::safe_VkDescriptorSetLayoutCreateInfo var_local_pCreateInfo;
     vku::safe_VkDescriptorSetLayoutCreateInfo* local_pCreateInfo = nullptr;
@@ -4422,8 +4457,9 @@ void Device::GetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescripto
                                                            pSupport);
 }
 
-void Device::CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+void DispatchDevice::CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                             uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                              maxDrawCount, stride);
@@ -4435,9 +4471,9 @@ void Device::CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buf
                                                   stride);
 }
 
-void Device::CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                            uint32_t stride) {
+void DispatchDevice::CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                     maxDrawCount, stride);
@@ -4449,7 +4485,7 @@ void Device::CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuf
                                                          maxDrawCount, stride);
 }
 
-VkResult Device::GetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
+VkResult DispatchDevice::GetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
     if (!wrap_handles) return device_dispatch_table.GetSemaphoreCounterValueKHR(device, semaphore, pValue);
     {
         semaphore = Unwrap(semaphore);
@@ -4459,7 +4495,7 @@ VkResult Device::GetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaph
     return result;
 }
 
-VkResult Device::WaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
+VkResult DispatchDevice::WaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
     if (!wrap_handles) return device_dispatch_table.WaitSemaphoresKHR(device, pWaitInfo, timeout);
     vku::safe_VkSemaphoreWaitInfo var_local_pWaitInfo;
     vku::safe_VkSemaphoreWaitInfo* local_pWaitInfo = nullptr;
@@ -4479,7 +4515,7 @@ VkResult Device::WaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* p
     return result;
 }
 
-VkResult Device::SignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
+VkResult DispatchDevice::SignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
     if (!wrap_handles) return device_dispatch_table.SignalSemaphoreKHR(device, pSignalInfo);
     vku::safe_VkSemaphoreSignalInfo var_local_pSignalInfo;
     vku::safe_VkSemaphoreSignalInfo* local_pSignalInfo = nullptr;
@@ -4498,30 +4534,31 @@ VkResult Device::SignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount,
-                                                            VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) {
+VkResult DispatchInstance::GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice,
+                                                                    uint32_t* pFragmentShadingRateCount,
+                                                                    VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                                        pFragmentShadingRates);
 
     return result;
 }
 
-void Device::CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
-                                          const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
+void DispatchDevice::CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
+                                                  const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
     device_dispatch_table.CmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps);
 }
 
-void Device::CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                                   const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+void DispatchDevice::CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
+                                                           const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     device_dispatch_table.CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
 }
 
-void Device::CmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                                      const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+void DispatchDevice::CmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     device_dispatch_table.CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
 }
 
-VkResult Device::WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
+VkResult DispatchDevice::WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
     if (!wrap_handles) return device_dispatch_table.WaitForPresentKHR(device, swapchain, presentId, timeout);
     {
         swapchain = Unwrap(swapchain);
@@ -4531,7 +4568,7 @@ VkResult Device::WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, ui
     return result;
 }
 
-VkDeviceAddress Device::GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+VkDeviceAddress DispatchDevice::GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetBufferDeviceAddressKHR(device, pInfo);
     vku::safe_VkBufferDeviceAddressInfo var_local_pInfo;
     vku::safe_VkBufferDeviceAddressInfo* local_pInfo = nullptr;
@@ -4550,7 +4587,7 @@ VkDeviceAddress Device::GetBufferDeviceAddressKHR(VkDevice device, const VkBuffe
     return result;
 }
 
-uint64_t Device::GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+uint64_t DispatchDevice::GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetBufferOpaqueCaptureAddressKHR(device, pInfo);
     vku::safe_VkBufferDeviceAddressInfo var_local_pInfo;
     vku::safe_VkBufferDeviceAddressInfo* local_pInfo = nullptr;
@@ -4569,7 +4606,8 @@ uint64_t Device::GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBuffe
     return result;
 }
 
-uint64_t Device::GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+uint64_t DispatchDevice::GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device,
+                                                                const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
     vku::safe_VkDeviceMemoryOpaqueCaptureAddressInfo var_local_pInfo;
     vku::safe_VkDeviceMemoryOpaqueCaptureAddressInfo* local_pInfo = nullptr;
@@ -4589,8 +4627,8 @@ uint64_t Device::GetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device, const V
     return result;
 }
 
-VkResult Device::CreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
-                                            VkDeferredOperationKHR* pDeferredOperation) {
+VkResult DispatchDevice::CreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
+                                                    VkDeferredOperationKHR* pDeferredOperation) {
     if (!wrap_handles) return device_dispatch_table.CreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
 
     VkResult result = device_dispatch_table.CreateDeferredOperationKHR(device, pAllocator, pDeferredOperation);
@@ -4600,14 +4638,14 @@ VkResult Device::CreateDeferredOperationKHR(VkDevice device, const VkAllocationC
     return result;
 }
 
-void Device::DestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                         const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
+                                                 const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
     operation = Erase(operation);
     device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
 }
 
-uint32_t Device::GetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation) {
+uint32_t DispatchDevice::GetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation) {
     if (!wrap_handles) return device_dispatch_table.GetDeferredOperationMaxConcurrencyKHR(device, operation);
     {
         operation = Unwrap(operation);
@@ -4617,8 +4655,9 @@ uint32_t Device::GetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferr
     return result;
 }
 
-VkResult Device::GetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
-                                                    uint32_t* pExecutableCount, VkPipelineExecutablePropertiesKHR* pProperties) {
+VkResult DispatchDevice::GetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
+                                                            uint32_t* pExecutableCount,
+                                                            VkPipelineExecutablePropertiesKHR* pProperties) {
     if (!wrap_handles)
         return device_dispatch_table.GetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
     vku::safe_VkPipelineInfoKHR var_local_pPipelineInfo;
@@ -4639,8 +4678,9 @@ VkResult Device::GetPipelineExecutablePropertiesKHR(VkDevice device, const VkPip
     return result;
 }
 
-VkResult Device::GetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
-                                                    uint32_t* pStatisticCount, VkPipelineExecutableStatisticKHR* pStatistics) {
+VkResult DispatchDevice::GetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                                            uint32_t* pStatisticCount,
+                                                            VkPipelineExecutableStatisticKHR* pStatistics) {
     if (!wrap_handles)
         return device_dispatch_table.GetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
     vku::safe_VkPipelineExecutableInfoKHR var_local_pExecutableInfo;
@@ -4661,7 +4701,7 @@ VkResult Device::GetPipelineExecutableStatisticsKHR(VkDevice device, const VkPip
     return result;
 }
 
-VkResult Device::GetPipelineExecutableInternalRepresentationsKHR(
+VkResult DispatchDevice::GetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
     if (!wrap_handles)
@@ -4685,7 +4725,7 @@ VkResult Device::GetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
-VkResult Device::MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
+VkResult DispatchDevice::MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.MapMemory2KHR(device, pMemoryMapInfo, ppData);
     vku::safe_VkMemoryMapInfo var_local_pMemoryMapInfo;
     vku::safe_VkMemoryMapInfo* local_pMemoryMapInfo = nullptr;
@@ -4704,7 +4744,7 @@ VkResult Device::MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMa
     return result;
 }
 
-VkResult Device::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
+VkResult DispatchDevice::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     if (!wrap_handles) return device_dispatch_table.UnmapMemory2KHR(device, pMemoryUnmapInfo);
     vku::safe_VkMemoryUnmapInfo var_local_pMemoryUnmapInfo;
     vku::safe_VkMemoryUnmapInfo* local_pMemoryUnmapInfo = nullptr;
@@ -4723,7 +4763,7 @@ VkResult Device::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemo
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+VkResult DispatchInstance::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
@@ -4732,10 +4772,9 @@ VkResult Instance::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     return result;
 }
 
-VkResult Device::GetEncodedVideoSessionParametersKHR(VkDevice device,
-                                                     const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
-                                                     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
-                                                     size_t* pDataSize, void* pData) {
+VkResult DispatchDevice::GetEncodedVideoSessionParametersKHR(
+    VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {
     if (!wrap_handles)
         return device_dispatch_table.GetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo,
                                                                          pDataSize, pData);
@@ -4759,7 +4798,7 @@ VkResult Device::GetEncodedVideoSessionParametersKHR(VkDevice device,
     return result;
 }
 
-void Device::CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
+void DispatchDevice::CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdEncodeVideoKHR(commandBuffer, pEncodeInfo);
     vku::safe_VkVideoEncodeInfoKHR var_local_pEncodeInfo;
     vku::safe_VkVideoEncodeInfoKHR* local_pEncodeInfo = nullptr;
@@ -4798,7 +4837,7 @@ void Device::CmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncod
     device_dispatch_table.CmdEncodeVideoKHR(commandBuffer, (const VkVideoEncodeInfoKHR*)local_pEncodeInfo);
 }
 
-void Device::CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+void DispatchDevice::CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
     vku::safe_VkDependencyInfo var_local_pDependencyInfo;
     vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
@@ -4829,7 +4868,7 @@ void Device::CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const
     device_dispatch_table.CmdSetEvent2KHR(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
 }
 
-void Device::CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+void DispatchDevice::CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
     if (!wrap_handles) return device_dispatch_table.CmdResetEvent2KHR(commandBuffer, event, stageMask);
     {
         event = Unwrap(event);
@@ -4837,8 +4876,8 @@ void Device::CmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkP
     device_dispatch_table.CmdResetEvent2KHR(commandBuffer, event, stageMask);
 }
 
-void Device::CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                               const VkDependencyInfo* pDependencyInfos) {
+void DispatchDevice::CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                       const VkDependencyInfo* pDependencyInfos) {
     if (!wrap_handles) return device_dispatch_table.CmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
     small_vector<VkEvent, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pEvents;
     VkEvent* local_pEvents = nullptr;
@@ -4881,7 +4920,7 @@ void Device::CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCoun
                                             (const VkDependencyInfo*)local_pDependencyInfos);
 }
 
-void Device::CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
+void DispatchDevice::CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
     vku::safe_VkDependencyInfo var_local_pDependencyInfo;
     vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
@@ -4911,8 +4950,8 @@ void Device::CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDepen
     device_dispatch_table.CmdPipelineBarrier2KHR(commandBuffer, (const VkDependencyInfo*)local_pDependencyInfo);
 }
 
-void Device::CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                   uint32_t query) {
+void DispatchDevice::CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
+                                           uint32_t query) {
     if (!wrap_handles) return device_dispatch_table.CmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
     {
         queryPool = Unwrap(queryPool);
@@ -4920,7 +4959,7 @@ void Device::CmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStag
     device_dispatch_table.CmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query);
 }
 
-VkResult Device::QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
+VkResult DispatchDevice::QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) {
     if (!wrap_handles) return device_dispatch_table.QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
     small_vector<vku::safe_VkSubmitInfo2, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSubmits;
     vku::safe_VkSubmitInfo2* local_pSubmits = nullptr;
@@ -4961,32 +5000,32 @@ VkResult Device::QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
     return result;
 }
 
-void Device::CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
+void DispatchDevice::CmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo) {
     device_dispatch_table.CmdBindIndexBuffer3KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                      const VkBindVertexBuffer3InfoKHR* pBindingInfos) {
+void DispatchDevice::CmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                              const VkBindVertexBuffer3InfoKHR* pBindingInfos) {
     device_dispatch_table.CmdBindVertexBuffers3KHR(commandBuffer, firstBinding, bindingCount, pBindingInfos);
 }
 
-void Device::CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawIndirect2KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawIndexedIndirect2KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
+void DispatchDevice::CmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo) {
     device_dispatch_table.CmdDispatchIndirect2KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo) {
+void DispatchDevice::CmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo) {
     device_dispatch_table.CmdCopyMemoryKHR(commandBuffer, pCopyMemoryInfo);
 }
 
-void Device::CmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+void DispatchDevice::CmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToImageKHR(commandBuffer, pCopyMemoryInfo);
     vku::safe_VkCopyDeviceMemoryImageInfoKHR var_local_pCopyMemoryInfo;
     vku::safe_VkCopyDeviceMemoryImageInfoKHR* local_pCopyMemoryInfo = nullptr;
@@ -5003,7 +5042,7 @@ void Device::CmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer, const VkCopy
     device_dispatch_table.CmdCopyMemoryToImageKHR(commandBuffer, (const VkCopyDeviceMemoryImageInfoKHR*)local_pCopyMemoryInfo);
 }
 
-void Device::CmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
+void DispatchDevice::CmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyImageToMemoryKHR(commandBuffer, pCopyMemoryInfo);
     vku::safe_VkCopyDeviceMemoryImageInfoKHR var_local_pCopyMemoryInfo;
     vku::safe_VkCopyDeviceMemoryImageInfoKHR* local_pCopyMemoryInfo = nullptr;
@@ -5020,19 +5059,19 @@ void Device::CmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer, const VkCopy
     device_dispatch_table.CmdCopyImageToMemoryKHR(commandBuffer, (const VkCopyDeviceMemoryImageInfoKHR*)local_pCopyMemoryInfo);
 }
 
-void Device::CmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
-                                VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData) {
+void DispatchDevice::CmdUpdateMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                        VkAddressCommandFlagsKHR dstFlags, VkDeviceSize dataSize, const void* pData) {
     device_dispatch_table.CmdUpdateMemoryKHR(commandBuffer, pDstRange, dstFlags, dataSize, pData);
 }
 
-void Device::CmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
-                              VkAddressCommandFlagsKHR dstFlags, uint32_t data) {
+void DispatchDevice::CmdFillMemoryKHR(VkCommandBuffer commandBuffer, const VkDeviceAddressRangeKHR* pDstRange,
+                                      VkAddressCommandFlagsKHR dstFlags, uint32_t data) {
     device_dispatch_table.CmdFillMemoryKHR(commandBuffer, pDstRange, dstFlags, data);
 }
 
-void Device::CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                uint32_t queryCount, const VkStridedDeviceAddressRangeKHR* pDstRange,
-                                                VkAddressCommandFlagsKHR dstFlags, VkQueryResultFlags queryResultFlags) {
+void DispatchDevice::CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                        uint32_t queryCount, const VkStridedDeviceAddressRangeKHR* pDstRange,
+                                                        VkAddressCommandFlagsKHR dstFlags, VkQueryResultFlags queryResultFlags) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount, pDstRange,
                                                                         dstFlags, queryResultFlags);
@@ -5043,56 +5082,59 @@ void Device::CmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, V
                                                              queryResultFlags);
 }
 
-void Device::CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawIndirectCount2KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo);
 }
 
-void Device::CmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
-                                              const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin) {
+void DispatchDevice::CmdBeginConditionalRendering2EXT(VkCommandBuffer commandBuffer,
+                                                      const VkConditionalRenderingBeginInfo2EXT* pConditionalRenderingBegin) {
     device_dispatch_table.CmdBeginConditionalRendering2EXT(commandBuffer, pConditionalRenderingBegin);
 }
 
-void Device::CmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                 const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
+void DispatchDevice::CmdBindTransformFeedbackBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                         uint32_t bindingCount,
+                                                         const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
     device_dispatch_table.CmdBindTransformFeedbackBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBindingInfos);
 }
 
-void Device::CmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange, uint32_t counterRangeCount,
-                                           const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+void DispatchDevice::CmdBeginTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                   uint32_t counterRangeCount,
+                                                   const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
     device_dispatch_table.CmdBeginTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
 }
 
-void Device::CmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange, uint32_t counterRangeCount,
-                                         const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+void DispatchDevice::CmdEndTransformFeedback2EXT(VkCommandBuffer commandBuffer, uint32_t firstCounterRange,
+                                                 uint32_t counterRangeCount,
+                                                 const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
     device_dispatch_table.CmdEndTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
 }
 
-void Device::CmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
-                                          const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo, uint32_t counterOffset,
-                                          uint32_t vertexStride) {
+void DispatchDevice::CmdDrawIndirectByteCount2EXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                                  const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo, uint32_t counterOffset,
+                                                  uint32_t vertexStride) {
     device_dispatch_table.CmdDrawIndirectByteCount2EXT(commandBuffer, instanceCount, firstInstance, pCounterInfo, counterOffset,
                                                        vertexStride);
 }
 
-void Device::CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo);
 }
 
-void Device::CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
+void DispatchDevice::CmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo) {
     device_dispatch_table.CmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo);
 }
 
-void Device::CmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo) {
+void DispatchDevice::CmdWriteMarkerToMemoryAMD(VkCommandBuffer commandBuffer, const VkMemoryMarkerInfoAMD* pInfo) {
     device_dispatch_table.CmdWriteMarkerToMemoryAMD(commandBuffer, pInfo);
 }
 
-VkResult Device::CreateAccelerationStructure2KHR(VkDevice device, const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator,
-                                                 VkAccelerationStructureKHR* pAccelerationStructure) {
+VkResult DispatchDevice::CreateAccelerationStructure2KHR(VkDevice device, const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkAccelerationStructureKHR* pAccelerationStructure) {
     if (!wrap_handles)
         return device_dispatch_table.CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 
@@ -5104,7 +5146,7 @@ VkResult Device::CreateAccelerationStructure2KHR(VkDevice device, const VkAccele
     return result;
 }
 
-void Device::CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+void DispatchDevice::CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
     vku::safe_VkCopyBufferInfo2 var_local_pCopyBufferInfo;
     vku::safe_VkCopyBufferInfo2* local_pCopyBufferInfo = nullptr;
@@ -5124,7 +5166,7 @@ void Device::CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBuffer
     device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, (const VkCopyBufferInfo2*)local_pCopyBufferInfo);
 }
 
-void Device::CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
+void DispatchDevice::CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
     vku::safe_VkCopyImageInfo2 var_local_pCopyImageInfo;
     vku::safe_VkCopyImageInfo2* local_pCopyImageInfo = nullptr;
@@ -5144,7 +5186,8 @@ void Device::CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageIn
     device_dispatch_table.CmdCopyImage2KHR(commandBuffer, (const VkCopyImageInfo2*)local_pCopyImageInfo);
 }
 
-void Device::CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+void DispatchDevice::CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                              const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
     vku::safe_VkCopyBufferToImageInfo2 var_local_pCopyBufferToImageInfo;
     vku::safe_VkCopyBufferToImageInfo2* local_pCopyBufferToImageInfo = nullptr;
@@ -5164,7 +5207,8 @@ void Device::CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCop
     device_dispatch_table.CmdCopyBufferToImage2KHR(commandBuffer, (const VkCopyBufferToImageInfo2*)local_pCopyBufferToImageInfo);
 }
 
-void Device::CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+void DispatchDevice::CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                              const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
     vku::safe_VkCopyImageToBufferInfo2 var_local_pCopyImageToBufferInfo;
     vku::safe_VkCopyImageToBufferInfo2* local_pCopyImageToBufferInfo = nullptr;
@@ -5184,7 +5228,7 @@ void Device::CmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer, const VkCop
     device_dispatch_table.CmdCopyImageToBuffer2KHR(commandBuffer, (const VkCopyImageToBufferInfo2*)local_pCopyImageToBufferInfo);
 }
 
-void Device::CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+void DispatchDevice::CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
     vku::safe_VkBlitImageInfo2 var_local_pBlitImageInfo;
     vku::safe_VkBlitImageInfo2* local_pBlitImageInfo = nullptr;
@@ -5204,7 +5248,7 @@ void Device::CmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageIn
     device_dispatch_table.CmdBlitImage2KHR(commandBuffer, (const VkBlitImageInfo2*)local_pBlitImageInfo);
 }
 
-void Device::CmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
+void DispatchDevice::CmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
     vku::safe_VkResolveImageInfo2 var_local_pResolveImageInfo;
     vku::safe_VkResolveImageInfo2* local_pResolveImageInfo = nullptr;
@@ -5224,29 +5268,29 @@ void Device::CmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveI
     device_dispatch_table.CmdResolveImage2KHR(commandBuffer, (const VkResolveImageInfo2*)local_pResolveImageInfo);
 }
 
-void Device::CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
+void DispatchDevice::CmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
     device_dispatch_table.CmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
 }
 
-void Device::GetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                                  VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                          VkMemoryRequirements2* pMemoryRequirements) {
     device_dispatch_table.GetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-void Device::GetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                 VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                         VkMemoryRequirements2* pMemoryRequirements) {
     device_dispatch_table.GetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
 }
 
-void Device::GetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                       uint32_t* pSparseMemoryRequirementCount,
-                                                       VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+void DispatchDevice::GetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                               uint32_t* pSparseMemoryRequirementCount,
+                                                               VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     device_dispatch_table.GetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                     pSparseMemoryRequirements);
 }
 
-void Device::CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
-                                    VkIndexType indexType) {
+void DispatchDevice::CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                            VkIndexType indexType) {
     if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
     {
         buffer = Unwrap(buffer);
@@ -5254,18 +5298,18 @@ void Device::CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buff
     device_dispatch_table.CmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
 }
 
-void Device::GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                            VkExtent2D* pGranularity) {
+void DispatchDevice::GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                    VkExtent2D* pGranularity) {
     device_dispatch_table.GetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
 }
 
-void Device::GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
-                                                VkSubresourceLayout2* pLayout) {
+void DispatchDevice::GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                        VkSubresourceLayout2* pLayout) {
     device_dispatch_table.GetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
 }
 
-void Device::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                           VkSubresourceLayout2* pLayout) {
+void DispatchDevice::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                   VkSubresourceLayout2* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
     {
         image = Unwrap(image);
@@ -5273,7 +5317,8 @@ void Device::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
     device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
 }
 
-VkResult Device::WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info) {
+VkResult DispatchDevice::WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                            const VkPresentWait2InfoKHR* pPresentWait2Info) {
     if (!wrap_handles) return device_dispatch_table.WaitForPresent2KHR(device, swapchain, pPresentWait2Info);
     {
         swapchain = Unwrap(swapchain);
@@ -5283,16 +5328,16 @@ VkResult Device::WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, c
     return result;
 }
 
-void Device::DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
-                                      const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
+                                              const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
     pipelineBinary = Erase(pipelineBinary);
     device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
 }
 
-VkResult Device::GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
-                                          VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
-                                          void* pPipelineBinaryData) {
+VkResult DispatchDevice::GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
+                                                  VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
+                                                  void* pPipelineBinaryData) {
     if (!wrap_handles)
         return device_dispatch_table.GetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
                                                               pPipelineBinaryData);
@@ -5314,8 +5359,8 @@ VkResult Device::GetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinar
     return result;
 }
 
-VkResult Device::ReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
-                                                const VkAllocationCallbacks* pAllocator) {
+VkResult DispatchDevice::ReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                        const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.ReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator);
     vku::safe_VkReleaseCapturedPipelineDataInfoKHR var_local_pInfo;
     vku::safe_VkReleaseCapturedPipelineDataInfoKHR* local_pInfo = nullptr;
@@ -5335,7 +5380,7 @@ VkResult Device::ReleaseCapturedPipelineDataKHR(VkDevice device, const VkRelease
     return result;
 }
 
-VkResult Device::ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
+VkResult DispatchDevice::ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     if (!wrap_handles) return device_dispatch_table.ReleaseSwapchainImagesKHR(device, pReleaseInfo);
     vku::safe_VkReleaseSwapchainImagesInfoKHR var_local_pReleaseInfo;
     vku::safe_VkReleaseSwapchainImagesInfoKHR* local_pReleaseInfo = nullptr;
@@ -5355,29 +5400,30 @@ VkResult Device::ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapc
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                   VkCooperativeMatrixPropertiesKHR* pProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t* pPropertyCount,
+                                                                           VkCooperativeMatrixPropertiesKHR* pProperties) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
 
     return result;
 }
 
-void Device::CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+void DispatchDevice::CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
     device_dispatch_table.CmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
-VkResult Instance::GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                                VkTimeDomainKHR* pTimeDomains) {
+VkResult DispatchInstance::GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                                        VkTimeDomainKHR* pTimeDomains) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains);
 
     return result;
 }
 
-VkResult Device::GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
-                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
-                                            uint64_t* pMaxDeviation) {
+VkResult DispatchDevice::GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                    const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                    uint64_t* pMaxDeviation) {
     if (!wrap_handles)
         return device_dispatch_table.GetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
                                                                 pMaxDeviation);
@@ -5399,7 +5445,8 @@ VkResult Device::GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampC
     return result;
 }
 
-void Device::CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
+void DispatchDevice::CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                               const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo);
     vku::safe_VkBindDescriptorSetsInfo var_local_pBindDescriptorSetsInfo;
     vku::safe_VkBindDescriptorSetsInfo* local_pBindDescriptorSetsInfo = nullptr;
@@ -5423,7 +5470,7 @@ void Device::CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBi
     device_dispatch_table.CmdBindDescriptorSets2KHR(commandBuffer, (const VkBindDescriptorSetsInfo*)local_pBindDescriptorSetsInfo);
 }
 
-void Device::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
+void DispatchDevice::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushConstants2KHR(commandBuffer, pPushConstantsInfo);
     vku::safe_VkPushConstantsInfo var_local_pPushConstantsInfo;
     vku::safe_VkPushConstantsInfo* local_pPushConstantsInfo = nullptr;
@@ -5441,7 +5488,8 @@ void Device::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushCon
     device_dispatch_table.CmdPushConstants2KHR(commandBuffer, (const VkPushConstantsInfo*)local_pPushConstantsInfo);
 }
 
-void Device::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
+void DispatchDevice::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                              const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo);
     vku::safe_VkPushDescriptorSetInfo var_local_pPushDescriptorSetInfo;
     vku::safe_VkPushDescriptorSetInfo* local_pPushDescriptorSetInfo = nullptr;
@@ -5506,8 +5554,8 @@ void Device::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
     device_dispatch_table.CmdPushDescriptorSet2KHR(commandBuffer, (const VkPushDescriptorSetInfo*)local_pPushDescriptorSetInfo);
 }
 
-void Device::CmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
-                                               const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {
+void DispatchDevice::CmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
+                                                       const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo) {
     if (!wrap_handles)
         return device_dispatch_table.CmdSetDescriptorBufferOffsets2EXT(commandBuffer, pSetDescriptorBufferOffsetsInfo);
     vku::safe_VkSetDescriptorBufferOffsetsInfoEXT var_local_pSetDescriptorBufferOffsetsInfo;
@@ -5527,7 +5575,7 @@ void Device::CmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
         commandBuffer, (const VkSetDescriptorBufferOffsetsInfoEXT*)local_pSetDescriptorBufferOffsetsInfo);
 }
 
-void Device::CmdBindDescriptorBufferEmbeddedSamplers2EXT(
+void DispatchDevice::CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindDescriptorBufferEmbeddedSamplers2EXT(commandBuffer,
@@ -5549,12 +5597,13 @@ void Device::CmdBindDescriptorBufferEmbeddedSamplers2EXT(
         commandBuffer, (const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*)local_pBindDescriptorBufferEmbeddedSamplersInfo);
 }
 
-void Device::CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
+void DispatchDevice::CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                              const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
     device_dispatch_table.CmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo);
 }
 
-void Device::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
-                                             const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
+void DispatchDevice::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                     const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
     vku::safe_VkCopyMemoryToImageIndirectInfoKHR var_local_pCopyMemoryToImageIndirectInfo;
     vku::safe_VkCopyMemoryToImageIndirectInfoKHR* local_pCopyMemoryToImageIndirectInfo = nullptr;
@@ -5572,25 +5621,26 @@ void Device::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
         commandBuffer, (const VkCopyMemoryToImageIndirectInfoKHR*)local_pCopyMemoryToImageIndirectInfo);
 }
 
-VkResult Device::GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
-                                          VkDeviceFaultInfoKHR* pFaultInfo) {
+VkResult DispatchDevice::GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
+                                                  VkDeviceFaultInfoKHR* pFaultInfo) {
     VkResult result = device_dispatch_table.GetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo);
 
     return result;
 }
 
-VkResult Device::GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
+VkResult DispatchDevice::GetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo) {
     VkResult result = device_dispatch_table.GetDeviceFaultDebugInfoKHR(device, pDebugInfo);
 
     return result;
 }
 
-void Device::CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
+void DispatchDevice::CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);
 }
 
-VkResult Instance::CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
+VkResult DispatchInstance::CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkDebugReportCallbackEXT* pCallback) {
     if (!wrap_handles) return instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
 
     VkResult result = instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
@@ -5600,33 +5650,35 @@ VkResult Instance::CreateDebugReportCallbackEXT(VkInstance instance, const VkDeb
     return result;
 }
 
-void Instance::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                             const VkAllocationCallbacks* pAllocator) {
+void DispatchInstance::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
+                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     callback = Erase(callback);
     instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
 }
 
-void Instance::DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-                                     uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix,
-                                     const char* pMessage) {
+void DispatchInstance::DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
+                                             VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location,
+                                             int32_t messageCode, const char* pLayerPrefix, const char* pMessage) {
     instance_dispatch_table.DebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
                                                   pMessage);
 }
 
-void Device::CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
+void DispatchDevice::CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
     device_dispatch_table.CmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
 }
 
-void Device::CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdDebugMarkerEndEXT(commandBuffer); }
+void DispatchDevice::CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
+    device_dispatch_table.CmdDebugMarkerEndEXT(commandBuffer);
+}
 
-void Device::CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
+void DispatchDevice::CmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo) {
     device_dispatch_table.CmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo);
 }
 
-void Device::CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
-                                                const VkDeviceSize* pSizes) {
+void DispatchDevice::CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                        const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
+                                                        const VkDeviceSize* pSizes) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers,
                                                                         pOffsets, pSizes);
@@ -5645,8 +5697,9 @@ void Device::CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, u
                                                              (const VkBuffer*)local_pBuffers, pOffsets, pSizes);
 }
 
-void Device::CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount,
-                                          const VkBuffer* pCounterBuffers, const VkDeviceSize* pCounterBufferOffsets) {
+void DispatchDevice::CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                  uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                  const VkDeviceSize* pCounterBufferOffsets) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount,
                                                                   pCounterBuffers, pCounterBufferOffsets);
@@ -5665,8 +5718,9 @@ void Device::CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_
                                                        (const VkBuffer*)local_pCounterBuffers, pCounterBufferOffsets);
 }
 
-void Device::CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount,
-                                        const VkBuffer* pCounterBuffers, const VkDeviceSize* pCounterBufferOffsets) {
+void DispatchDevice::CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                const VkDeviceSize* pCounterBufferOffsets) {
     if (!wrap_handles)
         return device_dispatch_table.CmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount,
                                                                 pCounterBuffers, pCounterBufferOffsets);
@@ -5685,8 +5739,8 @@ void Device::CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t 
                                                      (const VkBuffer*)local_pCounterBuffers, pCounterBufferOffsets);
 }
 
-void Device::CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                     VkQueryControlFlags flags, uint32_t index) {
+void DispatchDevice::CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                             VkQueryControlFlags flags, uint32_t index) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
     {
         queryPool = Unwrap(queryPool);
@@ -5694,7 +5748,7 @@ void Device::CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool 
     device_dispatch_table.CmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
 }
 
-void Device::CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index) {
+void DispatchDevice::CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index) {
     if (!wrap_handles) return device_dispatch_table.CmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
     {
         queryPool = Unwrap(queryPool);
@@ -5702,9 +5756,9 @@ void Device::CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool qu
     device_dispatch_table.CmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
 }
 
-void Device::CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
-                                         VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                         uint32_t vertexStride) {
+void DispatchDevice::CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
+                                                 VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                 uint32_t vertexStride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                                  counterBufferOffset, counterOffset, vertexStride);
@@ -5715,8 +5769,8 @@ void Device::CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t
                                                       counterBufferOffset, counterOffset, vertexStride);
 }
 
-VkResult Device::CreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) {
+VkResult DispatchDevice::CreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule) {
     if (!wrap_handles) return device_dispatch_table.CreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
 
     VkResult result = device_dispatch_table.CreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule);
@@ -5726,8 +5780,8 @@ VkResult Device::CreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNV
     return result;
 }
 
-VkResult Device::CreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) {
+VkResult DispatchDevice::CreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction) {
     if (!wrap_handles) return device_dispatch_table.CreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction);
     vku::safe_VkCuFunctionCreateInfoNVX var_local_pCreateInfo;
     vku::safe_VkCuFunctionCreateInfoNVX* local_pCreateInfo = nullptr;
@@ -5749,19 +5803,19 @@ VkResult Device::CreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateIn
     return result;
 }
 
-void Device::DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
     module = Erase(module);
     device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
 }
 
-void Device::DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
     function = Erase(function);
     device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
 }
 
-void Device::CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
+void DispatchDevice::CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo);
     vku::safe_VkCuLaunchInfoNVX var_local_pLaunchInfo;
     vku::safe_VkCuLaunchInfoNVX* local_pLaunchInfo = nullptr;
@@ -5778,7 +5832,7 @@ void Device::CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunc
     device_dispatch_table.CmdCuLaunchKernelNVX(commandBuffer, (const VkCuLaunchInfoNVX*)local_pLaunchInfo);
 }
 
-uint32_t Device::GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
+uint32_t DispatchDevice::GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetImageViewHandleNVX(device, pInfo);
     vku::safe_VkImageViewHandleInfoNVX var_local_pInfo;
     vku::safe_VkImageViewHandleInfoNVX* local_pInfo = nullptr;
@@ -5800,7 +5854,7 @@ uint32_t Device::GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleI
     return result;
 }
 
-uint64_t Device::GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
+uint64_t DispatchDevice::GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetImageViewHandle64NVX(device, pInfo);
     vku::safe_VkImageViewHandleInfoNVX var_local_pInfo;
     vku::safe_VkImageViewHandleInfoNVX* local_pInfo = nullptr;
@@ -5822,7 +5876,8 @@ uint64_t Device::GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandl
     return result;
 }
 
-VkResult Device::GetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties) {
+VkResult DispatchDevice::GetImageViewAddressNVX(VkDevice device, VkImageView imageView,
+                                                VkImageViewAddressPropertiesNVX* pProperties) {
     if (!wrap_handles) return device_dispatch_table.GetImageViewAddressNVX(device, imageView, pProperties);
     {
         imageView = Unwrap(imageView);
@@ -5832,14 +5887,15 @@ VkResult Device::GetImageViewAddressNVX(VkDevice device, VkImageView imageView, 
     return result;
 }
 
-uint64_t Device::GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex) {
+uint64_t DispatchDevice::GetDeviceCombinedImageSamplerIndexNVX(VkDevice device, uint64_t imageViewIndex, uint64_t samplerIndex) {
     uint64_t result = device_dispatch_table.GetDeviceCombinedImageSamplerIndexNVX(device, imageViewIndex, samplerIndex);
 
     return result;
 }
 
-void Device::CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+void DispatchDevice::CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                             uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                              maxDrawCount, stride);
@@ -5851,9 +5907,9 @@ void Device::CmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buf
                                                   stride);
 }
 
-void Device::CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                            uint32_t stride) {
+void DispatchDevice::CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                     maxDrawCount, stride);
@@ -5865,8 +5921,8 @@ void Device::CmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuf
                                                          maxDrawCount, stride);
 }
 
-VkResult Device::GetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShaderStageFlagBits shaderStage,
-                                  VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo) {
+VkResult DispatchDevice::GetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShaderStageFlagBits shaderStage,
+                                          VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
     {
         pipeline = Unwrap(pipeline);
@@ -5877,8 +5933,9 @@ VkResult Device::GetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShader
 }
 #ifdef VK_USE_PLATFORM_GGP
 
-VkResult Instance::CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
-                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateStreamDescriptorSurfaceGGP(VkInstance instance,
+                                                            const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
@@ -5889,7 +5946,7 @@ VkResult Instance::CreateStreamDescriptorSurfaceGGP(VkInstance instance, const V
 }
 #endif  // VK_USE_PLATFORM_GGP
 
-VkResult Instance::GetPhysicalDeviceExternalImageFormatPropertiesNV(
+VkResult DispatchInstance::GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties) {
@@ -5900,8 +5957,8 @@ VkResult Instance::GetPhysicalDeviceExternalImageFormatPropertiesNV(
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Device::GetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType,
-                                        HANDLE* pHandle) {
+VkResult DispatchDevice::GetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory,
+                                                VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryWin32HandleNV(device, memory, handleType, pHandle);
     {
         memory = Unwrap(memory);
@@ -5913,8 +5970,8 @@ VkResult Device::GetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_VI_NN
 
-VkResult Instance::CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
@@ -5925,8 +5982,8 @@ VkResult Instance::CreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreat
 }
 #endif  // VK_USE_PLATFORM_VI_NN
 
-void Device::CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
-                                             const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) {
+void DispatchDevice::CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
+                                                     const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
     vku::safe_VkConditionalRenderingBeginInfoEXT var_local_pConditionalRenderingBegin;
     vku::safe_VkConditionalRenderingBeginInfoEXT* local_pConditionalRenderingBegin = nullptr;
@@ -5944,16 +6001,16 @@ void Device::CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
         commandBuffer, (const VkConditionalRenderingBeginInfoEXT*)local_pConditionalRenderingBegin);
 }
 
-void Device::CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
+void DispatchDevice::CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) {
     device_dispatch_table.CmdEndConditionalRenderingEXT(commandBuffer);
 }
 
-void Device::CmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                      const VkViewportWScalingNV* pViewportWScalings) {
+void DispatchDevice::CmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                              const VkViewportWScalingNV* pViewportWScalings) {
     device_dispatch_table.CmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
 }
 
-VkResult Instance::ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
+VkResult DispatchInstance::ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     if (!wrap_handles) return instance_dispatch_table.ReleaseDisplayEXT(physicalDevice, display);
     {
         display = Unwrap(display);
@@ -5964,7 +6021,7 @@ VkResult Instance::ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayK
 }
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-VkResult Instance::AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display) {
+VkResult DispatchInstance::AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display) {
     if (!wrap_handles) return instance_dispatch_table.AcquireXlibDisplayEXT(physicalDevice, dpy, display);
     {
         display = Unwrap(display);
@@ -5974,8 +6031,8 @@ VkResult Instance::AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Displa
     return result;
 }
 
-VkResult Instance::GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
-                                            VkDisplayKHR* pDisplay) {
+VkResult DispatchInstance::GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
+                                                    VkDisplayKHR* pDisplay) {
     if (!wrap_handles) return instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
 
     VkResult result = instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
@@ -5986,8 +6043,8 @@ VkResult Instance::GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Dis
 }
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-VkResult Instance::GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                    VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
     {
@@ -5999,7 +6056,8 @@ VkResult Instance::GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice phy
     return result;
 }
 
-VkResult Device::DisplayPowerControlEXT(VkDevice device, VkDisplayKHR display, const VkDisplayPowerInfoEXT* pDisplayPowerInfo) {
+VkResult DispatchDevice::DisplayPowerControlEXT(VkDevice device, VkDisplayKHR display,
+                                                const VkDisplayPowerInfoEXT* pDisplayPowerInfo) {
     if (!wrap_handles) return device_dispatch_table.DisplayPowerControlEXT(device, display, pDisplayPowerInfo);
     {
         display = Unwrap(display);
@@ -6009,8 +6067,8 @@ VkResult Device::DisplayPowerControlEXT(VkDevice device, VkDisplayKHR display, c
     return result;
 }
 
-VkResult Device::RegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+VkResult DispatchDevice::RegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
     if (!wrap_handles) return device_dispatch_table.RegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
 
     VkResult result = device_dispatch_table.RegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
@@ -6020,8 +6078,9 @@ VkResult Device::RegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfo
     return result;
 }
 
-VkResult Device::RegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display, const VkDisplayEventInfoEXT* pDisplayEventInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
+VkResult DispatchDevice::RegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display,
+                                                 const VkDisplayEventInfoEXT* pDisplayEventInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkFence* pFence) {
     if (!wrap_handles) return device_dispatch_table.RegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
     {
         display = Unwrap(display);
@@ -6033,8 +6092,8 @@ VkResult Device::RegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display, 
     return result;
 }
 
-VkResult Device::GetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain, VkSurfaceCounterFlagBitsEXT counter,
-                                        uint64_t* pCounterValue) {
+VkResult DispatchDevice::GetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain, VkSurfaceCounterFlagBitsEXT counter,
+                                                uint64_t* pCounterValue) {
     if (!wrap_handles) return device_dispatch_table.GetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
     {
         swapchain = Unwrap(swapchain);
@@ -6044,8 +6103,8 @@ VkResult Device::GetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchai
     return result;
 }
 
-VkResult Device::GetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
-                                               VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties) {
+VkResult DispatchDevice::GetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
+                                                       VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties) {
     if (!wrap_handles) return device_dispatch_table.GetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
     {
         swapchain = Unwrap(swapchain);
@@ -6055,8 +6114,9 @@ VkResult Device::GetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR s
     return result;
 }
 
-VkResult Device::GetPastPresentationTimingGOOGLE(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pPresentationTimingCount,
-                                                 VkPastPresentationTimingGOOGLE* pPresentationTimings) {
+VkResult DispatchDevice::GetPastPresentationTimingGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
+                                                         uint32_t* pPresentationTimingCount,
+                                                         VkPastPresentationTimingGOOGLE* pPresentationTimings) {
     if (!wrap_handles)
         return device_dispatch_table.GetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount,
                                                                      pPresentationTimings);
@@ -6069,22 +6129,22 @@ VkResult Device::GetPastPresentationTimingGOOGLE(VkDevice device, VkSwapchainKHR
     return result;
 }
 
-void Device::CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
-                                       uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles) {
+void DispatchDevice::CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                               uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles) {
     device_dispatch_table.CmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
                                                     pDiscardRectangles);
 }
 
-void Device::CmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable) {
+void DispatchDevice::CmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable) {
     device_dispatch_table.CmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
 }
 
-void Device::CmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer, VkDiscardRectangleModeEXT discardRectangleMode) {
+void DispatchDevice::CmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer, VkDiscardRectangleModeEXT discardRectangleMode) {
     device_dispatch_table.CmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
 }
 
-void Device::SetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
-                               const VkHdrMetadataEXT* pMetadata) {
+void DispatchDevice::SetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
+                                       const VkHdrMetadataEXT* pMetadata) {
     if (!wrap_handles) return device_dispatch_table.SetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
     small_vector<VkSwapchainKHR, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSwapchains;
     VkSwapchainKHR* local_pSwapchains = nullptr;
@@ -6101,8 +6161,8 @@ void Device::SetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const V
 }
 #ifdef VK_USE_PLATFORM_IOS_MVK
 
-VkResult Instance::CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
@@ -6114,8 +6174,8 @@ VkResult Instance::CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCr
 #endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 
-VkResult Instance::CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
@@ -6126,30 +6186,31 @@ VkResult Instance::CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfa
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-void Device::QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
+void DispatchDevice::QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
     device_dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
 }
 
-void Device::QueueEndDebugUtilsLabelEXT(VkQueue queue) { device_dispatch_table.QueueEndDebugUtilsLabelEXT(queue); }
+void DispatchDevice::QueueEndDebugUtilsLabelEXT(VkQueue queue) { device_dispatch_table.QueueEndDebugUtilsLabelEXT(queue); }
 
-void Device::QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
+void DispatchDevice::QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo) {
     device_dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
 }
 
-void Device::CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
+void DispatchDevice::CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
     device_dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-void Device::CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
+void DispatchDevice::CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
     device_dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
-void Device::CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
+void DispatchDevice::CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) {
     device_dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
-VkResult Instance::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
+VkResult DispatchInstance::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkDebugUtilsMessengerEXT* pMessenger) {
     if (!wrap_handles) return instance_dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
 
     VkResult result = instance_dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
@@ -6159,29 +6220,30 @@ VkResult Instance::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDeb
     return result;
 }
 
-void Instance::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                             const VkAllocationCallbacks* pAllocator) {
+void DispatchInstance::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
     messenger = Erase(messenger);
     instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 }
 
-void Instance::SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                          VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                          const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {
+void DispatchInstance::SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {
     instance_dispatch_table.SubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
 }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-VkResult Device::GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
-                                                           VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
+VkResult DispatchDevice::GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties) {
     VkResult result = device_dispatch_table.GetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
 
     return result;
 }
 
-VkResult Device::GetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-                                                       struct AHardwareBuffer** pBuffer) {
+VkResult DispatchDevice::GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
+                                                               const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
+                                                               struct AHardwareBuffer** pBuffer) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
     vku::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID var_local_pInfo;
     vku::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID* local_pInfo = nullptr;
@@ -6203,9 +6265,9 @@ VkResult Device::GetMemoryAndroidHardwareBufferANDROID(VkDevice device, const Vk
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-VkResult Device::CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                   const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
-                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+VkResult DispatchDevice::CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     if (!wrap_handles)
         return device_dispatch_table.CreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                        pAllocator, pPipelines);
@@ -6256,8 +6318,8 @@ VkResult Device::CreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCa
     return result;
 }
 
-VkResult Device::GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
-                                                          VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
+VkResult DispatchDevice::GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
+                                                                  VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) {
     if (!wrap_handles) return device_dispatch_table.GetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
     {
         executionGraph = Unwrap(executionGraph);
@@ -6267,9 +6329,9 @@ VkResult Device::GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPip
     return result;
 }
 
-VkResult Device::GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
-                                                        const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
-                                                        uint32_t* pNodeIndex) {
+VkResult DispatchDevice::GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
+                                                                const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+                                                                uint32_t* pNodeIndex) {
     if (!wrap_handles)
         return device_dispatch_table.GetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
     {
@@ -6280,8 +6342,8 @@ VkResult Device::GetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipel
     return result;
 }
 
-void Device::CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph, VkDeviceAddress scratch,
-                                                 VkDeviceSize scratchSize) {
+void DispatchDevice::CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                         VkDeviceAddress scratch, VkDeviceSize scratchSize) {
     if (!wrap_handles)
         return device_dispatch_table.CmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize);
     {
@@ -6290,24 +6352,24 @@ void Device::CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, 
     device_dispatch_table.CmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize);
 }
 
-void Device::CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
-                                  const VkDispatchGraphCountInfoAMDX* pCountInfo) {
+void DispatchDevice::CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
+                                          const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     device_dispatch_table.CmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
 }
 
-void Device::CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
-                                          const VkDispatchGraphCountInfoAMDX* pCountInfo) {
+void DispatchDevice::CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
+                                                  const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     device_dispatch_table.CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
 }
 
-void Device::CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
-                                               VkDeviceAddress countInfo) {
+void DispatchDevice::CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                                       VkDeviceSize scratchSize, VkDeviceAddress countInfo) {
     device_dispatch_table.CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-VkResult Device::WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
-                                            const VkHostAddressRangeEXT* pDescriptors) {
+VkResult DispatchDevice::WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCount, const VkSamplerCreateInfo* pSamplers,
+                                                    const VkHostAddressRangeEXT* pDescriptors) {
     if (!wrap_handles) return device_dispatch_table.WriteSamplerDescriptorsEXT(device, samplerCount, pSamplers, pDescriptors);
     small_vector<vku::safe_VkSamplerCreateInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSamplers;
     vku::safe_VkSamplerCreateInfo* local_pSamplers = nullptr;
@@ -6327,20 +6389,20 @@ VkResult Device::WriteSamplerDescriptorsEXT(VkDevice device, uint32_t samplerCou
     return result;
 }
 
-void Device::CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+void DispatchDevice::CmdBindSamplerHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
     device_dispatch_table.CmdBindSamplerHeapEXT(commandBuffer, pBindInfo);
 }
 
-void Device::CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
+void DispatchDevice::CmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo) {
     device_dispatch_table.CmdBindResourceHeapEXT(commandBuffer, pBindInfo);
 }
 
-void Device::CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {
+void DispatchDevice::CmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo) {
     device_dispatch_table.CmdPushDataEXT(commandBuffer, pPushDataInfo);
 }
 
-VkResult Device::GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
-                                              VkHostAddressRangeEXT* pDatas) {
+VkResult DispatchDevice::GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCount, const VkImage* pImages,
+                                                      VkHostAddressRangeEXT* pDatas) {
     if (!wrap_handles) return device_dispatch_table.GetImageOpaqueCaptureDataEXT(device, imageCount, pImages, pDatas);
     small_vector<VkImage, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pImages;
     VkImage* local_pImages = nullptr;
@@ -6358,25 +6420,26 @@ VkResult Device::GetImageOpaqueCaptureDataEXT(VkDevice device, uint32_t imageCou
     return result;
 }
 
-VkDeviceSize Instance::GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice, VkDescriptorType descriptorType) {
+VkDeviceSize DispatchInstance::GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
+                                                                  VkDescriptorType descriptorType) {
     VkDeviceSize result = instance_dispatch_table.GetPhysicalDeviceDescriptorSizeEXT(physicalDevice, descriptorType);
 
     return result;
 }
 
-VkResult Device::RegisterCustomBorderColorEXT(VkDevice device, const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
-                                              VkBool32 requestIndex, uint32_t* pIndex) {
+VkResult DispatchDevice::RegisterCustomBorderColorEXT(VkDevice device, const VkSamplerCustomBorderColorCreateInfoEXT* pBorderColor,
+                                                      VkBool32 requestIndex, uint32_t* pIndex) {
     VkResult result = device_dispatch_table.RegisterCustomBorderColorEXT(device, pBorderColor, requestIndex, pIndex);
 
     return result;
 }
 
-void Device::UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {
+void DispatchDevice::UnregisterCustomBorderColorEXT(VkDevice device, uint32_t index) {
     device_dispatch_table.UnregisterCustomBorderColorEXT(device, index);
 }
 
-VkResult Device::GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
-                                               VkHostAddressRangeEXT* pDatas) {
+VkResult DispatchDevice::GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorCount, const VkTensorARM* pTensors,
+                                                       VkHostAddressRangeEXT* pDatas) {
     if (!wrap_handles) return device_dispatch_table.GetTensorOpaqueCaptureDataARM(device, tensorCount, pTensors, pDatas);
     small_vector<VkTensorARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTensors;
     VkTensorARM* local_pTensors = nullptr;
@@ -6395,17 +6458,17 @@ VkResult Device::GetTensorOpaqueCaptureDataARM(VkDevice device, uint32_t tensorC
     return result;
 }
 
-void Device::CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
+void DispatchDevice::CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {
     device_dispatch_table.CmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
 }
 
-void Instance::GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples,
-                                                         VkMultisamplePropertiesEXT* pMultisampleProperties) {
+void DispatchInstance::GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples,
+                                                                 VkMultisamplePropertiesEXT* pMultisampleProperties) {
     instance_dispatch_table.GetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties);
 }
 
-VkResult Device::GetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
-                                                        VkImageDrmFormatModifierPropertiesEXT* pProperties) {
+VkResult DispatchDevice::GetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
+                                                                VkImageDrmFormatModifierPropertiesEXT* pProperties) {
     if (!wrap_handles) return device_dispatch_table.GetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
     {
         image = Unwrap(image);
@@ -6415,8 +6478,8 @@ VkResult Device::GetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage
     return result;
 }
 
-VkResult Device::CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) {
+VkResult DispatchDevice::CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) {
     if (!wrap_handles) return device_dispatch_table.CreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
 
     VkResult result = device_dispatch_table.CreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
@@ -6426,15 +6489,15 @@ VkResult Device::CreateValidationCacheEXT(VkDevice device, const VkValidationCac
     return result;
 }
 
-void Device::DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
-                                       const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
+                                               const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
     validationCache = Erase(validationCache);
     device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
 }
 
-VkResult Device::MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
-                                          const VkValidationCacheEXT* pSrcCaches) {
+VkResult DispatchDevice::MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+                                                  const VkValidationCacheEXT* pSrcCaches) {
     if (!wrap_handles) return device_dispatch_table.MergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
     small_vector<VkValidationCacheEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pSrcCaches;
     VkValidationCacheEXT* local_pSrcCaches = nullptr;
@@ -6454,7 +6517,8 @@ VkResult Device::MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT 
     return result;
 }
 
-VkResult Device::GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData) {
+VkResult DispatchDevice::GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
+                                                   void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
     {
         validationCache = Unwrap(validationCache);
@@ -6464,7 +6528,7 @@ VkResult Device::GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT
     return result;
 }
 
-void Device::CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
+void DispatchDevice::CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
     if (!wrap_handles) return device_dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
     {
         imageView = Unwrap(imageView);
@@ -6472,19 +6536,21 @@ void Device::CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageVie
     device_dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
 }
 
-void Device::CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                                const VkShadingRatePaletteNV* pShadingRatePalettes) {
+void DispatchDevice::CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                        uint32_t viewportCount,
+                                                        const VkShadingRatePaletteNV* pShadingRatePalettes) {
     device_dispatch_table.CmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
 }
 
-void Device::CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
-                                       uint32_t customSampleOrderCount, const VkCoarseSampleOrderCustomNV* pCustomSampleOrders) {
+void DispatchDevice::CmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
+                                               uint32_t customSampleOrderCount,
+                                               const VkCoarseSampleOrderCustomNV* pCustomSampleOrders) {
     device_dispatch_table.CmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
 }
 
-VkResult Device::CreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator,
-                                               VkAccelerationStructureNV* pAccelerationStructure) {
+VkResult DispatchDevice::CreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkAccelerationStructureNV* pAccelerationStructure) {
     if (!wrap_handles)
         return device_dispatch_table.CreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
     vku::safe_VkAccelerationStructureCreateInfoNV var_local_pCreateInfo;
@@ -6523,16 +6589,16 @@ VkResult Device::CreateAccelerationStructureNV(VkDevice device, const VkAccelera
     return result;
 }
 
-void Device::DestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                            const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
     accelerationStructure = Erase(accelerationStructure);
     device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
 }
 
-void Device::GetAccelerationStructureMemoryRequirementsNV(VkDevice device,
-                                                          const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                          VkMemoryRequirements2KHR* pMemoryRequirements) {
+void DispatchDevice::GetAccelerationStructureMemoryRequirementsNV(VkDevice device,
+                                                                  const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
+                                                                  VkMemoryRequirements2KHR* pMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     vku::safe_VkAccelerationStructureMemoryRequirementsInfoNV var_local_pInfo;
@@ -6551,8 +6617,8 @@ void Device::GetAccelerationStructureMemoryRequirementsNV(VkDevice device,
         device, (const VkAccelerationStructureMemoryRequirementsInfoNV*)local_pInfo, pMemoryRequirements);
 }
 
-VkResult Device::BindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                   const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
+VkResult DispatchDevice::BindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
     if (!wrap_handles) return device_dispatch_table.BindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
     small_vector<vku::safe_VkBindAccelerationStructureMemoryInfoNV, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
     vku::safe_VkBindAccelerationStructureMemoryInfoNV* local_pBindInfos = nullptr;
@@ -6578,10 +6644,10 @@ VkResult Device::BindAccelerationStructureMemoryNV(VkDevice device, uint32_t bin
     return result;
 }
 
-void Device::CmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
-                                             VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
-                                             VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch,
-                                             VkDeviceSize scratchOffset) {
+void DispatchDevice::CmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                     VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                     VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch,
+                                                     VkDeviceSize scratchOffset) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update,
                                                                      dst, src, scratch, scratchOffset);
@@ -6621,8 +6687,8 @@ void Device::CmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, cons
                                                           instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
 }
 
-void Device::CmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                            VkAccelerationStructureNV src, VkCopyAccelerationStructureModeKHR mode) {
+void DispatchDevice::CmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
+                                                    VkAccelerationStructureNV src, VkCopyAccelerationStructureModeKHR mode) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
     {
         dst = Unwrap(dst);
@@ -6631,13 +6697,13 @@ void Device::CmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAcc
     device_dispatch_table.CmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
 }
 
-void Device::CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                            VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                            VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                            VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                            VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                            VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride, uint32_t width,
-                            uint32_t height, uint32_t depth) {
+void DispatchDevice::CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                    VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                    VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                    VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                    VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                    VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                    uint32_t width, uint32_t height, uint32_t depth) {
     if (!wrap_handles)
         return device_dispatch_table.CmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
                                                     missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride,
@@ -6657,8 +6723,8 @@ void Device::CmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShader
                                          width, height, depth);
 }
 
-VkResult Device::GetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount,
-                                                    size_t dataSize, void* pData) {
+VkResult DispatchDevice::GetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
+                                                            uint32_t groupCount, size_t dataSize, void* pData) {
     if (!wrap_handles)
         return device_dispatch_table.GetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
     {
@@ -6670,8 +6736,8 @@ VkResult Device::GetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline 
     return result;
 }
 
-VkResult Device::GetRayTracingShaderGroupHandlesNV(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount,
-                                                   size_t dataSize, void* pData) {
+VkResult DispatchDevice::GetRayTracingShaderGroupHandlesNV(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
+                                                           uint32_t groupCount, size_t dataSize, void* pData) {
     if (!wrap_handles)
         return device_dispatch_table.GetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
     {
@@ -6683,8 +6749,8 @@ VkResult Device::GetRayTracingShaderGroupHandlesNV(VkDevice device, VkPipeline p
     return result;
 }
 
-VkResult Device::GetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure, size_t dataSize,
-                                                  void* pData) {
+VkResult DispatchDevice::GetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                          size_t dataSize, void* pData) {
     if (!wrap_handles)
         return device_dispatch_table.GetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
     {
@@ -6695,9 +6761,9 @@ VkResult Device::GetAccelerationStructureHandleNV(VkDevice device, VkAcceleratio
     return result;
 }
 
-void Device::CmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
-                                                        const VkAccelerationStructureNV* pAccelerationStructures,
-                                                        VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
+void DispatchDevice::CmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
+                                                                const VkAccelerationStructureNV* pAccelerationStructures,
+                                                                VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
     if (!wrap_handles)
         return device_dispatch_table.CmdWriteAccelerationStructuresPropertiesNV(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
@@ -6718,7 +6784,7 @@ void Device::CmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandB
         queryPool, firstQuery);
 }
 
-VkResult Device::CompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader) {
+VkResult DispatchDevice::CompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader) {
     if (!wrap_handles) return device_dispatch_table.CompileDeferredNV(device, pipeline, shader);
     {
         pipeline = Unwrap(pipeline);
@@ -6728,17 +6794,17 @@ VkResult Device::CompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_
     return result;
 }
 
-VkResult Device::GetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
-                                                   const void* pHostPointer,
-                                                   VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
+VkResult DispatchDevice::GetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                           const void* pHostPointer,
+                                                           VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
     VkResult result =
         device_dispatch_table.GetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties);
 
     return result;
 }
 
-void Device::CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer,
-                                     VkDeviceSize dstOffset, uint32_t marker) {
+void DispatchDevice::CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                             VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
     if (!wrap_handles)
         return device_dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
     {
@@ -6747,8 +6813,8 @@ void Device::CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineSt
     device_dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
-void Device::CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                      VkDeviceSize dstOffset, uint32_t marker) {
+void DispatchDevice::CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                              VkDeviceSize dstOffset, uint32_t marker) {
     if (!wrap_handles) return device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
     {
         dstBuffer = Unwrap(dstBuffer);
@@ -6756,17 +6822,17 @@ void Device::CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineS
     device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
 }
 
-VkResult Instance::GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
-                                                                VkTimeDomainKHR* pTimeDomains) {
+VkResult DispatchInstance::GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
+                                                                        VkTimeDomainKHR* pTimeDomains) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains);
 
     return result;
 }
 
-VkResult Device::GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
-                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
-                                            uint64_t* pMaxDeviation) {
+VkResult DispatchDevice::GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                    const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                    uint64_t* pMaxDeviation) {
     if (!wrap_handles)
         return device_dispatch_table.GetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps,
                                                                 pMaxDeviation);
@@ -6788,12 +6854,12 @@ VkResult Device::GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampC
     return result;
 }
 
-void Device::CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+void DispatchDevice::CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     device_dispatch_table.CmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
 }
 
-void Device::CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                        uint32_t stride) {
+void DispatchDevice::CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                uint32_t drawCount, uint32_t stride) {
     if (!wrap_handles) return device_dispatch_table.CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
     {
         buffer = Unwrap(buffer);
@@ -6801,9 +6867,9 @@ void Device::CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer 
     device_dispatch_table.CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void Device::CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                             uint32_t stride) {
+void DispatchDevice::CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                     uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                      maxDrawCount, stride);
@@ -6815,30 +6881,31 @@ void Device::CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBu
                                                           maxDrawCount, stride);
 }
 
-void Device::CmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                            uint32_t exclusiveScissorCount, const VkBool32* pExclusiveScissorEnables) {
+void DispatchDevice::CmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                                    uint32_t exclusiveScissorCount, const VkBool32* pExclusiveScissorEnables) {
     device_dispatch_table.CmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
                                                          pExclusiveScissorEnables);
 }
 
-void Device::CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor, uint32_t exclusiveScissorCount,
-                                      const VkRect2D* pExclusiveScissors) {
+void DispatchDevice::CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                              uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors) {
     device_dispatch_table.CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
 }
 
-void Device::CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) {
+void DispatchDevice::CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) {
     device_dispatch_table.CmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
 }
 
-void Device::GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData) {
+void DispatchDevice::GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData) {
     device_dispatch_table.GetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
-void Device::GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData) {
+void DispatchDevice::GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                               VkCheckpointData2NV* pCheckpointData) {
     device_dispatch_table.GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
-VkResult Device::SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
+VkResult DispatchDevice::SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
     if (!wrap_handles) return device_dispatch_table.SetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size);
     {
         swapchain = Unwrap(swapchain);
@@ -6848,9 +6915,9 @@ VkResult Device::SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapch
     return result;
 }
 
-VkResult Device::GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                 VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
-                                                 uint64_t* pSwapchainTimingPropertiesCounter) {
+VkResult DispatchDevice::GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                         VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                         uint64_t* pSwapchainTimingPropertiesCounter) {
     if (!wrap_handles)
         return device_dispatch_table.GetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
                                                                      pSwapchainTimingPropertiesCounter);
@@ -6863,9 +6930,9 @@ VkResult Device::GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR
     return result;
 }
 
-VkResult Device::GetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                     VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
-                                                     uint64_t* pTimeDomainsCounter) {
+VkResult DispatchDevice::GetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                             VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                             uint64_t* pTimeDomainsCounter) {
     if (!wrap_handles)
         return device_dispatch_table.GetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
                                                                          pTimeDomainsCounter);
@@ -6878,8 +6945,9 @@ VkResult Device::GetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchai
     return result;
 }
 
-VkResult Device::GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
-                                              VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
+VkResult DispatchDevice::GetPastPresentationTimingEXT(VkDevice device,
+                                                      const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                      VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
     if (!wrap_handles)
         return device_dispatch_table.GetPastPresentationTimingEXT(device, pPastPresentationTimingInfo,
                                                                   pPastPresentationTimingProperties);
@@ -6901,37 +6969,41 @@ VkResult Device::GetPastPresentationTimingEXT(VkDevice device, const VkPastPrese
     return result;
 }
 
-VkResult Device::InitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
+VkResult DispatchDevice::InitializePerformanceApiINTEL(VkDevice device,
+                                                       const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
     VkResult result = device_dispatch_table.InitializePerformanceApiINTEL(device, pInitializeInfo);
 
     return result;
 }
 
-void Device::UninitializePerformanceApiINTEL(VkDevice device) { device_dispatch_table.UninitializePerformanceApiINTEL(device); }
+void DispatchDevice::UninitializePerformanceApiINTEL(VkDevice device) {
+    device_dispatch_table.UninitializePerformanceApiINTEL(device);
+}
 
-VkResult Device::CmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer, const VkPerformanceMarkerInfoINTEL* pMarkerInfo) {
+VkResult DispatchDevice::CmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
+                                                      const VkPerformanceMarkerInfoINTEL* pMarkerInfo) {
     VkResult result = device_dispatch_table.CmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo);
 
     return result;
 }
 
-VkResult Device::CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
-                                                    const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) {
+VkResult DispatchDevice::CmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
+                                                            const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) {
     VkResult result = device_dispatch_table.CmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo);
 
     return result;
 }
 
-VkResult Device::CmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
-                                                const VkPerformanceOverrideInfoINTEL* pOverrideInfo) {
+VkResult DispatchDevice::CmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
+                                                        const VkPerformanceOverrideInfoINTEL* pOverrideInfo) {
     VkResult result = device_dispatch_table.CmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo);
 
     return result;
 }
 
-VkResult Device::AcquirePerformanceConfigurationINTEL(VkDevice device,
-                                                      const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
-                                                      VkPerformanceConfigurationINTEL* pConfiguration) {
+VkResult DispatchDevice::AcquirePerformanceConfigurationINTEL(VkDevice device,
+                                                              const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
+                                                              VkPerformanceConfigurationINTEL* pConfiguration) {
     if (!wrap_handles) return device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
 
     VkResult result = device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
@@ -6941,7 +7013,7 @@ VkResult Device::AcquirePerformanceConfigurationINTEL(VkDevice device,
     return result;
 }
 
-VkResult Device::QueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration) {
+VkResult DispatchDevice::QueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration) {
     if (!wrap_handles) return device_dispatch_table.QueueSetPerformanceConfigurationINTEL(queue, configuration);
     {
         configuration = Unwrap(configuration);
@@ -6951,14 +7023,14 @@ VkResult Device::QueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerforma
     return result;
 }
 
-VkResult Device::GetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
-                                              VkPerformanceValueINTEL* pValue) {
+VkResult DispatchDevice::GetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
+                                                      VkPerformanceValueINTEL* pValue) {
     VkResult result = device_dispatch_table.GetPerformanceParameterINTEL(device, parameter, pValue);
 
     return result;
 }
 
-void Device::SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable) {
+void DispatchDevice::SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable) {
     if (!wrap_handles) return device_dispatch_table.SetLocalDimmingAMD(device, swapChain, localDimmingEnable);
     {
         swapChain = Unwrap(swapChain);
@@ -6967,8 +7039,9 @@ void Device::SetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBoo
 }
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
-VkResult Instance::CreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateImagePipeSurfaceFUCHSIA(VkInstance instance,
+                                                         const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
@@ -6980,8 +7053,8 @@ VkResult Instance::CreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkIm
 #endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
-VkResult Instance::CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
@@ -6992,7 +7065,7 @@ VkResult Instance::CreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfa
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-VkDeviceAddress Device::GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+VkDeviceAddress DispatchDevice::GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);
     vku::safe_VkBufferDeviceAddressInfo var_local_pInfo;
     vku::safe_VkBufferDeviceAddressInfo* local_pInfo = nullptr;
@@ -7011,15 +7084,15 @@ VkDeviceAddress Device::GetBufferDeviceAddressEXT(VkDevice device, const VkBuffe
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceCooperativeMatrixPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                  VkCooperativeMatrixPropertiesNV* pProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceCooperativeMatrixPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                          VkCooperativeMatrixPropertiesNV* pProperties) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties);
 
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
+VkResult DispatchInstance::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice physicalDevice, uint32_t* pCombinationCount, VkFramebufferMixedSamplesCombinationNV* pCombinations) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
         physicalDevice, pCombinationCount, pCombinations);
@@ -7028,9 +7101,9 @@ VkResult Instance::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinations
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Instance::GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                            uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
+VkResult DispatchInstance::GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                    uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
     if (!wrap_handles)
         return instance_dispatch_table.GetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                                 pPresentModes);
@@ -7052,7 +7125,7 @@ VkResult Instance::GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice phy
     return result;
 }
 
-VkResult Device::AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
+VkResult DispatchDevice::AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     if (!wrap_handles) return device_dispatch_table.AcquireFullScreenExclusiveModeEXT(device, swapchain);
     {
         swapchain = Unwrap(swapchain);
@@ -7062,7 +7135,7 @@ VkResult Device::AcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainK
     return result;
 }
 
-VkResult Device::ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
+VkResult DispatchDevice::ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     if (!wrap_handles) return device_dispatch_table.ReleaseFullScreenExclusiveModeEXT(device, swapchain);
     {
         swapchain = Unwrap(swapchain);
@@ -7072,8 +7145,8 @@ VkResult Device::ReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainK
     return result;
 }
 
-VkResult Device::GetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                       VkDeviceGroupPresentModeFlagsKHR* pModes) {
+VkResult DispatchDevice::GetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                               VkDeviceGroupPresentModeFlagsKHR* pModes) {
     if (!wrap_handles) return device_dispatch_table.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
     vku::safe_VkPhysicalDeviceSurfaceInfo2KHR var_local_pSurfaceInfo;
     vku::safe_VkPhysicalDeviceSurfaceInfo2KHR* local_pSurfaceInfo = nullptr;
@@ -7094,8 +7167,8 @@ VkResult Device::GetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const Vk
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Instance::CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
@@ -7105,11 +7178,11 @@ VkResult Instance::CreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadles
     return result;
 }
 
-void Device::CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+void DispatchDevice::CmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
     device_dispatch_table.CmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
-void Device::ResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void DispatchDevice::ResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     if (!wrap_handles) return device_dispatch_table.ResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
     {
         queryPool = Unwrap(queryPool);
@@ -7117,29 +7190,30 @@ void Device::ResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t 
     device_dispatch_table.ResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
 }
 
-void Device::CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+void DispatchDevice::CmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
     device_dispatch_table.CmdSetCullModeEXT(commandBuffer, cullMode);
 }
 
-void Device::CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+void DispatchDevice::CmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
     device_dispatch_table.CmdSetFrontFaceEXT(commandBuffer, frontFace);
 }
 
-void Device::CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+void DispatchDevice::CmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
     device_dispatch_table.CmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology);
 }
 
-void Device::CmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports) {
+void DispatchDevice::CmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                const VkViewport* pViewports) {
     device_dispatch_table.CmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports);
 }
 
-void Device::CmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
+void DispatchDevice::CmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors) {
     device_dispatch_table.CmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors);
 }
 
-void Device::CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
-                                      const VkDeviceSize* pStrides) {
+void DispatchDevice::CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
+                                              const VkDeviceSize* pStrides) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
                                                               pStrides);
@@ -7158,32 +7232,32 @@ void Device::CmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t fi
                                                    pOffsets, pSizes, pStrides);
 }
 
-void Device::CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+void DispatchDevice::CmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
     device_dispatch_table.CmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable);
 }
 
-void Device::CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+void DispatchDevice::CmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
     device_dispatch_table.CmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable);
 }
 
-void Device::CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+void DispatchDevice::CmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
     device_dispatch_table.CmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp);
 }
 
-void Device::CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
+void DispatchDevice::CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {
     device_dispatch_table.CmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable);
 }
 
-void Device::CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
+void DispatchDevice::CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
     device_dispatch_table.CmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable);
 }
 
-void Device::CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp,
-                                VkStencilOp depthFailOp, VkCompareOp compareOp) {
+void DispatchDevice::CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
+                                        VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {
     device_dispatch_table.CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
-VkResult Device::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+VkResult DispatchDevice::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
     vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
     vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
@@ -7203,7 +7277,7 @@ VkResult Device::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImage
     return result;
 }
 
-VkResult Device::CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+VkResult DispatchDevice::CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
     vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
     vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
@@ -7223,7 +7297,7 @@ VkResult Device::CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemory
     return result;
 }
 
-VkResult Device::CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+VkResult DispatchDevice::CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToImageEXT(device, pCopyImageToImageInfo);
     vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
     vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
@@ -7245,8 +7319,8 @@ VkResult Device::CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageIn
     return result;
 }
 
-VkResult Device::TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                          const VkHostImageLayoutTransitionInfo* pTransitions) {
+VkResult DispatchDevice::TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
+                                                  const VkHostImageLayoutTransitionInfo* pTransitions) {
     if (!wrap_handles) return device_dispatch_table.TransitionImageLayoutEXT(device, transitionCount, pTransitions);
     small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
     vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
@@ -7269,8 +7343,8 @@ VkResult Device::TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCo
     return result;
 }
 
-void Device::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                           VkSubresourceLayout2* pLayout) {
+void DispatchDevice::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                   VkSubresourceLayout2* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
     {
         image = Unwrap(image);
@@ -7278,7 +7352,7 @@ void Device::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const
     device_dispatch_table.GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
 }
 
-VkResult Device::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
+VkResult DispatchDevice::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     if (!wrap_handles) return device_dispatch_table.ReleaseSwapchainImagesEXT(device, pReleaseInfo);
     vku::safe_VkReleaseSwapchainImagesInfoKHR var_local_pReleaseInfo;
     vku::safe_VkReleaseSwapchainImagesInfoKHR* local_pReleaseInfo = nullptr;
@@ -7298,8 +7372,9 @@ VkResult Device::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapc
     return result;
 }
 
-void Device::GetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
-                                                      VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
+                                                              const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
+                                                              VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     vku::safe_VkGeneratedCommandsMemoryRequirementsInfoNV var_local_pInfo;
     vku::safe_VkGeneratedCommandsMemoryRequirementsInfoNV* local_pInfo = nullptr;
@@ -7320,8 +7395,8 @@ void Device::GetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkG
         device, (const VkGeneratedCommandsMemoryRequirementsInfoNV*)local_pInfo, pMemoryRequirements);
 }
 
-void Device::CmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
-                                              const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
+void DispatchDevice::CmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
+                                                      const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
     vku::safe_VkGeneratedCommandsInfoNV var_local_pGeneratedCommandsInfo;
     vku::safe_VkGeneratedCommandsInfoNV* local_pGeneratedCommandsInfo = nullptr;
@@ -7360,8 +7435,8 @@ void Device::CmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
                                                            (const VkGeneratedCommandsInfoNV*)local_pGeneratedCommandsInfo);
 }
 
-void Device::CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                           const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
+void DispatchDevice::CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                   const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {
     if (!wrap_handles)
         return device_dispatch_table.CmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
     vku::safe_VkGeneratedCommandsInfoNV var_local_pGeneratedCommandsInfo;
@@ -7401,8 +7476,8 @@ void Device::CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool
                                                         (const VkGeneratedCommandsInfoNV*)local_pGeneratedCommandsInfo);
 }
 
-void Device::CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
-                                          uint32_t groupIndex) {
+void DispatchDevice::CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                  VkPipeline pipeline, uint32_t groupIndex) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
     {
@@ -7411,9 +7486,9 @@ void Device::CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipel
     device_dispatch_table.CmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
 }
 
-VkResult Device::CreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator,
-                                                VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) {
+VkResult DispatchDevice::CreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) {
     if (!wrap_handles)
         return device_dispatch_table.CreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     vku::safe_VkIndirectCommandsLayoutCreateInfoNV var_local_pCreateInfo;
@@ -7440,18 +7515,18 @@ VkResult Device::CreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirec
     return result;
 }
 
-void Device::DestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
-                                             const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
     indirectCommandsLayout = Erase(indirectCommandsLayout);
     device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
 }
 
-void Device::CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo) {
+void DispatchDevice::CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo) {
     device_dispatch_table.CmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
 }
 
-VkResult Instance::AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
+VkResult DispatchInstance::AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {
     if (!wrap_handles) return instance_dispatch_table.AcquireDrmDisplayEXT(physicalDevice, drmFd, display);
     {
         display = Unwrap(display);
@@ -7461,7 +7536,8 @@ VkResult Instance::AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t
     return result;
 }
 
-VkResult Instance::GetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR* display) {
+VkResult DispatchInstance::GetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
+                                            VkDisplayKHR* display) {
     if (!wrap_handles) return instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
 
     VkResult result = instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
@@ -7471,8 +7547,8 @@ VkResult Instance::GetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drm
     return result;
 }
 
-VkResult Device::CreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
+VkResult DispatchDevice::CreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     if (!wrap_handles) return device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 
     VkResult result = device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
@@ -7482,15 +7558,15 @@ VkResult Device::CreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSl
     return result;
 }
 
-void Device::DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
-                                       const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
+                                               const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
     privateDataSlot = Erase(privateDataSlot);
     device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
-VkResult Device::SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                   VkPrivateDataSlot privateDataSlot, uint64_t data) {
+VkResult DispatchDevice::SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                           VkPrivateDataSlot privateDataSlot, uint64_t data) {
     if (!wrap_handles) return device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
     {
         if (NotDispatchableHandle(objectType)) {
@@ -7503,8 +7579,8 @@ VkResult Device::SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uin
     return result;
 }
 
-void Device::GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
-                               uint64_t* pData) {
+void DispatchDevice::GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
+                                       VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     if (!wrap_handles) return device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
     {
         if (NotDispatchableHandle(objectType)) {
@@ -7516,8 +7592,8 @@ void Device::GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_
 }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-VkResult Device::CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
+VkResult DispatchDevice::CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
     if (!wrap_handles) return device_dispatch_table.CreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
 
     VkResult result = device_dispatch_table.CreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule);
@@ -7527,7 +7603,7 @@ VkResult Device::CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInf
     return result;
 }
 
-VkResult Device::GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
+VkResult DispatchDevice::GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData) {
     if (!wrap_handles) return device_dispatch_table.GetCudaModuleCacheNV(device, module, pCacheSize, pCacheData);
     {
         module = Unwrap(module);
@@ -7537,8 +7613,8 @@ VkResult Device::GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, si
     return result;
 }
 
-VkResult Device::CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
+VkResult DispatchDevice::CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction) {
     if (!wrap_handles) return device_dispatch_table.CreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction);
     vku::safe_VkCudaFunctionCreateInfoNV var_local_pCreateInfo;
     vku::safe_VkCudaFunctionCreateInfoNV* local_pCreateInfo = nullptr;
@@ -7560,19 +7636,19 @@ VkResult Device::CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreat
     return result;
 }
 
-void Device::DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
     module = Erase(module);
     device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
 }
 
-void Device::DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
     function = Erase(function);
     device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
 }
 
-void Device::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
+void DispatchDevice::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
     vku::safe_VkCudaLaunchInfoNV var_local_pLaunchInfo;
     vku::safe_VkCudaLaunchInfoNV* local_pLaunchInfo = nullptr;
@@ -7590,19 +7666,20 @@ void Device::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLa
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-void Device::CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
+void DispatchDevice::CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
     device_dispatch_table.CmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo);
 }
 
-void Device::CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
+void DispatchDevice::CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
     device_dispatch_table.CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);
 }
 
-void Device::CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
+void DispatchDevice::CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
     device_dispatch_table.CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
 }
 
-void Device::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes) {
+void DispatchDevice::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
+                                                   VkDeviceSize* pLayoutSizeInBytes) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
     {
         layout = Unwrap(layout);
@@ -7610,8 +7687,8 @@ void Device::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayou
     device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
 }
 
-void Device::GetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
-                                                    VkDeviceSize* pOffset) {
+void DispatchDevice::GetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
+                                                            VkDeviceSize* pOffset) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
     {
         layout = Unwrap(layout);
@@ -7619,8 +7696,8 @@ void Device::GetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescripto
     device_dispatch_table.GetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
 }
 
-void Device::CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                         const VkDescriptorBufferBindingInfoEXT* pBindingInfos) {
+void DispatchDevice::CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                 const VkDescriptorBufferBindingInfoEXT* pBindingInfos) {
     if (!wrap_handles) return device_dispatch_table.CmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
     small_vector<vku::safe_VkDescriptorBufferBindingInfoEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindingInfos;
     vku::safe_VkDescriptorBufferBindingInfoEXT* local_pBindingInfos = nullptr;
@@ -7638,9 +7715,9 @@ void Device::CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t
                                                       (const VkDescriptorBufferBindingInfoEXT*)local_pBindingInfos);
 }
 
-void Device::CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                              const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets) {
+void DispatchDevice::CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                      const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets) {
     if (!wrap_handles)
         return device_dispatch_table.CmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
                                                                       pBufferIndices, pOffsets);
@@ -7651,8 +7728,9 @@ void Device::CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkP
                                                            pBufferIndices, pOffsets);
 }
 
-void Device::CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                        VkPipelineLayout layout, uint32_t set) {
+void DispatchDevice::CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
+                                                                VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                uint32_t set) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
     {
@@ -7661,8 +7739,8 @@ void Device::CmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandB
     device_dispatch_table.CmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
 }
 
-VkResult Device::GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
-                                                         void* pData) {
+VkResult DispatchDevice::GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
+                                                                 void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
     vku::safe_VkBufferCaptureDescriptorDataInfoEXT var_local_pInfo;
     vku::safe_VkBufferCaptureDescriptorDataInfoEXT* local_pInfo = nullptr;
@@ -7682,8 +7760,8 @@ VkResult Device::GetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const 
     return result;
 }
 
-VkResult Device::GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkImageCaptureDescriptorDataInfoEXT* pInfo,
-                                                        void* pData) {
+VkResult DispatchDevice::GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkImageCaptureDescriptorDataInfoEXT* pInfo,
+                                                                void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
     vku::safe_VkImageCaptureDescriptorDataInfoEXT var_local_pInfo;
     vku::safe_VkImageCaptureDescriptorDataInfoEXT* local_pInfo = nullptr;
@@ -7703,8 +7781,9 @@ VkResult Device::GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device, const V
     return result;
 }
 
-VkResult Device::GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
-                                                            void* pData) {
+VkResult DispatchDevice::GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                    const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+                                                                    void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
     vku::safe_VkImageViewCaptureDescriptorDataInfoEXT var_local_pInfo;
     vku::safe_VkImageViewCaptureDescriptorDataInfoEXT* local_pInfo = nullptr;
@@ -7724,8 +7803,8 @@ VkResult Device::GetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device, con
     return result;
 }
 
-VkResult Device::GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
-                                                          void* pData) {
+VkResult DispatchDevice::GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                                                  const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
     vku::safe_VkSamplerCaptureDescriptorDataInfoEXT var_local_pInfo;
     vku::safe_VkSamplerCaptureDescriptorDataInfoEXT* local_pInfo = nullptr;
@@ -7745,7 +7824,7 @@ VkResult Device::GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device, const
     return result;
 }
 
-VkResult Device::GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+VkResult DispatchDevice::GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
     vku::safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT var_local_pInfo;
@@ -7769,19 +7848,20 @@ VkResult Device::GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
     return result;
 }
 
-void Device::CmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
-                                             const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
+void DispatchDevice::CmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
+                                                     const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {
     device_dispatch_table.CmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
 }
 
-VkResult Device::GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts, VkDeviceFaultInfoEXT* pFaultInfo) {
+VkResult DispatchDevice::GetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
+                                               VkDeviceFaultInfoEXT* pFaultInfo) {
     VkResult result = device_dispatch_table.GetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo);
 
     return result;
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Instance::AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
+VkResult DispatchInstance::AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     if (!wrap_handles) return instance_dispatch_table.AcquireWinrtDisplayNV(physicalDevice, display);
     {
         display = Unwrap(display);
@@ -7791,7 +7871,7 @@ VkResult Instance::AcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisp
     return result;
 }
 
-VkResult Instance::GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay) {
+VkResult DispatchInstance::GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay) {
     if (!wrap_handles) return instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
 
     VkResult result = instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
@@ -7803,8 +7883,8 @@ VkResult Instance::GetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t d
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
-VkResult Instance::CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
@@ -7814,8 +7894,8 @@ VkResult Instance::CreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectF
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                   IDirectFB* dfb) {
+VkBool32 DispatchInstance::GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t queueFamilyIndex, IDirectFB* dfb) {
     VkBool32 result =
         instance_dispatch_table.GetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb);
 
@@ -7823,17 +7903,18 @@ VkBool32 Instance::GetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDev
 }
 #endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
-void Device::CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
-                                  const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
-                                  uint32_t vertexAttributeDescriptionCount,
-                                  const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
+void DispatchDevice::CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+                                          const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
+                                          uint32_t vertexAttributeDescriptionCount,
+                                          const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
     device_dispatch_table.CmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions,
                                                vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
 }
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
-VkResult Device::GetMemoryZirconHandleFUCHSIA(VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
-                                              zx_handle_t* pZirconHandle) {
+VkResult DispatchDevice::GetMemoryZirconHandleFUCHSIA(VkDevice device,
+                                                      const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+                                                      zx_handle_t* pZirconHandle) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
     vku::safe_VkMemoryGetZirconHandleInfoFUCHSIA var_local_pGetZirconHandleInfo;
     vku::safe_VkMemoryGetZirconHandleInfoFUCHSIA* local_pGetZirconHandleInfo = nullptr;
@@ -7853,16 +7934,16 @@ VkResult Device::GetMemoryZirconHandleFUCHSIA(VkDevice device, const VkMemoryGet
     return result;
 }
 
-VkResult Device::GetMemoryZirconHandlePropertiesFUCHSIA(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
-                                                        zx_handle_t zirconHandle,
-                                                        VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
+VkResult DispatchDevice::GetMemoryZirconHandlePropertiesFUCHSIA(
+    VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
+    VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties) {
     VkResult result = device_dispatch_table.GetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle,
                                                                                    pMemoryZirconHandleProperties);
 
     return result;
 }
 
-VkResult Device::ImportSemaphoreZirconHandleFUCHSIA(
+VkResult DispatchDevice::ImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
     if (!wrap_handles) return device_dispatch_table.ImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo);
     vku::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA var_local_pImportSemaphoreZirconHandleInfo;
@@ -7883,8 +7964,9 @@ VkResult Device::ImportSemaphoreZirconHandleFUCHSIA(
     return result;
 }
 
-VkResult Device::GetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
-                                                 zx_handle_t* pZirconHandle) {
+VkResult DispatchDevice::GetSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                         const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+                                                         zx_handle_t* pZirconHandle) {
     if (!wrap_handles) return device_dispatch_table.GetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle);
     vku::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA var_local_pGetZirconHandleInfo;
     vku::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA* local_pGetZirconHandleInfo = nullptr;
@@ -7904,8 +7986,9 @@ VkResult Device::GetSemaphoreZirconHandleFUCHSIA(VkDevice device, const VkSemaph
     return result;
 }
 
-VkResult Device::CreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator, VkBufferCollectionFUCHSIA* pCollection) {
+VkResult DispatchDevice::CreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkBufferCollectionFUCHSIA* pCollection) {
     if (!wrap_handles) return device_dispatch_table.CreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
 
     VkResult result = device_dispatch_table.CreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection);
@@ -7915,8 +7998,8 @@ VkResult Device::CreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCo
     return result;
 }
 
-VkResult Device::SetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                                            const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
+VkResult DispatchDevice::SetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
+                                                                    const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo) {
     if (!wrap_handles)
         return device_dispatch_table.SetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo);
     {
@@ -7927,8 +8010,8 @@ VkResult Device::SetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkB
     return result;
 }
 
-VkResult Device::SetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                                             const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
+VkResult DispatchDevice::SetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
+                                                                     const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo) {
     if (!wrap_handles)
         return device_dispatch_table.SetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo);
     {
@@ -7939,15 +8022,15 @@ VkResult Device::SetBufferCollectionBufferConstraintsFUCHSIA(VkDevice device, Vk
     return result;
 }
 
-void Device::DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                            const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
+                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
     collection = Erase(collection);
     device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
 }
 
-VkResult Device::GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                                      VkBufferCollectionPropertiesFUCHSIA* pProperties) {
+VkResult DispatchDevice::GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
+                                                              VkBufferCollectionPropertiesFUCHSIA* pProperties) {
     if (!wrap_handles) return device_dispatch_table.GetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties);
     {
         collection = Unwrap(collection);
@@ -7958,8 +8041,8 @@ VkResult Device::GetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferC
 }
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
-VkResult Device::GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
-                                                               VkExtent2D* pMaxWorkgroupSize) {
+VkResult DispatchDevice::GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
+                                                                       VkExtent2D* pMaxWorkgroupSize) {
     if (!wrap_handles)
         return device_dispatch_table.GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize);
     {
@@ -7970,11 +8053,11 @@ VkResult Device::GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, 
     return result;
 }
 
-void Device::CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
+void DispatchDevice::CmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer) {
     device_dispatch_table.CmdSubpassShadingHUAWEI(commandBuffer);
 }
 
-void Device::CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
+void DispatchDevice::CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout) {
     if (!wrap_handles) return device_dispatch_table.CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
     {
         imageView = Unwrap(imageView);
@@ -7982,8 +8065,9 @@ void Device::CmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageV
     device_dispatch_table.CmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout);
 }
 
-VkResult Device::GetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
-                                          VkRemoteAddressNV* pAddress) {
+VkResult DispatchDevice::GetMemoryRemoteAddressNV(VkDevice device,
+                                                  const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
+                                                  VkRemoteAddressNV* pAddress) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress);
     vku::safe_VkMemoryGetRemoteAddressInfoNV var_local_pMemoryGetRemoteAddressInfo;
     vku::safe_VkMemoryGetRemoteAddressInfoNV* local_pMemoryGetRemoteAddressInfo = nullptr;
@@ -8003,8 +8087,8 @@ VkResult Device::GetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemo
     return result;
 }
 
-VkResult Device::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
-                                          VkBaseOutStructure* pPipelineProperties) {
+VkResult DispatchDevice::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+                                                  VkBaseOutStructure* pPipelineProperties) {
     if (!wrap_handles) return device_dispatch_table.GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
     vku::safe_VkPipelineInfoKHR var_local_pPipelineInfo;
     vku::safe_VkPipelineInfoKHR* local_pPipelineInfo = nullptr;
@@ -8024,29 +8108,29 @@ VkResult Device::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoE
     return result;
 }
 
-void Device::CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
+void DispatchDevice::CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) {
     device_dispatch_table.CmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints);
 }
 
-void Device::CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
+void DispatchDevice::CmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable) {
     device_dispatch_table.CmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable);
 }
 
-void Device::CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+void DispatchDevice::CmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
     device_dispatch_table.CmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable);
 }
 
-void Device::CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
+void DispatchDevice::CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {
     device_dispatch_table.CmdSetLogicOpEXT(commandBuffer, logicOp);
 }
 
-void Device::CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
+void DispatchDevice::CmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {
     device_dispatch_table.CmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable);
 }
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
-VkResult Instance::CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface);
@@ -8056,8 +8140,8 @@ VkResult Instance::CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSur
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                 struct _screen_window* window) {
+VkBool32 DispatchInstance::GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                         struct _screen_window* window) {
     VkBool32 result =
         instance_dispatch_table.GetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window);
 
@@ -8065,24 +8149,25 @@ VkBool32 Instance::GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevic
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-void Device::CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                       const VkBool32* pColorWriteEnables) {
+void DispatchDevice::CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                               const VkBool32* pColorWriteEnables) {
     device_dispatch_table.CmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
 }
 
-void Device::CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
-                             uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) {
+void DispatchDevice::CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                     uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) {
     device_dispatch_table.CmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
 }
 
-void Device::CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawIndexedInfoEXT* pIndexInfo,
-                                    uint32_t instanceCount, uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset) {
+void DispatchDevice::CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
+                                            const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
+                                            uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset) {
     device_dispatch_table.CmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
                                                  pVertexOffset);
 }
 
-VkResult Device::CreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap) {
+VkResult DispatchDevice::CreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap) {
     if (!wrap_handles) return device_dispatch_table.CreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap);
     vku::safe_VkMicromapCreateInfoEXT var_local_pCreateInfo;
     vku::safe_VkMicromapCreateInfoEXT* local_pCreateInfo = nullptr;
@@ -8104,13 +8189,13 @@ VkResult Device::CreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEX
     return result;
 }
 
-void Device::DestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
     micromap = Erase(micromap);
     device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
 }
 
-void Device::CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkMicromapBuildInfoEXT* pInfos) {
+void DispatchDevice::CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkMicromapBuildInfoEXT* pInfos) {
     if (!wrap_handles) return device_dispatch_table.CmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos);
     small_vector<vku::safe_VkMicromapBuildInfoEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pInfos;
     vku::safe_VkMicromapBuildInfoEXT* local_pInfos = nullptr;
@@ -8130,8 +8215,8 @@ void Device::CmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCo
     device_dispatch_table.CmdBuildMicromapsEXT(commandBuffer, infoCount, (const VkMicromapBuildInfoEXT*)local_pInfos);
 }
 
-VkResult Device::BuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
-                                   const VkMicromapBuildInfoEXT* pInfos) {
+VkResult DispatchDevice::BuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+                                           const VkMicromapBuildInfoEXT* pInfos) {
     if (!wrap_handles) return device_dispatch_table.BuildMicromapsEXT(device, deferredOperation, infoCount, pInfos);
     vku::safe_VkMicromapBuildInfoEXT* local_pInfos = nullptr;
     {
@@ -8163,7 +8248,8 @@ VkResult Device::BuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR defer
     return result;
 }
 
-VkResult Device::CopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMicromapInfoEXT* pInfo) {
+VkResult DispatchDevice::CopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                         const VkCopyMicromapInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMicromapEXT(device, deferredOperation, pInfo);
     vku::safe_VkCopyMicromapInfoEXT* local_pInfo = nullptr;
     {
@@ -8195,8 +8281,8 @@ VkResult Device::CopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferre
     return result;
 }
 
-VkResult Device::CopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                         const VkCopyMicromapToMemoryInfoEXT* pInfo) {
+VkResult DispatchDevice::CopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                 const VkCopyMicromapToMemoryInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMicromapToMemoryEXT(device, deferredOperation, pInfo);
     vku::safe_VkCopyMicromapToMemoryInfoEXT* local_pInfo = nullptr;
     {
@@ -8226,8 +8312,8 @@ VkResult Device::CopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR
     return result;
 }
 
-VkResult Device::CopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                         const VkCopyMemoryToMicromapInfoEXT* pInfo) {
+VkResult DispatchDevice::CopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                 const VkCopyMemoryToMicromapInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMemoryToMicromapEXT(device, deferredOperation, pInfo);
     vku::safe_VkCopyMemoryToMicromapInfoEXT* local_pInfo = nullptr;
     {
@@ -8257,8 +8343,8 @@ VkResult Device::CopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR
     return result;
 }
 
-VkResult Device::WriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
-                                             VkQueryType queryType, size_t dataSize, void* pData, size_t stride) {
+VkResult DispatchDevice::WriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
+                                                     VkQueryType queryType, size_t dataSize, void* pData, size_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.WriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData,
                                                                  stride);
@@ -8279,7 +8365,7 @@ VkResult Device::WriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapC
     return result;
 }
 
-void Device::CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo) {
+void DispatchDevice::CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMicromapEXT(commandBuffer, pInfo);
     vku::safe_VkCopyMicromapInfoEXT var_local_pInfo;
     vku::safe_VkCopyMicromapInfoEXT* local_pInfo = nullptr;
@@ -8299,7 +8385,7 @@ void Device::CmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicro
     device_dispatch_table.CmdCopyMicromapEXT(commandBuffer, (const VkCopyMicromapInfoEXT*)local_pInfo);
 }
 
-void Device::CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo) {
+void DispatchDevice::CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMicromapToMemoryEXT(commandBuffer, pInfo);
     vku::safe_VkCopyMicromapToMemoryInfoEXT var_local_pInfo;
     vku::safe_VkCopyMicromapToMemoryInfoEXT* local_pInfo = nullptr;
@@ -8316,7 +8402,7 @@ void Device::CmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkC
     device_dispatch_table.CmdCopyMicromapToMemoryEXT(commandBuffer, (const VkCopyMicromapToMemoryInfoEXT*)local_pInfo);
 }
 
-void Device::CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo) {
+void DispatchDevice::CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToMicromapEXT(commandBuffer, pInfo);
     vku::safe_VkCopyMemoryToMicromapInfoEXT var_local_pInfo;
     vku::safe_VkCopyMemoryToMicromapInfoEXT* local_pInfo = nullptr;
@@ -8333,8 +8419,9 @@ void Device::CmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkC
     device_dispatch_table.CmdCopyMemoryToMicromapEXT(commandBuffer, (const VkCopyMemoryToMicromapInfoEXT*)local_pInfo);
 }
 
-void Device::CmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
-                                            VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
+void DispatchDevice::CmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
+                                                    const VkMicromapEXT* pMicromaps, VkQueryType queryType, VkQueryPool queryPool,
+                                                    uint32_t firstQuery) {
     if (!wrap_handles)
         return device_dispatch_table.CmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
                                                                     firstQuery);
@@ -8354,13 +8441,13 @@ void Device::CmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint3
                                                          queryType, queryPool, firstQuery);
 }
 
-void Device::GetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT* pVersionInfo,
-                                               VkAccelerationStructureCompatibilityKHR* pCompatibility) {
+void DispatchDevice::GetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT* pVersionInfo,
+                                                       VkAccelerationStructureCompatibilityKHR* pCompatibility) {
     device_dispatch_table.GetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility);
 }
 
-void Device::GetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
-                                      const VkMicromapBuildInfoEXT* pBuildInfo, VkMicromapBuildSizesInfoEXT* pSizeInfo) {
+void DispatchDevice::GetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
+                                              const VkMicromapBuildInfoEXT* pBuildInfo, VkMicromapBuildSizesInfoEXT* pSizeInfo) {
     if (!wrap_handles) return device_dispatch_table.GetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo);
     vku::safe_VkMicromapBuildInfoEXT var_local_pBuildInfo;
     vku::safe_VkMicromapBuildInfoEXT* local_pBuildInfo = nullptr;
@@ -8377,11 +8464,12 @@ void Device::GetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBu
     device_dispatch_table.GetMicromapBuildSizesEXT(device, buildType, (const VkMicromapBuildInfoEXT*)local_pBuildInfo, pSizeInfo);
 }
 
-void Device::CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void DispatchDevice::CmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                          uint32_t groupCountZ) {
     device_dispatch_table.CmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void Device::CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+void DispatchDevice::CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     if (!wrap_handles) return device_dispatch_table.CmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
     {
         buffer = Unwrap(buffer);
@@ -8389,7 +8477,7 @@ void Device::CmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffe
     device_dispatch_table.CmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
 }
 
-void Device::SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
+void DispatchDevice::SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
     if (!wrap_handles) return device_dispatch_table.SetDeviceMemoryPriorityEXT(device, memory, priority);
     {
         memory = Unwrap(memory);
@@ -8397,9 +8485,9 @@ void Device::SetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, 
     device_dispatch_table.SetDeviceMemoryPriorityEXT(device, memory, priority);
 }
 
-void Device::GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
-                                                        const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
-                                                        VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
+void DispatchDevice::GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
+                                                                const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
+                                                                VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {
     if (!wrap_handles)
         return device_dispatch_table.GetDescriptorSetLayoutHostMappingInfoVALVE(device, pBindingReference, pHostMapping);
     vku::safe_VkDescriptorSetBindingReferenceVALVE var_local_pBindingReference;
@@ -8418,7 +8506,7 @@ void Device::GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
         device, (const VkDescriptorSetBindingReferenceVALVE*)local_pBindingReference, pHostMapping);
 }
 
-void Device::GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
+void DispatchDevice::GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
     {
         descriptorSet = Unwrap(descriptorSet);
@@ -8426,14 +8514,15 @@ void Device::GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet d
     device_dispatch_table.GetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
 }
 
-void Device::CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                     uint32_t stride) {
+void DispatchDevice::CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
+                                             uint32_t stride) {
     device_dispatch_table.CmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride);
 }
 
-void Device::CmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                            uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout,
-                                            const VkImageSubresourceLayers* pImageSubresources) {
+void DispatchDevice::CmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                    uint32_t copyCount, uint32_t stride, VkImage dstImage,
+                                                    VkImageLayout dstImageLayout,
+                                                    const VkImageSubresourceLayers* pImageSubresources) {
     if (!wrap_handles)
         return device_dispatch_table.CmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
                                                                     dstImageLayout, pImageSubresources);
@@ -8444,19 +8533,19 @@ void Device::CmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDev
                                                          dstImageLayout, pImageSubresources);
 }
 
-void Device::CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,
-                                   const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {
+void DispatchDevice::CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,
+                                           const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {
     device_dispatch_table.CmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions);
 }
 
-void Device::CmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer, VkDeviceAddress indirectCommandsAddress,
-                                                VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {
+void DispatchDevice::CmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer, VkDeviceAddress indirectCommandsAddress,
+                                                        VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {
     device_dispatch_table.CmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress,
                                                              stride);
 }
 
-void Device::GetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo,
-                                                     VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo,
+                                                             VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
     vku::safe_VkComputePipelineCreateInfo var_local_pCreateInfo;
@@ -8484,8 +8573,8 @@ void Device::GetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkCo
                                                                   pMemoryRequirements);
 }
 
-void Device::CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                               VkPipeline pipeline) {
+void DispatchDevice::CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                       VkPipeline pipeline) {
     if (!wrap_handles) return device_dispatch_table.CmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
     {
         pipeline = Unwrap(pipeline);
@@ -8493,7 +8582,8 @@ void Device::CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, Vk
     device_dispatch_table.CmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
 }
 
-VkDeviceAddress Device::GetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
+VkDeviceAddress DispatchDevice::GetPipelineIndirectDeviceAddressNV(VkDevice device,
+                                                                   const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetPipelineIndirectDeviceAddressNV(device, pInfo);
     vku::safe_VkPipelineIndirectDeviceAddressInfoNV var_local_pInfo;
     vku::safe_VkPipelineIndirectDeviceAddressInfoNV* local_pInfo = nullptr;
@@ -8514,15 +8604,15 @@ VkDeviceAddress Device::GetPipelineIndirectDeviceAddressNV(VkDevice device, cons
 }
 #ifdef VK_USE_PLATFORM_OHOS
 
-VkResult Device::GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
-                                               VkNativeBufferPropertiesOHOS* pProperties) {
+VkResult DispatchDevice::GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                       VkNativeBufferPropertiesOHOS* pProperties) {
     VkResult result = device_dispatch_table.GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
 
     return result;
 }
 
-VkResult Device::GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
-                                           struct OH_NativeBuffer** pBuffer) {
+VkResult DispatchDevice::GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                   struct OH_NativeBuffer** pBuffer) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
     vku::safe_VkMemoryGetNativeBufferInfoOHOS var_local_pInfo;
     vku::safe_VkMemoryGetNativeBufferInfoOHOS* local_pInfo = nullptr;
@@ -8543,139 +8633,144 @@ VkResult Device::GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNat
 }
 #endif  // VK_USE_PLATFORM_OHOS
 
-void Device::CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
+void DispatchDevice::CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     device_dispatch_table.CmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
 }
 
-void Device::CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {
+void DispatchDevice::CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {
     device_dispatch_table.CmdSetPolygonModeEXT(commandBuffer, polygonMode);
 }
 
-void Device::CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples) {
+void DispatchDevice::CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples) {
     device_dispatch_table.CmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples);
 }
 
-void Device::CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples, const VkSampleMask* pSampleMask) {
+void DispatchDevice::CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
+                                         const VkSampleMask* pSampleMask) {
     device_dispatch_table.CmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask);
 }
 
-void Device::CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) {
+void DispatchDevice::CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) {
     device_dispatch_table.CmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable);
 }
 
-void Device::CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
+void DispatchDevice::CmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
     device_dispatch_table.CmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable);
 }
 
-void Device::CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) {
+void DispatchDevice::CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) {
     device_dispatch_table.CmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable);
 }
 
-void Device::CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                       const VkBool32* pColorBlendEnables) {
+void DispatchDevice::CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                               const VkBool32* pColorBlendEnables) {
     device_dispatch_table.CmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
 }
 
-void Device::CmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                         const VkColorBlendEquationEXT* pColorBlendEquations) {
+void DispatchDevice::CmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                                 const VkColorBlendEquationEXT* pColorBlendEquations) {
     device_dispatch_table.CmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
 }
 
-void Device::CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                     const VkColorComponentFlags* pColorWriteMasks) {
+void DispatchDevice::CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                             const VkColorComponentFlags* pColorWriteMasks) {
     device_dispatch_table.CmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
 }
 
-void Device::CmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {
+void DispatchDevice::CmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {
     device_dispatch_table.CmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
 }
 
-void Device::CmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) {
+void DispatchDevice::CmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) {
     device_dispatch_table.CmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream);
 }
 
-void Device::CmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,
-                                                    VkConservativeRasterizationModeEXT conservativeRasterizationMode) {
+void DispatchDevice::CmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,
+                                                            VkConservativeRasterizationModeEXT conservativeRasterizationMode) {
     device_dispatch_table.CmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode);
 }
 
-void Device::CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer, float extraPrimitiveOverestimationSize) {
+void DispatchDevice::CmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer,
+                                                               float extraPrimitiveOverestimationSize) {
     device_dispatch_table.CmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize);
 }
 
-void Device::CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable) {
+void DispatchDevice::CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable) {
     device_dispatch_table.CmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable);
 }
 
-void Device::CmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable) {
+void DispatchDevice::CmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable) {
     device_dispatch_table.CmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable);
 }
 
-void Device::CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                         const VkColorBlendAdvancedEXT* pColorBlendAdvanced) {
+void DispatchDevice::CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                                 const VkColorBlendAdvancedEXT* pColorBlendAdvanced) {
     device_dispatch_table.CmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced);
 }
 
-void Device::CmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer, VkProvokingVertexModeEXT provokingVertexMode) {
+void DispatchDevice::CmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer, VkProvokingVertexModeEXT provokingVertexMode) {
     device_dispatch_table.CmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode);
 }
 
-void Device::CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode) {
+void DispatchDevice::CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
+                                                    VkLineRasterizationModeEXT lineRasterizationMode) {
     device_dispatch_table.CmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode);
 }
 
-void Device::CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) {
+void DispatchDevice::CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) {
     device_dispatch_table.CmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable);
 }
 
-void Device::CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) {
+void DispatchDevice::CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) {
     device_dispatch_table.CmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne);
 }
 
-void Device::CmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable) {
+void DispatchDevice::CmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable) {
     device_dispatch_table.CmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable);
 }
 
-void Device::CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                     const VkViewportSwizzleNV* pViewportSwizzles) {
+void DispatchDevice::CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                             const VkViewportSwizzleNV* pViewportSwizzles) {
     device_dispatch_table.CmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles);
 }
 
-void Device::CmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable) {
+void DispatchDevice::CmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable) {
     device_dispatch_table.CmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable);
 }
 
-void Device::CmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation) {
+void DispatchDevice::CmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation) {
     device_dispatch_table.CmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation);
 }
 
-void Device::CmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer, VkCoverageModulationModeNV coverageModulationMode) {
+void DispatchDevice::CmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
+                                                    VkCoverageModulationModeNV coverageModulationMode) {
     device_dispatch_table.CmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode);
 }
 
-void Device::CmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageModulationTableEnable) {
+void DispatchDevice::CmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageModulationTableEnable) {
     device_dispatch_table.CmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable);
 }
 
-void Device::CmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
-                                             const float* pCoverageModulationTable) {
+void DispatchDevice::CmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
+                                                     const float* pCoverageModulationTable) {
     device_dispatch_table.CmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount, pCoverageModulationTable);
 }
 
-void Device::CmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) {
+void DispatchDevice::CmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) {
     device_dispatch_table.CmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable);
 }
 
-void Device::CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable) {
+void DispatchDevice::CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer,
+                                                              VkBool32 representativeFragmentTestEnable) {
     device_dispatch_table.CmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
 }
 
-void Device::CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode) {
+void DispatchDevice::CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode) {
     device_dispatch_table.CmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
 }
 
-VkResult Device::CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                 VkTensorARM* pTensor) {
+VkResult DispatchDevice::CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor) {
     if (!wrap_handles) return device_dispatch_table.CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
 
     VkResult result = device_dispatch_table.CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
@@ -8685,14 +8780,14 @@ VkResult Device::CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* p
     return result;
 }
 
-void Device::DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyTensorARM(device, tensor, pAllocator);
     tensor = Erase(tensor);
     device_dispatch_table.DestroyTensorARM(device, tensor, pAllocator);
 }
 
-VkResult Device::CreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
+VkResult DispatchDevice::CreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
     if (!wrap_handles) return device_dispatch_table.CreateTensorViewARM(device, pCreateInfo, pAllocator, pView);
     vku::safe_VkTensorViewCreateInfoARM var_local_pCreateInfo;
     vku::safe_VkTensorViewCreateInfoARM* local_pCreateInfo = nullptr;
@@ -8714,14 +8809,14 @@ VkResult Device::CreateTensorViewARM(VkDevice device, const VkTensorViewCreateIn
     return result;
 }
 
-void Device::DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyTensorViewARM(device, tensorView, pAllocator);
     tensorView = Erase(tensorView);
     device_dispatch_table.DestroyTensorViewARM(device, tensorView, pAllocator);
 }
 
-void Device::GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
-                                            VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                    VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
     vku::safe_VkTensorMemoryRequirementsInfoARM var_local_pInfo;
     vku::safe_VkTensorMemoryRequirementsInfoARM* local_pInfo = nullptr;
@@ -8739,7 +8834,7 @@ void Device::GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemor
                                                          pMemoryRequirements);
 }
 
-VkResult Device::BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos) {
+VkResult DispatchDevice::BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos) {
     if (!wrap_handles) return device_dispatch_table.BindTensorMemoryARM(device, bindInfoCount, pBindInfos);
     small_vector<vku::safe_VkBindTensorMemoryInfoARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
     vku::safe_VkBindTensorMemoryInfoARM* local_pBindInfos = nullptr;
@@ -8765,12 +8860,12 @@ VkResult Device::BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, co
     return result;
 }
 
-void Device::GetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
-                                                  VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                          VkMemoryRequirements2* pMemoryRequirements) {
     device_dispatch_table.GetDeviceTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
 }
 
-void Device::CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {
+void DispatchDevice::CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyTensorARM(commandBuffer, pCopyTensorInfo);
     vku::safe_VkCopyTensorInfoARM var_local_pCopyTensorInfo;
     vku::safe_VkCopyTensorInfoARM* local_pCopyTensorInfo = nullptr;
@@ -8790,15 +8885,15 @@ void Device::CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorI
     device_dispatch_table.CmdCopyTensorARM(commandBuffer, (const VkCopyTensorInfoARM*)local_pCopyTensorInfo);
 }
 
-void Instance::GetPhysicalDeviceExternalTensorPropertiesARM(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
-                                                            VkExternalTensorPropertiesARM* pExternalTensorProperties) {
+void DispatchInstance::GetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalTensorPropertiesARM(physicalDevice, pExternalTensorInfo,
                                                                          pExternalTensorProperties);
 }
 
-VkResult Device::GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
-                                                         void* pData) {
+VkResult DispatchDevice::GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                 void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetTensorOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
     vku::safe_VkTensorCaptureDescriptorDataInfoARM var_local_pInfo;
     vku::safe_VkTensorCaptureDescriptorDataInfoARM* local_pInfo = nullptr;
@@ -8818,8 +8913,9 @@ VkResult Device::GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const 
     return result;
 }
 
-VkResult Device::GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
-                                                             void* pData) {
+VkResult DispatchDevice::GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                     const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                     void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetTensorViewOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
     vku::safe_VkTensorViewCaptureDescriptorDataInfoARM var_local_pInfo;
     vku::safe_VkTensorViewCaptureDescriptorDataInfoARM* local_pInfo = nullptr;
@@ -8839,7 +8935,8 @@ VkResult Device::GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device, co
     return result;
 }
 
-void Device::GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule, VkShaderModuleIdentifierEXT* pIdentifier) {
+void DispatchDevice::GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
+                                                  VkShaderModuleIdentifierEXT* pIdentifier) {
     if (!wrap_handles) return device_dispatch_table.GetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
     {
         shaderModule = Unwrap(shaderModule);
@@ -8847,8 +8944,8 @@ void Device::GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shader
     device_dispatch_table.GetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
 }
 
-void Device::GetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
-                                                    VkShaderModuleIdentifierEXT* pIdentifier) {
+void DispatchDevice::GetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                                            VkShaderModuleIdentifierEXT* pIdentifier) {
     if (!wrap_handles) return device_dispatch_table.GetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
     vku::safe_VkShaderModuleCreateInfo var_local_pCreateInfo;
     vku::safe_VkShaderModuleCreateInfo* local_pCreateInfo = nullptr;
@@ -8863,18 +8960,17 @@ void Device::GetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkSha
                                                                  pIdentifier);
 }
 
-VkResult Instance::GetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDevice,
-                                                              const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo,
-                                                              uint32_t* pFormatCount,
-                                                              VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceOpticalFlowImageFormatsNV(
+    VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
+    VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceOpticalFlowImageFormatsNV(
         physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties);
 
     return result;
 }
 
-VkResult Device::CreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkOpticalFlowSessionNV* pSession) {
+VkResult DispatchDevice::CreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkOpticalFlowSessionNV* pSession) {
     if (!wrap_handles) return device_dispatch_table.CreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
 
     VkResult result = device_dispatch_table.CreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession);
@@ -8884,15 +8980,16 @@ VkResult Device::CreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlow
     return result;
 }
 
-void Device::DestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session,
+                                                 const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
     session = Erase(session);
     device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
 }
 
-VkResult Device::BindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
-                                               VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
-                                               VkImageLayout layout) {
+VkResult DispatchDevice::BindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
+                                                       VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
+                                                       VkImageLayout layout) {
     if (!wrap_handles) return device_dispatch_table.BindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout);
     {
         session = Unwrap(session);
@@ -8903,8 +9000,8 @@ VkResult Device::BindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSes
     return result;
 }
 
-void Device::CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
-                                     const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {
+void DispatchDevice::CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
+                                             const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
     {
         session = Unwrap(session);
@@ -8912,17 +9009,17 @@ void Device::CmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlo
     device_dispatch_table.CmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
 }
 
-void Device::AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {
+void DispatchDevice::AntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData) {
     device_dispatch_table.AntiLagUpdateAMD(device, pData);
 }
 
-void Device::DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyShaderEXT(device, shader, pAllocator);
     shader = Erase(shader);
     device_dispatch_table.DestroyShaderEXT(device, shader, pAllocator);
 }
 
-VkResult Device::GetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) {
+VkResult DispatchDevice::GetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) {
     if (!wrap_handles) return device_dispatch_table.GetShaderBinaryDataEXT(device, shader, pDataSize, pData);
     {
         shader = Unwrap(shader);
@@ -8932,8 +9029,8 @@ VkResult Device::GetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, siz
     return result;
 }
 
-void Device::CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
-                               const VkShaderEXT* pShaders) {
+void DispatchDevice::CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
+                                       const VkShaderEXT* pShaders) {
     if (!wrap_handles) return device_dispatch_table.CmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
     small_vector<VkShaderEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pShaders;
     VkShaderEXT* local_pShaders = nullptr;
@@ -8949,13 +9046,13 @@ void Device::CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCoun
     device_dispatch_table.CmdBindShadersEXT(commandBuffer, stageCount, pStages, (const VkShaderEXT*)local_pShaders);
 }
 
-void Device::CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
-                                      const VkDepthClampRangeEXT* pDepthClampRange) {
+void DispatchDevice::CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                              const VkDepthClampRangeEXT* pDepthClampRange) {
     device_dispatch_table.CmdSetDepthClampRangeEXT(commandBuffer, depthClampMode, pDepthClampRange);
 }
 
-VkResult Device::GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
-                                                  VkTilePropertiesQCOM* pProperties) {
+VkResult DispatchDevice::GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
+                                                          VkTilePropertiesQCOM* pProperties) {
     if (!wrap_handles)
         return device_dispatch_table.GetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
     {
@@ -8966,8 +9063,8 @@ VkResult Device::GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer
     return result;
 }
 
-VkResult Device::GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
-                                                       VkTilePropertiesQCOM* pProperties) {
+VkResult DispatchDevice::GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                               VkTilePropertiesQCOM* pProperties) {
     if (!wrap_handles) return device_dispatch_table.GetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
     vku::safe_VkRenderingInfo var_local_pRenderingInfo;
     vku::safe_VkRenderingInfo* local_pRenderingInfo = nullptr;
@@ -9014,26 +9111,27 @@ VkResult Device::GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const Vk
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                  VkCooperativeVectorPropertiesNV* pProperties) {
+VkResult DispatchInstance::GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                          VkCooperativeVectorPropertiesNV* pProperties) {
     VkResult result =
         instance_dispatch_table.GetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties);
 
     return result;
 }
 
-VkResult Device::ConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
+VkResult DispatchDevice::ConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
     VkResult result = device_dispatch_table.ConvertCooperativeVectorMatrixNV(device, pInfo);
 
     return result;
 }
 
-void Device::CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                 const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
+void DispatchDevice::CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                         const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
     device_dispatch_table.CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
 }
 
-VkResult Device::SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo) {
+VkResult DispatchDevice::SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
+                                               const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     if (!wrap_handles) return device_dispatch_table.SetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
     {
         swapchain = Unwrap(swapchain);
@@ -9043,7 +9141,7 @@ VkResult Device::SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain
     return result;
 }
 
-VkResult Device::LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
+VkResult DispatchDevice::LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo) {
     if (!wrap_handles) return device_dispatch_table.LatencySleepNV(device, swapchain, pSleepInfo);
     vku::safe_VkLatencySleepInfoNV var_local_pSleepInfo;
     vku::safe_VkLatencySleepInfoNV* local_pSleepInfo = nullptr;
@@ -9063,7 +9161,8 @@ VkResult Device::LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const
     return result;
 }
 
-void Device::SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+void DispatchDevice::SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                        const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     if (!wrap_handles) return device_dispatch_table.SetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
     {
         swapchain = Unwrap(swapchain);
@@ -9071,7 +9170,7 @@ void Device::SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const
     device_dispatch_table.SetLatencyMarkerNV(device, swapchain, pLatencyMarkerInfo);
 }
 
-void Device::GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
+void DispatchDevice::GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     if (!wrap_handles) return device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
     {
         swapchain = Unwrap(swapchain);
@@ -9079,13 +9178,14 @@ void Device::GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGe
     device_dispatch_table.GetLatencyTimingsNV(device, swapchain, pLatencyMarkerInfo);
 }
 
-void Device::QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
+void DispatchDevice::QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     device_dispatch_table.QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
 }
 
-VkResult Device::CreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
-                                                   const VkAllocationCallbacks* pAllocator,
-                                                   VkDataGraphPipelineSessionARM* pSession) {
+VkResult DispatchDevice::CreateDataGraphPipelineSessionARM(VkDevice device,
+                                                           const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkDataGraphPipelineSessionARM* pSession) {
     if (!wrap_handles) return device_dispatch_table.CreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession);
     vku::safe_VkDataGraphPipelineSessionCreateInfoARM var_local_pCreateInfo;
     vku::safe_VkDataGraphPipelineSessionCreateInfoARM* local_pCreateInfo = nullptr;
@@ -9107,7 +9207,7 @@ VkResult Device::CreateDataGraphPipelineSessionARM(VkDevice device, const VkData
     return result;
 }
 
-VkResult Device::GetDataGraphPipelineSessionBindPointRequirementsARM(
+VkResult DispatchDevice::GetDataGraphPipelineSessionBindPointRequirementsARM(
     VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
     VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
     if (!wrap_handles)
@@ -9132,9 +9232,8 @@ VkResult Device::GetDataGraphPipelineSessionBindPointRequirementsARM(
     return result;
 }
 
-void Device::GetDataGraphPipelineSessionMemoryRequirementsARM(VkDevice device,
-                                                              const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo,
-                                                              VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles)
         return device_dispatch_table.GetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
     vku::safe_VkDataGraphPipelineSessionMemoryRequirementsInfoARM var_local_pInfo;
@@ -9153,8 +9252,8 @@ void Device::GetDataGraphPipelineSessionMemoryRequirementsARM(VkDevice device,
         device, (const VkDataGraphPipelineSessionMemoryRequirementsInfoARM*)local_pInfo, pMemoryRequirements);
 }
 
-VkResult Device::BindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
-                                                       const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
+VkResult DispatchDevice::BindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                               const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
     if (!wrap_handles) return device_dispatch_table.BindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos);
     small_vector<vku::safe_VkBindDataGraphPipelineSessionMemoryInfoARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
     vku::safe_VkBindDataGraphPipelineSessionMemoryInfoARM* local_pBindInfos = nullptr;
@@ -9180,15 +9279,15 @@ VkResult Device::BindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t
     return result;
 }
 
-void Device::DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
-                                                const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                        const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
     session = Erase(session);
     device_dispatch_table.DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
 }
 
-void Device::CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
-                                     const VkDataGraphPipelineDispatchInfoARM* pInfo) {
+void DispatchDevice::CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                             const VkDataGraphPipelineDispatchInfoARM* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
     {
         session = Unwrap(session);
@@ -9196,9 +9295,10 @@ void Device::CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphP
     device_dispatch_table.CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
 }
 
-VkResult Device::GetDataGraphPipelineAvailablePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
-                                                            uint32_t* pPropertiesCount,
-                                                            VkDataGraphPipelinePropertyARM* pProperties) {
+VkResult DispatchDevice::GetDataGraphPipelineAvailablePropertiesARM(VkDevice device,
+                                                                    const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                    uint32_t* pPropertiesCount,
+                                                                    VkDataGraphPipelinePropertyARM* pProperties) {
     if (!wrap_handles)
         return device_dispatch_table.GetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount,
                                                                                 pProperties);
@@ -9220,9 +9320,9 @@ VkResult Device::GetDataGraphPipelineAvailablePropertiesARM(VkDevice device, con
     return result;
 }
 
-VkResult Device::GetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
-                                                   uint32_t propertiesCount,
-                                                   VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
+VkResult DispatchDevice::GetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                           uint32_t propertiesCount,
+                                                           VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
     if (!wrap_handles)
         return device_dispatch_table.GetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties);
     vku::safe_VkDataGraphPipelineInfoARM var_local_pPipelineInfo;
@@ -9243,7 +9343,7 @@ VkResult Device::GetDataGraphPipelinePropertiesARM(VkDevice device, const VkData
     return result;
 }
 
-VkResult Instance::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+VkResult DispatchInstance::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
@@ -9252,7 +9352,7 @@ VkResult Instance::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     return result;
 }
 
-void Instance::GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+void DispatchInstance::GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
     VkPhysicalDevice physicalDevice,
     const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
     VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {
@@ -9260,20 +9360,20 @@ void Instance::GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesAR
         physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
 }
 
-void Device::CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
+void DispatchDevice::CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     device_dispatch_table.CmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
 }
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
-VkResult Device::GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
-                                              VkScreenBufferPropertiesQNX* pProperties) {
+VkResult DispatchDevice::GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
+                                                      VkScreenBufferPropertiesQNX* pProperties) {
     VkResult result = device_dispatch_table.GetScreenBufferPropertiesQNX(device, buffer, pProperties);
 
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-void Device::CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
+void DispatchDevice::CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
     vku::safe_VkTileMemoryBindInfoQCOM var_local_pTileMemoryBindInfo;
     vku::safe_VkTileMemoryBindInfoQCOM* local_pTileMemoryBindInfo = nullptr;
@@ -9290,59 +9390,63 @@ void Device::CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMe
     device_dispatch_table.CmdBindTileMemoryQCOM(commandBuffer, (const VkTileMemoryBindInfoQCOM*)local_pTileMemoryBindInfo);
 }
 
-void Device::CmdDecompressMemoryEXT(VkCommandBuffer commandBuffer, const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT) {
+void DispatchDevice::CmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                            const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT) {
     device_dispatch_table.CmdDecompressMemoryEXT(commandBuffer, pDecompressMemoryInfoEXT);
 }
 
-void Device::CmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
-                                                 VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
-                                                 VkDeviceAddress indirectCommandsAddress,
-                                                 VkDeviceAddress indirectCommandsCountAddress, uint32_t maxDecompressionCount,
-                                                 uint32_t stride) {
+void DispatchDevice::CmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                         VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                         VkDeviceAddress indirectCommandsAddress,
+                                                         VkDeviceAddress indirectCommandsCountAddress,
+                                                         uint32_t maxDecompressionCount, uint32_t stride) {
     device_dispatch_table.CmdDecompressMemoryIndirectCountEXT(commandBuffer, decompressionMethod, indirectCommandsAddress,
                                                               indirectCommandsCountAddress, maxDecompressionCount, stride);
 }
 
-VkResult Device::CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue) {
+VkResult DispatchDevice::CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkExternalComputeQueueNV* pExternalQueue) {
     VkResult result = device_dispatch_table.CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
 
     return result;
 }
 
-void Device::DestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
-                                           const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                   const VkAllocationCallbacks* pAllocator) {
     device_dispatch_table.DestroyExternalComputeQueueNV(device, externalQueue, pAllocator);
 }
 
-void Device::GetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue, VkExternalComputeQueueDataParamsNV* params,
-                                           void* pData) {
+void DispatchDevice::GetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                   VkExternalComputeQueueDataParamsNV* params, void* pData) {
     device_dispatch_table.GetExternalComputeQueueDataNV(externalQueue, params, pData);
 }
 
-void Device::GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo,
-                                                         VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+void DispatchDevice::GetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                 const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                 VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     device_dispatch_table.GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
 }
 
-void Device::CmdBuildClusterAccelerationStructureIndirectNV(VkCommandBuffer commandBuffer,
-                                                            const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
+void DispatchDevice::CmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
     device_dispatch_table.CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
 }
 
-void Device::GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
-                                                              const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-                                                              VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+void DispatchDevice::GetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     device_dispatch_table.GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
 }
 
-void Device::CmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
-                                                         const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
+void DispatchDevice::CmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                                 const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
     device_dispatch_table.CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
 }
 
-void Device::GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
-                                                       VkMemoryRequirements2* pMemoryRequirements) {
+void DispatchDevice::GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
+                                                               const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                               VkMemoryRequirements2* pMemoryRequirements) {
     if (!wrap_handles) return device_dispatch_table.GetGeneratedCommandsMemoryRequirementsEXT(device, pInfo, pMemoryRequirements);
     vku::safe_VkGeneratedCommandsMemoryRequirementsInfoEXT var_local_pInfo;
     vku::safe_VkGeneratedCommandsMemoryRequirementsInfoEXT* local_pInfo = nullptr;
@@ -9364,9 +9468,9 @@ void Device::GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const Vk
         device, (const VkGeneratedCommandsMemoryRequirementsInfoEXT*)local_pInfo, pMemoryRequirements);
 }
 
-void Device::CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
-                                               const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-                                               VkCommandBuffer stateCommandBuffer) {
+void DispatchDevice::CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                       const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                       VkCommandBuffer stateCommandBuffer) {
     if (!wrap_handles)
         return device_dispatch_table.CmdPreprocessGeneratedCommandsEXT(commandBuffer, pGeneratedCommandsInfo, stateCommandBuffer);
     vku::safe_VkGeneratedCommandsInfoEXT var_local_pGeneratedCommandsInfo;
@@ -9389,8 +9493,8 @@ void Device::CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
         commandBuffer, (const VkGeneratedCommandsInfoEXT*)local_pGeneratedCommandsInfo, stateCommandBuffer);
 }
 
-void Device::CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                            const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo) {
+void DispatchDevice::CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                    const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo) {
     if (!wrap_handles)
         return device_dispatch_table.CmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
     vku::safe_VkGeneratedCommandsInfoEXT var_local_pGeneratedCommandsInfo;
@@ -9413,9 +9517,9 @@ void Device::CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBoo
                                                          (const VkGeneratedCommandsInfoEXT*)local_pGeneratedCommandsInfo);
 }
 
-VkResult Device::CreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator,
-                                                 VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout) {
+VkResult DispatchDevice::CreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout) {
     if (!wrap_handles)
         return device_dispatch_table.CreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     vku::safe_VkIndirectCommandsLayoutCreateInfoEXT var_local_pCreateInfo;
@@ -9439,23 +9543,23 @@ VkResult Device::CreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndire
     return result;
 }
 
-void Device::DestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
-                                              const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                      const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
     indirectCommandsLayout = Erase(indirectCommandsLayout);
     device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
 }
 
-void Device::DestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                            const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
     indirectExecutionSet = Erase(indirectExecutionSet);
     device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
 }
 
-void Device::UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                                   uint32_t executionSetWriteCount,
-                                                   const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites) {
+void DispatchDevice::UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                           uint32_t executionSetWriteCount,
+                                                           const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites) {
     if (!wrap_handles)
         return device_dispatch_table.UpdateIndirectExecutionSetPipelineEXT(device, indirectExecutionSet, executionSetWriteCount,
                                                                            pExecutionSetWrites);
@@ -9480,9 +9584,9 @@ void Device::UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectEx
         (const VkWriteIndirectExecutionSetPipelineEXT*)local_pExecutionSetWrites);
 }
 
-void Device::UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                                 uint32_t executionSetWriteCount,
-                                                 const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {
+void DispatchDevice::UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                         uint32_t executionSetWriteCount,
+                                                         const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {
     if (!wrap_handles)
         return device_dispatch_table.UpdateIndirectExecutionSetShaderEXT(device, indirectExecutionSet, executionSetWriteCount,
                                                                          pExecutionSetWrites);
@@ -9508,8 +9612,8 @@ void Device::UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExec
 }
 #ifdef VK_USE_PLATFORM_OHOS
 
-VkResult Instance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
@@ -9520,7 +9624,7 @@ VkResult Instance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateI
 }
 #endif  // VK_USE_PLATFORM_OHOS
 
-VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+VkResult DispatchInstance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
         physicalDevice, pPropertyCount, pProperties);
@@ -9529,8 +9633,8 @@ VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertie
 }
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
-VkResult Device::GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
-                                         void** pHandle) {
+VkResult DispatchDevice::GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                 void** pHandle) {
     if (!wrap_handles) return device_dispatch_table.GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
     vku::safe_VkMemoryGetMetalHandleInfoEXT var_local_pGetMetalHandleInfo;
     vku::safe_VkMemoryGetMetalHandleInfoEXT* local_pGetMetalHandleInfo = nullptr;
@@ -9550,9 +9654,9 @@ VkResult Device::GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetal
     return result;
 }
 
-VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
-                                                   const void* pHandle,
-                                                   VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
+VkResult DispatchDevice::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                           const void* pHandle,
+                                                           VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
     VkResult result =
         device_dispatch_table.GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
 
@@ -9560,7 +9664,7 @@ VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMe
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+VkResult DispatchInstance::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
     VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
     VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
@@ -9569,7 +9673,7 @@ VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegion
     return result;
 }
 
-VkResult Instance::EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+VkResult DispatchInstance::EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
     VkPhysicalDevice physicalDevice, uint32_t* pDescriptionCount, VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
     VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
         physicalDevice, pDescriptionCount, pDescriptions);
@@ -9577,9 +9681,9 @@ VkResult Instance::EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
     return result;
 }
 
-VkResult Device::CreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator,
-                                                VkShaderInstrumentationARM* pInstrumentation) {
+VkResult DispatchDevice::CreateShaderInstrumentationARM(VkDevice device, const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkShaderInstrumentationARM* pInstrumentation) {
     if (!wrap_handles)
         return device_dispatch_table.CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
 
@@ -9590,14 +9694,14 @@ VkResult Device::CreateShaderInstrumentationARM(VkDevice device, const VkShaderI
     return result;
 }
 
-void Device::DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
-                                             const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyShaderInstrumentationARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
     instrumentation = Erase(instrumentation);
     device_dispatch_table.DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
 }
 
-void Device::CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation) {
+void DispatchDevice::CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkShaderInstrumentationARM instrumentation) {
     if (!wrap_handles) return device_dispatch_table.CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
     {
         instrumentation = Unwrap(instrumentation);
@@ -9605,13 +9709,13 @@ void Device::CmdBeginShaderInstrumentationARM(VkCommandBuffer commandBuffer, VkS
     device_dispatch_table.CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
 }
 
-void Device::CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
+void DispatchDevice::CmdEndShaderInstrumentationARM(VkCommandBuffer commandBuffer) {
     device_dispatch_table.CmdEndShaderInstrumentationARM(commandBuffer);
 }
 
-VkResult Device::GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
-                                                   uint32_t* pMetricBlockCount, void* pMetricValues,
-                                                   VkShaderInstrumentationValuesFlagsARM flags) {
+VkResult DispatchDevice::GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInstrumentationARM instrumentation,
+                                                           uint32_t* pMetricBlockCount, void* pMetricValues,
+                                                           VkShaderInstrumentationValuesFlagsARM flags) {
     if (!wrap_handles)
         return device_dispatch_table.GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues,
                                                                        flags);
@@ -9624,7 +9728,7 @@ VkResult Device::GetShaderInstrumentationValuesARM(VkDevice device, VkShaderInst
     return result;
 }
 
-void Device::ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
+void DispatchDevice::ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstrumentationARM instrumentation) {
     if (!wrap_handles) return device_dispatch_table.ClearShaderInstrumentationMetricsARM(device, instrumentation);
     {
         instrumentation = Unwrap(instrumentation);
@@ -9632,22 +9736,23 @@ void Device::ClearShaderInstrumentationMetricsARM(VkDevice device, VkShaderInstr
     device_dispatch_table.ClearShaderInstrumentationMetricsARM(device, instrumentation);
 }
 
-void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
+void DispatchDevice::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }
 
-void Device::CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
+void DispatchDevice::CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                              const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
     device_dispatch_table.CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
 }
 
-void Device::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
-                                              const VkComputeOccupancyPriorityParametersNV* pParameters) {
+void DispatchDevice::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                      const VkComputeOccupancyPriorityParametersNV* pParameters) {
     device_dispatch_table.CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
 }
 #ifdef VK_USE_PLATFORM_UBM_SEC
 
-VkResult Instance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+VkResult DispatchInstance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     if (!wrap_handles) return instance_dispatch_table.CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
 
     VkResult result = instance_dispatch_table.CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
@@ -9657,17 +9762,17 @@ VkResult Instance::CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCr
     return result;
 }
 
-VkBool32 Instance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                              struct ubm_device* device) {
+VkBool32 DispatchInstance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                      struct ubm_device* device) {
     VkBool32 result = instance_dispatch_table.GetPhysicalDeviceUbmPresentationSupportSEC(physicalDevice, queueFamilyIndex, device);
 
     return result;
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
 
-VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator,
-                                                VkAccelerationStructureKHR* pAccelerationStructure) {
+VkResult DispatchDevice::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkAccelerationStructureKHR* pAccelerationStructure) {
     if (!wrap_handles)
         return device_dispatch_table.CreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
     vku::safe_VkAccelerationStructureCreateInfoKHR var_local_pCreateInfo;
@@ -9690,18 +9795,18 @@ VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAcceler
     return result;
 }
 
-void Device::DestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                             const VkAllocationCallbacks* pAllocator) {
+void DispatchDevice::DestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
+                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
     accelerationStructure = Erase(accelerationStructure);
     device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
-void Device::CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-                                                       const VkDeviceAddress* pIndirectDeviceAddresses,
-                                                       const uint32_t* pIndirectStrides,
-                                                       const uint32_t* const* ppMaxPrimitiveCounts) {
+void DispatchDevice::CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                               const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                               const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                               const uint32_t* pIndirectStrides,
+                                                               const uint32_t* const* ppMaxPrimitiveCounts) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBuildAccelerationStructuresIndirectKHR(
             commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts);
@@ -9728,8 +9833,8 @@ void Device::CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBu
         pIndirectStrides, ppMaxPrimitiveCounts);
 }
 
-VkResult Device::CopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                              const VkCopyAccelerationStructureInfoKHR* pInfo) {
+VkResult DispatchDevice::CopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                      const VkCopyAccelerationStructureInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyAccelerationStructureKHR(device, deferredOperation, pInfo);
     vku::safe_VkCopyAccelerationStructureInfoKHR* local_pInfo = nullptr;
     {
@@ -9762,8 +9867,8 @@ VkResult Device::CopyAccelerationStructureKHR(VkDevice device, VkDeferredOperati
     return result;
 }
 
-VkResult Device::CopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                      const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
+VkResult DispatchDevice::CopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                              const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo);
     vku::safe_VkCopyAccelerationStructureToMemoryInfoKHR* local_pInfo = nullptr;
     {
@@ -9793,8 +9898,8 @@ VkResult Device::CopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferre
     return result;
 }
 
-VkResult Device::CopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                      const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
+VkResult DispatchDevice::CopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                              const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo);
     vku::safe_VkCopyMemoryToAccelerationStructureInfoKHR* local_pInfo = nullptr;
     {
@@ -9824,9 +9929,10 @@ VkResult Device::CopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferre
     return result;
 }
 
-VkResult Device::WriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
-                                                          const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                          VkQueryType queryType, size_t dataSize, void* pData, size_t stride) {
+VkResult DispatchDevice::WriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
+                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                  VkQueryType queryType, size_t dataSize, void* pData,
+                                                                  size_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.WriteAccelerationStructuresPropertiesKHR(
             device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride);
@@ -9848,7 +9954,8 @@ VkResult Device::WriteAccelerationStructuresPropertiesKHR(VkDevice device, uint3
     return result;
 }
 
-void Device::CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR* pInfo) {
+void DispatchDevice::CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                     const VkCopyAccelerationStructureInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
     vku::safe_VkCopyAccelerationStructureInfoKHR var_local_pInfo;
     vku::safe_VkCopyAccelerationStructureInfoKHR* local_pInfo = nullptr;
@@ -9868,8 +9975,8 @@ void Device::CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, cons
     device_dispatch_table.CmdCopyAccelerationStructureKHR(commandBuffer, (const VkCopyAccelerationStructureInfoKHR*)local_pInfo);
 }
 
-void Device::CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
-                                                     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
+void DispatchDevice::CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                             const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
     vku::safe_VkCopyAccelerationStructureToMemoryInfoKHR var_local_pInfo;
     vku::safe_VkCopyAccelerationStructureToMemoryInfoKHR* local_pInfo = nullptr;
@@ -9887,8 +9994,8 @@ void Device::CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuff
                                                                   (const VkCopyAccelerationStructureToMemoryInfoKHR*)local_pInfo);
 }
 
-void Device::CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
-                                                     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
+void DispatchDevice::CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                             const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
     vku::safe_VkCopyMemoryToAccelerationStructureInfoKHR var_local_pInfo;
     vku::safe_VkCopyMemoryToAccelerationStructureInfoKHR* local_pInfo = nullptr;
@@ -9906,8 +10013,8 @@ void Device::CmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuff
                                                                   (const VkCopyMemoryToAccelerationStructureInfoKHR*)local_pInfo);
 }
 
-VkDeviceAddress Device::GetAccelerationStructureDeviceAddressKHR(VkDevice device,
-                                                                 const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
+VkDeviceAddress DispatchDevice::GetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                         const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
     if (!wrap_handles) return device_dispatch_table.GetAccelerationStructureDeviceAddressKHR(device, pInfo);
     vku::safe_VkAccelerationStructureDeviceAddressInfoKHR var_local_pInfo;
     vku::safe_VkAccelerationStructureDeviceAddressInfoKHR* local_pInfo = nullptr;
@@ -9927,9 +10034,10 @@ VkDeviceAddress Device::GetAccelerationStructureDeviceAddressKHR(VkDevice device
     return result;
 }
 
-void Device::CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
-                                                         const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                         VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
+void DispatchDevice::CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
+                                                                 const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                 VkQueryType queryType, VkQueryPool queryPool,
+                                                                 uint32_t firstQuery) {
     if (!wrap_handles)
         return device_dispatch_table.CmdWriteAccelerationStructuresPropertiesKHR(
             commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
@@ -9950,23 +10058,24 @@ void Device::CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer command
         queryPool, firstQuery);
 }
 
-void Device::GetDeviceAccelerationStructureCompatibilityKHR(VkDevice device,
-                                                            const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
-                                                            VkAccelerationStructureCompatibilityKHR* pCompatibility) {
+void DispatchDevice::GetDeviceAccelerationStructureCompatibilityKHR(VkDevice device,
+                                                                    const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
+                                                                    VkAccelerationStructureCompatibilityKHR* pCompatibility) {
     device_dispatch_table.GetDeviceAccelerationStructureCompatibilityKHR(device, pVersionInfo, pCompatibility);
 }
 
-void Device::CmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
-                             const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
-                             const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                             const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height,
-                             uint32_t depth) {
+void DispatchDevice::CmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                     const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                     const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                     const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                     const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
+                                     uint32_t height, uint32_t depth) {
     device_dispatch_table.CmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
                                           pCallableShaderBindingTable, width, height, depth);
 }
 
-VkResult Device::GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
-                                                                 uint32_t groupCount, size_t dataSize, void* pData) {
+VkResult DispatchDevice::GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
+                                                                         uint32_t groupCount, size_t dataSize, void* pData) {
     if (!wrap_handles)
         return device_dispatch_table.GetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount,
                                                                                      dataSize, pData);
@@ -9979,18 +10088,18 @@ VkResult Device::GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device
     return result;
 }
 
-void Device::CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                     const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
-                                     const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
-                                     const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                     const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
-                                     VkDeviceAddress indirectDeviceAddress) {
+void DispatchDevice::CmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                             const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
+                                             const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
+                                             VkDeviceAddress indirectDeviceAddress) {
     device_dispatch_table.CmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                   pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress);
 }
 
-VkDeviceSize Device::GetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
-                                                          VkShaderGroupShaderKHR groupShader) {
+VkDeviceSize DispatchDevice::GetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
+                                                                  VkShaderGroupShaderKHR groupShader) {
     if (!wrap_handles) return device_dispatch_table.GetRayTracingShaderGroupStackSizeKHR(device, pipeline, group, groupShader);
     {
         pipeline = Unwrap(pipeline);
@@ -10000,16 +10109,17 @@ VkDeviceSize Device::GetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPip
     return result;
 }
 
-void Device::CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) {
+void DispatchDevice::CmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) {
     device_dispatch_table.CmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
 }
 
-void Device::CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void DispatchDevice::CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                         uint32_t groupCountZ) {
     device_dispatch_table.CmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void Device::CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                         uint32_t stride) {
+void DispatchDevice::CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t drawCount, uint32_t stride) {
     if (!wrap_handles) return device_dispatch_table.CmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
     {
         buffer = Unwrap(buffer);
@@ -10017,9 +10127,9 @@ void Device::CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer
     device_dispatch_table.CmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-void Device::CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                              uint32_t stride) {
+void DispatchDevice::CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                      uint32_t stride) {
     if (!wrap_handles)
         return device_dispatch_table.CmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                       maxDrawCount, stride);
@@ -10030,7 +10140,6 @@ void Device::CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkB
     device_dispatch_table.CmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                            maxDrawCount, stride);
 }
-}  // namespace dispatch
 }  // namespace vvl
 
 // NOLINTEND

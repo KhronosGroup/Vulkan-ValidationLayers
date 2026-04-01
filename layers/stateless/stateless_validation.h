@@ -324,7 +324,7 @@ class Instance : public vvl::BaseInstance {
     vvl::unordered_map<VkPhysicalDevice, DeviceExtensions> physical_device_extensions{};
     // We have a copy of this in Stateless and vvl::Instance, could move the base::Instance, but we don't have a way to
 
-    Instance(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeParameterValidation) {}
+    Instance(vvl::DispatchInstance* dispatch) : BaseInstance(dispatch, LayerObjectTypeParameterValidation) {}
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
@@ -449,7 +449,7 @@ class Device : public vvl::BaseDevice {
     using Field = vvl::Field;
 
   public:
-    Device(vvl::dispatch::Device* dev, Instance* instance_vo)
+    Device(vvl::DispatchDevice* dev, Instance* instance_vo)
         : BaseDevice(dev, instance_vo, LayerObjectTypeParameterValidation), instance(instance_vo) {}
     ~Device() {}
 

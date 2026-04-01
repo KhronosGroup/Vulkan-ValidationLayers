@@ -71,11 +71,9 @@ struct InstrumentedShader {
 // Handles shader instrumentation (reserve a descriptor slot, create descriptor
 // sets, pipeline layout, hook into pipeline creation, etc...)
 class GpuShaderInstrumentor : public vvl::DeviceProxy {
-    using BaseClass = vvl::DeviceProxy;
-
   public:
-    GpuShaderInstrumentor(vvl::dispatch::Device *dev, vvl::InstanceProxy *instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type) {
+    GpuShaderInstrumentor(vvl::DispatchDevice* dev, vvl::InstanceProxy* instance, LayerObjectTypeId type)
+        : DeviceProxy(dev, instance, type) {
         for (uint32_t i = 0; i < vvl::DescriptorModeCount; i++) {
             dummy_desc_layout_[i] = VK_NULL_HANDLE;
             instrumentation_desc_layout_[i] = VK_NULL_HANDLE;

@@ -60,7 +60,7 @@
 
 namespace vvl {
 
-DeviceState::DeviceState(vvl::dispatch::Device* dev, InstanceState* instance)
+DeviceState::DeviceState(DispatchDevice* dev, InstanceState* instance)
     : BaseDevice(dev, instance, LayerObjectTypeStateTracker),
       instance_state(instance),
       special_supported(dev->stateless_device_data.special_supported) {

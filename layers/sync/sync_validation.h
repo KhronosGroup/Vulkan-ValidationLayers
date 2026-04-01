@@ -33,7 +33,7 @@ namespace syncval {
 // sync validation has no instance-level functionality
 class Instance : public vvl::InstanceProxy {
   public:
-    Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeSyncValidation) {}
+    Instance(vvl::DispatchInstance* dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeSyncValidation) {}
 };
 
 class SyncValidator : public vvl::DeviceProxy {
@@ -44,7 +44,7 @@ class SyncValidator : public vvl::DeviceProxy {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo);
+    SyncValidator(vvl::DispatchDevice* dev, syncval::Instance* instance_vo);
     ~SyncValidator();
 
     ErrorMessages error_messages_;

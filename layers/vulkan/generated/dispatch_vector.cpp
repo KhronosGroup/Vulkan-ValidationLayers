@@ -44,9 +44,8 @@
 #include "gpu_dump/gpu_dump.h"
 
 namespace vvl {
-namespace dispatch {
 
-void Device::InitObjectDispatchVectors() {
+void DispatchDevice::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                       \
     init_object_dispatch_vector(InterceptId##name, typeid(&vvl::BaseDevice::name), typeid(&threadsafety::Device::name),   \
                                 typeid(&stateless::Device::name), typeid(&legacy::Device::name),                          \
@@ -2209,7 +2208,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountEXT);
 }
-}  // namespace dispatch
 }  // namespace vvl
 
 // NOLINTEND

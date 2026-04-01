@@ -205,7 +205,7 @@ class InstanceState : public vvl::BaseInstance {
     using Func = vvl::Func;
 
   public:
-    InstanceState(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeStateTracker) {}
+    InstanceState(DispatchInstance* dispatch) : BaseInstance(dispatch, LayerObjectTypeStateTracker) {}
 
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -483,7 +483,7 @@ class InstanceProxy : public vvl::BaseInstance {
   public:
     vvl::InstanceState* instance_state;
 
-    InstanceProxy(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type)
+    InstanceProxy(DispatchInstance* dispatch, LayerObjectTypeId type)
         : BaseInstance(dispatch, type),
           instance_state(dynamic_cast<vvl::InstanceState*>(dispatch->GetValidationObject(LayerObjectTypeStateTracker))) {}
 
@@ -553,7 +553,7 @@ class DeviceState : public vvl::BaseDevice {
     void DestroyObjectMaps();
 
   public:
-    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance);
+    DeviceState(DispatchDevice* dev, InstanceState* instance);
     ~DeviceState();
 
     void AddProxy(DeviceProxy& proxy);
@@ -2272,7 +2272,7 @@ class DeviceProxy : public vvl::BaseDevice {
     vvl::InstanceState* instance_state{};
     vvl::InstanceProxy* instance_proxy{};
 
-    DeviceProxy(vvl::dispatch::Device* dev, InstanceProxy* instance, LayerObjectTypeId type)
+    DeviceProxy(DispatchDevice* dev, InstanceProxy* instance, LayerObjectTypeId type)
         : BaseDevice(dev, instance, type),
           device_state(dynamic_cast<vvl::DeviceState*>(dev->GetValidationObject(LayerObjectTypeStateTracker))),
           physical_device_state(device_state->physical_device_state),

@@ -56,10 +56,8 @@ struct HashedUint64 {
 namespace vvl {
 class BaseInstance;
 class BaseDevice;
-namespace dispatch {
-class Instance;
-class Device;
-}  // namespace dispatch
+class DispatchInstance;
+class DispatchDevice;
 
 // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
 // TODO: this could be defined and initialized via generated code
@@ -127,7 +125,7 @@ struct DeviceExtensionProperties {
 // and then used by all downstream users (state tracker, stateless SPIR-V validator, etc.).
 class StatelessDeviceData {
   public:
-    StatelessDeviceData(vvl::dispatch::Instance* instance, VkPhysicalDevice physical_device, const VkDeviceCreateInfo* pCreateInfo);
+    StatelessDeviceData(DispatchInstance* instance, VkPhysicalDevice physical_device, const VkDeviceCreateInfo* pCreateInfo);
 
     APIVersion api_version;
 
@@ -148,23 +146,21 @@ class StatelessDeviceData {
     SpecialSupported special_supported;
 };
 
-namespace dispatch {
+class DispatchInstance;
+void SetDispatchInstance(VkInstance instance, std::unique_ptr<DispatchInstance>&&);
+DispatchInstance* GetDispatchInstance(VkInstance);
+DispatchInstance* GetDispatchInstance(VkPhysicalDevice);
+void FreeDispatchInstance(void* key);
 
-class Instance;
-void SetData(VkInstance instance, std::unique_ptr<Instance>&&);
-Instance* GetData(VkInstance);
-Instance* GetData(VkPhysicalDevice);
-void FreeData(void* key, VkInstance instance);
+class DispatchDevice;
+void SetDispatchDevice(VkDevice dev, std::unique_ptr<DispatchDevice>&&);
+DispatchDevice* GetDispatchDevice(VkDevice);
+DispatchDevice* GetDispatchDevice(VkQueue);
+DispatchDevice* GetDispatchDevice(VkCommandBuffer);
+DispatchDevice* GetDispatchDevice(VkExternalComputeQueueNV);
+void FreeDispatchDevice(void* key);
 
-class Device;
-void SetData(VkDevice dev, std::unique_ptr<Device>&&);
-Device* GetData(VkDevice);
-Device* GetData(VkQueue);
-Device* GetData(VkCommandBuffer);
-Device* GetData(VkExternalComputeQueueNV);
-void FreeData(void* key, VkDevice device);
-
-void FreeAllData();
+void FreeAllDispatchObjects();
 
 struct TemplateState {
     VkDescriptorUpdateTemplate desc_update_template;
@@ -239,10 +235,10 @@ class HandleWrapper : public Logger {
     static bool wrap_handles;
 };
 
-class Instance : public HandleWrapper {
+class DispatchInstance : public HandleWrapper {
   public:
-    Instance(const VkInstanceCreateInfo* pCreateInfo);
-    ~Instance();
+    DispatchInstance(const VkInstanceCreateInfo* pCreateInfo);
+    ~DispatchInstance();
 
     void InitValidationObjects();
     void FindSupportedExtensions();
@@ -296,10 +292,10 @@ class Instance : public HandleWrapper {
     void ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo& create_info);
 };
 
-class Device : public HandleWrapper {
+class DispatchDevice : public HandleWrapper {
   public:
-    Device(Instance* instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
-    ~Device();
+    DispatchDevice(DispatchInstance* instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
+    ~DispatchDevice();
 
     void InitObjectDispatchVectors();
     void InitValidationObjects();
@@ -309,7 +305,7 @@ class Device : public HandleWrapper {
     bool IsSecondary(VkCommandBuffer cb) const;
 
     Settings& settings;
-    Instance* dispatch_instance;
+    DispatchInstance* dispatch_instance;
 
     const StatelessDeviceData stateless_device_data;
 
@@ -362,5 +358,4 @@ class Device : public HandleWrapper {
 
 #include "generated/dispatch_object_device_methods.h"
 };
-}  // namespace dispatch
 }  // namespace vvl

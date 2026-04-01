@@ -22,7 +22,7 @@
 
 // NOLINTBEGIN
 
-// This file contains methods for class vvl::dispatch::Device and it is designed to ONLY be
+// This file contains methods for class DispatchDevice and it is designed to ONLY be
 // included into dispatch_object.h.
 
 #pragma once
