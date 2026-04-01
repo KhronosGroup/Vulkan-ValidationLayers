@@ -295,7 +295,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
 
                 assert(physicalDevice);
-                auto layer_data = vvl::dispatch::GetData(physicalDevice);
+                auto layer_data = vvl::GetDispatchInstance(physicalDevice);
                 return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
             }
             ''')
@@ -307,10 +307,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             paramsList = ', '.join([param.name for param in command.params])
 
-            dispatch = 'device_dispatch' if not command.instance else 'instance_dispatch'
             # Setup common to call wrappers. First parameter is always dispatchable
             out.append('VVL_ZoneScoped;\n\n')
-            out.append(f'auto {dispatch} = vvl::dispatch::GetData({command.params[0].name});\n')
+            if command.instance:
+                out.append(f'auto instance_dispatch = vvl::GetDispatchInstance({command.params[0].name});\n')
+            else:
+                out.append(f'auto device_dispatch = vvl::GetDispatchDevice({command.params[0].name});\n')
 
             # Declare result variable, if any.
             return_map = {
@@ -330,6 +332,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             out.append(f'ErrorObject error_obj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
 
             # Generate pre-call validation source code
+            dispatch = 'device_dispatch' if not command.instance else 'instance_dispatch'
             out.append(f'{{\nVVL_ZoneScopedN("PreCallValidate_{command.name}");')
             if not command.instance:
                 out.append(f'''

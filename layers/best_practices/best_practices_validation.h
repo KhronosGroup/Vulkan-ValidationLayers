@@ -65,14 +65,12 @@ void LogResult(const StateObject& state, Handle handle, const RecordObject& reco
 }
 
 class Instance : public vvl::InstanceProxy {
-    using BaseClass = vvl::InstanceProxy;
-
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeBestPractices) {}
+    Instance(vvl::DispatchInstance* dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeBestPractices) {}
 
     bool VendorCheckEnabled(BPVendorFlags vendors) const { return IsVendorCheckEnabled(enabled, vendors); }
 
@@ -118,15 +116,13 @@ class Instance : public vvl::InstanceProxy {
 }  // namespace bp_state
 
 class BestPractices : public vvl::DeviceProxy {
-    using BaseClass = vvl::DeviceProxy;
-
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    BestPractices(vvl::dispatch::Device* dev, bp_state::Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeBestPractices) {}
+    BestPractices(vvl::DispatchDevice* dev, bp_state::Instance* instance_vo)
+        : DeviceProxy(dev, instance_vo, LayerObjectTypeBestPractices) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

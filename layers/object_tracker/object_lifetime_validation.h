@@ -157,7 +157,7 @@ class Instance : public vvl::BaseInstance {
 
     Tracker tracker;
 
-    Instance(vvl::dispatch::Instance *dispatch);
+    Instance(vvl::DispatchInstance* dispatch);
     ~Instance();
 
     void DestroyLeakedObjects();
@@ -210,7 +210,7 @@ class Device : public vvl::BaseDevice {
     ObjectMapGPL linked_graphics_pipeline_map;
 
     // Constructor for object lifetime tracking
-    Device(vvl::dispatch::Device *dev, Instance *instance);
+    Device(vvl::DispatchDevice *dev, Instance *instance);
     ~Device();
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;

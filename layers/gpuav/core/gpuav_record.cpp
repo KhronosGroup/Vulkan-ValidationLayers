@@ -303,7 +303,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     global_resource_descriptor_buffer_.Destroy();
     global_resource_descriptor_heap_.Destroy();
 
-    BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    GpuShaderInstrumentor::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
     // State Tracker (BaseClass) can end up making vma calls through callbacks - so destroy allocator last
     if (vma_allocator_) {

@@ -146,9 +146,8 @@ class DispatchVectorGenerator(BaseGenerator):
 
         out.append('''
             namespace vvl {
-            namespace dispatch {
 
-            void Device::InitObjectDispatchVectors() {
+            void DispatchDevice::InitObjectDispatchVectors() {
 
             #define BUILD_DISPATCH_VECTOR(name) \\
                 init_object_dispatch_vector(InterceptId ## name, \\
@@ -236,6 +235,5 @@ class DispatchVectorGenerator(BaseGenerator):
                 out.append(f'    {macro}(PostCallRecord{command.name[2:]});\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
-        out.append('} // namespace dispatch\n')
         out.append('} // namespace vvl\n')
         self.write("".join(out))

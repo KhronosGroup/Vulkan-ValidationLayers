@@ -211,7 +211,7 @@ void GpuShaderInstrumentor::SetupDescriptorHeap(const Location& loc) {
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
-    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
+    DeviceProxy::FinishDeviceSetup(pCreateInfo, loc);
 
     // Update feature and extension state based on changes made to the create info.
     GetEnabledDeviceFeatures(pCreateInfo, &modified_features, api_version);
@@ -301,7 +301,7 @@ void GpuShaderInstrumentor::Cleanup() {
 void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) {
     Cleanup();
-    BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    DeviceProxy::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 }
 
 // Just gives a warning about a possible deadlock.
