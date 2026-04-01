@@ -4890,11 +4890,6 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                             framebuffer_attachments_create_info->attachmentImageInfoCount)) {
             const Location attachment_image_info_loc =
                 create_info_loc.pNext(Struct::VkFramebufferAttachmentsCreateInfo, Field::pAttachmentImageInfos, i);
-            if (attachment_image_info.pNext != nullptr) {
-                skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-pNext-pNext", device,
-                                 attachment_image_info_loc.dot(Field::pNext), "is not NULL.\n%s",
-                                 PrintPNextChain(Struct::VkFramebufferAttachmentImageInfo, attachment_image_info.pNext).c_str());
-            }
             for (const auto [j, view_format] :
                  vvl::enumerate(attachment_image_info.pViewFormats, attachment_image_info.viewFormatCount)) {
                 // VK_ANDROID_external_format_resolve can have a valid undefined format
