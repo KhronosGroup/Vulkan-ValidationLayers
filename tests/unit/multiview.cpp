@@ -1559,7 +1559,8 @@ TEST_F(NegativeMultiview, MultiviewPerViewViewportsDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeMultiview, DynamicRenderingResolveArrayLayer) {
+// Being decided in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8173
+TEST_F(NegativeMultiview, DISABLED_DynamicRenderingResolveArrayLayer) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12015");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
