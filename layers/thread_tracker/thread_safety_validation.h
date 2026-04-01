@@ -260,13 +260,11 @@ class Counter {
     void CreateObject(type object) { c_##type.CreateObject(object); }                               \
     void DestroyObject(type object) { c_##type.DestroyObject(object); }
 
-class Instance : public vvl::base::Instance {
-    using BaseClass = vvl::base::Instance;
-
+class Instance : public vvl::BaseInstance {
   public:
     std::shared_mutex thread_safety_lock;
 
-    Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeThreading) { InitCounters(); }
+    Instance(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeThreading) { InitCounters(); }
 
     void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR *pProperties,
@@ -312,9 +310,7 @@ class Instance : public vvl::base::Instance {
     void StartReadObjectParentInstance(type object, const Location &loc) { parent_instance->StartReadObject(object, loc); }     \
     void FinishReadObjectParentInstance(type object, const Location &loc) { parent_instance->FinishReadObject(object, loc); }
 
-class Device : public vvl::base::Device {
-    using BaseClass = vvl::base::Device;
-
+class Device : public vvl::BaseDevice {
   public:
     std::shared_mutex thread_safety_lock;
 
@@ -358,8 +354,8 @@ class Device : public vvl::base::Device {
 
     Instance *parent_instance;
 
-    Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeThreading), parent_instance(instance_vo) {
+    Device(vvl::dispatch::Device* dev, Instance* instance_vo)
+        : BaseDevice(dev, instance_vo, LayerObjectTypeThreading), parent_instance(instance_vo) {
         c_VkCommandPoolContents.Init(kVulkanObjectTypeCommandPool, this);
         InitCounters();
     }

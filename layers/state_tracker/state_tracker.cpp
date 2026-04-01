@@ -61,7 +61,7 @@
 namespace vvl {
 
 DeviceState::DeviceState(vvl::dispatch::Device* dev, InstanceState* instance)
-    : BaseClass(dev, instance, LayerObjectTypeStateTracker),
+    : BaseDevice(dev, instance, LayerObjectTypeStateTracker),
       instance_state(instance),
       special_supported(dev->stateless_device_data.special_supported) {
     physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();

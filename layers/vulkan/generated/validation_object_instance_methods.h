@@ -24,7 +24,7 @@
 
 // NOLINTBEGIN
 
-// This file contains methods for class vvl::base::Instance and it is designed to ONLY be
+// This file contains methods for class vvl::BaseInstance and it is designed to ONLY be
 // included into validation_object.h.
 
 virtual bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

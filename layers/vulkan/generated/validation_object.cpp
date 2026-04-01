@@ -30,9 +30,9 @@
 
 #include "chassis/validation_object.h"
 
-namespace vvl::base {
-thread_local WriteLockGuard* Device::record_guard{};
+namespace vvl {
+thread_local WriteLockGuard* BaseDevice::record_guard{};
 
-}  // namespace vvl::base
+}  // namespace vvl
 
 // NOLINTEND

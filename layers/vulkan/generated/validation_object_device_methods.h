@@ -24,7 +24,7 @@
 
 // NOLINTBEGIN
 
-// This file contains methods for class vvl::base::Device and it is designed to ONLY be
+// This file contains methods for class vvl::BaseDevice and it is designed to ONLY be
 // included into validation_object.h.
 
 virtual bool PreCallValidateGetDeviceProcAddr(VkDevice device, const char* pName, const ErrorObject& error_obj) const {

@@ -45,11 +45,9 @@ ExtensionData GetExtensionData(vvl::Extension extension);
 
 // We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
 // we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
-class Instance : public vvl::base::Instance {
-    using BaseClass = vvl::base::Instance;
-
+class Instance : public vvl::BaseInstance {
   public:
-    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeLegacy) {}
+    Instance(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeLegacy) {}
 
     // Special functions done in legacy_manual.cpp
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -87,12 +85,10 @@ class Instance : public vvl::base::Instance {
                                                                      const ErrorObject& error_obj) const override;
 };
 
-class Device : public vvl::base::Device {
-    using BaseClass = vvl::base::Device;
-
+class Device : public vvl::BaseDevice {
   public:
     Device(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {}
+        : BaseDevice(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {}
     ~Device() {}
     Instance* instance;
 

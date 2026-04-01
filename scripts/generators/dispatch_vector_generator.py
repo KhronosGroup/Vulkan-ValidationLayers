@@ -152,7 +152,7 @@ class DispatchVectorGenerator(BaseGenerator):
 
             #define BUILD_DISPATCH_VECTOR(name) \\
                 init_object_dispatch_vector(InterceptId ## name, \\
-                                            typeid(&vvl::base::Device::name), \\
+                                            typeid(&vvl::BaseDevice::name), \\
         ''')
         params = [f'typeid(&{layer["device"]}::name)' for layer in layer_list]
         out.append(',\\\n'.join(params))
@@ -160,7 +160,7 @@ class DispatchVectorGenerator(BaseGenerator):
         out.append('''
             #define BUILD_DESTROY_DISPATCH_VECTOR(name) \\
                 init_object_dispatch_vector(InterceptId ## name, \\
-                                            typeid(&vvl::base::Device::name), \\
+                                            typeid(&vvl::BaseDevice::name), \\
         ''')
         out.append(',\\\n'.join(params))
         out.append(', true);\n')
@@ -175,7 +175,7 @@ class DispatchVectorGenerator(BaseGenerator):
 
         out.append('bool is_destroy) {\n')
         out.append('''
-            vvl::base::Device *state_tracker = nullptr;
+            vvl::BaseDevice *state_tracker = nullptr;
             auto *intercept_vector = &this->intercept_vectors[id];
             for (auto& vo: this->object_dispatch) {
                 auto *item = vo.get();
