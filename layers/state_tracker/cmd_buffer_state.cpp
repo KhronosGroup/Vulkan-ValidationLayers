@@ -1752,10 +1752,9 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
         last_bound.ds_slots.resize(required_size);
     }
 
-    // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
+    // For any previously bound push descriptor sets, need to set them to "invalid" if they were disturbed by this update
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
         PushDescriptorCleanup(last_bound, set_idx);
-        last_bound.ds_slots[set_idx].Reset();
     }
 
     // Now update the bound sets with the input sets

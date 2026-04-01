@@ -1715,10 +1715,11 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
     bool has_bound_descriptor_buffer = false;
     for (const auto& ds_slot : last_bound_state.ds_slots) {
         if (pipeline.descriptor_buffer_mode) {
-            if (!ds_slot.ds_state) {
-                continue;
-            }
-            if (!ds_slot.ds_state->IsPushDescriptor()) {
+            const bool is_push_descriptor = ds_slot.ds_state && ds_slot.ds_state->IsPushDescriptor();
+            has_bound_descriptor_buffer |= ds_slot.descriptor_buffer_binding.has_value() || is_push_descriptor;
+
+            // ds_state is null if using a non-push descriptor buffer, as there is no VkDescriptorSet handle anymore
+            if (ds_slot.ds_state && !ds_slot.ds_state->IsPushDescriptor()) {
                 LogObjectList objlist = cb_state.GetObjectList(bind_point);
                 objlist.add(ds_slot.ds_state->Handle());
                 skip |= LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, vuid.loc(),
@@ -1728,7 +1729,6 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
                                  last_bound_state.DescribeInvalidDescriptorMode().c_str());
                 break;
             }
-            has_bound_descriptor_buffer |= ds_slot.descriptor_buffer_binding.has_value() || ds_slot.ds_state->IsPushDescriptor();
         } else if (ds_slot.descriptor_buffer_binding.has_value()) {
             skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, cb_state.GetObjectList(bind_point), vuid.loc(),
                              "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
