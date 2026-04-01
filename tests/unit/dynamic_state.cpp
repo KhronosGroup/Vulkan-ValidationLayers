@@ -3878,6 +3878,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -3890,7 +3891,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     vk::CmdSetScissor(m_command_buffer, 0, 1, &scissor);
     vk::CmdSetLineWidth(m_command_buffer, 1);
 
-    m_errorMonitor->SetDesiredWarning("WARNING-Ignored-DynamicState");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4525,7 +4526,7 @@ TEST_F(NegativeDynamicState, SetAfterStaticPipeline) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static);
     vk::CmdSetLineWidth(m_command_buffer, 1.0f);
 
-    m_errorMonitor->SetDesiredWarning("WARNING-Ignored-DynamicState");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4671,46 +4672,11 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
     depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT;
     vk::CmdSetDepthBias2EXT(m_command_buffer, &depth_bias_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredWarning("WARNING-Ignored-DynamicState");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeDynamicState, IgnoredFragmentShaderStage) {
-    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10897");
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    RETURN_IF_SKIP(Init());
-
-    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
-    pipeline_rendering_ci.colorAttachmentCount = 1;
-    pipeline_rendering_ci.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
-    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.CreateGraphicsPipeline();
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.colorAttachmentCount = 0;
-    rendering_info.layerCount = 1;
-    rendering_info.renderArea = GetRenderTargetArea();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRendering(rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdSetStencilCompareMask(m_command_buffer, VK_STENCIL_FACE_FRONT_BIT, 1);
-    m_errorMonitor->SetDesiredWarning("WARNING-Ignored-DynamicState");
-    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 

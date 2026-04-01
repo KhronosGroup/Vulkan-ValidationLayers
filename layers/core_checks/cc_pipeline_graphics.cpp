@@ -3856,19 +3856,13 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
         const auto rendering_color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
         if (color_attachment_count != rendering_color_attachment_count) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            std::ostringstream ss;
-            ss << "Currently bound " << FormatHandle(pipeline)
-               << " was created with VkPipelineRenderingCreateInfo::colorAttachmentCount ("
-               << pipeline_rendering_ci.colorAttachmentCount << ") which must be equal to "
-               << (rp_state.use_dynamic_rendering ? "VkRenderingInfo" : "VkCommandBufferInheritanceRenderingInfo")
-               << "::colorAttachmentCount (" << rendering_color_attachment_count << ").\n";
-            if (pipeline_rendering_ci.colorAttachmentCount == 0 && pipeline.RasterizationDisabled()) {
-                ss << "Hint: Because rasterizerDiscardEnable was set to true, the colorAttachmentCount is ignored and "
-                      "vkCmdBeginRendering should match this.\n";
-            }
-            ss << "The dynamicRenderingUnusedAttachments feature allows a way to remove this restriction.";
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_COLOR_COUNT_06179), objlist, loc,
-                             "%s", ss.str().c_str());
+                             "Currently bound %s was created with VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
+                             ") which must be equal to %s::colorAttachmentCount (%" PRIu32
+                             ").\nThe dynamicRenderingUnusedAttachments feature allows a way to remove this restriction.",
+                             FormatHandle(pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
+                             rp_state.use_dynamic_rendering ? "VkRenderingInfo" : "VkCommandBufferInheritanceRenderingInfo",
+                             rendering_color_attachment_count);
         }
     }
 

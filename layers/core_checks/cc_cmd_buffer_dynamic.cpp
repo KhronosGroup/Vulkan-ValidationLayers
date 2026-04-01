@@ -841,16 +841,16 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     if (unset_status_pipeline.any()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4495
-        // It is not invalid to set dynamic state here, but we should warn the user what they are doing may lead to values not being
-        // what they think it should have been
-        skip |= LogWarning("WARNING-Ignored-DynamicState", objlist, loc,
-                           "%s was not created with full VkDynamicState, since the last vkCmdBindPipeline and this %s, the "
-                           "following commands have been ignored and didn't set the state you may think they did.\n%s",
-                           FormatHandle(pipeline).c_str(), String(loc.function),
-                           DynamicStatesCommandsToString(unset_status_pipeline).c_str());
+        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_STATE_ALL_SET_08608), objlist, loc,
+                         "%s doesn't set up %s, but since the vkCmdBindPipeline, the related dynamic state commands (%s) have been "
+                         "called in this command buffer.",
+                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
+                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
+        // Dynamic state was not set, will produce garbage when trying to read to values
+        return skip;
     }
 
+    // Once we know for sure state was set, check value is valid
     skip |= ValidateDrawDynamicStatePipelineValue(last_bound_state, pipeline, loc);
     skip |= ValidateDrawDynamicStatePipelineViewportScissor(last_bound_state, pipeline, loc);
 
@@ -1476,12 +1476,10 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
     } else {
         if (cb_state.dynamic_state_status.rtx_stack_size_pipeline) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4495
-            // We decided this is not invalid, but should be a warning to the user
-            skip |= LogWarning(
-                "WARNING-Ignored-vkCmdSetRayTracingPipelineStackSizeKHR", objlist, loc,
-                "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR, but since the last vkCmdBindPipeline, "
-                "vkCmdSetRayTracingPipelineStackSizeKHR was called and will have no impact on the stack size.",
+            skip |= LogError(
+                CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_STATE_ALL_SET_08608), objlist, loc,
+                "%s doesn't set up VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR,  but since the vkCmdBindPipeline, the "
+                "related dynamic state commands (vkCmdSetRayTracingPipelineStackSizeKHR) have been called in this command buffer.",
                 FormatHandle(pipeline).c_str());
         }
     }
