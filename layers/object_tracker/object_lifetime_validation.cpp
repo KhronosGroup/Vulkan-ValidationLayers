@@ -29,7 +29,8 @@ namespace object_lifetimes {
 static std::shared_mutex lifetime_set_mutex;
 static vvl::unordered_set<Tracker*> lifetime_set;
 
-Instance::Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeObjectTracker), tracker(debug_report) {
+Instance::Instance(vvl::dispatch::Instance* dispatch)
+    : BaseInstance(dispatch, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
 }
@@ -40,7 +41,7 @@ Instance::~Instance() {
 }
 
 Device::Device(vvl::dispatch::Device* dev, Instance* instance)
-    : BaseClass(dev, instance, LayerObjectTypeObjectTracker), tracker(debug_report) {
+    : BaseDevice(dev, instance, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
 }
@@ -201,7 +202,7 @@ void Tracker::SetDeviceHandle(const Device& device) {
 void Tracker::SetInstanceHandle(VkInstance instance) { handle_ = VulkanTypedHandle(instance, kVulkanObjectTypeInstance); }
 
 void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
-    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
+    BaseDevice::FinishDeviceSetup(pCreateInfo, loc);
     tracker.SetDeviceHandle(*this);
 }
 

@@ -149,9 +149,8 @@ class Tracker : public Logger {
     bool is_device_maintenance4_enabled_ = false;
 };
 
-class Instance : public vvl::base::Instance {
+class Instance : public vvl::BaseInstance {
   public:
-    using BaseClass = vvl::base::Instance;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -191,8 +190,7 @@ class Instance : public vvl::base::Instance {
 #include "generated/object_tracker_instance_methods.h"
 };
 
-class Device : public vvl::base::Device {
-    using BaseClass = vvl::base::Device;
+class Device : public vvl::BaseDevice {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;

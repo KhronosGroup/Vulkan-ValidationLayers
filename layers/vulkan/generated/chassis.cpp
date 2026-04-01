@@ -7069,7 +7069,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
             if (!vo) {
                 continue;
             }
-            vvl::base::Device::BlockingOperationGuard lock(vo);
+            vvl::BaseDevice::BlockingOperationGuard lock(vo);
             vo->PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
         }
     }
@@ -7122,7 +7122,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
             if (!vo) {
                 continue;
             }
-            vvl::base::Device::BlockingOperationGuard lock(vo);
+            vvl::BaseDevice::BlockingOperationGuard lock(vo);
             vo->PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
         }
     }
@@ -15034,7 +15034,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
             if (!vo) {
                 continue;
             }
-            vvl::base::Device::BlockingOperationGuard lock(vo);
+            vvl::BaseDevice::BlockingOperationGuard lock(vo);
             vo->PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, record_obj);
         }
     }
@@ -15087,7 +15087,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
             if (!vo) {
                 continue;
             }
-            vvl::base::Device::BlockingOperationGuard lock(vo);
+            vvl::BaseDevice::BlockingOperationGuard lock(vo);
             vo->PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, record_obj);
         }
     }

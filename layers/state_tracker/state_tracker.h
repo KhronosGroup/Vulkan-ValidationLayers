@@ -201,12 +201,11 @@ VALSTATETRACK_STATE_OBJECT(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet)
 VALSTATETRACK_STATE_OBJECT(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout)
 
 namespace vvl {
-class InstanceState : public vvl::base::Instance {
+class InstanceState : public vvl::BaseInstance {
     using Func = vvl::Func;
-    using BaseClass = vvl::base::Instance;
 
   public:
-    InstanceState(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeStateTracker) {}
+    InstanceState(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeStateTracker) {}
 
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -480,14 +479,12 @@ class InstanceState : public vvl::base::Instance {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 };
 
-class InstanceProxy : public vvl::base::Instance {
+class InstanceProxy : public vvl::BaseInstance {
   public:
-    using BaseClass = vvl::base::Instance;
-
     vvl::InstanceState* instance_state;
 
     InstanceProxy(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type)
-        : BaseClass(dispatch, type),
+        : BaseInstance(dispatch, type),
           instance_state(dynamic_cast<vvl::InstanceState*>(dispatch->GetValidationObject(LayerObjectTypeStateTracker))) {}
 
     template <typename State, typename Traits = typename state_object::Traits<State>>
@@ -528,9 +525,8 @@ struct HasSubStates<State,
                     typename std::enable_if_t<std::is_member_function_pointer_v<decltype(&State::SetSubState)>>>
         : std::true_type {};
 
-class DeviceState : public vvl::base::Device {
+class DeviceState : public vvl::BaseDevice {
     using Func = vvl::Func;
-    using BaseClass = vvl::base::Device;
 
   private:
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -2269,9 +2265,7 @@ class DeviceState : public vvl::base::Device {
     std::map<LayerObjectTypeId, DeviceProxy&> proxies;
 };
 
-class DeviceProxy : public vvl::base::Device {
-    using BaseClass = vvl::base::Device;
-
+class DeviceProxy : public vvl::BaseDevice {
   public:
     vvl::DeviceState* device_state{};
     vvl::PhysicalDevice* physical_device_state{};
@@ -2279,7 +2273,7 @@ class DeviceProxy : public vvl::base::Device {
     vvl::InstanceProxy* instance_proxy{};
 
     DeviceProxy(vvl::dispatch::Device* dev, InstanceProxy* instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type),
+        : BaseDevice(dev, instance, type),
           device_state(dynamic_cast<vvl::DeviceState*>(dev->GetValidationObject(LayerObjectTypeStateTracker))),
           physical_device_state(device_state->physical_device_state),
           instance_state(instance->instance_state),

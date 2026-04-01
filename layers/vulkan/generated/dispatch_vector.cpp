@@ -48,13 +48,13 @@ namespace dispatch {
 
 void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                       \
-    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
+    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::BaseDevice::name), typeid(&threadsafety::Device::name),   \
                                 typeid(&stateless::Device::name), typeid(&legacy::Device::name),                          \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
                                 typeid(&syncval::SyncValidator::name), typeid(&gpudump::GpuDump::name), false);
 #define BUILD_DESTROY_DISPATCH_VECTOR(name)                                                                               \
-    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
+    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::BaseDevice::name), typeid(&threadsafety::Device::name),   \
                                 typeid(&stateless::Device::name), typeid(&legacy::Device::name),                          \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
@@ -65,7 +65,7 @@ void Device::InitObjectDispatchVectors() {
                const std::type_info& l_typeid, const std::type_info& ot_typeid, const std::type_info& st_typeid,
                const std::type_info& cv_typeid, const std::type_info& bp_typeid, const std::type_info& ga_typeid,
                const std::type_info& sv_typeid, const std::type_info& gd_typeid, bool is_destroy) {
-            vvl::base::Device* state_tracker = nullptr;
+            vvl::BaseDevice* state_tracker = nullptr;
             auto* intercept_vector = &this->intercept_vectors[id];
             for (auto& vo : this->object_dispatch) {
                 auto* item = vo.get();

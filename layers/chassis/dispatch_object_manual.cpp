@@ -867,7 +867,7 @@ VkResult Instance::GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevi
     return result;
 }
 
-base::Instance* Instance::GetValidationObject(LayerObjectTypeId object_type) const {
+BaseInstance* Instance::GetValidationObject(LayerObjectTypeId object_type) const {
     for (auto& validation_object : object_dispatch) {
         if (validation_object->container_type == object_type) {
             return validation_object.get();
@@ -913,7 +913,7 @@ Device::~Device() {
     }
 }
 
-base::Device* Device::GetValidationObject(LayerObjectTypeId object_type) const {
+BaseDevice* Device::GetValidationObject(LayerObjectTypeId object_type) const {
     for (auto& validation_object : object_dispatch) {
         if (validation_object->container_type == object_type) {
             return validation_object.get();

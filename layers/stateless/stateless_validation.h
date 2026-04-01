@@ -314,8 +314,7 @@ class Context {
     std::string DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
 };
 
-class Instance : public vvl::base::Instance {
-    using BaseClass = vvl::base::Instance;
+class Instance : public vvl::BaseInstance {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -325,7 +324,7 @@ class Instance : public vvl::base::Instance {
     vvl::unordered_map<VkPhysicalDevice, DeviceExtensions> physical_device_extensions{};
     // We have a copy of this in Stateless and vvl::Instance, could move the base::Instance, but we don't have a way to
 
-    Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeParameterValidation) {}
+    Instance(vvl::dispatch::Instance* dispatch) : BaseInstance(dispatch, LayerObjectTypeParameterValidation) {}
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
@@ -444,15 +443,14 @@ class Instance : public vvl::base::Instance {
 #include "generated/stateless_instance_methods.h"
 };
 
-class Device : public vvl::base::Device {
-    using BaseClass = vvl::base::Device;
+class Device : public vvl::BaseDevice {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
   public:
-    Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeParameterValidation), instance(instance_vo) {}
+    Device(vvl::dispatch::Device* dev, Instance* instance_vo)
+        : BaseDevice(dev, instance_vo, LayerObjectTypeParameterValidation), instance(instance_vo) {}
     ~Device() {}
 
     Instance *instance;

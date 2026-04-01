@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
 
 // Aliases to avoid excessive typing. We can't easily auto these away because
-// there are virtual methods in vvl::base::Device which return lock guards
+// there are virtual methods in vvl::BaseDevice which return lock guards
 // and those cannot use return type deduction.
 typedef std::shared_lock<std::shared_mutex> ReadLockGuard;
 typedef std::unique_lock<std::shared_mutex> WriteLockGuard;
