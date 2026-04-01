@@ -606,7 +606,6 @@ class DynamicStateOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-            #include <sstream>
             #include "state_tracker/pipeline_state.h"
 
             VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
@@ -660,16 +659,17 @@ class DynamicStateOutputGenerator(BaseGenerator):
             }
 
             std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states) {
-                std::ostringstream ss;
+                std::string ret;
                 // enum is not zero based
                 for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
                     CBDynamicState status = static_cast<CBDynamicState>(index);
                     if (dynamic_states[status]) {
-                        ss << " - " << DescribeDynamicStateCommand(status) << " (pipeline missing "
-                        << string_VkDynamicState(ConvertToDynamicState(status)) << ")\\n";
+                        if (!ret.empty()) ret.append(", ");
+                        ret.append(DescribeDynamicStateCommand(status));
                     }
                 }
-                return ss.str().c_str();
+                if (ret.empty()) ret.append("(Unknown Dynamic State)");
+                return ret;
             }
             ''')
 
