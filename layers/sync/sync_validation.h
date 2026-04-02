@@ -133,7 +133,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                    const RecordObject &record_obj) override;
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator,
                                           const RecordObject &record_obj) override;
-    bool SuppressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 

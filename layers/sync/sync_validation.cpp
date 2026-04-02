@@ -760,15 +760,6 @@ bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     return PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
 }
 
-// Simple heuristic rule to detect WAW operations representing algorithmically safe or increment
-// updates to a resource which do not conflict at the byte level.
-// TODO: Revisit this rule to see if it needs to be tighter or looser
-// TODO: Add programatic control over suppression heuristics
-bool SyncValidator::SuppressedBoundDescriptorWAW(const HazardResult& hazard) const {
-    assert(hazard.IsHazard());
-    return hazard.IsWAWHazard();
-}
-
 bool SyncValidator::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
                                                         const ErrorObject& error_obj) const {
     return PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);

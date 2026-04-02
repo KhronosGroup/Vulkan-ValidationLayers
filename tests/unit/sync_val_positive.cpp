@@ -2408,12 +2408,14 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     m_default_queue->Wait();
 }
 
-// TODO: this test does not work due to SuppressedBoundDescriptorWAW(). That workaround should be removed.
-// Two possible solutions:
-// a) Try to detect if there is atomic operation in the buffer access chain. If yes, skip validation.
-// b) If a) is hard to do, then this case is in the category that is not handled by the current heuristic
-//    and is part of "Shader access heuristic" is disabled by default direction.
-TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
+// Does not work correctly similar to AtomicAccessFromTwoDispatches. The initial idea that using
+// atomic makes this scenario valid but currently it reports WAW (but check UPDATE comment below).
+// Try to detect if there is atomic operation in the buffer access chain. If yes, skip validation.
+//
+// UPDATE: we need to investigate if this test describes hazard free scenario. Even if different
+// dispatches write to adjacent and non-intersecting memory locations it's not clear if that's fine
+// due to non-coherent GPU accesses and I'm increasingly tend to think this might be a WAW hazard.
+TEST_F(PositiveSyncVal, DISABLED_AtomicAccessFromTwoDispatches2) {
     TEST_DESCRIPTION("Use atomic counter so parallel dispatches write to different locations");
     RETURN_IF_SKIP(InitSyncVal());
 
