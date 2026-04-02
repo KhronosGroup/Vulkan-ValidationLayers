@@ -81,6 +81,7 @@ def VerifyClangFormatSource(commit, target_files):
 # Check no trailing white spaces!
 def VerifyTrailingWhiteSpace(target_files):
     whitespace_pattern = re.compile(r'[ \t]+$', flags=re.MULTILINE)
+    found_any = False
     for file_path in target_files:
         full_path = repo_relative(file_path)
         if not os.path.isfile(full_path):
@@ -89,13 +90,13 @@ def VerifyTrailingWhiteSpace(target_files):
             with open(repo_relative(full_path), 'r', encoding='utf-8', errors='ignore') as f:
                 for line_number, line in enumerate(f, 1):
                     if whitespace_pattern.search(line):
-                        print(f"-------------- WHITE SPACE! --------------\nFound trailing white space in {file_path} at line {line_number}")
-                        return 1
+                        print(f"Trailing white space in {file_path} at line {line_number}")
+                        found_any = True
         except FileNotFoundError:
             print(f"Warning: File not found at '{file_path}'. Skipping.")
         except Exception as e:
             print(f"Error reading file '{file_path}': {e}")
-    return 0
+    return 1 if found_any else 0
 #
 #
 # Check copyright dates for modified files

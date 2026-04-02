@@ -77,6 +77,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_STRING_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_SHARED_MEMORY_DATA_RACE, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
+        else if (strcmp(VK_LAYER_GPUAV_VALIDATE_TRACE_RAY, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_LEGACY_DETECTION, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_LOG_FILENAME, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_STRING_EXT; }

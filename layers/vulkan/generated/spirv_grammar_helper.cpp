@@ -2160,15 +2160,66 @@ static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatri
 }
 
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
-    std::string ret;
-    while (mask) {
-        if (mask & 1) {
-            if (!ret.empty()) ret.append("|");
-            ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(1U << mask)));
-        }
-        mask >>= 1;
+    if (mask == 0) {
+        return "CooperativeMatrixOperandsMask(0)";
     }
-    if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
+    std::string ret;
+    for (uint32_t bit = 1; mask != 0; bit <<= 1, mask >>= 1) {
+        if (mask & 1) {
+            if (!ret.empty()) {
+                ret.append("|");
+            }
+            ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(bit)));
+        }
+    }
+    return ret;
+}
+
+static const char* string_SpvRayFlagsBit(spv::RayFlagsMask mask) {
+    switch (mask) {
+        case spv::RayFlagsMaskNone:
+            return "None";
+        case spv::RayFlagsOpaqueKHRMask:
+            return "OpaqueKHR";
+        case spv::RayFlagsNoOpaqueKHRMask:
+            return "NoOpaqueKHR";
+        case spv::RayFlagsTerminateOnFirstHitKHRMask:
+            return "TerminateOnFirstHitKHR";
+        case spv::RayFlagsSkipClosestHitShaderKHRMask:
+            return "SkipClosestHitShaderKHR";
+        case spv::RayFlagsCullBackFacingTrianglesKHRMask:
+            return "CullBackFacingTrianglesKHR";
+        case spv::RayFlagsCullFrontFacingTrianglesKHRMask:
+            return "CullFrontFacingTrianglesKHR";
+        case spv::RayFlagsCullOpaqueKHRMask:
+            return "CullOpaqueKHR";
+        case spv::RayFlagsCullNoOpaqueKHRMask:
+            return "CullNoOpaqueKHR";
+        case spv::RayFlagsSkipTrianglesKHRMask:
+            return "SkipTrianglesKHR";
+        case spv::RayFlagsSkipAABBsKHRMask:
+            return "SkipAABBsKHR";
+        case spv::RayFlagsForceOpacityMicromap2StateEXTMask:
+            return "ForceOpacityMicromap2StateEXT";
+
+        default:
+            return "Unknown RayFlagsMask";
+    }
+}
+
+std::string string_SpvRayFlagsMask(uint32_t mask) {
+    if (mask == 0) {
+        return "RayFlagsMask(0)";
+    }
+    std::string ret;
+    for (uint32_t bit = 1; mask != 0; bit <<= 1, mask >>= 1) {
+        if (mask & 1) {
+            if (!ret.empty()) {
+                ret.append("|");
+            }
+            ret.append(string_SpvRayFlagsBit(static_cast<spv::RayFlagsMask>(bit)));
+        }
+    }
     return ret;
 }
 

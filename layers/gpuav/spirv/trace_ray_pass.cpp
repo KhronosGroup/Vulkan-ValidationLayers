@@ -1,5 +1,4 @@
 /* Copyright (c) 2024-2026 LunarG, Inc.
- * Copyright (c) 2020-2026 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +13,8 @@
  * limitations under the License.
  */
 
-#include "ray_query_pass.h"
+#include "trace_ray_pass.h"
+
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -24,48 +24,42 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineModule kOfflineModule = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size,
+const static OfflineModule kOfflineModule = {instrumentation_trace_ray_comp, instrumentation_trace_ray_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunction = {"inst_ray_query_comp", instrumentation_ray_query_comp_function_0_offset};
+const static OfflineFunction kOfflineFunction = {"inst_trace_ray_comp", instrumentation_trace_ray_comp_function_0_offset};
 
-RayQueryPass::RayQueryPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
+TraceRayPass::TraceRayPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t RayQueryPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
+uint32_t TraceRayPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+uint32_t TraceRayPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
-    const uint32_t ray_flags_id = meta.target_instruction->Operand(2);
-    const uint32_t ray_origin_id = meta.target_instruction->Operand(4);
-    const uint32_t ray_tmin_id = meta.target_instruction->Operand(5);
-    const uint32_t ray_direction_id = meta.target_instruction->Operand(6);
-    const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
+    const uint32_t ray_flags_id = meta.target_instruction->Operand(1);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_id, ray_flags_id, ray_origin_id, ray_tmin_id,
-                             ray_direction_id, ray_tmax_id},
+    block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, inst_position_id, ray_flags_id},
                             inst_it);
     module_.need_log_error_ = true;
     return function_result;
 }
 
-bool RayQueryPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
+bool TraceRayPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
-    if (opcode != spv::OpRayQueryInitializeKHR) {
+    if (opcode != spv::OpTraceRayKHR) {
         return false;
     }
     meta.target_instruction = &inst;
     return true;
 }
 
-bool RayQueryPass::Instrument() {
+bool TraceRayPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (Function& function : module_.functions_) {
         if (!function.called_from_target_) {
@@ -86,6 +80,7 @@ bool RayQueryPass::Instrument() {
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
+
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*(inst_it->get()), meta)) {
                     continue;
@@ -114,8 +109,8 @@ bool RayQueryPass::Instrument() {
     return instrumentations_count_ != 0;
 }
 
-void RayQueryPass::PrintDebugInfo() const {
-    std::cout << "RayQueryPass instrumentation count: " << instrumentations_count_ << '\n';
+void TraceRayPass::PrintDebugInfo() const {
+    std::cout << "TraceRayPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

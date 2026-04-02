@@ -180,6 +180,11 @@ khronos_validation.gpuav_shared_memory_data_race = true
 # Enable shader instrumentation on OpRayQueryInitializeKHR
 khronos_validation.gpuav_validate_ray_query = true
 
+# TraceRay SPIR-V instructions
+# =====================
+# Enable shader instrumentation on OpTraceRayKHR
+khronos_validation.gpuav_validate_trace_ray = true
+
 # Out of bounds vertex attribute fetching
 # =====================
 # Validate that no vertex attribute fetching is out of bonds

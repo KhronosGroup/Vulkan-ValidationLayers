@@ -65,6 +65,7 @@ struct GpuAVSettings {
         bool ray_hit_object = true;
         bool mesh_shading = true;
         bool post_process_descriptor_indexing = true;
+        bool trace_ray = true;
         bool vertex_attribute_fetch_oob = true;
         bool sanitizer = true;
         bool shared_memory_data_race = true;

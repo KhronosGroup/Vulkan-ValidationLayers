@@ -874,6 +874,21 @@
                                             }
                                         },
                                         {
+                                            "key": "gpuav_validate_trace_ray",
+                                            "label": "TraceRay SPIR-V instructions",
+                                            "description": "Enable shader instrumentation on OpTraceRayKHR",
+                                            "type": "BOOL",
+                                            "view": "DEBUG",
+                                            "default": true,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            }
+                                        },
+                                        {
                                             "key": "gpuav_vertex_attribute_fetch_oob",
                                             "label": "Out of bounds vertex attribute fetching",
                                             "description": "Validate that no vertex attribute fetching is out of bonds",
