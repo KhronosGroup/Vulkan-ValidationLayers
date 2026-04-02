@@ -185,7 +185,7 @@ struct OutputRecord {
     uint32_t values;             // place holder to be casted to get rest of items in record
 };
 
-struct DebugPrintfBufferInfo {
+struct BufferInfo {
     // The buffer where DebugPrintf data was written to (and need to report)
     vko::BufferRange output_mem_buffer;
     // Same as GPU-AV, we need these to generate details in error message where error occured in the CmdBuffer
@@ -194,19 +194,19 @@ struct DebugPrintfBufferInfo {
     // Before the draw/dispatch/etc we can save the pipeline/shaderObject that are being used
     LogObjectList objlist;
 
-    DebugPrintfBufferInfo(vko::BufferRange output_mem_buffer, VkPipelineBindPoint pipeline_bind_point,
-                          uint32_t action_command_index, const LogObjectList& objlist)
+    BufferInfo(vko::BufferRange output_mem_buffer, VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index,
+               const LogObjectList& objlist)
         : output_mem_buffer(output_mem_buffer),
           pipeline_bind_point(pipeline_bind_point),
           action_command_index(action_command_index),
           objlist(objlist) {};
 };
 
-struct DebugPrintfCbState {
-    std::vector<DebugPrintfBufferInfo> buffer_infos;
+struct CbState {
+    std::vector<debug_printf::BufferInfo> buffer_infos;
 };
 
-void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, DebugPrintfBufferInfo& buffer_info,
+void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, debug_printf::BufferInfo& buffer_info,
                                const uint32_t* debug_output_buffer, const Location& loc) {
     uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintf_OutputBuffer_DWordsCount];
     if (!output_buffer_dwords_counts) return;
@@ -410,7 +410,7 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
 
     cb_state.on_instrumentation_common_desc_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location&, CommonDescriptorUpdate& out_update) {
+            CommandBufferSubState& cb, const LastBound& last_bound, const Location&, CommonDescriptorUpdate& out_update) {
             vko::BufferRange output_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
             std::memset(output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
 
@@ -421,7 +421,8 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
 
             out_update.binding = glsl::kBindingInstDebugPrintf;
 
-            DebugPrintfCbState& debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
+            const VkPipelineBindPoint bind_point = last_bound.bind_point;
+            debug_printf::CbState& debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<debug_printf::CbState>();
             debug_printf_cb_state.buffer_infos.emplace_back(output_buffer, bind_point, cb.GetActionCommandIndex(bind_point),
                                                             cb.base.GetObjectList(bind_point));
         });
@@ -429,13 +430,13 @@ void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state) {
     cb_state.on_cb_completion_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
                                                         const CommandBufferSubState::LabelLogging& label_logging,
                                                         const Location& loc) {
-        DebugPrintfCbState* debug_printf_cb_state = cb.shared_resources_cache.TryGet<DebugPrintfCbState>();
+        debug_printf::CbState* debug_printf_cb_state = cb.shared_resources_cache.TryGet<debug_printf::CbState>();
         if (!debug_printf_cb_state) {
             return true;
         }
-        for (DebugPrintfBufferInfo& printf_buffer_info : debug_printf_cb_state->buffer_infos) {
-            auto printf_output_ptr = (char*)printf_buffer_info.output_mem_buffer.offset_mapped_ptr;
-            debug_printf::AnalyzeAndGenerateMessage(gpuav, cb.VkHandle(), printf_buffer_info, (uint32_t*)printf_output_ptr, loc);
+        for (debug_printf::BufferInfo& buffer_info : debug_printf_cb_state->buffer_infos) {
+            uint32_t* output_ptr = (uint32_t*)buffer_info.output_mem_buffer.offset_mapped_ptr;
+            debug_printf::AnalyzeAndGenerateMessage(gpuav, cb.VkHandle(), buffer_info, output_ptr, loc);
         }
         return true;
     });
