@@ -21,6 +21,7 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 #include "containers/container_utils.h"
+#include "utils/image_utils.h"
 
 namespace stateless {
 // Traits objects to allow string_join to operate on collections of const char *
@@ -909,16 +910,16 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
 
     if (pImageFormatInfo != nullptr) {
         const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
-        const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext);
-        if (image_stencil_struct != nullptr) {
-            if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
+        const auto stencil_usage = GetImageStencilUsageFlags(pImageFormatInfo->pNext);
+        if (stencil_usage.has_value()) {
+            if ((stencil_usage.value() & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
                 VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
                 // No flags other than the legal attachment bits may be set
                 legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-                if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
+                if ((stencil_usage.value() & ~legal_flags) != 0) {
                     skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", physicalDevice,
                                      format_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
-                                     string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
+                                     string_VkImageUsageFlags(stencil_usage.value()).c_str());
                 }
             }
         }

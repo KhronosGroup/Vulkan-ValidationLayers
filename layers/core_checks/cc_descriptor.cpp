@@ -1244,10 +1244,10 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
                                  string_VkDescriptorType(type));
             }
 
-            if (!(image_state->create_info.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
+            if (!(image_state->create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
                 skip |= LogError("VUID-VkDescriptorImageInfo-imageView-07796", objlist, image_info_loc.dot(Field::imageView),
                                  "is VK_IMAGE_VIEW_TYPE_2D, the image is VK_IMAGE_VIEW_TYPE_3D, but the image was created with %s.",
-                                 string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                                 string_VkImageCreateFlags(image_state->create_flags).c_str());
             }
         }
     }
@@ -2199,12 +2199,12 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                         if (vkuFormatIsMultiplane(image_state->GetFormat())) {
                             // multiplane formats must be created with mutable format bit
                             const VkFormat image_format = image_state->GetFormat();
-                            if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+                            if ((image_state->create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) {
                                 const LogObjectList objlist(update.dstSet, image_state->Handle());
                                 skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
                                                  "combined image sampler is a multi-planar format %s and was created with %s.",
                                                  string_VkFormat(image_format),
-                                                 string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                                                 string_VkImageCreateFlags(image_state->create_flags).c_str());
                             }
                             const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
                             if (!IsValidPlaneAspect(image_format, image_aspect)) {
@@ -3027,10 +3027,10 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice 
     }
 
     if (auto image_state = Get<vvl::Image>(pInfo->image)) {
-        if (!(image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+        if (!(image_state->create_flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkImageCaptureDescriptorDataInfoEXT-image-08079", pInfo->image,
                              error_obj.location.dot(Field::pInfo).dot(Field::image), "is %s.",
-                             string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                             string_VkImageCreateFlags(image_state->create_flags).c_str());
         }
     }
 
@@ -5320,7 +5320,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             const VkImageViewCreateInfo& image_view_ci = *image_info->pView;
             const auto image_state = Get<vvl::Image>(image_view_ci.image);
             ASSERT_AND_CONTINUE(image_state);
-            if ((image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
+            if ((image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
                 VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
                 VkSubsampledImageFormatPropertiesEXT subsampled_image_format_info = vku::InitStructHelper();
                 VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&subsampled_image_format_info);
@@ -5372,7 +5372,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      string_VkDescriptorType(resource.type));
                 }
                 if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D &&
-                    (image_state->create_info.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) == 0) {
+                    (image_state->create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) == 0) {
                     skip |= LogError("VUID-VkImageDescriptorInfoEXT-pView-11427", image_view_ci.image,
                                      data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::viewType),
                                      "has been created with VK_IMAGE_VIEW_TYPE_2D, while underlying image is created with "
@@ -5433,18 +5433,19 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             skip |= ValidateImageViewCreateInfo(image_view_ci, data_loc.dot(Field::pImage).dot(Field::pView));
             if (IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                           VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
-                VkImageUsageFlags usage = resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE   ? VK_IMAGE_USAGE_SAMPLED_BIT
-                                          : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? VK_IMAGE_USAGE_STORAGE_BIT
-                                                                                              : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-                if ((image_state->create_info.usage & usage) == 0) {
+                const VkImageUsageFlags usage = resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ? VK_IMAGE_USAGE_SAMPLED_BIT
+                                                : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+                                                    ? VK_IMAGE_USAGE_STORAGE_BIT
+                                                    : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+                if ((image_state->usage & usage) == 0) {
                     const char* vuid =
                         resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE   ? "VUID-VkResourceDescriptorInfoEXT-type-11458"
                         : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? "VUID-VkResourceDescriptorInfoEXT-type-11459"
                                                                             : "VUID-VkResourceDescriptorInfoEXT-type-11460";
                     skip |= LogError(vuid, image_state->VkHandle(), data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::image),
                                      "was created with usages %s, but required %s is missing.\npResources[%" PRIu32 "].type = %s",
-                                     string_VkImageUsageFlags(image_state->create_info.usage).c_str(),
-                                     string_VkImageUsageFlags(usage).c_str(), i, string_VkDescriptorType(resource.type));
+                                     string_VkImageUsageFlags(image_state->usage).c_str(), string_VkImageUsageFlags(usage).c_str(),
+                                     i, string_VkDescriptorType(resource.type));
                 }
             }
         }
@@ -5544,11 +5545,11 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
         }
         auto image_state = Get<vvl::Image>(pImages[i]);
         ASSERT_AND_CONTINUE(image_state);
-        if ((image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) == 0) {
+        if ((image_state->create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) == 0) {
             skip |=
                 LogError("VUID-vkGetImageOpaqueCaptureDataEXT-pImages-11285", pImages[i], error_obj.location.dot(Field::pImage, i),
                          "was created with %s, but needs to have VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT.",
-                         string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                         string_VkImageCreateFlags(image_state->create_flags).c_str());
         }
     }
 

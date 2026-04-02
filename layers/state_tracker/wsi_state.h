@@ -91,6 +91,8 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
   public:
     const vku::safe_VkSwapchainCreateInfoKHR safe_create_info;
     const VkSwapchainCreateInfoKHR& create_info;
+    // VkImageUsageFlags2CreateInfoKHR can be used instead of the VkSwapchainCreateInfoKHR::imageUsage
+    const VkImageUsageFlags image_usage;
 
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<SwapchainImage> images;

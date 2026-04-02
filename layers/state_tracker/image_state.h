@@ -75,10 +75,23 @@ namespace vvl {
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
 //
+
 class Image : public Bindable, public SubStateManager<ImageSubState> {
-  public:
+    // We normally want to allow full access to the |create_info|
+    // but due to things, such as VkImageUsageFlags2CreateInfo, it is really easy
+    // to not realize that |create_info.usage| is the wrong usage and you need to check the pNext.
+    // The answer is for these cases, to force a getter function for the entire |create_info| to prevent bugs
     const vku::safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &create_info;
+
+  public:
+    // VkImageCreateFlags2CreateInfoKHR can be used instead of the VkImageCreateInfo::flags
+    const VkImageCreateFlags create_flags;
+    // VkImageUsageFlags2CreateInfoKHR can be used instead of the VkImageCreateInfo::usage
+    const VkImageUsageFlags usage;
+
+    // Provided by either VkImageStencilUsage2CreateInfo or VkImageStencilUsageCreateInfo and 0 otherwise
+    std::optional<VkImageUsageFlags> stencil_usage;
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
     const uint64_t ahb_format;                 // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
@@ -134,7 +147,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     VkImageTiling GetTiling() const { return create_info.tiling; }
     VkSharingMode GetSharingMode() const { return create_info.sharingMode; }
     uint32_t GetQueueFamilyIndexCount() const { return create_info.queueFamilyIndexCount; }
-    const uint32_t* GetQueueFamilyIndices() const { return create_info.pQueueFamilyIndices; }
+    const uint32_t *GetQueueFamilyIndices() const { return create_info.pQueueFamilyIndices; }
     VkImageLayout GetInitialLayout() const { return create_info.initialLayout; }
 
     VkPhysicalDeviceImageFormatInfo2 GetImageFormatInfo2(void* pNext = nullptr) const;
@@ -143,12 +156,14 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     bool IsCompatibleAliasing(const Image *other_image_state) const;
 
     // returns true if this image could be using the same memory as another image
-    bool HasAliasFlag() const { return 0 != (create_info.flags & VK_IMAGE_CREATE_ALIAS_BIT); }
+    bool HasAliasFlag() const { return 0 != (create_flags & VK_IMAGE_CREATE_ALIAS_BIT); }
     bool CanAlias() const { return HasAliasFlag() || bind_swapchain; }
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const;
-    bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const;
+    bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const Image &other_image_state) const;
     bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
+
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageAspectFlags aspect_mask, const uint32_t mip_level) const;
 
     // TODO - need to understand if VkBindImageMemorySwapchainInfoKHR counts as "bound"
     bool HasBeenBound() const { return (MemoryState() != nullptr) || (bind_swapchain); }
@@ -161,9 +176,6 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     }
     inline bool IsMipLevelsEqual(const VkImageCreateInfo &other_create_info) const {
         return create_info.mipLevels == other_create_info.mipLevels;
-    }
-    inline bool IsUsageEqual(const VkImageCreateInfo &other_create_info) const {
-        return create_info.usage == other_create_info.usage;
     }
     inline bool IsSamplesEqual(const VkImageCreateInfo &other_create_info) const {
         return create_info.samples == other_create_info.samples;
@@ -185,10 +197,10 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
                (create_info.extent.height == other_create_info.extent.height) &&
                (create_info.extent.depth == other_create_info.extent.depth);
     }
-    inline bool IsQueueFamilyIndicesEqual(const VkImageCreateInfo &other_create_info) const {
-        return (create_info.queueFamilyIndexCount == other_create_info.queueFamilyIndexCount) &&
+    inline bool IsQueueFamilyIndicesEqual(uint32_t queueFamilyIndexCount, const uint32_t* pQueueFamilyIndices) const {
+        return (create_info.queueFamilyIndexCount == queueFamilyIndexCount) &&
                (create_info.queueFamilyIndexCount == 0 ||
-                memcmp(create_info.pQueueFamilyIndices, other_create_info.pQueueFamilyIndices,
+                memcmp(create_info.pQueueFamilyIndices, pQueueFamilyIndices,
                        create_info.queueFamilyIndexCount * sizeof(create_info.pQueueFamilyIndices[0])) == 0);
     }
 

@@ -696,7 +696,7 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
         format_features =
             instance_state->GetImageFormatFeatures(physical_device, special_supported.vk_khr_format_feature_flags2,
                                                    IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
-                                                   image_state->VkHandle(), pCreateInfo->format, image_state->create_info.tiling);
+                                                   image_state->VkHandle(), pCreateInfo->format, image_state->GetTiling());
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
@@ -705,12 +705,12 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
         VkPhysicalDeviceImageViewImageFormatInfoEXT imageview_format_info = vku::InitStructHelper();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
         VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&imageview_format_info);
-        image_format_info.type = image_state->create_info.imageType;
-        image_format_info.format = image_state->create_info.format;
-        image_format_info.tiling = image_state->create_info.tiling;
+        image_format_info.type = image_state->GetImageType();
+        image_format_info.format = image_state->GetFormat();
+        image_format_info.tiling = image_state->GetTiling();
         auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext);
-        image_format_info.usage = usage_create_info ? usage_create_info->usage : image_state->create_info.usage;
-        image_format_info.flags = image_state->create_info.flags;
+        image_format_info.usage = usage_create_info ? usage_create_info->usage : (VkImageUsageFlags)image_state->usage;
+        image_format_info.flags = (VkImageCreateFlags)image_state->create_flags;
 
         VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&filter_cubic_props);
 

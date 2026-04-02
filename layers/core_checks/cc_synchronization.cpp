@@ -1803,9 +1803,8 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
     const VkImage image = image_state.VkHandle();
     assert(image == barrier.image);
 
-    const VkImageCreateInfo& image_ci = image_state.create_info;
     const Location image_loc = barrier_loc.dot(Field::image);
-    const VkFormat image_format = image_ci.format;
+    const VkFormat image_format = image_state.GetFormat();
     const VkImageLayout old_layout = barrier.oldLayout;
     const VkImageLayout new_layout = barrier.newLayout;
 
@@ -1814,17 +1813,16 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
     const bool has_stencil_aspect = (barrier_aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
     skip |= ValidateBarrierQueueFamilies(cb_state.Handle(), barrier_loc, image_loc, barrier, image_state.Handle(),
-                                         image_ci.sharingMode, cb_state.command_pool->queueFamilyIndex);
+                                         image_state.GetSharingMode(), cb_state.command_pool->queueFamilyIndex);
     const auto& vuid_aspect = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kAspectMask);
-    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_ci.format, barrier.subresourceRange.aspectMask,
+    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_state.GetFormat(), barrier.subresourceRange.aspectMask,
                                     image_state.disjoint, image_loc, vuid_aspect.c_str());
-    skip |= ValidateImageBarrierSubresourceRange(image_ci, barrier.subresourceRange, image_state, cb_state.Handle(),
+    skip |= ValidateImageBarrierSubresourceRange(barrier.subresourceRange, image_state, cb_state.Handle(),
                                                  barrier_loc.dot(Field::subresourceRange));
 
     if ((barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) || (old_layout != new_layout)) {
-        const VkImageUsageFlags usage_flags = image_ci.usage;
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, usage_flags);
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, usage_flags);
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, image_state.usage);
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, image_state.usage);
     }
 
     // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked

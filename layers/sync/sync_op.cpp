@@ -296,7 +296,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const 
 
             // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
             if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-                CanTransitionDepthSlices(extensions, image->create_info)) {
+                CanTransitionDepthSlices(extensions, image->GetImageType(), image->create_flags)) {
                 subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
             }
 
@@ -319,7 +319,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
 
             // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
             if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-                CanTransitionDepthSlices(extensions, image->create_info)) {
+                CanTransitionDepthSlices(extensions, image->GetImageType(), image->create_flags)) {
                 subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
             }
 
@@ -376,7 +376,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext& cb_contex
         }
         const vvl::Image& image_state = *image_barrier.image;
         const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(cb_context.GetSyncState().extensions, image_state.create_info);
+            CanTransitionDepthSlices(cb_context.GetSyncState().extensions, image_state.GetImageType(), image_state.create_flags);
         const auto hazard = context->DetectImageBarrierHazard(
             image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
             image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll);
@@ -436,7 +436,7 @@ void SyncOpPipelineBarrier::ApplySingleImageBarrier(CommandExecutionContext& exe
 
     const auto& sub_state = SubState(*image_barrier.image);
     const bool can_transition_depth_slices =
-        CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+        CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
     auto range_gen = sub_state.MakeImageRangeGen(image_barrier.subresource_range, can_transition_depth_slices);
 
     access_context->UpdateMemoryAccessState(apply_barrier, range_gen);
@@ -473,8 +473,8 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext& exec_
     }
     for (const SyncImageBarrier& barrier : barrier_set_.image_barriers) {
         const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+        const bool can_transition_depth_slices = CanTransitionDepthSlices(exec_context.GetSyncState().extensions,
+                                                                          sub_state.base.GetImageType(), sub_state.base.create_flags);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
         // TODO: check if we need: barrier.layout_transition && (queue_id == kQueueIdInvalid)
         ApplyMarkupFunctor markup_action(barrier.layout_transition);
@@ -501,8 +501,8 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext& exec_
                                                 barrier.handle_index, pending_barriers);
 
         const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+        const bool can_transition_depth_slices = CanTransitionDepthSlices(
+            exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
 
         access_context->UpdateMemoryAccessState(collect_barriers, range_gen);
@@ -853,8 +853,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
             }
             for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
                 const auto& sub_state = SubState(*barrier.image);
-                const bool can_transition_depth_slices =
-                    CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+                const bool can_transition_depth_slices = CanTransitionDepthSlices(
+                    exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
                 EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
                 ApplyMarkupFunctor markup_action(barrier.layout_transition);
@@ -903,8 +903,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext& exec_context, Resou
                                                         barrier.handle_index, pending_barriers);
 
                 const auto& sub_state = SubState(*barrier.image);
-                const bool can_transition_depth_slices =
-                    CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
+                const bool can_transition_depth_slices = CanTransitionDepthSlices(
+                    exec_context.GetSyncState().extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
                 EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
 

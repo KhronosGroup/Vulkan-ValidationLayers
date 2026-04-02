@@ -542,8 +542,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                      const VkVideoProfileListInfoKHR* profile_list) const;
     std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                      const VkVideoProfileInfoKHR* profile) const;
-    bool IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileListInfoKHR* profile_list) const;
-    bool IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileInfoKHR* profile) const;
+    bool IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+                                VkImageTiling tiling, const VkVideoProfileListInfoKHR* profile_list) const;
+    bool IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+                                VkImageTiling tiling, const VkVideoProfileInfoKHR* profile) const;
     bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
     bool IsBufferCompatibleWithVideoSession(const vvl::Buffer& buffer_state, const vvl::VideoSession& vs_state) const;
     bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const;
@@ -1037,11 +1039,14 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;
 
-    bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc) const;
+    bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const VkImageCreateFlags create_flags,
+                                     const Location& loc) const;
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage,
                             const ErrorObject& error_obj) const;
-    bool ValidateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
     bool ValidateImageExternalMemory(const VkImageCreateInfo& create_info, const Location& create_info_loc,
                                      VkPhysicalDeviceImageFormatInfo2& image_format_info) const;
 
@@ -1066,7 +1071,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                          const Location& dg_shader_ci_loc, const vvl::Pipeline& pipeline) const;
     bool ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const VkDataGraphPipelineConstantARM& constant,
                                                   const Location& constant_loc, const vvl::Pipeline& pipeline) const;
-    bool ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info, const Location& create_info_loc, const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci, const vvl::Pipeline& pipeline) const;
+    bool ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                    const Location& create_info_loc,
+                                                    const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
+                                                    const vvl::Pipeline& pipeline) const;
     bool ValidateDataGraphOperations(const vvl::Pipeline& pipeline, uint32_t queueFamilyIndex, const Location& loc) const;
 
     bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -1265,7 +1273,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                const VkAttachmentDescription2& attachment_description,
                                                const Location& layout_loc) const;
 
-    bool ValidateImageUsageFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state, VkImageUsageFlags desired,
+    bool ValidateImageUsageFlags(VkCommandBuffer commandBuffer, const vvl::Image& image_state, VkImageUsageFlags desired,
                                  bool strict, const char* vuid, const Location& image_loc) const;
 
     bool ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state,
@@ -1295,17 +1303,16 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCreateImageViewSubresourceRange(const vvl::Image& image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange, const Location& loc) const;
 
-    bool ValidateCmdClearColorSubresourceRange(const VkImageCreateInfo& create_info,
+    bool ValidateCmdClearColorSubresourceRange(const vvl::Image& image_state,
                                                const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
                                                const Location& loc) const;
 
-    bool ValidateCmdClearDepthSubresourceRange(const VkImageCreateInfo& create_info,
+    bool ValidateCmdClearDepthSubresourceRange(const vvl::Image& image_state,
                                                const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
                                                const Location& loc) const;
 
-    bool ValidateImageBarrierSubresourceRange(const VkImageCreateInfo& create_info, const VkImageSubresourceRange& subresourceRange,
-                                              const vvl::Image& image_state, const LogObjectList& objlist,
-                                              const Location& loc) const;
+    bool ValidateImageBarrierSubresourceRange(const VkImageSubresourceRange& subresourceRange, const vvl::Image& image_state,
+                                              const LogObjectList& objlist, const Location& loc) const;
 
     bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkFormat view_format,
                                          const VkImageUsageFlags image_usage, const Location& create_info_loc) const;
@@ -1432,7 +1439,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
                                             const ErrorObject& error_obj) const override;
 
-    bool ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                    const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
                                         const Location& create_info_loc) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,

@@ -478,6 +478,8 @@ vvl_sources = [
   "layers/vulkan/generated/enum_flag_bits.h",
   "layers/vulkan/generated/error_location_helper.cpp",
   "layers/vulkan/generated/error_location_helper.h",
+  "layers/vulkan/generated/extended_flags_helper_generator.h",
+  "layers/vulkan/generated/extended_flags_helper_generator.cpp",
   "layers/vulkan/generated/feature_requirements_helper.cpp",
   "layers/vulkan/generated/feature_requirements_helper.h",
   "layers/vulkan/generated/feature_not_present.cpp",

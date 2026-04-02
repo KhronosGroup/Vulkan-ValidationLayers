@@ -870,7 +870,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 }
             }
         }
-        if ((image_state->create_info.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
+        if ((image_state->create_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
             (sampler_state->create_info.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
              sampler_state->create_info.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
              sampler_state->create_info.addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)) {
@@ -918,7 +918,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     "the %s (%s) was created with levelCount of %s, but %s was created with "
                     "unnormalizedCoordinates.%s",
                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
-                    string_LevelCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    string_LevelCount(image_state->GetMipLevels(), image_view_ci.subresourceRange).c_str(),
                     FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (subresource_range.layerCount != 1) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
@@ -927,7 +927,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     "the %s (%s) was created with layerCount of %s, but %s was created with "
                     "unnormalizedCoordinates.%s",
                     DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
-                    string_LayerCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    string_LayerCount(image_state->GetArrayLayers(), image_view_ci.subresourceRange).c_str(),
                     FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (image_insn.is_sampler_implicitLod_dref_proj) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*

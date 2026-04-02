@@ -184,7 +184,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     // make sure this type is actually used.
     // This warning will only trigger if this layer is run on a platform that supports LAZILY_ALLOCATED_BIT
     // (i.e.most tile - based renderers)
-    if (image_state->create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
+    if (image_state->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
         bool supports_lazy = false;
         uint32_t suggested_type = 0;
 

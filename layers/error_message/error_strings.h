@@ -83,11 +83,11 @@ class DeviceState;
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_LevelCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+[[maybe_unused]] static std::string string_LevelCount(uint32_t mipLevels, VkImageSubresourceRange const &range) {
     std::ostringstream ss;
     if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
-        const uint32_t level_count = ci.mipLevels - range.baseMipLevel;
-        ss << "VK_REMAINING_MIP_LEVELS [mipLevels (" << ci.mipLevels << ") - baseMipLevel (" << range.baseMipLevel
+        const uint32_t level_count = mipLevels - range.baseMipLevel;
+        ss << "VK_REMAINING_MIP_LEVELS [mipLevels (" << mipLevels << ") - baseMipLevel (" << range.baseMipLevel
            << ") = " << level_count << "]";
     } else {
         ss << range.levelCount;
@@ -95,11 +95,11 @@ class DeviceState;
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+[[maybe_unused]] static std::string string_LayerCount(uint32_t arrayLayers, VkImageSubresourceRange const &range) {
     std::ostringstream ss;
     if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const uint32_t layer_count = ci.arrayLayers - range.baseArrayLayer;
-        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << range.baseArrayLayer
+        const uint32_t layer_count = arrayLayers - range.baseArrayLayer;
+        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << arrayLayers << ") - baseArrayLayer (" << range.baseArrayLayer
            << ") = " << layer_count << "]";
     } else {
         ss << range.layerCount;
@@ -107,11 +107,11 @@ class DeviceState;
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceLayers const &resource) {
+[[maybe_unused]] static std::string string_LayerCount(uint32_t arrayLayers, VkImageSubresourceLayers const &resource) {
     std::ostringstream ss;
     if (resource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const uint32_t layer_count = ci.arrayLayers - resource.baseArrayLayer;
-        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << resource.baseArrayLayer
+        const uint32_t layer_count = arrayLayers - resource.baseArrayLayer;
+        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << arrayLayers << ") - baseArrayLayer (" << resource.baseArrayLayer
            << ") = " << layer_count << "]";
     } else {
         ss << resource.layerCount;
@@ -161,24 +161,18 @@ class DeviceState;
 [[maybe_unused]] static std::string string_VkBool32(VkBool32 value) { return value ? "VK_TRUE" : "VK_FALSE"; }
 
 // Some VUs use the subset in VkPhysicalDeviceImageFormatInfo2 to refer to an VkImageCreateInfo
-[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkPhysicalDeviceImageFormatInfo2 info) {
-    std::ostringstream ss;
-    ss << "format (" << string_VkFormat(info.format) << ")\n";
-    ss << "type (" << string_VkImageType(info.type) << ")\n";
-    ss << "tiling (" << string_VkImageTiling(info.tiling) << ")\n";
-    ss << "usage (" << string_VkImageUsageFlags(info.usage) << ")\n";
-    ss << "flags (" << string_VkImageCreateFlags(info.flags) << ")\n";
-    return ss.str();
-}
+std::string string_VkPhysicalDeviceImageFormatInfo2(VkPhysicalDeviceImageFormatInfo2 info);
 
 // Same thing as VkPhysicalDeviceImageFormatInfo2 but given the actual VkImageCreateInfo
-[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkImageCreateInfo info) {
+[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkImageCreateFlags flags, VkImageUsageFlags usage,
+                                                                            VkFormat format, VkImageType imageType,
+                                                                            VkImageTiling tiling) {
     std::ostringstream ss;
-    ss << "format (" << string_VkFormat(info.format) << ")\n";
-    ss << "type (" << string_VkImageType(info.imageType) << ")\n";
-    ss << "tiling (" << string_VkImageTiling(info.tiling) << ")\n";
-    ss << "usage (" << string_VkImageUsageFlags(info.usage) << ")\n";
-    ss << "flags (" << string_VkImageCreateFlags(info.flags) << ")\n";
+    ss << "format (" << string_VkFormat(format) << ")\n";
+    ss << "type (" << string_VkImageType(imageType) << ")\n";
+    ss << "tiling (" << string_VkImageTiling(tiling) << ")\n";
+    ss << "usage (" << string_VkImageUsageFlags(usage) << ")\n";
+    ss << "flags (" << string_VkImageCreateFlags(flags) << ")\n";
     return ss.str();
 }
 
