@@ -2320,3 +2320,30 @@ TEST_F(NegativeVideo, DeviceAddressCommandsQueryResultFlags) {
 
     cb.End();
 }
+
+TEST_F(NegativeVideo, VideoFormatQueryMissingProfileExtendedFlags) {
+    TEST_DESCRIPTION("vkGetPhysicalDeviceVideoFormatPropertiesKHR with extended flags - missing profile info");
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(Init());
+
+    if (!GetConfig()) {
+        GTEST_SKIP() << "Test requires video support";
+    }
+
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags_2 = vku::InitStructHelper();
+    image_usage_flags_2.usage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
+    auto format_info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>(&image_usage_flags_2);
+    uint32_t format_count = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
+    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &format_info, &format_count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
+    image_usage_flags_2.pNext = &profile_list;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
+    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &format_info, &format_count, nullptr);
+    m_errorMonitor->VerifyFound();
+}

@@ -1122,3 +1122,91 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     vk::BeginCommandBuffer(secondary, &cb_begin_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImagelessFramebuffer, ExtendedFlags) {
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t attachment_width = 512;
+    uint32_t attachment_height = 512;
+    VkFormat attachment_formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
+    VkFormat framebuffer_attachment_formats[3] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
+
+    // Create a renderPass with a single attachment
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachment_formats[0]);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags_2 = vku::InitStructHelper();
+    image_usage_flags_2.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper(&image_usage_flags_2);
+    framebuffer_attachment_image_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    framebuffer_attachment_image_info.usage = 0;
+    framebuffer_attachment_image_info.width = attachment_width;
+    framebuffer_attachment_image_info.height = attachment_height;
+    framebuffer_attachment_image_info.layerCount = 1;
+    framebuffer_attachment_image_info.viewFormatCount = 2;
+    framebuffer_attachment_image_info.pViewFormats = framebuffer_attachment_formats;
+    VkFramebufferAttachmentsCreateInfo framebuffer_attachment_ci = vku::InitStructHelper();
+    framebuffer_attachment_ci.attachmentImageInfoCount = 1;
+    framebuffer_attachment_ci.pAttachmentImageInfos = &framebuffer_attachment_image_info;
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper(&framebuffer_attachment_ci);
+    framebuffer_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    framebuffer_ci.width = attachment_width;
+    framebuffer_ci.height = attachment_height;
+    framebuffer_ci.layers = 1;
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = nullptr;
+    framebuffer_ci.renderPass = rp;
+
+    VkImageFormatListCreateInfo imageFormatListCreateInfo = vku::InitStructHelper();
+    imageFormatListCreateInfo.viewFormatCount = 2;
+    imageFormatListCreateInfo.pViewFormats = attachment_formats;
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&imageFormatListCreateInfo);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.extent = {attachment_width, attachment_height, 1};
+    image_ci.arrayLayers = 1;
+    image_ci.mipLevels = 10;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.format = attachment_formats[0];
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = attachment_formats[0];
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::ImageView image_view_subset(*m_device, image_view_ci);
+
+    image_view_ci.pNext = nullptr;
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    VkImageView image_views[2] = {image_view, image_view};
+    VkRenderPassAttachmentBeginInfo rp_attachment_begin_info = vku::InitStructHelper();
+    rp_attachment_begin_info.attachmentCount = 1;
+    rp_attachment_begin_info.pAttachments = image_views;
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&rp_attachment_begin_info);
+    rp_begin_info.renderPass = rp;
+    rp_begin_info.renderArea.extent = {attachment_width, attachment_height};
+
+    VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+
+    framebuffer_ci.pAttachments = nullptr;
+    framebuffer_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    rp_begin_info.framebuffer = framebuffer;
+    m_command_buffer.Begin(&cmd_begin_info);
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-04627");
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

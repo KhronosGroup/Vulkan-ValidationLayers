@@ -946,6 +946,74 @@ TEST_F(PositiveImage, BlockTexelViewLayerCount) {
     vkt::ImageView view(*m_device, image_view_ci);
 }
 
+TEST_F(PositiveImage, ExtendedFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_IMAGE_CREATE_2_2D_ARRAY_COMPATIBLE_BIT_KHR;
+
+    VkImageUsageFlags2CreateInfoKHR usage_flags = vku::InitStructHelper(&create_flags);
+    usage_flags.usage = VK_IMAGE_USAGE_2_TRANSFER_DST_BIT_KHR | VK_IMAGE_USAGE_2_SAMPLED_BIT_KHR;
+
+    VkImageCreateInfo image_create_ci = vku::InitStructHelper(&usage_flags);
+    image_create_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_create_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_ci.extent = {32u, 32u, 2u};
+    image_create_ci.mipLevels = 1u;
+    image_create_ci.arrayLayers = 1u;
+    image_create_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    vkt::Image image(*m_device, image_create_ci);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    image_view_ci.format = image_create_ci.format;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, VK_REMAINING_ARRAY_LAYERS};
+    vkt::ImageView view(*m_device, image_view_ci);
+
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_ci.size = 32u * 32u * 2u * 4u;
+    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32u, 32u, 2u};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveImage, SparsePropertiesExtendedFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(Init());
+
+    VkImageUsageFlags2CreateInfoKHR usage_flags_2 = vku::InitStructHelper();
+    usage_flags_2.usage = VK_IMAGE_USAGE_2_COLOR_ATTACHMENT_BIT_KHR;
+
+    VkPhysicalDeviceSparseImageFormatInfo2 format_info = vku::InitStructHelper(&usage_flags_2);
+    format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    format_info.type = VK_IMAGE_TYPE_2D;
+    format_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    format_info.usage = 0;
+    format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    uint32_t propertyCount;
+    vk::GetPhysicalDeviceSparseImageFormatProperties2(gpu_, &format_info, &propertyCount, nullptr);
+}
+
 TEST_F(PositiveImage, ImageSingleLayerDescriptorFlagButMultiplanarImageView) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);

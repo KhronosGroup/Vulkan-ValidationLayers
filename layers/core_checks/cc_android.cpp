@@ -281,7 +281,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 allocate_info.memoryTypeIndex, ahb_loc.Fields().c_str(), ahb_props.memoryTypeBits, import_ahb_info->buffer);
         }
 
-        VkImageUsageFlags dedicated_image_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // dummy init value
+        VkImageUsageFlags2KHR dedicated_image_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // dummy init value
 
         // Checks for allocations without a dedicated allocation requirement
         if ((nullptr == mem_ded_alloc_info) || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
@@ -371,11 +371,11 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
                     "was created with %s which are not listed in the AHardwareBuffer Usage Equivalence table. (AHB = %p).",
-                    string_VkImageUsageFlags(image_state->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
+                    string_VkImageUsageFlags2KHR(image_state->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
             }
 
             // Based on vkspec.html#memory-external-android-hardware-buffer-usage
-            static std::unordered_map<VkImageUsageFlags, uint64_t> ahb_usage_map_v2a = {
+            static std::unordered_map<VkImageUsageFlags2KHR, uint64_t> ahb_usage_map_v2a = {
                 {VK_IMAGE_USAGE_SAMPLED_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
@@ -389,7 +389,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                         skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
                                          "was created with %s, but the AHB equivalent 0x%" PRIx64
                                          " (%s) is not in AHardwareBuffer_Desc.usage (0x%" PRIx64 "). (AHB = %p).",
-                                         string_VkImageUsageFlags(vk_usage).c_str(), ahb_usage,
+                                         string_VkImageUsageFlags2KHR(vk_usage).c_str(), ahb_usage,
                                          string_AHardwareBufferGpuUsage(ahb_usage), ahb_desc.usage, import_ahb_info->buffer);
                     }
                 }
@@ -535,7 +535,7 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
 
 // Validate creating an image with an external format
 bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const {
+                                            const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const {
     bool skip = false;
 
     const VkExternalFormatANDROID* ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info.pNext);
@@ -551,7 +551,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02396", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but flags is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageCreateFlags(create_flags).c_str());
+                             string_VkImageCreateFlags2KHR(create_flags).c_str());
         }
 
         if (0 !=
@@ -559,7 +559,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageUsageFlags(usage).c_str());
+                             string_VkImageUsageFlags2KHR(usage).c_str());
         } else if (!enabled_features.externalFormatResolve &&
                    ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & usage)) {
             skip |= LogError(
@@ -567,7 +567,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                 "(%" PRIu64
                 ") is non-zero, but usage is %s (without externalFormatResolve, only VK_IMAGE_USAGE_SAMPLED_BIT is allowed).",
-                ext_fmt_android->externalFormat, string_VkImageUsageFlags(usage).c_str());
+                ext_fmt_android->externalFormat, string_VkImageUsageFlags2KHR(usage).c_str());
         }
 
         if (VK_IMAGE_TILING_OPTIMAL != create_info.tiling) {
@@ -697,7 +697,7 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
 }
 
 bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const {
+                                            const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const {
     return false;
 }
 

@@ -355,7 +355,7 @@ class CoreChecks : public vvl::DeviceProxy {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                           uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const;
 
-    bool IsDynamicRenderingImageUsageValid(VkImageUsageFlags image_usage) const;
+    bool IsDynamicRenderingImageUsageValid(VkImageUsageFlags2KHR image_usage) const;
 
     bool ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
                                           const VkDependencyInfo& dep_info) const;
@@ -544,15 +544,15 @@ class CoreChecks : public vvl::DeviceProxy {
     bool OutsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool InsideVideoCodingScope(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool OutsideVideoCodingScope(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
-    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
+    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags2KHR image_usage,
                                                                      const VkVideoProfileListInfoKHR* profile_list) const;
-    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
+    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags2KHR image_usage,
                                                                      const VkVideoProfileInfoKHR* profile) const;
-    bool IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+    bool IsSupportedVideoFormat(VkImageCreateFlags2KHR flags, VkImageUsageFlags2KHR usage, VkImageType imageType, VkFormat format,
                                 VkImageTiling tiling, const VkVideoProfileListInfoKHR* profile_list) const;
-    bool IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+    bool IsSupportedVideoFormat(VkImageCreateFlags2KHR flags, VkImageUsageFlags2KHR usage, VkImageType imageType, VkFormat format,
                                 VkImageTiling tiling, const VkVideoProfileInfoKHR* profile) const;
-    bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
+    bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags2KHR image_usage, const VkVideoProfileInfoKHR* profile) const;
     bool IsBufferCompatibleWithVideoSession(const vvl::Buffer& buffer_state, const vvl::VideoSession& vs_state) const;
     bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const;
     bool ValidateVideoInlineQueryInfo(const vvl::QueryPool& query_pool_state, const VkVideoInlineQueryInfoKHR& query_info,
@@ -1039,13 +1039,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                  const Location& loc) const;
 
     bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc,
-                                     const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
+                                     const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const;
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                            const VkImageCreateFlags create_flags, const Location& flags_loc, const VkImageUsageFlags usage,
+                            const VkImageCreateFlags2KHR create_flags, const Location& flags_loc, const VkImageUsageFlags2KHR usage,
                             const Location& usage_loc, const ErrorObject& error_obj) const;
     bool ValidateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                                const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
+                                const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const;
     bool ValidateImageExternalMemory(const VkImageCreateInfo& create_info, const Location& create_info_loc,
                                      VkPhysicalDeviceImageFormatInfo2& image_format_info) const;
 
@@ -1184,7 +1184,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
 
     bool ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
-                                              VkImageUsageFlags usage) const;
+                                              VkImageUsageFlags2KHR usage) const;
 
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,
@@ -1311,7 +1311,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                               const LogObjectList& objlist, const Location& loc) const;
 
     bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkFormat view_format,
-                                         const VkImageUsageFlags image_usage, const Location& create_info_loc) const;
+                                         const VkImageUsageFlags2KHR image_usage, const Location& create_info_loc) const;
 
     bool ValidateImageViewSlicedCreateInfo(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
                                            const VkImageSubresourceRange& normalized_subresource_range,
@@ -1436,7 +1436,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const ErrorObject& error_obj) const override;
 
     bool ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
-                                    const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const;
+                                    const VkImageCreateFlags2KHR create_flags, const VkImageUsageFlags2KHR usage) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
                                         const Location& create_info_loc) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,

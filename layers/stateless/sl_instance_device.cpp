@@ -901,13 +901,14 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
         const auto stencil_usage = GetImageStencilUsageFlags(pImageFormatInfo->pNext);
         if (stencil_usage.has_value()) {
             if ((stencil_usage.value() & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
-                VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+                VkImageUsageFlags2KHR legal_flags =
+                    (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
                 // No flags other than the legal attachment bits may be set
                 legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
                 if ((stencil_usage.value() & ~legal_flags) != 0) {
                     skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", physicalDevice,
                                      format_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
-                                     string_VkImageUsageFlags(stencil_usage.value()).c_str());
+                                     string_VkImageUsageFlags2KHR(stencil_usage.value()).c_str());
                 }
             }
         }

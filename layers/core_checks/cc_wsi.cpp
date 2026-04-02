@@ -50,6 +50,14 @@ static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D m
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(const VkSwapchainCreateInfoKHR& create_info) {
     VkImageCreateInfo result = vku::InitStructHelper();
 
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags2;
+    auto chain_image_usage_flags2 = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(create_info.pNext);
+    if (chain_image_usage_flags2) {
+        image_usage_flags2 = *chain_image_usage_flags2;
+        image_usage_flags2.pNext = const_cast<void*>(result.pNext);
+        result.pNext = &image_usage_flags2;
+    }
+
     if (create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
     }
@@ -484,8 +492,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & surface_caps.supportedUsageFlags)) && !shared_present_mode) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device, GetImageUsageLocation(create_info, create_info_loc),
-                     "(%s) are not in supportedUsageFlags (%s).", string_VkImageUsageFlags(image_usage).c_str(),
-                     string_VkImageUsageFlags(surface_caps.supportedUsageFlags).c_str())) {
+                     "(%s) are not in supportedUsageFlags (%s).", string_VkImageUsageFlags2KHR(image_usage).c_str(),
+                     string_VkImageUsageFlags2KHR(surface_caps.supportedUsageFlags).c_str())) {
             return true;
         }
     }
@@ -568,18 +576,27 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
             }
         }
 
+        VkSharedPresentSurfaceCapabilities2KHR shared_present_capabilities_2 = vku::InitStructHelper();
         VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = vku::InitStructHelper();
-        VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&shared_present_capabilities);
+        bool has_extended_flags = IsExtEnabled(extensions.vk_khr_extended_flags);
+        VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper();
+        if (has_extended_flags) {
+            capabilities2.pNext = &shared_present_capabilities_2;
+        } else {
+            capabilities2.pNext = &shared_present_capabilities;
+        }
         VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
         surface_info.surface = create_info.surface;
         DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info, &capabilities2);
 
-        const VkImageUsageFlags usage = shared_present_capabilities.sharedPresentSupportedUsageFlags;
+        const VkImageUsageFlags2KHR usage = has_extended_flags ? shared_present_capabilities_2.sharedPresentSupportedUsageFlags
+                                                               : shared_present_capabilities.sharedPresentSupportedUsageFlags;
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
-            if (LogError(
-                    "VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, GetImageUsageLocation(create_info, create_info_loc),
-                    "(%s), but the supported flag bits for %s present mode are %s.", string_VkImageUsageFlags(image_usage).c_str(),
-                    string_VkPresentModeKHR(create_info.presentMode), string_VkImageUsageFlags(usage).c_str())) {
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device,
+                         GetImageUsageLocation(create_info, create_info_loc),
+                         "(%s), but the supported flag bits for %s present mode are %s.",
+                         string_VkImageUsageFlags2KHR(image_usage).c_str(), string_VkPresentModeKHR(create_info.presentMode),
+                         string_VkImageUsageFlags2KHR(usage).c_str())) {
                 return true;
             }
         }

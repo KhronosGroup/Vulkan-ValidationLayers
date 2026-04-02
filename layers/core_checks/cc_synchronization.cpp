@@ -1888,8 +1888,8 @@ bool CoreChecks::ValidateSubpassDependency(const Location& loc, const VkSubpassD
 }
 
 // Verify an image barrier's old/new layouts are compatible with the image's usage flags.
-bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
-                                                      VkImageUsageFlags usage_flags) const {
+bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc, VkImage image, VkImageLayout layout,
+                                                      VkImageUsageFlags2KHR usage_flags) const {
     bool skip = false;
     bool is_error = false;
     switch (layout) {
@@ -1981,7 +1981,7 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc
     if (is_error) {
         const auto& vuid = vvl::GetBadImageLayoutVUID(layout_loc, layout);
         skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s usage flags %s.", string_VkImageLayout(layout),
-                         FormatHandle(image).c_str(), string_VkImageUsageFlags(usage_flags).c_str());
+                         FormatHandle(image).c_str(), string_VkImageUsageFlags2KHR(usage_flags).c_str());
     }
     return skip;
 }
@@ -2796,7 +2796,7 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
     return skip;
 }
 
-bool CoreChecks::IsDynamicRenderingImageUsageValid(VkImageUsageFlags image_usage) const {
+bool CoreChecks::IsDynamicRenderingImageUsageValid(VkImageUsageFlags2KHR image_usage) const {
     bool valid = false;
 
     valid |= ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0);

@@ -1249,7 +1249,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
             if (!(image_state->create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
                 skip |= LogError("VUID-VkDescriptorImageInfo-imageView-07796", objlist, image_info_loc.dot(Field::imageView),
                                  "is VK_IMAGE_VIEW_TYPE_2D, the image is VK_IMAGE_VIEW_TYPE_3D, but the image was created with %s.",
-                                 string_VkImageCreateFlags(image_state->create_flags).c_str());
+                                 string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
             }
         }
     }
@@ -2210,7 +2210,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                                 skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
                                                  "combined image sampler is a multi-planar format %s and was created with %s.",
                                                  string_VkFormat(image_format),
-                                                 string_VkImageCreateFlags(image_state->create_flags).c_str());
+                                                 string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
                             }
                             const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
                             if (!IsValidPlaneAspect(image_format, image_aspect)) {
@@ -3036,7 +3036,7 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice 
         if (!(image_state->create_flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkImageCaptureDescriptorDataInfoEXT-image-08079", pInfo->image,
                              error_obj.location.dot(Field::pInfo).dot(Field::image), "is %s.",
-                             string_VkImageCreateFlags(image_state->create_flags).c_str());
+                             string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
         }
     }
 
@@ -3420,8 +3420,14 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT& des
         } else {
             const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
             if (image_view_state && image_view_state->sampler_conversion != VK_NULL_HANDLE) {
+                VkImageUsageFlags2CreateInfoKHR usage_flags_2 = vku::InitStructHelper();
+                usage_flags_2.usage = image_view_state->inherited_usage;
                 VkPhysicalDeviceImageFormatInfo2 image_format_info = image_view_state->image_state->GetImageFormatInfo2();
-                image_format_info.usage = image_view_state->inherited_usage;
+                if (IsExtEnabled(extensions.vk_khr_extended_flags)) {
+                    image_format_info.pNext = &usage_flags_2;
+                } else {
+                    image_format_info.usage = (VkImageUsageFlags)image_view_state->inherited_usage;
+                }
 
                 VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
                 VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
@@ -5452,7 +5458,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
             skip |= ValidateImageViewCreateInfo(image_view_ci, data_loc.dot(Field::pImage).dot(Field::pView));
             if (IsValueIn(resource.type, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                           VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
-                const VkImageUsageFlags usage = resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ? VK_IMAGE_USAGE_SAMPLED_BIT
+                const VkImageUsageFlags2KHR usage = resource.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ? VK_IMAGE_USAGE_SAMPLED_BIT
                                                 : resource.type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
                                                     ? VK_IMAGE_USAGE_STORAGE_BIT
                                                     : VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
@@ -5463,7 +5469,8 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                                                             : "VUID-VkResourceDescriptorInfoEXT-type-11460";
                     skip |= LogError(vuid, image_state->VkHandle(), data_loc.dot(Field::pImage).dot(Field::pView).dot(Field::image),
                                      "was created with usages %s, but required %s is missing.\npResources[%" PRIu32 "].type = %s",
-                                     string_VkImageUsageFlags(image_state->usage).c_str(), string_VkImageUsageFlags(usage).c_str(),
+                                     string_VkImageUsageFlags2KHR(image_state->usage).c_str(),
+                                     string_VkImageUsageFlags2KHR(usage).c_str(),
                                      i, string_VkDescriptorType(resource.type));
                 }
             }
@@ -5570,7 +5577,7 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
             skip |=
                 LogError("VUID-vkGetImageOpaqueCaptureDataEXT-pImages-11285", pImages[i], error_obj.location.dot(Field::pImage, i),
                          "was created with %s, but needs to have VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT.",
-                         string_VkImageCreateFlags(image_state->create_flags).c_str());
+                         string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
         }
     }
 

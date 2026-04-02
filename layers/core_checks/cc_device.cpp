@@ -97,8 +97,9 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image& image_state,
     Func command = Func::vkGetPhysicalDeviceImageFormatProperties;
     if (image_state.GetTiling() != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-            physical_device, image_state.GetFormat(), image_state.GetImageType(), image_state.GetTiling(), image_state.usage,
-            image_state.create_flags, &image_state.image_format_properties);
+            physical_device, image_state.GetFormat(), image_state.GetImageType(), image_state.GetTiling(),
+            (VkImageUsageFlags)image_state.usage, (VkImageCreateFlags)image_state.create_flags,
+            &image_state.image_format_properties);
     } else {
         command = Func::vkGetPhysicalDeviceImageFormatProperties2;
         VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state.GetImageFormatInfo2();
@@ -486,13 +487,13 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
     bool skip = false;
     const auto* copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
-        const VkImageUsageFlags usage_flags = GetImageUsageFlags(*pImageFormatInfo);
+        const VkImageUsageFlags2KHR usage_flags = GetImageUsageFlags(*pImageFormatInfo);
         if ((usage_flags & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", gpu, error_obj.location,
                              "pImageFormatProperties includes a chained "
                              "VkHostImageCopyDevicePerformanceQuery struct, but pImageFormatInfo->usage (%s) does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT",
-                             string_VkImageUsageFlags(usage_flags).c_str());
+                             string_VkImageUsageFlags2KHR(usage_flags).c_str());
         }
     }
     return skip;
