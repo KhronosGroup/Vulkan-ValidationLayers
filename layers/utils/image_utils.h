@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 #include <vulkan/vulkan_core.h>
 
@@ -26,7 +27,13 @@ struct DeviceExtensions;
 
 uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange &subresource_range, uint32_t total_level_count);
 uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange &subresource_range, uint32_t total_layer_count);
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
+
+VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat format, VkImageCreateFlags flags,
+                              VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level);
+VkExtent3D GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
+
+std::optional<VkImageUsageFlags> GetImageStencilUsageFlags(const void *pNext);
+std::optional<VkImageUsageFlags> GetImageViewUsageFlags(const VkImageViewCreateInfo &create_info);
 
 // When dealing with a compressed format, we could have a miplevel that is less than a single texel block
 // In that case, we still view (from the API) that you need a full extent for 1 texel block
@@ -79,10 +86,10 @@ bool IsImageLayoutStencilOnly(VkImageLayout layout);
 bool IsImageLayoutStencilReadOnly(VkImageLayout layout);
 
 // Return true if an image view of this type references separate depth slices of a 3d image
-bool IsDepthSliceView(const VkImageCreateInfo &image_create_info, VkImageViewType view_type);
+bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags imageCreateFlags, VkImageViewType view_type);
 
 // Return true if layout transitions of separate slices of a 3d image are supported for the image with the given create info
-bool CanTransitionDepthSlices(const DeviceExtensions &extensions, const VkImageCreateInfo &create_info);
+bool CanTransitionDepthSlices(const DeviceExtensions &extensions, VkImageType imageType, VkImageCreateFlags imageCreateFlags);
 
 static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format off

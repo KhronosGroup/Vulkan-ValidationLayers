@@ -80,15 +80,16 @@ std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkI
     return GetVideoFormatProperties(image_usage, &profile_list);
 }
 
-bool CoreChecks::IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileListInfoKHR* profile_list) const {
-    auto format_props_list = GetVideoFormatProperties(image_ci.usage, profile_list);
+bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+                                        VkImageTiling tiling, const VkVideoProfileListInfoKHR* profile_list) const {
+    auto format_props_list = GetVideoFormatProperties(usage, profile_list);
 
     for (auto& format_props : format_props_list) {
         const VkImageCreateFlags allowed_flags = format_props.imageCreateFlags | VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
-        const bool compatible_usage = (image_ci.flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) ||
-                                      ((image_ci.usage & format_props.imageUsageFlags) == image_ci.usage);
-        if (image_ci.format == format_props.format && (image_ci.flags & allowed_flags) == image_ci.flags &&
-            image_ci.imageType == format_props.imageType && image_ci.tiling == format_props.imageTiling && compatible_usage) {
+        const bool compatible_usage = (flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) ||
+                                      ((usage & format_props.imageUsageFlags) == usage);
+        if (format == format_props.format && (flags & allowed_flags) == flags &&
+            imageType == format_props.imageType && tiling == format_props.imageTiling && compatible_usage) {
             return true;
         }
     }
@@ -96,12 +97,13 @@ bool CoreChecks::IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const
     return false;
 }
 
-bool CoreChecks::IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileInfoKHR* profile) const {
+bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
+                                        VkImageTiling tiling, const VkVideoProfileInfoKHR* profile) const {
     VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
     profile_list.pProfiles = profile;
 
-    return IsSupportedVideoFormat(image_ci, &profile_list);
+    return IsSupportedVideoFormat(flags, usage, imageType, format, tiling, &profile_list);
 }
 
 bool CoreChecks::IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage,
@@ -119,8 +121,9 @@ bool CoreChecks::IsBufferCompatibleWithVideoSession(const vvl::Buffer& buffer_st
 }
 
 bool CoreChecks::IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const {
-    if (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
-        return IsSupportedVideoFormat(image_state.create_info, vs_state.create_info.pVideoProfile);
+    if (image_state.create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+        return IsSupportedVideoFormat(image_state.create_flags, image_state.usage, image_state.GetImageType(),
+                                      image_state.GetFormat(), image_state.GetTiling(), vs_state.create_info.pVideoProfile);
     } else {
         return image_state.supported_video_profiles.find(vs_state.profile) != image_state.supported_video_profiles.end();
     }
@@ -3613,7 +3616,7 @@ bool CoreChecks::ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer
 
         if (!IsImageCompatibleWithVideoSession(*iv_state->image_state, *vs_state)) {
             const LogObjectList objlist(cb_state.Handle(), vs_state->Handle(), iv_state->Handle());
-            if (iv_state->image_state->create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+            if (iv_state->image_state->create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
                 skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10310", objlist, loc.dot(Field::quantizationMap),
                                  "(%s created from %s) was created with VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR but was "
                                  "not created with a video format supported by the video profile (%s) "
@@ -5122,7 +5125,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
                                                     reference_resource.image_view_state->Handle(),
                                                     reference_resource.image_state->Handle());
-                        if (reference_resource.image_state->create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+                        if (reference_resource.image_state->create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
                             skip |= LogError(
                                 "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07240", objlist, reference_image_view_loc,
                                 "(%s created from %s) was created with VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR but was "
@@ -5569,7 +5572,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         if (!IsImageCompatibleWithVideoSession(*dst_resource.image_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), dst_resource.image_view_state->Handle(),
                                         dst_resource.image_state->Handle());
-            if (dst_resource.image_state->create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+            if (dst_resource.image_state->create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
                 skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07142", objlist, dst_image_view_loc,
                                  "(%s created from %s) was created with VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR but was "
                                  "not created with a video format supported by the video profile (%s) "
@@ -6057,7 +6060,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         if (!IsImageCompatibleWithVideoSession(*src_resource.image_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), src_resource.image_view_state->Handle(),
                                         src_resource.image_state->Handle());
-            if (src_resource.image_state->create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+            if (src_resource.image_state->create_flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
                 skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08206", objlist, src_image_view_loc,
                                  "(%s created from %s) was created with VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR but was "
                                  "not created with a video format supported by the video profile (%s) "

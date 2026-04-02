@@ -302,6 +302,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_instance_defs.h
     ${API_TYPE}/generated/gpuav_offline_spirv.h
     ${API_TYPE}/generated/gpuav_offline_spirv.cpp
+    ${API_TYPE}/generated/extended_flags_helper_generator.h
+    ${API_TYPE}/generated/extended_flags_helper_generator.cpp
     gpuav/core/gpuav.h
     gpuav/core/gpuav_constants.h
     gpuav/core/gpuav_features.cpp

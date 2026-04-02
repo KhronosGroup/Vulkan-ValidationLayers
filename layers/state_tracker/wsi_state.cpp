@@ -25,19 +25,20 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "generated/dispatch_functions.h"
+#include "generated/extended_flags_helper_generator.h"
+#include "utils/image_utils.h"
 
 static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR* pCreateInfo) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.pNext = nullptr;
     // Pull out the format list only. This stack variable will get copied onto the heap
     // by the 'safe' constructor used to build the return value below.
     VkImageFormatListCreateInfo fmt_info;
     auto chain_fmt_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
     if (chain_fmt_info) {
         fmt_info = *chain_fmt_info;
-        fmt_info.pNext = nullptr;
+        fmt_info.pNext = image_ci.pNext;
         image_ci.pNext = &fmt_info;
-    } else {
-        image_ci.pNext = nullptr;
     }
     image_ci.flags = 0;  // to be updated below
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -100,6 +101,7 @@ Swapchain::Swapchain(vvl::DeviceState& dev_data_, const VkSwapchainCreateInfoKHR
     : RefcountedStateObject(handle, kVulkanObjectTypeSwapchainKHR),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
+      image_usage(GetImageUsageFlags(create_info)),
       images(),
       exclusive_full_screen_access(false),
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||

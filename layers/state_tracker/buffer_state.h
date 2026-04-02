@@ -42,7 +42,7 @@ class Buffer : public Bindable, public SubStateManager<BufferSubState> {
   public:
     const VkMemoryRequirements requirements;
     VkDeviceAddress deviceAddress = 0;
-    // VkBufferUsageFlags2CreateInfo can be used instead over the VkBufferCreateInfo::usage
+    // VkBufferUsageFlags2CreateInfo can be used instead of the VkBufferCreateInfo::usage
     const VkBufferUsageFlags2 usage;
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;

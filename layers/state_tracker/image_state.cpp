@@ -29,6 +29,7 @@
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
+#include "generated/extended_flags_helper_generator.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 
@@ -132,10 +133,13 @@ static bool GetMetalExport(const VkImageCreateInfo* info, VkExportMetalObjectTyp
 namespace vvl {
 
 Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkFormatFeatureFlags2 ff)
-    : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
+    : Bindable(img, kVulkanObjectTypeImage, (GetImageCreateFlags(*pCreateInfo) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+               (GetImageCreateFlags(*pCreateInfo) & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
+      create_flags(GetImageCreateFlags(create_info)),
+      usage(GetImageUsageFlags(create_info)),
+      stencil_usage(GetImageStencilUsageFlags(pCreateInfo->pNext)),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(create_info)},
@@ -143,9 +147,9 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       owned_by_swapchain(false),
       swapchain_image_index(0),
       format_features(ff),
-      disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
+      disjoint((create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements(GetMemoryRequirements(dev_data, img, pCreateInfo, disjoint, IsExternalBuffer())),
-      sparse_residency((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0),
+      sparse_residency((create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0),
       sparse_requirements(GetSparseRequirements(dev_data, img, sparse_residency)),
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
@@ -155,11 +159,11 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
-    if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-        bool is_resident = (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
+    if (create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+        bool is_resident = (create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
         tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
         SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
-    } else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
+    } else if (create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
         tracker_.emplace<BindableMultiplanarMemoryTracker>(requirements.data(), vkuFormatPlaneCount(pCreateInfo->format));
         SetMemoryTracker(&std::get<BindableMultiplanarMemoryTracker>(tracker_));
     } else {
@@ -174,6 +178,9 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
+      create_flags(GetImageCreateFlags(create_info)),
+      usage(GetImageUsageFlags(create_info)),
+      stencil_usage(GetImageStencilUsageFlags(pCreateInfo->pNext)),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(create_info)},
@@ -181,7 +188,7 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       owned_by_swapchain(true),
       swapchain_image_index(swapchain_index),
       format_features(ff),
-      disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
+      disjoint((create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements{},
       sparse_residency(false),
       sparse_requirements{},
@@ -299,37 +306,52 @@ void Image::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool un
 }
 
 bool Image::IsCreateInfoEqual(const VkImageCreateInfo& other_create_info) const {
-    bool is_equal = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
+    bool is_equal = (create_info.sType == other_create_info.sType) &&
+                    (GetImageCreateFlags(create_info) == GetImageCreateFlags(other_create_info));
     is_equal = is_equal && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
     is_equal = is_equal && IsMipLevelsEqual(other_create_info) && IsArrayLayersEqual(other_create_info);
-    is_equal = is_equal && IsUsageEqual(other_create_info) && IsInitialLayoutEqual(other_create_info);
+    is_equal = is_equal && (GetImageUsageFlags(create_info) == GetImageUsageFlags(other_create_info)) &&
+               IsInitialLayoutEqual(other_create_info);
     is_equal = is_equal && IsExtentEqual(other_create_info) && IsTilingEqual(other_create_info);
     is_equal = is_equal && IsSamplesEqual(other_create_info) && IsSharingModeEqual(other_create_info);
     return is_equal &&
-           ((create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_create_info) : true);
+           ((create_info.sharingMode == VK_SHARING_MODE_CONCURRENT)
+                ? IsQueueFamilyIndicesEqual(other_create_info.queueFamilyIndexCount, other_create_info.pQueueFamilyIndices)
+                : true);
 }
 
 // Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
-bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo& other_create_info) const {
-    bool is_compatible = (create_info.sType == other_create_info.sType) && (create_info.flags == other_create_info.flags);
-    is_compatible = is_compatible && IsImageTypeEqual(other_create_info) && IsFormatEqual(other_create_info);
-    is_compatible = is_compatible && IsMipLevelsEqual(other_create_info);
-    is_compatible = is_compatible && IsUsageEqual(other_create_info) && IsInitialLayoutEqual(other_create_info);
-    is_compatible = is_compatible && IsSamplesEqual(other_create_info) && IsSharingModeEqual(other_create_info);
-    is_compatible = is_compatible &&
-                    ((create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_create_info) : true);
-    is_compatible = is_compatible && IsTilingEqual(other_create_info);
+bool Image::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const Image& other_image_state) const {
+    bool is_compatible = create_flags == other_image_state.create_flags;
+    is_compatible &= GetImageType() == other_image_state.GetImageType();
+    is_compatible &= GetFormat() == other_image_state.GetFormat();
+    is_compatible &= GetMipLevels() == other_image_state.GetMipLevels();
+    is_compatible &= usage == other_image_state.usage;
+    is_compatible &= GetInitialLayout() == other_image_state.GetInitialLayout();
+    is_compatible &= GetSamples() == other_image_state.GetSamples();
+    is_compatible &= GetSharingMode() == other_image_state.GetSharingMode();
+    if (GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
+        is_compatible &=
+            IsQueueFamilyIndicesEqual(other_image_state.GetQueueFamilyIndexCount(), other_image_state.GetQueueFamilyIndices());
+    }
+    is_compatible &= GetTiling() == other_image_state.GetTiling();
 
-    is_compatible = is_compatible && create_info.extent.width <= other_create_info.extent.width &&
-                    create_info.extent.height <= other_create_info.extent.height &&
-                    create_info.extent.depth <= other_create_info.extent.depth &&
-                    create_info.arrayLayers <= other_create_info.arrayLayers;
+    is_compatible = is_compatible && GetExtent().width <= other_image_state.GetExtent().width &&
+                    GetExtent().height <= other_image_state.GetExtent().height &&
+                    GetExtent().depth <= other_image_state.GetExtent().depth &&
+                    GetArrayLayers() <= other_image_state.GetArrayLayers();
     return is_compatible;
+}
+
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageAspectFlags aspect_mask, const uint32_t mip_level) const {
+    return GetEffectiveExtent(GetMipLevels(), GetExtent(), GetFormat(),
+                              create_flags, GetImageType(), GetArrayLayers(), aspect_mask,
+                              mip_level);
 }
 
 bool Image::IsCompatibleAliasing(const Image* other_image_state) const {
     if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
-        !(create_info.flags & other_image_state->create_info.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
+        !(create_flags & other_image_state->create_flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
     }
     const auto binding = Binding();
@@ -357,15 +379,15 @@ VkPhysicalDeviceImageFormatInfo2 Image::GetImageFormatInfo2(void* pNext) const {
 }
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers& sub) const {
-    return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
+    return GetEffectiveSubresourceExtent(sub.aspectMask, sub.mipLevel);
 }
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource& sub) const {
-    return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
+    return GetEffectiveSubresourceExtent(sub.aspectMask, sub.mipLevel);
 }
 
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange& range) const {
-    return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
+    return GetEffectiveSubresourceExtent(range.aspectMask, range.baseMipLevel);
 }
 
 std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers& subresource) const {
@@ -420,7 +442,7 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) co
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state,
                                                           const VkImageSubresourceRange& full_range) {
     VkImageSubresourceRange encoder_range = full_range;
-    if (CanTransitionDepthSlices(device_state.extensions, create_info)) {
+    if (CanTransitionDepthSlices(device_state.extensions, GetImageType(), create_flags)) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -502,12 +524,14 @@ bool Image::CompareCreateInfo(const Image& other) const {
     // check the ExternalHandleType and not other pNext chains
     const bool valid_external = GetExternalHandleTypes(&create_info) == GetExternalHandleTypes(&other.create_info);
 
-    return (create_info.flags == other.create_info.flags) && (create_info.imageType == other.create_info.imageType) &&
-           (create_info.format == other.create_info.format) && (create_info.extent.width == other.create_info.extent.width) &&
+    return (GetImageCreateFlags(create_info) == GetImageCreateFlags(other.create_info)) &&
+           (create_info.imageType == other.create_info.imageType) && (create_info.format == other.create_info.format) &&
+           (create_info.extent.width == other.create_info.extent.width) &&
            (create_info.extent.height == other.create_info.extent.height) &&
            (create_info.extent.depth == other.create_info.extent.depth) && (create_info.mipLevels == other.create_info.mipLevels) &&
            (create_info.arrayLayers == other.create_info.arrayLayers) && (create_info.samples == other.create_info.samples) &&
-           (create_info.tiling == other.create_info.tiling) && (create_info.usage == other.create_info.usage) &&
+           (create_info.tiling == other.create_info.tiling) &&
+           (GetImageUsageFlags(create_info) == GetImageUsageFlags(other.create_info)) &&
            (create_info.initialLayout == other.create_info.initialLayout) && valid_queue_family && valid_external;
 }
 
@@ -520,20 +544,20 @@ static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo
 
 // We print how we get this info in ImageView::DescribeImageUsage()
 static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo& ci, const vvl::Image& image_state) {
-    if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
+    if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
         return usage_create_info->usage;
     }
 
-    VkImageUsageFlags usage = image_state.create_info.usage;
+    VkImageUsageFlags usage = image_state.usage;
 
     // We can't apply the stencil usage until we get the aspectMask to know how to appply it
-    if (const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.GetPNext())) {
+    if (image_state.stencil_usage.has_value()) {
         const bool stencil_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
         const bool depth_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
         if (stencil_aspect && !depth_aspect) {
-            usage = stencil_usage_info->stencilUsage;
+            usage = image_state.stencil_usage.value();
         } else if (stencil_aspect && depth_aspect) {
-            usage &= stencil_usage_info->stencilUsage;
+            usage &= image_state.stencil_usage.value();
         }
     }
     return usage;
@@ -571,7 +595,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_imageview_export(GetMetalExport(create_info)),
 #endif
-      is_depth_sliced(IsDepthSliceView(image_state->create_info, create_info.viewType)),
+      is_depth_sliced(IsDepthSliceView(image_state->GetImageType(), image_state->create_flags, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->GetSamples()),
@@ -602,25 +626,23 @@ void ImageView::Destroy() {
 
 uint32_t ImageView::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !is_depth_sliced) {
-        return image_state->create_info.arrayLayers;
+        return image_state->GetArrayLayers();
     }
     return create_info.subresourceRange.layerCount;
 }
 
 VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image& image_state,
                                                                       const VkImageViewCreateInfo& image_view_ci) {
-    const VkImageCreateInfo& image_ci = image_state.create_info;
-
     VkImageSubresourceRange range = image_view_ci.subresourceRange;
-    range.levelCount = GetEffectiveLevelCount(range, image_ci.mipLevels);
+    range.levelCount = GetEffectiveLevelCount(range, image_state.GetMipLevels());
     range.aspectMask = NormalizeAspectMask(range.aspectMask, image_view_ci.format);
 
     if (image_view_ci.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        if (IsDepthSliceView(image_state.create_info, image_view_ci.viewType)) {
-            const VkExtent3D extent = GetEffectiveExtent(image_ci, range.aspectMask, range.baseMipLevel);
+        if (IsDepthSliceView(image_state.GetImageType(), image_state.create_flags, image_view_ci.viewType)) {
+            const VkExtent3D extent = image_state.GetEffectiveSubresourceExtent(range.aspectMask, range.baseMipLevel);
             range.layerCount = extent.depth - image_view_ci.subresourceRange.baseArrayLayer;
         } else {
-            range.layerCount = GetEffectiveLayerCount(range, image_ci.arrayLayers);
+            range.layerCount = GetEffectiveLayerCount(range, image_state.GetArrayLayers());
         }
     }
     return range;
@@ -639,7 +661,7 @@ VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions
     //     If the maintenance9 feature is not enabled, any layout transitions performed on such an attachment view during a render
     //     pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip level.
     //
-    if (is_depth_sliced && !CanTransitionDepthSlices(extensions, image_state->create_info)) {
+    if (is_depth_sliced && !CanTransitionDepthSlices(extensions, image_state->GetImageType(), image_state->create_flags)) {
         subres_range.baseArrayLayer = 0;
         subres_range.layerCount = 1;
     }
@@ -687,25 +709,26 @@ bool ImageView::OverlapSubresource(const ImageView& compare_view) const {
 
 std::string ImageView::DescribeImageUsage(const Logger& logger) const {
     std::ostringstream ss;
-    ss << logger.FormatHandle(create_info.image) << " was created with "
-       << string_VkImageUsageFlags(image_state->create_info.usage);
+    ss << logger.FormatHandle(create_info.image) << " was created with " << string_VkImageUsageFlags(image_state->usage);
 
     if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
         // Even if using VkImageViewUsageCreateInfo, only worth showing if they are different
-        if (inherited_usage != image_state->create_info.usage) {
+        if (inherited_usage != image_state->usage) {
             ss << ", but VkImageViewUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(usage_create_info->usage) << "";
         }
-    } else if (const auto stencil_usage_info =
-                   vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->create_info.pNext)) {
-        const bool stencil_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
-        const bool depth_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
-        if (stencil_aspect && !depth_aspect) {
-            ss << ", but VkImageStencilUsageCreateInfo overwrote it with "
-               << string_VkImageUsageFlags(stencil_usage_info->stencilUsage)
-               << " because the image view has VK_IMAGE_ASPECT_STENCIL_BIT only";
-        } else if (stencil_aspect && depth_aspect) {
-            ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags(stencil_usage_info->stencilUsage)
-               << " because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
+    } else {
+        const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->GetPNext());
+        if (stencil_usage_info) {
+            const VkImageUsageFlags stencilUsage = stencil_usage_info->stencilUsage;
+            const bool stencil_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+            const bool depth_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+            if (stencil_aspect && !depth_aspect) {
+                ss << ", but VkImageStencilUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(stencilUsage)
+                   << " because the image view has VK_IMAGE_ASPECT_STENCIL_BIT only";
+            } else if (stencil_aspect && depth_aspect) {
+                ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags(stencilUsage)
+                   << " because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
+            }
         }
     }
 

@@ -35,6 +35,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
+#include "generated/extended_flags_helper_generator.h"
 #include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "containers/container_utils.h"
@@ -478,11 +479,12 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
             return true;
         }
     }
-    const VkImageUsageFlags image_usage = create_info.imageUsage;
+    const auto image_usage = GetImageUsageFlags(create_info);
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & surface_caps.supportedUsageFlags)) && !shared_present_mode) {
-        if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device, create_info_loc.dot(Field::imageUsage),
+        if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-01427", device,
+                     GetSwapchainCreateInfoKHRImageUsageLocation(create_info.pNext, create_info_loc),
                      "(%s) are not in supportedUsageFlags (%s).", string_VkImageUsageFlags(image_usage).c_str(),
                      string_VkImageUsageFlags(surface_caps.supportedUsageFlags).c_str())) {
             return true;
@@ -573,11 +575,13 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         surface_info.surface = create_info.surface;
         DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info, &capabilities2);
 
+        const VkImageUsageFlags usage = shared_present_capabilities.sharedPresentSupportedUsageFlags;
         if (image_usage != (image_usage & shared_present_capabilities.sharedPresentSupportedUsageFlags)) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device, create_info_loc.dot(Field::imageUsage),
+            if (LogError("VUID-VkSwapchainCreateInfoKHR-imageUsage-01384", device,
+                         GetSwapchainCreateInfoKHRImageUsageLocation(create_info.pNext, create_info_loc),
                          "(%s), but the supported flag bits for %s present mode are %s.",
                          string_VkImageUsageFlags(image_usage).c_str(), string_VkPresentModeKHR(create_info.presentMode),
-                         string_VkImageUsageFlags(shared_present_capabilities.sharedPresentSupportedUsageFlags).c_str())) {
+                         string_VkImageUsageFlags(usage).c_str())) {
                 return true;
             }
         }
@@ -647,10 +651,12 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         image_create_info.flags, &image_properties);
 
     if (image_properties_result != VK_SUCCESS) {
-        if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
-                     "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                     "with following VkImageCreateInfo\n%s",
-                     string_VkPhysicalDeviceImageFormatInfo2(image_create_info).c_str())) {
+        if (LogError(
+                "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
+                "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, with following VkImageCreateInfo\n%s",
+                string_VkPhysicalDeviceImageFormatInfo2(image_create_info.flags, image_create_info.usage, image_create_info.format,
+                                                        image_create_info.imageType, image_create_info.tiling)
+                    .c_str())) {
             return true;
         }
     }

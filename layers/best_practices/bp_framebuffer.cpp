@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -40,9 +40,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         auto view_state = Get<vvl::ImageView>(attachments[i]);
         ASSERT_AND_CONTINUE(view_state);
 
-        const auto& ici = view_state->image_state->create_info;
-
-        const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
+        const bool image_is_transient = (view_state->image_state->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
         // The check for an image that should not be transient applies to all GPUs
         if (!attachment_should_be_transient && image_is_transient) {

@@ -523,32 +523,40 @@ class Device : public vvl::BaseDevice {
                                                                    VkDeviceAddress indirectCommandsCountAddress,
                                                                    uint32_t maxDecompressionCount, uint32_t stride,
                                                                    const Context& context) const;
-    bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
-                                               const Context &context) const;
+    bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
+                                               const Context& context) const;
 
-    bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                            const Context &context) const;
+    bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                            const Context& context) const;
 
-    bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, const Context &context) const;
-    bool ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageCompressionControl(const Context &context, const VkImageCreateInfo &create_info,
-                                               const Location &create_info_loc) const;
-    bool ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageFormatList(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
-                                               std::vector<uint64_t> &image_create_drm_format_modifiers) const;
+    bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkImage* pImage, const Context& context) const;
+    bool ValidateCreateImageSparse(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                   const VkImageCreateFlags create_flags, const Location& create_flags_loc,
+                                   const VkImageUsageFlags usage, const Location& usage_loc) const;
+    bool ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                                const VkImageUsageFlags usage, const Location& usage_loc) const;
+    bool ValidateCreateImageCornerSampled(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                          const VkImageCreateFlags create_flags, const Location& create_flags_loc) const;
+    bool ValidateCreateImageStencilUsage(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                         const VkImageUsageFlags usage, const Location& usage_loc) const;
+    bool ValidateCreateImageCompressionControl(const Context& context, const VkImageCreateInfo& create_info,
+                                               const Location& create_info_loc) const;
+    bool ValidateCreateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                      const VkImageCreateFlags create_flags) const;
+    bool ValidateCreateImageFormatList(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                       const VkImageCreateFlags create_flags) const;
+    bool ValidateCreateImageMetalObject(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                               std::vector<uint64_t>& image_create_drm_format_modifiers,
+                                               const VkImageCreateFlags create_flags) const;
 
-    bool ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const;
-    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                               const Context &context) const;
+    bool ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create_info, const Location& create_info_loc) const;
+    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkImageView* pView,
+                                               const Context& context) const;
 
     bool manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
                                                                VkSubresourceLayout2 *pLayout, const Context &context) const;

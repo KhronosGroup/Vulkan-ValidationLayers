@@ -309,56 +309,56 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
             ASSERT_AND_RETURN_SKIP(image_state);
-            const auto* ici = &image_state->create_info;
             const Location& dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
 
-            dedicated_image_usage = ici->usage;
+            dedicated_image_usage = image_state->usage;
 
             //  the format of image must be VK_FORMAT_UNDEFINED or the format returned by
             //  vkGetAndroidHardwareBufferPropertiesANDROID
-            if (VK_FORMAT_UNDEFINED != ici->format) {
+            if (VK_FORMAT_UNDEFINED != image_state->GetFormat()) {
                 // Mali drivers will not return a valid VkAndroidHardwareBufferPropertiesANDROID::allocationSize if the
                 // FormatPropertiesANDROID is passed in as well so need to query again for the format
                 VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = vku::InitStructHelper();
                 VkAndroidHardwareBufferPropertiesANDROID dummy_ahb_props = vku::InitStructHelper(&ahb_format_props);
                 DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &dummy_ahb_props);
-                if (ici->format != ahb_format_props.format) {
+                if (image_state->GetFormat() != ahb_format_props.format) {
                     skip |= LogError(
                         "VUID-VkMemoryAllocateInfo-pNext-02387", mem_ded_alloc_info->image, dedicated_image_loc,
                         "was created with format (%s) which does not match the %s AHardwareBuffer's format (%s). (AHB = %p).",
-                        string_VkFormat(ici->format), ahb_loc.Fields().c_str(), string_VkFormat(ahb_format_props.format),
+                        string_VkFormat(image_state->GetFormat()), ahb_loc.Fields().c_str(), string_VkFormat(ahb_format_props.format),
                         import_ahb_info->buffer);
                 }
             }
 
             // The width, height, and array layer dimensions of image and the Android hardwarebuffer must be identical
-            if ((ici->extent.width != ahb_desc.width) || (ici->extent.height != ahb_desc.height) ||
-                (ici->arrayLayers != ahb_desc.layers)) {
+            if ((image_state->GetExtent().width != ahb_desc.width) || (image_state->GetExtent().height != ahb_desc.height) ||
+                (image_state->GetArrayLayers() != ahb_desc.layers)) {
                 skip |=
                     LogError("VUID-VkMemoryAllocateInfo-pNext-02388", mem_ded_alloc_info->image, dedicated_image_loc,
                              "was created with width (%" PRId32 "),  height (%" PRId32 "), and arrayLayers (%" PRId32
                              ") which not match those of the %s AHardwareBuffer (%" PRId32 " %" PRId32 " %" PRId32 "). (AHB = %p).",
-                             ici->extent.width, ici->extent.height, ici->arrayLayers, ahb_loc.Fields().c_str(), ahb_desc.width,
-                             ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
+                             image_state->GetExtent().width, image_state->GetExtent().height, image_state->GetArrayLayers(),
+                             ahb_loc.Fields().c_str(), ahb_desc.width, ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
             }
 
             if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) != 0) {
-                if ((ici->mipLevels != 1) && (ici->mipLevels != FullMipChainLevels(ici->extent))) {
+                if ((image_state->GetMipLevels() != 1) &&
+                    (image_state->GetMipLevels() != FullMipChainLevels(image_state->GetExtent()))) {
                     skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02389", mem_ded_alloc_info->image, ahb_loc,
                                      "AHardwareBuffer_Desc's usage (0x%" PRIx64
                                      ") includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but %s mipLevels (%" PRIu32
                                      ") is neither 1 nor full mip chain levels (%" PRIu32 "). (AHB = %p).",
-                                     ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels,
-                                     FullMipChainLevels(ici->extent), import_ahb_info->buffer);
+                                     ahb_desc.usage, dedicated_image_loc.Fields().c_str(), image_state->GetMipLevels(),
+                                     FullMipChainLevels(image_state->GetExtent()), import_ahb_info->buffer);
                 }
             } else {
-                if (ici->mipLevels != 1) {
-                    skip |=
-                        LogError("VUID-VkMemoryAllocateInfo-pNext-02586", mem_ded_alloc_info->image, ahb_loc,
-                                 "AHardwareBuffer_Desc's usage (0x%" PRIx64
-                                 ") is missing 0x4000000 (AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) but %s mipLevels is %" PRIu32
-                                 ". (AHB = %p).",
-                                 ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels, import_ahb_info->buffer);
+                if (image_state->GetMipLevels() != 1) {
+                    skip |= LogError(
+                        "VUID-VkMemoryAllocateInfo-pNext-02586", mem_ded_alloc_info->image, ahb_loc,
+                        "AHardwareBuffer_Desc's usage (0x%" PRIx64
+                        ") is missing 0x4000000 (AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) but %s mipLevels is %" PRIu32
+                        ". (AHB = %p).",
+                        ahb_desc.usage, dedicated_image_loc.Fields().c_str(), image_state->GetMipLevels(), import_ahb_info->buffer);
                 }
             }
 
@@ -367,11 +367,11 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-            if (ici->usage & ~(valid_vk_usages)) {
-                skip |=
-                    LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
-                             "was created with %s which are not listed in the AHardwareBuffer Usage Equivalence table. (AHB = %p).",
-                             string_VkImageUsageFlags(ici->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
+            if (image_state->usage & ~(valid_vk_usages)) {
+                skip |= LogError(
+                    "VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
+                    "was created with %s which are not listed in the AHardwareBuffer Usage Equivalence table. (AHB = %p).",
+                    string_VkImageUsageFlags(image_state->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
             }
 
             // Based on vkspec.html#memory-external-android-hardware-buffer-usage
@@ -384,7 +384,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
             };
 
             for (const auto& [vk_usage, ahb_usage] : ahb_usage_map_v2a) {
-                if (ici->usage & vk_usage) {
+                if (image_state->usage & vk_usage) {
                     if (0 == (ahb_usage & ahb_desc.usage)) {
                         skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
                                          "was created with %s, but the AHB equivalent 0x%" PRIx64
@@ -534,7 +534,8 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
 }
 
 // Validate creating an image with an external format
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const {
     bool skip = false;
 
     const VkExternalFormatANDROID* ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info.pNext);
@@ -546,27 +547,27 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
                              string_VkFormat(create_info.format));
         }
 
-        if (0 != (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT & create_info.flags)) {
+        if (0 != (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT & create_flags)) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02396", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but flags is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageCreateFlags(create_info.flags).c_str());
+                             string_VkImageCreateFlags(create_flags).c_str());
         }
 
-        if (0 != (~(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &
-                  create_info.usage)) {
+        if (0 !=
+            (~(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & usage)) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02397", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "(%" PRIu64 ") is non-zero, but usage is %s.", ext_fmt_android->externalFormat,
-                             string_VkImageUsageFlags(create_info.usage).c_str());
+                             string_VkImageUsageFlags(usage).c_str());
         } else if (!enabled_features.externalFormatResolve &&
-                   ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & create_info.usage)) {
+                   ((VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) & usage)) {
             skip |= LogError(
                 "VUID-VkImageCreateInfo-pNext-09457", device,
                 create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                 "(%" PRIu64
                 ") is non-zero, but usage is %s (without externalFormatResolve, only VK_IMAGE_USAGE_SAMPLED_BIT is allowed).",
-                ext_fmt_android->externalFormat, string_VkImageUsageFlags(create_info.usage).c_str());
+                ext_fmt_android->externalFormat, string_VkImageUsageFlags(usage).c_str());
         }
 
         if (VK_IMAGE_TILING_OPTIMAL != create_info.tiling) {
@@ -695,7 +696,8 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                            const VkImageCreateFlags create_flags, const VkImageUsageFlags usage) const {
     return false;
 }
 

@@ -88,6 +88,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.feature_requirements import FeatureRequirementsGenerator
     from generators.feature_not_present import FeatureNotPresentGenerator
     from generators.test_icd_generator import TestIcdGenerator
+    from generators.extended_flags_helper_generator import ExtendedFlagsHelperOutputGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -349,6 +350,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         'test_icd_helper.h' : {
             'generator' : TestIcdGenerator,
             'genCombined': False,
+        },
+        'extended_flags_helper_generator.h' : {
+            'generator' : ExtendedFlagsHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'extended_flags_helper_generator.cpp' : {
+            'generator' : ExtendedFlagsHelperOutputGenerator,
+            'genCombined': True,
         },
     }
 

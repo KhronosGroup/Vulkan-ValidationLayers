@@ -2661,7 +2661,7 @@ bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound& last_boun
             if (!attachment || !attachment_info.IsDepth()) {
                 continue;
             }
-            if ((attachment->image_state->create_info.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+            if ((attachment->image_state->create_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                 const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
                 const vvl::ActionVUID vuid = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
                                                  ? vvl::ActionVUID::SAMPLE_LOCATION_07484

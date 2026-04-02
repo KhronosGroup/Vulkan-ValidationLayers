@@ -521,7 +521,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                         pAllocateInfo->allocationSize, image_loc.Fields().c_str(), FormatHandle(dedicated_image).c_str(),
                         image_state->requirements[0].size);
                 }
-                if ((image_state->create_info.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
+                if ((image_state->create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01434", objlist, image_loc,
                                      "(%s): was created with VK_IMAGE_CREATE_SPARSE_BINDING_BIT.",
                                      FormatHandle(dedicated_image).c_str());
@@ -1874,7 +1874,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(allocate_info.pNext);
                     const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
-                    if (image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) {
+                    if (image_state->create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) {
                         if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
                             const char* vuid =
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-08113" : "VUID-vkBindImageMemory-image-08113";
@@ -1992,8 +1992,8 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
             auto current_image_state = Get<vvl::Image>(bind_info.image);
             auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
             if ((bind_info.memoryOffset != 0) || !current_image_state ||
-                (dedicated_image_state && !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
-                                              dedicated_image_state->create_info))) {
+                (dedicated_image_state &&
+                 !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(*dedicated_image_state))) {
                 const char* vuid =
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02629" : "VUID-vkBindImageMemory-memory-02629";
                 const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
@@ -2016,7 +2016,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
             }
         }
     } else if (IsExtEnabled(extensions.vk_khr_dedicated_allocation) &&
-               (image_state.create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+               (image_state.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
         // If using Disjoint (for Multi-Planar, we need to include a VkImagePlaneMemoryRequirementsInfo) but if
         // disjoint, it can't also have dedicated allocations
         VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
@@ -2052,7 +2052,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
 
     auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(memory_state.allocate_info.pNext);
     const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
-    if (image_state.create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
+    if (image_state.create_flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
         if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
             const char* vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-08113" : "VUID-vkBindImageMemory-image-08113";
             const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -2354,7 +2354,7 @@ bool CoreChecks::ValidateBindImageMemoryDeviceGroupInfo(const VkBindImageMemoryI
         }
 
         if (image_state && bind_image_memory_device_group->splitInstanceBindRegionCount != 0) {
-            if (!(image_state->create_info.flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)) {
+            if (!(image_state->create_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)) {
                 const LogObjectList objlist(bind_info.image, bind_info.memory);
                 skip |=
                     LogError("VUID-VkBindImageMemoryInfo-pNext-01627", objlist,

@@ -368,6 +368,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         self.stype_version_dict = dict()
 
+        # Todo: move to vulkan object
+        self.extended_structs = set()
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -391,6 +394,31 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             * limitations under the License.
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+
+        # Todo: move to vulkan object
+        from dataclasses import dataclass
+        @dataclass
+        class ExtendedFlag:
+            struct: str
+            member: Member
+
+        for member in (m for s in self.vk.structs.values() for m in s.members):
+                member.extendedFlag = None
+
+        buffer_usage2 = self.vk.structs['VkBufferUsageFlags2CreateInfo']
+        pipe_flags2 = self.vk.structs['VkPipelineCreateFlags2CreateInfo']
+        self.vk.structs['VkBufferCreateInfo'].members[4].extendedFlag = ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
+        self.vk.structs['VkPhysicalDeviceExternalBufferInfo'].members[3].extendedFlag = ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
+        self.vk.structs['VkDescriptorBufferBindingInfoEXT'].members[3].extendedFlag =ExtendedFlag(struct=buffer_usage2.name, member=buffer_usage2.members[2])
+        self.vk.structs['VkComputePipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        self.vk.structs['VkGraphicsPipelineCreateInfo'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        self.vk.structs['VkRayTracingPipelineCreateInfoNV'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].members[2].extendedFlag = ExtendedFlag(struct=pipe_flags2.name, member=pipe_flags2.members[2])
+        for member in (m for s in self.vk.structs.values() for m in s.members):
+            if member.extendedFlag:
+                self.extended_structs.add(member.extendedFlag.struct)
+        self.extended_structs = sorted(self.extended_structs)
 
         if self.filename == 'stateless_instance_methods.h':
             self.generateInstanceHeader()
@@ -1128,7 +1156,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         else:
                             if self.vk.commands[funcName].instance:
                                 isInstanceFunction = 'true'
+                        extended = getattr(member, 'flagsextend', None)
+                        if (extended):
+                            usedLines.append(f'if (!vku::FindStructInPNextChain<{extended.struct}>({valuePrefix}pNext)) {{')
                         usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg}, {isInstanceFunction});\n')
+                        if (extended):
+                            usedLines.append(f'}}')
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= {context}ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type == 'VkDeviceAddress' and not member.optional:

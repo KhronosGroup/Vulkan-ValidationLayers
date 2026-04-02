@@ -116,7 +116,7 @@ bool CoreChecks::ValidateSubresourceImageLayout(const vvl::CommandBuffer& cb_sta
     VkImageSubresourceRange normalized_subresource_range =
         image_state.NormalizeSubresourceRange(RangeFromLayers(subresource_layers));
 
-    if (CanTransitionDepthSlices(extensions, image_state.create_info)) {
+    if (CanTransitionDepthSlices(extensions, image_state.GetImageType(), image_state.create_flags)) {
         normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
         normalized_subresource_range.layerCount = depth_extent;
     }
@@ -393,7 +393,6 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
                                                                      vvl::Image& image_state, VkSampleCountFlagBits msrtss_samples,
                                                                      const Location& rasterization_samples_loc) const {
     bool skip = false;
-    const auto image_create_info = image_state.create_info;
     if (!image_state.image_format_properties.sampleCounts) {
         skip |= GetPhysicalDeviceImageFormatProperties(image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
                                                        rasterization_samples_loc);
@@ -408,9 +407,9 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
                          "usage: %s\n"
                          "flags: %s\n",
                          string_VkSampleCountFlagBits(msrtss_samples), FormatHandle(image_state).c_str(),
-                         string_VkFormat(image_create_info.format), string_VkImageType(image_state.GetImageType()),
-                         string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                         string_VkImageCreateFlags(image_create_info.flags).c_str());
+                         string_VkFormat(image_state.GetFormat()), string_VkImageType(image_state.GetImageType()),
+                         string_VkImageTiling(image_state.GetTiling()), string_VkImageUsageFlags(image_state.usage).c_str(),
+                         string_VkImageCreateFlags(image_state.create_flags).c_str());
     }
     return skip;
 }
@@ -426,7 +425,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
     }
     const bool use_rp2 = rp_loc.function != Func::vkCmdBeginRenderPass;
     const char* vuid = kVUIDUndefined;
-    VkImageUsageFlags image_usage = image_view_state.inherited_usage;
+    const VkImageUsageFlags image_usage = image_view_state.inherited_usage;
 
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
@@ -1153,7 +1152,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
 
     // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
     if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-        CanTransitionDepthSlices(extensions, image_state.create_info)) {
+        CanTransitionDepthSlices(extensions, image_state.GetImageType(), image_state.create_flags)) {
         normalized_subresource_range.layerCount = image_state.GetExtent().depth - normalized_subresource_range.baseArrayLayer;
     }
 

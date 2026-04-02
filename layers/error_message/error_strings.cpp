@@ -21,10 +21,23 @@
 #include "containers/span.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/state_tracker.h"
+#include "generated/extended_flags_helper_generator.h"
 
 #include <sstream>
 
 constexpr const char* indent = "    ";
+
+[[maybe_unused]] std::string string_VkPhysicalDeviceImageFormatInfo2(VkPhysicalDeviceImageFormatInfo2 info) {
+    VkImageCreateFlags create_flags = GetImageCreateFlags(info);
+    VkImageUsageFlags usage = GetImageUsageFlags(info);
+    std::ostringstream ss;
+    ss << "format (" << string_VkFormat(info.format) << ")\n";
+    ss << "type (" << string_VkImageType(info.type) << ")\n";
+    ss << "tiling (" << string_VkImageTiling(info.tiling) << ")\n";
+    ss << "usage (" << string_VkImageUsageFlags(usage) << ")\n";
+    ss << "flags (" << string_VkImageCreateFlags(create_flags) << ")\n";
+    return ss.str();
+}
 
 std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_dependency_info, VkDependencyInfo dependency_info) {
     std::ostringstream set;

@@ -51,12 +51,12 @@ using RangeGenerator = subresource_adapter::RangeGenerator;
 // Dynamic Rendering we know it is depth only, but for VkRenderPass, we need to check incase it is a stencil only attachment
 bool AttachmentInfo::IsDepth() const {
     return type == Type::Depth ||
-           (type == Type::DepthStencil && image_view && vkuFormatHasDepth(image_view->image_state->create_info.format));
+           (type == Type::DepthStencil && image_view && vkuFormatHasDepth(image_view->image_state->GetFormat()));
 }
 
 bool AttachmentInfo::IsStencil() const {
     return type == Type::Stencil ||
-           (type == Type::DepthStencil && image_view && vkuFormatHasStencil(image_view->image_state->create_info.format));
+           (type == Type::DepthStencil && image_view && vkuFormatHasStencil(image_view->image_state->GetFormat()));
 }
 
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
@@ -1840,7 +1840,7 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
 
-        if (depth_extent != 0 && CanTransitionDepthSlices(dev_data.extensions, image_state.create_info)) {
+        if (depth_extent != 0 && CanTransitionDepthSlices(dev_data.extensions, image_state.GetImageType(), image_state.create_flags)) {
             normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
             normalized_subresource_range.layerCount = depth_extent;
         }

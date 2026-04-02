@@ -232,7 +232,7 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
                                           "A queue family ownership transfer is being performed on %s, but this %s. Image was "
                                           "created with VK_IMAGE_TILING_LINEAR.",
                                           FormatHandle(image).c_str(), warning);
-        } else if ((image_state->create_info.usage &
+        } else if ((image_state->usage &
                     (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                      VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) ==
@@ -341,7 +341,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
             // general with no storage
             if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
-                if (image_state && !(image_state->create_info.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+                if (image_state && !(image_state->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);
                     skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidGeneral", objlist,
                                                   error_obj.location.dot(Field::pImageMemoryBarriers, i).dot(Field::image),

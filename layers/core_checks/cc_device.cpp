@@ -40,6 +40,7 @@
 #include "utils/file_system_utils.h"
 #include "utils/spirv_tools_utils.h"
 #include "containers/container_utils.h"
+#include "generated/extended_flags_helper_generator.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid,
                                            bool optional = false) const {
@@ -90,13 +91,12 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image& image_state, const char* vuid_string,
                                                         const Location& loc) const {
     bool skip = false;
-    const auto image_create_info = image_state.create_info;
     VkResult image_properties_result = VK_SUCCESS;
     Func command = Func::vkGetPhysicalDeviceImageFormatProperties;
-    if (image_create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+    if (image_state.GetTiling() != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-            physical_device, image_create_info.format, image_state.GetImageType(), image_create_info.tiling,
-            image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
+            physical_device, image_state.GetFormat(), image_state.GetImageType(), image_state.GetTiling(), image_state.usage,
+            image_state.create_flags, &image_state.image_format_properties);
     } else {
         command = Func::vkGetPhysicalDeviceImageFormatProperties2;
         VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state.GetImageFormatInfo2();
@@ -106,12 +106,15 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image& image_state,
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
     }
     if (image_properties_result != VK_SUCCESS) {
-        skip |= LogError(vuid_string, device, loc,
-                         "internal call to %s unexpectedly "
-                         "failed with result = %s, "
-                         "when called for validation with following VkImageCreateInfo\n%s",
-                         String(command), string_VkResult(image_properties_result),
-                         string_VkPhysicalDeviceImageFormatInfo2(image_create_info).c_str());
+        skip |=
+            LogError(vuid_string, device, loc,
+                     "internal call to %s unexpectedly "
+                     "failed with result = %s, "
+                     "when called for validation with following VkImageCreateInfo\n%s",
+                     String(command), string_VkResult(image_properties_result),
+                     string_VkPhysicalDeviceImageFormatInfo2(image_state.create_flags, image_state.usage, image_state.GetFormat(),
+                                                             image_state.GetImageType(), image_state.GetTiling())
+                         .c_str());
     }
     return skip;
 }
@@ -479,12 +482,13 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
     bool skip = false;
     const auto* copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
-        if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
+        const VkImageUsageFlags usage_flags = GetImageUsageFlags(*pImageFormatInfo);
+        if ((usage_flags & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", gpu, error_obj.location,
                              "pImageFormatProperties includes a chained "
                              "VkHostImageCopyDevicePerformanceQuery struct, but pImageFormatInfo->usage (%s) does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT",
-                             string_VkImageUsageFlags(pImageFormatInfo->usage).c_str());
+                             string_VkImageUsageFlags(usage_flags).c_str());
         }
     }
     return skip;
