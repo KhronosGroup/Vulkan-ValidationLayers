@@ -1,0 +1,71 @@
+// Copyright (c) 2024-2026 The Khronos Group Inc.
+// Copyright (c) 2024-2026 Valve Corporation
+// Copyright (c) 2024-2026 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+// from RayFlagsMask in spirv.hpp
+const uint SpvRayFlags_OpaqueKHRMask = 0x00000001;
+const uint SpvRayFlags_NoOpaqueKHRMask = 0x00000002;
+const uint SpvRayFlags_TerminateOnFirstHitKHRMask = 0x00000004;
+const uint SpvRayFlags_SkipClosestHitShaderKHRMask = 0x00000008;
+const uint SpvRayFlags_CullBackFacingTrianglesKHRMask = 0x00000010;
+const uint SpvRayFlags_CullFrontFacingTrianglesKHRMask = 0x00000020;
+const uint SpvRayFlags_CullOpaqueKHRMask = 0x00000040;
+const uint SpvRayFlags_CullNoOpaqueKHRMask = 0x00000080;
+const uint SpvRayFlags_SkipBuiltinPrimitivesNVMask = 0x00000100;
+const uint SpvRayFlags_SkipTrianglesKHRMask = 0x00000100;
+const uint SpvRayFlags_SkipAABBsKHRMask = 0x00000200;
+const uint SpvRayFlags_ForceOpacityMicromap2StateEXTMask = 0x00000400;
+
+#define has_multiple_flags(masked_flags) (((masked_flags) & ((masked_flags) - 1)) != 0)
+
+
+bool inst_trace_ray_comp(const uint inst_offset,
+                         const uint rayFlags)
+{
+    uint error = 0u;
+    uint param_0 = 0u;
+    uint param_1 = 0u;
+
+    const uint triangles_flags_mask = SpvRayFlags_SkipTrianglesKHRMask | SpvRayFlags_CullBackFacingTrianglesKHRMask | SpvRayFlags_CullFrontFacingTrianglesKHRMask;
+    const uint opaque_flags_mask = SpvRayFlags_OpaqueKHRMask | SpvRayFlags_NoOpaqueKHRMask | SpvRayFlags_CullOpaqueKHRMask | SpvRayFlags_CullNoOpaqueKHRMask;
+
+    if (has_multiple_flags(rayFlags & triangles_flags_mask)) {
+        error = kErrorSubCode_TraceRay_TrianglesFlags;
+        param_0 = rayFlags;
+    } else if (has_multiple_flags(rayFlags & opaque_flags_mask)) {
+        error = kErrorSubCode_TraceRay_OpaqueFlags;
+        param_0 = rayFlags;
+    }
+
+    if (0u != error) {
+         error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            param_0,
+                            param_1,
+                            0
+                        );
+        return false;
+    }
+
+    return true;
+}

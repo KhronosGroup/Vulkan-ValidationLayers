@@ -366,7 +366,8 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     };
 
     // Swap all Reference IDs (ignores Result ID)
-    switch (Opcode()) {
+    const uint32_t op_code = Opcode();
+    switch (op_code) {
         case spv::OpCompositeExtract:
         case spv::OpLoad:
         case spv::OpArrayLength:

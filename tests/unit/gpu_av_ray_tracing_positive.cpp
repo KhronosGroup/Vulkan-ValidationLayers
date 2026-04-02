@@ -743,7 +743,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
     %v3float = OpTypeVector %float 3
          %27 = OpConstantComposite %v3float %float_0_5 %float_0_5 %float_0_5
 %float_1000000 = OpConstant %float 1000000
-%uint_4294967295 = OpConstant %uint 4294967295
 %_runtimearr_float = OpTypeRuntimeArray %float
 %type_RWStructuredBuffer_float = OpTypeStruct %_runtimearr_float
 %_ptr_StorageBuffer_type_RWStructuredBuffer_float = OpTypePointer StorageBuffer %type_RWStructuredBuffer_float
@@ -787,7 +786,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
          %50 = OpCompositeConstruct %ColorPayload %43
                OpStore %payload_1 %50
          %51 = OpLoad %accelerationStructureNV %_tlas
-               OpTraceRayKHR %51 %uint_4294967295 %uint_0 %uint_0 %uint_0 %uint_0 %42 %float_0 %27 %float_1000000 %payload_1
+               OpTraceRayKHR %51 %uint_0 %uint_0 %uint_0 %uint_0 %uint_0 %42 %float_0 %27 %float_1000000 %payload_1
          %52 = OpLoad %ColorPayload %payload_1
          %53 = OpCompositeExtract %uint %52 0
          %15 = OpCopyObject %uint %53
