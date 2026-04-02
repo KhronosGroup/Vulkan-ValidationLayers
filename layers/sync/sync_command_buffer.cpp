@@ -592,7 +592,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                             hazard = current_context_->DetectHazard(*img_view_state, sync_index);
                         }
 
-                        if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
+                        if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), img_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.ImageDescriptorError(
                                 hazard, *this, loc.function, sync_state_.FormatHandle(*img_view_state), *pipe,
@@ -611,7 +611,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const auto* buf_state = buf_view_state->buffer_state.get();
                         const AccessRange range = MakeRange(*buf_view_state);
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
+                        if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), buf_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
                                 hazard, *this, loc.function, sync_state_.FormatHandle(*buf_view_state), *pipe,
@@ -638,7 +638,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const auto* buf_state = buffer_descriptor->GetBufferState();
                         const AccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
+                        if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
                                 hazard, *this, loc.function, sync_state_.FormatHandle(*buf_state), *pipe, variable.decorations.set,
@@ -659,8 +659,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (const vvl::BufferAndOffset as_buffer = accel->GetFirstValidBuffer(cb_state_->dev_data)) {
                             const AccessRange range = MakeRange(*as_buffer.state, as_buffer.offset, accel->GetSize());
                             auto hazard = current_context_->DetectHazard(*as_buffer.state, sync_index, range);
-                            // TODO: figure out what is the purpose of SuppressedBoundDescriptorWAW and do we still need it?
-                            if (hazard.IsHazard() && !sync_state_.SuppressedBoundDescriptorWAW(hazard)) {
+                            if (hazard.IsHazard()) {
                                 LogObjectList objlist(cb_state_->Handle(), as_buffer.state->Handle(), pipe->Handle());
                                 const std::string resource_description = sync_state_.FormatHandle(accel->Handle());
                                 const std::string error = error_messages_.AccelerationStructureDescriptorError(
