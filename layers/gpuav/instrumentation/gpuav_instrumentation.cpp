@@ -227,7 +227,7 @@ void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb
 
     for (const auto& func : vvl::make_span(cb_state.on_instrumentation_common_desc_update_functions)) {
         CommonDescriptorUpdate common_update;
-        func(cb_state, last_bound.bind_point, loc, common_update);
+        func(cb_state, last_bound, loc, common_update);
 
         if (common_update.address == 0) {
             continue;  // case like VertexAttributeFetchOff returning without a binding
@@ -262,7 +262,7 @@ void UpdateInstrumentationDescHeap(Validator& gpuav, CommandBufferSubState& cb_s
 
     for (const auto& func : vvl::make_span(cb_state.on_instrumentation_common_desc_update_functions)) {
         CommonDescriptorUpdate common_update;
-        func(cb_state, last_bound.bind_point, loc, common_update);
+        func(cb_state, last_bound, loc, common_update);
         if (common_update.address == 0) {
             continue;  // case like VertexAttributeFetchOff returning without a binding
         }
@@ -271,7 +271,7 @@ void UpdateInstrumentationDescHeap(Validator& gpuav, CommandBufferSubState& cb_s
     }
 }
 
-void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                   VkDescriptorSet instrumentation_desc_set, const Location& loc) {
     small_vector<VkWriteDescriptorSet, 8> desc_writes = {};
 
@@ -341,7 +341,7 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
     std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_common_desc_update_functions.size());
     for (const auto [func_i, func] : vvl::enumerate(cb_state.on_instrumentation_common_desc_update_functions)) {
         CommonDescriptorUpdate common_update;
-        func(cb_state, bind_point, loc, common_update);
+        func(cb_state, last_bound, loc, common_update);
         if (common_update.buffer == VK_NULL_HANDLE) {
             continue;  // case like VertexAttributeFetchOff returning without a binding
         }
@@ -444,7 +444,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, Command
         return;
     }
 
-    UpdateInstrumentationDescSet(gpuav, cb_state, last_bound.bind_point, instrumentation_desc_set, loc);
+    UpdateInstrumentationDescSet(gpuav, cb_state, last_bound, instrumentation_desc_set, loc);
 
     // Bind instrumentation descriptor set, using an appropriate pipeline layout
     // ---

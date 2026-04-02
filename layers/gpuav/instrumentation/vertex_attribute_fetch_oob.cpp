@@ -341,8 +341,8 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
     };
 
     cb.on_instrumentation_common_desc_update_functions.emplace_back(
-        [&gpuav, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState& cb, VkPipelineBindPoint bind_point,
-                                                                 const Location& loc, CommonDescriptorUpdate& out_update) {
+        [&gpuav, get_vertex_attribute_fetch_limits_buffer_range](CommandBufferSubState& cb, const LastBound&, const Location& loc,
+                                                                 CommonDescriptorUpdate& out_update) {
             if (!vvl::IsCommandDrawVertex(loc.function)) {
                 return;
             }

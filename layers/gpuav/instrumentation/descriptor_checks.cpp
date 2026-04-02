@@ -367,7 +367,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         });
 
     cb.on_instrumentation_common_desc_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, const LastBound&, const Location&,
                                                   CommonDescriptorUpdate& out_update) mutable {
             DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
             if (dc_cb_state) {

@@ -39,6 +39,8 @@
 #include "state_tracker/tensor_state.h"
 #include "state_tracker/descriptor_mode.h"
 
+struct LastBound;
+
 namespace gpuav {
 
 class Validator;
@@ -65,10 +67,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         std::string& out_error_msg, std::string& out_vuid_msg)>;
     using OnInstrumentationErrorLoggerRegister = stdext::inplace_function<InstrumentationErrorLogger(
         Validator &gpuav, CommandBufferSubState &cb, const LastBound &last_bound)>;
-    using OnInstrumentationCommonDescUpdate =
-        stdext::inplace_function<void(CommandBufferSubState& cb, VkPipelineBindPoint bind_point, const Location& loc,
-                                      CommonDescriptorUpdate& out_update),
-                                 48>;
+    using OnInstrumentationCommonDescUpdate = stdext::inplace_function<
+        void(CommandBufferSubState& cb, const LastBound& last_bound, const Location& loc, CommonDescriptorUpdate& out_update), 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =

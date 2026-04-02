@@ -96,7 +96,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
     });
 
     cb.on_instrumentation_common_desc_update_functions.emplace_back(
-        [](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&, CommonDescriptorUpdate& out_update) {
+        [](CommandBufferSubState& cb, const LastBound&, const Location&, CommonDescriptorUpdate& out_update) {
             BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
             const vko::BufferRange& buffer_range = bda_cb_state.bda_ranges_snapshot_ptr;
             out_update.buffer = buffer_range.buffer;
