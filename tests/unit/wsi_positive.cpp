@@ -3377,6 +3377,47 @@ TEST_F(PositiveWsi, MultipleCreateDisplay) {
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
 }
 
+TEST_F(PositiveWsi, ExtendedFlags) {
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    AddSurfaceExtension();
+
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags_2 = vku::InitStructHelper();
+    image_usage_flags_2.usage = VK_IMAGE_USAGE_2_TRANSFER_DST_BIT_KHR;
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&image_usage_flags_2);
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = 0;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+    m_swapchain.Init(*m_device, swapchain_create_info);
+
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    VkImageSubresourceRange subresource_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    m_command_buffer.Begin();
+    vk::CmdClearColorImage(m_command_buffer, swapchain_images[image_index], VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1u,
+                           &subresource_range);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveWsi, SharedPresentLayout) {
     TEST_DESCRIPTION("Use single SHARED_PRESENT layout both for rendering and presentation");
     AddSurfaceExtension();

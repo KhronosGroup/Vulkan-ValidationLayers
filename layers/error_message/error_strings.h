@@ -164,15 +164,16 @@ class DeviceState;
 std::string string_VkPhysicalDeviceImageFormatInfo2(VkPhysicalDeviceImageFormatInfo2 info);
 
 // Same thing as VkPhysicalDeviceImageFormatInfo2 but given the actual VkImageCreateInfo
-[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkImageCreateFlags flags, VkImageUsageFlags usage,
+[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkImageCreateFlags2KHR flags,
+                                                                            VkImageUsageFlags2KHR usage,
                                                                             VkFormat format, VkImageType imageType,
                                                                             VkImageTiling tiling) {
     std::ostringstream ss;
     ss << "format (" << string_VkFormat(format) << ")\n";
     ss << "type (" << string_VkImageType(imageType) << ")\n";
     ss << "tiling (" << string_VkImageTiling(tiling) << ")\n";
-    ss << "usage (" << string_VkImageUsageFlags(usage) << ")\n";
-    ss << "flags (" << string_VkImageCreateFlags(flags) << ")\n";
+    ss << "usage (" << string_VkImageUsageFlags2KHR(usage) << ")\n";
+    ss << "flags (" << string_VkImageCreateFlags2KHR(flags) << ")\n";
     return ss.str();
 }
 

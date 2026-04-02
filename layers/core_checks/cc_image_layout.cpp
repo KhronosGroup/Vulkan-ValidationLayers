@@ -463,8 +463,8 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
                          "flags: %s\n",
                          string_VkSampleCountFlagBits(msrtss_samples), FormatHandle(image_state).c_str(),
                          string_VkFormat(image_state.GetFormat()), string_VkImageType(image_state.GetImageType()),
-                         string_VkImageTiling(image_state.GetTiling()), string_VkImageUsageFlags(image_state.usage).c_str(),
-                         string_VkImageCreateFlags(image_state.create_flags).c_str());
+                         string_VkImageTiling(image_state.GetTiling()), string_VkImageUsageFlags2KHR(image_state.usage).c_str(),
+                         string_VkImageCreateFlags2KHR(image_state.create_flags).c_str());
     }
     return skip;
 }
@@ -480,7 +480,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
     }
     const bool use_rp2 = rp_loc.function != Func::vkCmdBeginRenderPass;
     const char* vuid = kVUIDUndefined;
-    const VkImageUsageFlags image_usage = image_view_state.inherited_usage;
+    const VkImageUsageFlags2KHR image_usage = image_view_state.inherited_usage;
 
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {

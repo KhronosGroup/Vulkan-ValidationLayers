@@ -770,7 +770,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
                 if (!image_state->sparse_residency) {
                     skip |= LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
-                                     "was created with flags %s.", string_VkImageCreateFlags(image_state->create_flags).c_str());
+                                     "was created with flags %s.", string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
                 }
 
                 for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {

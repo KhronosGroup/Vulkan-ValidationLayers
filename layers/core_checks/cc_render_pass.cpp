@@ -1121,8 +1121,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         const auto &subresource_range = image_view_state->normalized_subresource_range;
         const VkFramebufferAttachmentImageInfo* framebuffer_attachment_image_info =
             &framebuffer_attachments_create_info->pAttachmentImageInfos[i];
-        const VkImageCreateFlags fb_att_image_create_flags = GetImageCreateFlags(*framebuffer_attachment_image_info);
-        const VkImageUsageFlags fb_att_image_usage_flags = GetImageUsageFlags(*framebuffer_attachment_image_info);
+        const VkImageCreateFlags2KHR fb_att_image_create_flags = GetImageCreateFlags(*framebuffer_attachment_image_info);
+        const VkImageUsageFlags2KHR fb_att_image_usage_flags = GetImageUsageFlags(*framebuffer_attachment_image_info);
         const auto image_state = image_view_state->image_state;
         const LogObjectList objlist(begin_info.renderPass, begin_info.framebuffer, image_view_state->Handle(),
                                     image_view_state->image_state->Handle());
@@ -1132,8 +1132,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              GetFlagsLocation(*framebuffer_attachment_image_info, attachment_loc),
                              "is %s, but the VkFramebuffer was created with "
                              "VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].flags = %s",
-                             string_VkImageCreateFlags(image_state->create_flags).c_str(), i,
-                             string_VkImageCreateFlags(fb_att_image_create_flags).c_str());
+                             string_VkImageCreateFlags2KHR(image_state->create_flags).c_str(), i,
+                             string_VkImageCreateFlags2KHR(fb_att_image_create_flags).c_str());
         }
 
         if (fb_att_image_usage_flags != image_view_state->inherited_usage) {
@@ -1141,8 +1141,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              GetUsageLocation(*framebuffer_attachment_image_info, attachment_loc),
                              "is (%s), but the VkFramebuffer was created with "
                              "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.\n%s",
-                             string_VkImageUsageFlags(image_state->usage).c_str(), i,
-                             string_VkImageUsageFlags(fb_att_image_usage_flags).c_str(),
+                             string_VkImageUsageFlags2KHR(image_state->usage).c_str(), i,
+                             string_VkImageUsageFlags2KHR(fb_att_image_usage_flags).c_str(),
                              image_view_state->DescribeImageUsage(*this).c_str());
         }
 
@@ -3209,11 +3209,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfoFeedbackLoop(VkCommandBuffer com
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-10780", objlist,
                                  attachment_loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT, Field::feedbackLoopEnable),
                                  "is VK_TRUE, but image view usage is %s.",
-                                 string_VkImageUsageFlags(image_view_state.inherited_usage).c_str());
+                                 string_VkImageUsageFlags2KHR(image_view_state.inherited_usage).c_str());
             } else {
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-10780", objlist, attachment_loc.dot(Field::imageLayout),
                                  "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, but image view usage is %s.",
-                                 string_VkImageUsageFlags(image_view_state.inherited_usage).c_str());
+                                 string_VkImageUsageFlags2KHR(image_view_state.inherited_usage).c_str());
             }
         }
     }
@@ -4838,8 +4838,8 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                          string_VkFormat(image_view_state.create_info.format),
                          string_VkSampleCountFlagBits(msrtss_info.rasterizationSamples),
                          string_VkImageType(image_state->GetImageType()), string_VkImageTiling(image_state->GetTiling()),
-                         string_VkImageUsageFlags(image_state->usage).c_str(),
-                         string_VkImageCreateFlags(image_state->create_flags).c_str());
+                         string_VkImageUsageFlags2KHR(image_state->usage).c_str(),
+                         string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
     }
     return skip;
 }
@@ -4931,13 +4931,13 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2* attach
             const VkFramebufferAttachmentsCreateInfo* fbaci =
                 vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(fbci.pNext);
             if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr && fbaci->attachmentImageInfoCount > fb_attachment) {
-                const VkImageUsageFlags image_usage = GetImageUsageFlags(fbaci->pAttachmentImageInfos[fb_attachment]);
+                const VkImageUsageFlags2KHR image_usage = GetImageUsageFlags(fbaci->pAttachmentImageInfos[fb_attachment]);
                 if ((image_usage & usage_flag) == 0) {
                     skip |= LogError(
                         vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
                         "expected usage (%s) conflicts with the VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
                         "].usage flags (%s).",
-                        string_VkImageUsageFlagBits(usage_flag), fb_attachment, string_VkImageUsageFlags(image_usage).c_str());
+                        string_VkImageUsageFlagBits(usage_flag), fb_attachment, string_VkImageUsageFlags2KHR(image_usage).c_str());
                 }
             }
         }

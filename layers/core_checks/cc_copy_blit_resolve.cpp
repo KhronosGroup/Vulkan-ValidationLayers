@@ -2003,7 +2003,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             skip =
                 LogError(vuid, src_objlist, src_image_loc, "(%s) was created with %s but requires VK_IMAGE_USAGE_TRANSFER_SRC_BIT.",
                          FormatHandle(src_image_state->Handle()).c_str(),
-                         string_VkImageUsageFlags(src_image_state->stencil_usage.value()).c_str());
+                         string_VkImageUsageFlags2KHR(src_image_state->stencil_usage.value()).c_str());
         }
         if (!src_image_state->stencil_usage.has_value() || has_non_stencil_aspect) {
             vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
@@ -2017,7 +2017,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             skip =
                 LogError(vuid, dst_objlist, dst_image_loc, "(%s) was created with %s but requires VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
                          FormatHandle(dst_image_state->Handle()).c_str(),
-                         string_VkImageUsageFlags(dst_image_state->stencil_usage.value()).c_str());
+                         string_VkImageUsageFlags2KHR(dst_image_state->stencil_usage.value()).c_str());
         }
         if (!dst_image_state->stencil_usage.has_value() || has_non_stencil_aspect) {
             vuid = is_2 ? "VUID-vkCmdCopyImage-aspect-06663" : "VUID-vkCmdCopyImage-aspect-06663";
@@ -2648,7 +2648,7 @@ bool CoreChecks::UsageHostTransferCheck(const vvl::Image& image_state, const VkI
                                  "VkImageStencilUsageCreateInfo, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT was not included in "
                                  "VkImageStencilUsageCreateInfo::stencilUsage (%s) used to create image",
                                  string_VkImageAspectFlags(aspect_mask).c_str(),
-                                 string_VkImageUsageFlags(image_state.stencil_usage.value()).c_str());
+                                 string_VkImageUsageFlags2KHR(image_state.stencil_usage.value()).c_str());
             }
         } else {
             if ((image_state.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
@@ -2657,7 +2657,7 @@ bool CoreChecks::UsageHostTransferCheck(const vvl::Image& image_state, const VkI
                                  "VkImageStencilUsageCreateInfo, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT was not included in "
                                  "VkImageCreateInfo::usage (%s) used to create image",
                                  string_VkImageAspectFlags(aspect_mask).c_str(),
-                                 string_VkImageUsageFlags(image_state.usage).c_str());
+                                 string_VkImageUsageFlags2KHR(image_state.usage).c_str());
             }
         }
     }
@@ -2668,7 +2668,7 @@ bool CoreChecks::UsageHostTransferCheck(const vvl::Image& image_state, const VkI
                          "(%s) includes aspects other than VK_IMAGE_ASPECT_STENCIL_BIT, but "
                          "VK_IMAGE_USAGE_HOST_TRANSFER_BIT was not included "
                          "in VkImageCreateInfo::usage (%s) used to create image",
-                         string_VkImageAspectFlags(aspect_mask).c_str(), string_VkImageUsageFlags(image_state.usage).c_str());
+                         string_VkImageAspectFlags(aspect_mask).c_str(), string_VkImageUsageFlags2KHR(image_state.usage).c_str());
         }
     }
     return skip;
@@ -2774,8 +2774,8 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image& src_image_st
     std::ostringstream mismatch_stream{};
 
     if (src_image_state.create_flags != dst_image_state.create_flags) {
-        mismatch_stream << "srcImage flags = " << string_VkImageCreateFlags(src_image_state.create_flags)
-                        << " and dstImage flags = " << string_VkImageCreateFlags(dst_image_state.create_flags) << '\n';
+        mismatch_stream << "srcImage flags = " << string_VkImageCreateFlags2KHR(src_image_state.create_flags)
+                        << " and dstImage flags = " << string_VkImageCreateFlags2KHR(dst_image_state.create_flags) << '\n';
     }
     if (src_image_state.GetImageType() != dst_image_state.GetImageType()) {
         mismatch_stream << "srcImage imageType = " << string_VkImageType(src_image_state.GetImageType())
@@ -2809,8 +2809,8 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(const vvl::Image& src_image_st
                         << " and dstImage tiling = " << string_VkImageTiling(dst_image_state.GetTiling()) << '\n';
     }
     if (src_image_state.usage != dst_image_state.usage) {
-        mismatch_stream << "srcImage usage = " << string_VkImageUsageFlags(src_image_state.usage)
-                        << " and dstImage usage = " << string_VkImageUsageFlags(dst_image_state.usage) << '\n';
+        mismatch_stream << "srcImage usage = " << string_VkImageUsageFlags2KHR(src_image_state.usage)
+                        << " and dstImage usage = " << string_VkImageUsageFlags2KHR(dst_image_state.usage) << '\n';
     }
     if (src_image_state.GetSharingMode() != dst_image_state.GetSharingMode()) {
         mismatch_stream << "srcImage sharingMode = " << string_VkSharingMode(src_image_state.GetSharingMode())
@@ -4152,13 +4152,13 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer&
         if (!(dst_image->usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
             skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-07664", dst_objlist, dst_image_loc,
                              "was created with usage (%s) which is missing VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
-                             string_VkImageUsageFlags(dst_image->usage).c_str());
+                             string_VkImageUsageFlags2KHR(dst_image->usage).c_str());
         }
 
         if (dst_image->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
             skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-07673", dst_objlist, dst_image_loc,
                              "was created with %s (which contains VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT).",
-                             string_VkImageCreateFlags(dst_image->create_flags).c_str());
+                             string_VkImageCreateFlags2KHR(dst_image->create_flags).c_str());
         }
 
         if (dst_image->GetSamples() != VK_SAMPLE_COUNT_1_BIT) {
@@ -4319,17 +4319,17 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                         "(%s) was created with flags (%s), but command buffer (%s) is not a protected command buffer and "
                         "protectedNoFault is not supported",
                         FormatHandle(image_state->Handle()).c_str(),
-                        string_VkImageCreateFlags(image_state->create_flags).c_str(), FormatHandle(command_buffer).c_str());
+                        string_VkImageCreateFlags2KHR(image_state->create_flags).c_str(), FormatHandle(command_buffer).c_str());
                 }
             } else {
                 if (is_memory_to_image) {
                     if ((image_state->create_flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0) {
-                        skip |=
-                            LogError("VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13021", objlist, region_loc.dot(Field::image),
-                                     "(%s) was created with flags (%s), but command buffer (%s) is a protected command buffer and "
-                                     "protectedNoFault is not supported",
-                                     FormatHandle(image_state->Handle()).c_str(), string_VkImageCreateFlags(image_state->create_flags).c_str(),
-                                     FormatHandle(command_buffer).c_str());
+                        skip |= LogError(
+                            "VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-13021", objlist, region_loc.dot(Field::image),
+                            "(%s) was created with flags (%s), but command buffer (%s) is a protected command buffer and "
+                            "protectedNoFault is not supported",
+                            FormatHandle(image_state->Handle()).c_str(),
+                            string_VkImageCreateFlags2KHR(image_state->create_flags).c_str(), FormatHandle(command_buffer).c_str());
                     }
                 } else {
                     if ((region.addressFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) == 0) {
@@ -4411,7 +4411,7 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
             const char* vuid = is_memory_to_image ? "VUID-vkCmdCopyMemoryToImageKHR-pCopyMemoryInfo-13020"
                                                   : "VUID-vkCmdCopyImageToMemoryKHR-pCopyMemoryInfo-13024";
             skip |= LogError(vuid, objlist, region_loc.dot(Field::image), "(%s) was created with usage (%s) which is missing %s.",
-                             FormatHandle(image_state->Handle()).c_str(), string_VkImageUsageFlags(image_state->usage).c_str(),
+                             FormatHandle(image_state->Handle()).c_str(), string_VkImageUsageFlags2KHR(image_state->usage).c_str(),
                              string_VkImageUsageFlagBits(required_usage));
         }
 

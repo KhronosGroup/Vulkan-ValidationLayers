@@ -86,12 +86,12 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
   public:
     // VkImageCreateFlags2CreateInfoKHR can be used instead of the VkImageCreateInfo::flags
-    const VkImageCreateFlags create_flags;
+    const VkImageCreateFlags2KHR create_flags;
     // VkImageUsageFlags2CreateInfoKHR can be used instead of the VkImageCreateInfo::usage
-    const VkImageUsageFlags usage;
-
+    const VkImageUsageFlags2KHR usage;
     // Provided by either VkImageStencilUsage2CreateInfo or VkImageStencilUsageCreateInfo and 0 otherwise
-    std::optional<VkImageUsageFlags> stencil_usage;
+    std::optional<VkImageUsageFlags2KHR> stencil_usage;
+
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
     const uint64_t ahb_format;                 // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
@@ -315,7 +315,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
     const VkFormatFeatureFlags2 format_features;
-    const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
+    const VkImageUsageFlags2KHR inherited_usage;  // from spec #resources-image-inherited-usage
 
     ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
               const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2 ff,

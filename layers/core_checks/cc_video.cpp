@@ -50,7 +50,7 @@ bool CoreChecks::OutsideVideoCodingScope(const vvl::CommandBuffer& cb_state, con
     return outside;
 }
 
-std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
+std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags2KHR image_usage,
                                                                              const VkVideoProfileListInfoKHR* profile_list) const {
     // NOTE: We have to mask out any usage that is not video related
     const VkImageUsageFlags video_usage_mask = VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
@@ -71,7 +71,7 @@ std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkI
     return format_props;
 }
 
-std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
+std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags2KHR image_usage,
                                                                              const VkVideoProfileInfoKHR* profile) const {
     VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
@@ -80,8 +80,9 @@ std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkI
     return GetVideoFormatProperties(image_usage, &profile_list);
 }
 
-bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
-                                        VkImageTiling tiling, const VkVideoProfileListInfoKHR* profile_list) const {
+bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags2KHR flags, VkImageUsageFlags2KHR usage, VkImageType imageType,
+                                        VkFormat format, VkImageTiling tiling,
+                                        const VkVideoProfileListInfoKHR* profile_list) const {
     auto format_props_list = GetVideoFormatProperties(usage, profile_list);
 
     for (auto& format_props : format_props_list) {
@@ -97,8 +98,8 @@ bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFl
     return false;
 }
 
-bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFlags usage, VkImageType imageType, VkFormat format,
-                                        VkImageTiling tiling, const VkVideoProfileInfoKHR* profile) const {
+bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags2KHR flags, VkImageUsageFlags2KHR usage, VkImageType imageType,
+                                        VkFormat format, VkImageTiling tiling, const VkVideoProfileInfoKHR* profile) const {
     VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
     profile_list.profileCount = 1;
     profile_list.pProfiles = profile;
@@ -106,7 +107,7 @@ bool CoreChecks::IsSupportedVideoFormat(VkImageCreateFlags flags, VkImageUsageFl
     return IsSupportedVideoFormat(flags, usage, imageType, format, tiling, &profile_list);
 }
 
-bool CoreChecks::IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage,
+bool CoreChecks::IsVideoFormatSupported(VkFormat format, VkImageUsageFlags2KHR image_usage,
                                         const VkVideoProfileInfoKHR* profile) const {
     auto format_props_list = GetVideoFormatProperties(image_usage, profile);
     for (const auto& format_props : format_props_list) {

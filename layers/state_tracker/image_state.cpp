@@ -546,12 +546,14 @@ static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo
 }
 
 // We print how we get this info in ImageView::DescribeImageUsage()
-static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo& ci, const vvl::Image& image_state) {
-    if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
+static VkImageUsageFlags2KHR GetInheritedUsage(const VkImageViewCreateInfo& ci, const vvl::Image& image_state) {
+    if (const auto usage_create_info_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(ci.pNext)) {
+        return usage_create_info_2->usage;
+    } else if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
         return usage_create_info->usage;
     }
 
-    VkImageUsageFlags usage = image_state.usage;
+    VkImageUsageFlags2KHR usage = image_state.usage;
 
     // We can't apply the stencil usage until we get the aspectMask to know how to appply it
     if (image_state.stencil_usage.has_value()) {
@@ -712,24 +714,32 @@ bool ImageView::OverlapSubresource(const ImageView& compare_view) const {
 
 std::string ImageView::DescribeImageUsage(const Logger& logger) const {
     std::ostringstream ss;
-    ss << logger.FormatHandle(create_info.image) << " was created with " << string_VkImageUsageFlags(image_state->usage);
+    ss << logger.FormatHandle(create_info.image) << " was created with " << string_VkImageUsageFlags2KHR(image_state->usage);
 
-    if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
+    if (auto usage_create_2_info = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(create_info.pNext)) {
+        // Even if using VkImageViewUsage2CreateInfoKHR, only worth showing if they are different
+        if (inherited_usage != usage_create_2_info->usage) {
+            ss << ", but VkImageViewUsage2CreateInfoKHR overwrote it with "
+               << string_VkImageUsageFlags2KHR(usage_create_2_info->usage) << "";
+        }
+    } else if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
         // Even if using VkImageViewUsageCreateInfo, only worth showing if they are different
         if (inherited_usage != image_state->usage) {
             ss << ", but VkImageViewUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(usage_create_info->usage) << "";
         }
     } else {
         const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->GetPNext());
-        if (stencil_usage_info) {
-            const VkImageUsageFlags stencilUsage = stencil_usage_info->stencilUsage;
+        const auto stencil_usage_info_2 = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(image_state->GetPNext());
+        if (stencil_usage_info || stencil_usage_info_2) {
+            const VkImageUsageFlags2KHR stencilUsage =
+                stencil_usage_info_2 ? stencil_usage_info_2->stencilUsage : stencil_usage_info->stencilUsage;
             const bool stencil_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
             const bool depth_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
             if (stencil_aspect && !depth_aspect) {
-                ss << ", but VkImageStencilUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(stencilUsage)
+                ss << ", but VkImageStencilUsageCreateInfo overwrote it with " << string_VkImageUsageFlags2KHR(stencilUsage)
                    << " because the image view has VK_IMAGE_ASPECT_STENCIL_BIT only";
             } else if (stencil_aspect && depth_aspect) {
-                ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags(stencilUsage)
+                ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags2KHR(stencilUsage)
                    << " because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
             }
         }

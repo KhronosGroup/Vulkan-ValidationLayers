@@ -23,52 +23,55 @@
 
 #include "error_message/error_location.h"
 
-VkBufferUsageFlags GetBufferUsageFlags(const VkBufferCreateInfo& create_info);
-Location GetUsageLocation(const VkBufferCreateInfo& create_info, const Location& loc);
+VkBufferUsageFlags2 GetBufferCreateFlags(const VkBufferCreateInfo& create_info);
+Location GetFlagsLocation(const VkBufferCreateInfo& create_info, const Location& loc);
 
-VkImageCreateFlags GetImageCreateFlags(const VkImageCreateInfo& create_info);
+VkImageCreateFlags2KHR GetImageCreateFlags(const VkImageCreateInfo& create_info);
 Location GetFlagsLocation(const VkImageCreateInfo& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkImageCreateInfo& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkImageCreateInfo& create_info);
 Location GetUsageLocation(const VkImageCreateInfo& create_info, const Location& loc);
 
-VkPipelineCreateFlags GetPipelineCreateFlags(const VkComputePipelineCreateInfo& create_info);
+VkBufferUsageFlags2 GetBufferViewCreateFlags(const VkBufferViewCreateInfo& create_info);
+Location GetFlagsLocation(const VkBufferViewCreateInfo& create_info, const Location& loc);
+
+VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkComputePipelineCreateInfo& create_info);
 Location GetFlagsLocation(const VkComputePipelineCreateInfo& create_info, const Location& loc);
 
-VkPipelineCreateFlags GetPipelineCreateFlags(const VkGraphicsPipelineCreateInfo& create_info);
+VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkGraphicsPipelineCreateInfo& create_info);
 Location GetFlagsLocation(const VkGraphicsPipelineCreateInfo& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceImageFormatInfo2& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceImageFormatInfo2& create_info);
 Location GetUsageLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc);
 
-VkImageCreateFlags GetImageCreateFlags(const VkPhysicalDeviceImageFormatInfo2& create_info);
+VkImageCreateFlags2KHR GetImageCreateFlags(const VkPhysicalDeviceImageFormatInfo2& create_info);
 Location GetFlagsLocation(const VkPhysicalDeviceImageFormatInfo2& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceSparseImageFormatInfo2& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceSparseImageFormatInfo2& create_info);
 Location GetUsageLocation(const VkPhysicalDeviceSparseImageFormatInfo2& create_info, const Location& loc);
 
-VkBufferUsageFlags GetBufferUsageFlags(const VkPhysicalDeviceExternalBufferInfo& create_info);
+VkBufferUsageFlags2 GetBufferUsageFlags(const VkPhysicalDeviceExternalBufferInfo& create_info);
 Location GetUsageLocation(const VkPhysicalDeviceExternalBufferInfo& create_info, const Location& loc);
 
-VkImageCreateFlags GetImageCreateFlags(const VkFramebufferAttachmentImageInfo& create_info);
+VkImageCreateFlags2KHR GetImageCreateFlags(const VkFramebufferAttachmentImageInfo& create_info);
 Location GetFlagsLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkFramebufferAttachmentImageInfo& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkFramebufferAttachmentImageInfo& create_info);
 Location GetUsageLocation(const VkFramebufferAttachmentImageInfo& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkSwapchainCreateInfoKHR& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkSwapchainCreateInfoKHR& create_info);
 Location GetImageUsageLocation(const VkSwapchainCreateInfoKHR& create_info, const Location& loc);
 
-VkImageUsageFlags GetImageUsageFlags(const VkPhysicalDeviceVideoFormatInfoKHR& create_info);
+VkImageUsageFlags2KHR GetImageUsageFlags(const VkPhysicalDeviceVideoFormatInfoKHR& create_info);
 Location GetImageUsageLocation(const VkPhysicalDeviceVideoFormatInfoKHR& create_info, const Location& loc);
 
-VkPipelineCreateFlags GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoNV& create_info);
+VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoNV& create_info);
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoNV& create_info, const Location& loc);
 
-VkDeviceAddress GetDeviceAddress(const VkDescriptorBufferBindingInfoEXT& create_info);
+VkBufferUsageFlags2 GetDeviceAddress(const VkDescriptorBufferBindingInfoEXT& create_info);
 Location GetAddressLocation(const VkDescriptorBufferBindingInfoEXT& create_info, const Location& loc);
 
-VkPipelineCreateFlags GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoKHR& create_info);
+VkPipelineCreateFlags2 GetPipelineCreateFlags(const VkRayTracingPipelineCreateInfoKHR& create_info);
 Location GetFlagsLocation(const VkRayTracingPipelineCreateInfoKHR& create_info, const Location& loc);
 
 // NOLINTEND

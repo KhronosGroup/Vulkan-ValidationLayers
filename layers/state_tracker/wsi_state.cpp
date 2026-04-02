@@ -40,6 +40,13 @@ static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInf
         fmt_info.pNext = image_ci.pNext;
         image_ci.pNext = &fmt_info;
     }
+    VkImageUsageFlags2CreateInfoKHR image_usage_flags2;
+    auto chain_image_usage_flags2 = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pCreateInfo->pNext);
+    if (chain_image_usage_flags2) {
+        image_usage_flags2 = *chain_image_usage_flags2;
+        image_usage_flags2.pNext = const_cast<void*>(image_ci.pNext);
+        image_ci.pNext = &image_usage_flags2;
+    }
     image_ci.flags = 0;  // to be updated below
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = pCreateInfo->imageFormat;

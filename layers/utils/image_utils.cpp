@@ -53,7 +53,7 @@ uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange& subresource_range
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat format, VkImageCreateFlags flags,
+VkExtent3D GetEffectiveExtent(uint32_t mip_levels, VkExtent3D extent, VkFormat format, VkImageCreateFlags2KHR flags,
                               VkImageType image_type, uint32_t array_layers, VkImageAspectFlags aspect_mask, uint32_t mip_level,
                               bool layer_only) {
     // Return zero extent if mip level doesn't exist
@@ -103,15 +103,19 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFl
                               false);
 }
 
-std::optional<VkImageUsageFlags> GetImageStencilUsageFlags(const void* pNext) {
-    if (const auto stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pNext)) {
+std::optional<VkImageUsageFlags2KHR> GetImageStencilUsageFlags(const void* pNext) {
+    if (const auto stencil_usage_2 = vku::FindStructInPNextChain<VkImageStencilUsage2CreateInfoKHR>(pNext)) {
+        return stencil_usage_2->stencilUsage;
+    } else if (const auto stencil_usage = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pNext)) {
         return stencil_usage->stencilUsage;
     }
     return std::nullopt;
 }
 
-std::optional<VkImageUsageFlags> GetImageViewUsageFlags(const VkImageViewCreateInfo& create_info) {
-    if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
+std::optional<VkImageUsageFlags2KHR> GetImageViewUsageFlags(const VkImageViewCreateInfo& create_info) {
+    if (const auto usage_create_info_2 = vku::FindStructInPNextChain<VkImageViewUsage2CreateInfoKHR>(create_info.pNext)) {
+        return usage_create_info_2->usage;
+    } else if (const auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
         return usage_create_info->usage;
     }
     return std::nullopt;
@@ -299,8 +303,8 @@ bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
-bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags imageCreateFlags, VkImageViewType view_type) {
-    constexpr VkImageCreateFlags depth_slice_view_flags =
+bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags, VkImageViewType view_type) {
+    constexpr VkImageCreateFlags2KHR depth_slice_view_flags =
         VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 
     const bool image_supports_depth_slice_view = imageType == VK_IMAGE_TYPE_3D && (imageCreateFlags & depth_slice_view_flags) != 0;
@@ -308,7 +312,7 @@ bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags imageCreateFlags
     return image_supports_depth_slice_view && (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
-bool CanTransitionDepthSlices(const DeviceExtensions& extensions, VkImageType imageType, VkImageCreateFlags imageCreateFlags) {
+bool CanTransitionDepthSlices(const DeviceExtensions& extensions, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags) {
     return IsExtEnabled(extensions.vk_khr_maintenance9) && imageType == VK_IMAGE_TYPE_3D &&
            (imageCreateFlags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
 }

@@ -4380,17 +4380,21 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                             "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext",
                             "VUID-VkFramebufferAttachmentImageInfo-sType-unique", true);
 
-                        skip |= ValidateFlags(pAttachmentImageInfos_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                              AllVkImageCreateFlagBits,
-                                              structure->pAttachmentImageInfos[attachmentImageInfoIndex].flags, kOptionalFlags,
-                                              "VUID-VkFramebufferAttachmentImageInfo-flags-parameter", nullptr, false);
-
-                        skip |=
-                            ValidateFlags(pAttachmentImageInfos_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                          AllVkImageUsageFlagBits, structure->pAttachmentImageInfos[attachmentImageInfoIndex].usage,
-                                          kRequiredFlags, "VUID-VkFramebufferAttachmentImageInfo-usage-parameter",
-                                          "VUID-VkFramebufferAttachmentImageInfo-usage-requiredbitmask", false);
-
+                        if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(
+                                structure->pAttachmentImageInfos[attachmentImageInfoIndex].pNext)) {
+                            skip |= ValidateFlags(pAttachmentImageInfos_loc.dot(Field::flags),
+                                                  vvl::FlagBitmask::VkImageCreateFlagBits, AllVkImageCreateFlagBits,
+                                                  structure->pAttachmentImageInfos[attachmentImageInfoIndex].flags, kOptionalFlags,
+                                                  "VUID-VkFramebufferAttachmentImageInfo-flags-parameter", nullptr, false);
+                        }
+                        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(
+                                structure->pAttachmentImageInfos[attachmentImageInfoIndex].pNext)) {
+                            skip |= ValidateFlags(pAttachmentImageInfos_loc.dot(Field::usage),
+                                                  vvl::FlagBitmask::VkImageUsageFlagBits, AllVkImageUsageFlagBits,
+                                                  structure->pAttachmentImageInfos[attachmentImageInfoIndex].usage, kRequiredFlags,
+                                                  "VUID-VkFramebufferAttachmentImageInfo-usage-parameter",
+                                                  "VUID-VkFramebufferAttachmentImageInfo-usage-requiredbitmask", false);
+                        }
                         skip |= ValidateRangedEnumArray(pAttachmentImageInfos_loc.dot(Field::viewFormatCount),
                                                         pAttachmentImageInfos_loc.dot(Field::pViewFormats), vvl::Enum::VkFormat,
                                                         structure->pAttachmentImageInfos[attachmentImageInfoIndex].viewFormatCount,
@@ -10285,10 +10289,11 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
                                             allowed_structs_VkImageCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique", true);
 
-        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                      AllVkImageCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
-                                      "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
-
+        if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
+                                          AllVkImageCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                          "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
+        }
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageType), vvl::Enum::VkImageType, pCreateInfo->imageType,
                                            "VUID-VkImageCreateInfo-imageType-parameter");
 
@@ -10303,10 +10308,12 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling, pCreateInfo->tiling,
                                            "VUID-VkImageCreateInfo-tiling-parameter");
 
-        skip |= context.ValidateFlags(
-            pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits, AllVkImageUsageFlagBits, pCreateInfo->usage,
-            kRequiredFlags, "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
-
+        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                          AllVkImageUsageFlagBits, pCreateInfo->usage, kRequiredFlags,
+                                          "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask",
+                                          false);
+        }
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                            pCreateInfo->sharingMode, "VUID-VkImageCreateInfo-sharingMode-parameter");
 
@@ -12919,14 +12926,17 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysical
         skip |= context.ValidateRangedEnum(pImageFormatInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling,
                                            pImageFormatInfo->tiling, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-parameter");
 
-        skip |= context.ValidateFlags(pImageFormatInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                      AllVkImageUsageFlagBits, pImageFormatInfo->usage, kRequiredFlags,
-                                      "VUID-VkPhysicalDeviceImageFormatInfo2-usage-parameter",
-                                      "VUID-VkPhysicalDeviceImageFormatInfo2-usage-requiredbitmask", true);
-
-        skip |= context.ValidateFlags(pImageFormatInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                      AllVkImageCreateFlagBits, pImageFormatInfo->flags, kOptionalFlags,
-                                      "VUID-VkPhysicalDeviceImageFormatInfo2-flags-parameter", nullptr, true);
+        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pImageFormatInfo->pNext)) {
+            skip |= context.ValidateFlags(pImageFormatInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                          AllVkImageUsageFlagBits, pImageFormatInfo->usage, kRequiredFlags,
+                                          "VUID-VkPhysicalDeviceImageFormatInfo2-usage-parameter",
+                                          "VUID-VkPhysicalDeviceImageFormatInfo2-usage-requiredbitmask", true);
+        }
+        if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(pImageFormatInfo->pNext)) {
+            skip |= context.ValidateFlags(pImageFormatInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
+                                          AllVkImageCreateFlagBits, pImageFormatInfo->flags, kOptionalFlags,
+                                          "VUID-VkPhysicalDeviceImageFormatInfo2-flags-parameter", nullptr, true);
+        }
     }
     skip |= context.ValidateStructType(loc.dot(Field::pImageFormatProperties), pImageFormatProperties,
                                        VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2, true,
@@ -13062,11 +13072,12 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(
                                       "VUID-VkPhysicalDeviceSparseImageFormatInfo2-samples-parameter",
                                       "VUID-VkPhysicalDeviceSparseImageFormatInfo2-samples-parameter", true);
 
-        skip |= context.ValidateFlags(pFormatInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                      AllVkImageUsageFlagBits, pFormatInfo->usage, kRequiredFlags,
-                                      "VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-parameter",
-                                      "VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-requiredbitmask", true);
-
+        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pFormatInfo->pNext)) {
+            skip |= context.ValidateFlags(pFormatInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                          AllVkImageUsageFlagBits, pFormatInfo->usage, kRequiredFlags,
+                                          "VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-parameter",
+                                          "VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-requiredbitmask", true);
+        }
         skip |= context.ValidateRangedEnum(pFormatInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling, pFormatInfo->tiling,
                                            "VUID-VkPhysicalDeviceSparseImageFormatInfo2-tiling-parameter");
     }
@@ -14697,10 +14708,11 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
                                             allowed_structs_VkImageCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique", true);
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                          AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
-                                          "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
-
+            if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
+                                              AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                              "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageType), vvl::Enum::VkImageType,
                                                pInfo->pCreateInfo->imageType, "VUID-VkImageCreateInfo-imageType-parameter");
 
@@ -14715,11 +14727,12 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling,
                                                pInfo->pCreateInfo->tiling, "VUID-VkImageCreateInfo-tiling-parameter");
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                          AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
-                                          "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask",
-                                          false);
-
+            if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                              AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
+                                              "VUID-VkImageCreateInfo-usage-parameter",
+                                              "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                                pInfo->pCreateInfo->sharingMode, "VUID-VkImageCreateInfo-sharingMode-parameter");
 
@@ -14799,10 +14812,11 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
                                             allowed_structs_VkImageCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique", true);
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                          AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
-                                          "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
-
+            if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
+                                              AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                              "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageType), vvl::Enum::VkImageType,
                                                pInfo->pCreateInfo->imageType, "VUID-VkImageCreateInfo-imageType-parameter");
 
@@ -14817,11 +14831,12 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling,
                                                pInfo->pCreateInfo->tiling, "VUID-VkImageCreateInfo-tiling-parameter");
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                          AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
-                                          "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask",
-                                          false);
-
+            if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                              AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
+                                              "VUID-VkImageCreateInfo-usage-parameter",
+                                              "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                                pInfo->pCreateInfo->sharingMode, "VUID-VkImageCreateInfo-sharingMode-parameter");
 
@@ -15750,10 +15765,11 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
                                             allowed_structs_VkImageCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique", true);
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
-                                          AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
-                                          "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
-
+            if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
+                                              AllVkImageCreateFlagBits, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                              "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageType), vvl::Enum::VkImageType,
                                                pInfo->pCreateInfo->imageType, "VUID-VkImageCreateInfo-imageType-parameter");
 
@@ -15768,11 +15784,12 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::tiling), vvl::Enum::VkImageTiling,
                                                pInfo->pCreateInfo->tiling, "VUID-VkImageCreateInfo-tiling-parameter");
 
-            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                          AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
-                                          "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask",
-                                          false);
-
+            if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pInfo->pCreateInfo->pNext)) {
+                skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                              AllVkImageUsageFlagBits, pInfo->pCreateInfo->usage, kRequiredFlags,
+                                              "VUID-VkImageCreateInfo-usage-parameter",
+                                              "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                                                pInfo->pCreateInfo->sharingMode, "VUID-VkImageCreateInfo-sharingMode-parameter");
 
@@ -16465,11 +16482,12 @@ bool Device::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchai
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageColorSpace), vvl::Enum::VkColorSpaceKHR,
                                            pCreateInfo->imageColorSpace, "VUID-VkSwapchainCreateInfoKHR-imageColorSpace-parameter");
 
-        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                      AllVkImageUsageFlagBits, pCreateInfo->imageUsage, kRequiredFlags,
-                                      "VUID-VkSwapchainCreateInfoKHR-imageUsage-parameter",
-                                      "VUID-VkSwapchainCreateInfoKHR-imageUsage-requiredbitmask", false);
-
+        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                          AllVkImageUsageFlagBits, pCreateInfo->imageUsage, kRequiredFlags,
+                                          "VUID-VkSwapchainCreateInfoKHR-imageUsage-parameter",
+                                          "VUID-VkSwapchainCreateInfoKHR-imageUsage-requiredbitmask", false);
+        }
         skip |=
             context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::imageSharingMode), vvl::Enum::VkSharingMode,
                                        pCreateInfo->imageSharingMode, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-parameter");
@@ -16877,11 +16895,12 @@ bool Device::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t 
                                                pCreateInfos[swapchainIndex].imageColorSpace,
                                                "VUID-VkSwapchainCreateInfoKHR-imageColorSpace-parameter");
 
-            skip |= context.ValidateFlags(pCreateInfos_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                          AllVkImageUsageFlagBits, pCreateInfos[swapchainIndex].imageUsage, kRequiredFlags,
-                                          "VUID-VkSwapchainCreateInfoKHR-imageUsage-parameter",
-                                          "VUID-VkSwapchainCreateInfoKHR-imageUsage-requiredbitmask", false);
-
+            if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pCreateInfos[swapchainIndex].pNext)) {
+                skip |= context.ValidateFlags(pCreateInfos_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                              AllVkImageUsageFlagBits, pCreateInfos[swapchainIndex].imageUsage, kRequiredFlags,
+                                              "VUID-VkSwapchainCreateInfoKHR-imageUsage-parameter",
+                                              "VUID-VkSwapchainCreateInfoKHR-imageUsage-requiredbitmask", false);
+            }
             skip |= context.ValidateRangedEnum(pCreateInfos_loc.dot(Field::imageSharingMode), vvl::Enum::VkSharingMode,
                                                pCreateInfos[swapchainIndex].imageSharingMode,
                                                "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-parameter");
@@ -17232,10 +17251,12 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysic
             allowed_structs_VkPhysicalDeviceVideoFormatInfoKHR.data(), GeneratedVulkanHeaderVersion,
             "VUID-VkPhysicalDeviceVideoFormatInfoKHR-pNext-pNext", "VUID-VkPhysicalDeviceVideoFormatInfoKHR-sType-unique", true);
 
-        skip |= context.ValidateFlags(pVideoFormatInfo_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
-                                      AllVkImageUsageFlagBits, pVideoFormatInfo->imageUsage, kRequiredFlags,
-                                      "VUID-VkPhysicalDeviceVideoFormatInfoKHR-imageUsage-parameter",
-                                      "VUID-VkPhysicalDeviceVideoFormatInfoKHR-imageUsage-requiredbitmask", false);
+        if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pVideoFormatInfo->pNext)) {
+            skip |= context.ValidateFlags(pVideoFormatInfo_loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits,
+                                          AllVkImageUsageFlagBits, pVideoFormatInfo->imageUsage, kRequiredFlags,
+                                          "VUID-VkPhysicalDeviceVideoFormatInfoKHR-imageUsage-parameter",
+                                          "VUID-VkPhysicalDeviceVideoFormatInfoKHR-imageUsage-requiredbitmask", false);
+        }
     }
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::pVideoFormatPropertyCount), loc.dot(Field::pVideoFormatProperties), pVideoFormatPropertyCount,
@@ -25948,11 +25969,13 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     GeneratedVulkanHeaderVersion, "VUID-VkImageCreateInfo-pNext-pNext", "VUID-VkImageCreateInfo-sType-unique",
                     true);
 
-                skip |= context.ValidateFlags(
-                    imageCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits, AllVkImageCreateFlagBits,
-                    pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.flags, kOptionalFlags,
-                    "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
-
+                if (!vku::FindStructInPNextChain<VkImageCreateFlags2CreateInfoKHR>(
+                        pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.pNext)) {
+                    skip |= context.ValidateFlags(
+                        imageCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits, AllVkImageCreateFlagBits,
+                        pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.flags, kOptionalFlags,
+                        "VUID-VkImageCreateInfo-flags-parameter", nullptr, false);
+                }
                 skip |= context.ValidateRangedEnum(
                     imageCreateInfo_loc.dot(Field::imageType), vvl::Enum::VkImageType,
                     pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.imageType,
@@ -25973,11 +25996,13 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.tiling,
                     "VUID-VkImageCreateInfo-tiling-parameter");
 
-                skip |= context.ValidateFlags(
-                    imageCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits, AllVkImageUsageFlagBits,
-                    pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.usage, kRequiredFlags,
-                    "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
-
+                if (!vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(
+                        pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.pNext)) {
+                    skip |= context.ValidateFlags(
+                        imageCreateInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkImageUsageFlagBits, AllVkImageUsageFlagBits,
+                        pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.usage, kRequiredFlags,
+                        "VUID-VkImageCreateInfo-usage-parameter", "VUID-VkImageCreateInfo-usage-requiredbitmask", false);
+                }
                 skip |= context.ValidateRangedEnum(
                     imageCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
                     pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].imageCreateInfo.sharingMode,
