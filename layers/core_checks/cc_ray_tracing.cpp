@@ -643,10 +643,15 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
 
             if (const auto* motion_triangles =
                     vku::FindStructInPNextChain<VkAccelerationStructureGeometryMotionTrianglesDataNV>(triangles.pNext)) {
-                skip |= ValidateDeviceAddress(
-                    p_geom_geom_triangles_loc.pNext(Struct::VkAccelerationStructureGeometryMotionTrianglesDataNV, Field::vertexData)
-                        .dot(Field::deviceAddress),
-                    cb_objlist, motion_triangles->vertexData.deviceAddress);
+                const Location& motion_triangles_loc = p_geom_geom_triangles_loc.pNext(
+                    Struct::VkAccelerationStructureGeometryMotionTrianglesDataNV, Field::vertexData);
+                if (motion_triangles->vertexData.deviceAddress == 0) {
+                    // There is no indirect build version supported
+                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11845", cmd_buffer,
+                                     motion_triangles_loc.dot(Field::deviceAddress), "is zero");
+                }
+                skip |= ValidateDeviceAddress(motion_triangles_loc.dot(Field::deviceAddress), cb_objlist,
+                                              motion_triangles->vertexData.deviceAddress);
             }
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             if (geometry_build_range_primitive_count > 0) {
