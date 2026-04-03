@@ -1703,7 +1703,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, CreateImageViewQuantMapUnsupportedFor
 
         // The image is not created with MUTABLE, so we need to allow this VU.
         // This should also bypass view format compatibility checks
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-image-01762");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-image-12397");
         m_errorMonitor->SetDesiredError(vuid);
         VkImageView image_view = VK_NULL_HANDLE;
         vk::CreateImageView(device(), &image_view_ci, nullptr, &image_view);

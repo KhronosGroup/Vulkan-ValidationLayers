@@ -2276,7 +2276,7 @@ TEST_F(NegativeYcbcr, MutableFullImageView) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01762");
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-format-12398");
     vkt::ImageView view(*m_device, ivci);
     m_errorMonitor->VerifyFound();
 }

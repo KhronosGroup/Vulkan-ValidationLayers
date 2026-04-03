@@ -891,7 +891,7 @@ TEST_F(NegativeAndroidHardwareBuffer, CreateImageView) {
     ivci.format = VK_FORMAT_R5G6B5_UNORM_PACK16;
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-02399");
     // Also causes "view format different from image format"
-    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01762");
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-123972");
     vk::CreateImageView(device(), &ivci, NULL, &image_view);
     m_errorMonitor->VerifyFound();
 

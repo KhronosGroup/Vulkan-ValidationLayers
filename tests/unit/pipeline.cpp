@@ -1952,6 +1952,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9870");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1962,26 +1963,29 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set.layout_});
 
-    const char* csSource = R"glsl(
+    const char* vs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform UniformStruct { uint dummy; } ubo;
         void main() {
             uint x = ubo.dummy; // make descriptor set statically used
         }
     )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout_1;
-    pipe.CreateComputePipeline();
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout_1;
+    pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2, 0, 1, &descriptor_set.set_, 0,
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
-    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
 
@@ -3754,6 +3758,17 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02878");
+}
+
+TEST_F(NegativePipeline, IndependentSetsCompute) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-12396");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePipeline, PipelineCreationFlags2Library) {
