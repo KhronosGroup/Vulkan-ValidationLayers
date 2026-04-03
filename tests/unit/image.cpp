@@ -1675,8 +1675,7 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     view_ci.format = depth_format;
     view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    // Can't use depth format for view into color image - Expect INVALID_FORMAT
-    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01762");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 
 TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
@@ -1703,9 +1702,7 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     view_ci.format = VK_FORMAT_B8G8R8A8_UINT;
     view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    // Same compatibility class but no MUTABLE_FORMAT bit - Expect
-    // VIEW_CREATE_ERROR
-    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-01762");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 
 TEST_F(NegativeImage, ImageViewDifferentClass) {

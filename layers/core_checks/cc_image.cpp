@@ -2010,9 +2010,12 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
             // Multiplane format can only be different (with MUTABLE_FORMAT) if it is taking a plane view
             // If taking a COLOR_ASPECT view, then it must be the same
             if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
-                skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
-                         "%s is different from %s format (%s). Multiplane formats taking a view with VK_IMAGE_ASPECT_COLOR_BIT must have identical formats.\nIf a VK_IMAGE_ASPECT_PLANE_*_BIT aspect mask is used, it can be a different format that matches the plane.",
-                         string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
+                skip |=
+                    LogError("VUID-VkImageViewCreateInfo-format-12398", create_info.image, create_info_loc.dot(Field::format),
+                             "%s is different from %s format (%s). Multiplane formats taking a view with VK_IMAGE_ASPECT_COLOR_BIT "
+                             "must have identical formats.\nIf a VK_IMAGE_ASPECT_PLANE_*_BIT aspect mask is used, it can be a "
+                             "different format that matches the plane.",
+                             string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
             } else {
                 const VkFormat compat_format =
                 vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(aspect_mask));
@@ -2043,8 +2046,9 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
             }
         }
     } else if (image_format != view_format) {
-        skip |= LogError("VUID-VkImageViewCreateInfo-image-01762", create_info.image, create_info_loc.dot(Field::format),
-                         "%s is different from %s format (%s). Formats must be identical unless VK_IMAGE_CREATE_MUTABLE_FORMAT was set on image creation.",
+        skip |= LogError("VUID-VkImageViewCreateInfo-image-12397", create_info.image, create_info_loc.dot(Field::format),
+                         "%s is different from %s format (%s). Formats must be identical unless VK_IMAGE_CREATE_MUTABLE_FORMAT was "
+                         "set on image creation.",
                          string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
     }
 

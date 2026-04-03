@@ -61,6 +61,14 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         if (pipeline->descriptor_heap_embedded_samplers_count > 0) {
             skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_samplers_count, create_info_loc);
         }
+
+        auto pipeline_layout = pipeline->PipelineLayoutState();
+        if (pipeline_layout && (pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+            skip |= LogError("VUID-VkComputePipelineCreateInfo-layout-12396", pipeline_layout->Handle(),
+                             create_info_loc.dot(Field::layout),
+                             "was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT (which is only designed for "
+                             "graphics pipeline Libraries).");
+        }
     }
     return skip;
 }
