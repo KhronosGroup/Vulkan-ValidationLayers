@@ -16,6 +16,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vector>
 #include "pass.h"
 
 namespace gpuav {
@@ -29,18 +30,15 @@ class TraceRayPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
-    // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
-    struct InstructionMeta {
-        const Instruction* target_instruction = nullptr;
-    };
-
-    bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
-
-    uint32_t GetLinkFunctionId();
-
+    std::vector<uint32_t> GetTraceRayValidationFunctionCallInstructions(InstructionIt* trace_ray_inst_it);
+    std::vector<uint32_t> GetRayHitObjectValidationFunctionCallInstructions(InstructionIt* ray_hit_object_inst_it);
+    std::vector<uint32_t> GetRayHitObjectSbtIndexValidationFunctionCallInstructions(
+        InstructionIt* ray_hit_object_sbt_index_inst_it);
+    uint32_t AddFunctionCall(BasicBlock& block, std::vector<uint32_t>&& instructions, InstructionIt* inst_it);
     // Function IDs to link in
-    uint32_t link_function_id_ = 0;
+    uint32_t trace_ray_link_function_id_ = 0;
+    uint32_t hit_object_link_function_id_ = 0;
+    uint32_t hit_object_sbt_index_link_function_id_ = 0;
 };
 
 }  // namespace spirv

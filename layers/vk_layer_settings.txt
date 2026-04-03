@@ -182,7 +182,7 @@ khronos_validation.gpuav_validate_ray_query = true
 
 # TraceRay SPIR-V instructions
 # =====================
-# Enable shader instrumentation on OpTraceRayKHR
+# Enable shader instrumentation on OpTraceRayKHR, OpHitObject*
 khronos_validation.gpuav_validate_trace_ray = true
 
 # Out of bounds vertex attribute fetching

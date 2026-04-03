@@ -62,7 +62,6 @@ struct GpuAVSettings {
         bool descriptor_checks = true;
         bool buffer_device_address = true;
         bool ray_query = true;
-        bool ray_hit_object = true;
         bool mesh_shading = true;
         bool post_process_descriptor_indexing = true;
         bool trace_ray = true;
