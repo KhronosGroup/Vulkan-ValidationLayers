@@ -31,10 +31,9 @@
 
 bool GpuAVSettings::IsShaderInstrumentationEnabled() const {
     return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
-           shader_instrumentation.ray_query || shader_instrumentation.ray_hit_object || shader_instrumentation.trace_ray ||
-           shader_instrumentation.mesh_shading || shader_instrumentation.post_process_descriptor_indexing ||
-           shader_instrumentation.vertex_attribute_fetch_oob || shader_instrumentation.sanitizer ||
-           shader_instrumentation.shared_memory_data_race;
+           shader_instrumentation.ray_query || shader_instrumentation.trace_ray || shader_instrumentation.mesh_shading ||
+           shader_instrumentation.post_process_descriptor_indexing || shader_instrumentation.vertex_attribute_fetch_oob ||
+           shader_instrumentation.sanitizer || shader_instrumentation.shared_memory_data_race;
 }
 bool GpuAVSettings::IsSpirvModified() const {
     return IsShaderInstrumentationEnabled() || debug_printf_enabled || debug_descriptor_enabled;
@@ -45,7 +44,6 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
     shader_instrumentation.descriptor_checks = false;
     shader_instrumentation.buffer_device_address = false;
     shader_instrumentation.ray_query = false;
-    shader_instrumentation.ray_hit_object = false;
     shader_instrumentation.trace_ray = false;
     shader_instrumentation.mesh_shading = false;
     shader_instrumentation.post_process_descriptor_indexing = false;
@@ -130,7 +128,6 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(descriptor_checks);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(buffer_device_address);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(ray_query);
-    VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(ray_hit_object);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(trace_ray);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(mesh_shading);
     VVL_TRACY_PRINT_INSTRUMENTATION_SETTING(post_process_descriptor_indexing);

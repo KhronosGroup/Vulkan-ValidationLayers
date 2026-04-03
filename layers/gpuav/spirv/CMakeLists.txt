@@ -27,8 +27,6 @@ target_sources(gpu_av_spirv PRIVATE
     buffer_device_address_pass.cpp
     ray_query_pass.h
     ray_query_pass.cpp
-    ray_hit_object_pass.h
-    ray_hit_object_pass.cpp
     sanitizer_pass.h
     sanitizer_pass.cpp
     shared_memory_data_race_pass.h

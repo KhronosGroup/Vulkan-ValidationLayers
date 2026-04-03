@@ -49,7 +49,6 @@
 #include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/ray_query_pass.h"
-#include "gpuav/spirv/ray_hit_object_pass.h"
 #include "gpuav/spirv/trace_ray_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
@@ -1670,11 +1669,6 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
 
     if (gpuav_settings.shader_instrumentation.ray_query) {
         spirv::RayQueryPass pass(module);
-        modified |= pass.Run();
-    }
-
-    if (gpuav_settings.shader_instrumentation.ray_hit_object) {
-        spirv::RayHitObjectPass pass(module);
         modified |= pass.Run();
     }
 

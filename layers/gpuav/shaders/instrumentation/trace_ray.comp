@@ -22,31 +22,31 @@
 #include "error_payload.h"
 
 // from RayFlagsMask in spirv.hpp
-const uint SpvRayFlags_OpaqueKHRMask = 0x00000001;
-const uint SpvRayFlags_NoOpaqueKHRMask = 0x00000002;
-const uint SpvRayFlags_TerminateOnFirstHitKHRMask = 0x00000004;
-const uint SpvRayFlags_SkipClosestHitShaderKHRMask = 0x00000008;
-const uint SpvRayFlags_CullBackFacingTrianglesKHRMask = 0x00000010;
-const uint SpvRayFlags_CullFrontFacingTrianglesKHRMask = 0x00000020;
-const uint SpvRayFlags_CullOpaqueKHRMask = 0x00000040;
-const uint SpvRayFlags_CullNoOpaqueKHRMask = 0x00000080;
+const uint SpvRayFlags_OpaqueKHR = 0x00000001;
+const uint SpvRayFlags_NoOpaqueKHR = 0x00000002;
+const uint SpvRayFlags_TerminateOnFirstHitKHR = 0x00000004;
+const uint SpvRayFlags_SkipClosestHitShaderKHR = 0x00000008;
+const uint SpvRayFlags_CullBackFacingTrianglesKHR = 0x00000010;
+const uint SpvRayFlags_CullFrontFacingTrianglesKHR = 0x00000020;
+const uint SpvRayFlags_CullOpaqueKHR = 0x00000040;
+const uint SpvRayFlags_CullNoOpaqueKHR = 0x00000080;
 const uint SpvRayFlags_SkipBuiltinPrimitivesNVMask = 0x00000100;
-const uint SpvRayFlags_SkipTrianglesKHRMask = 0x00000100;
-const uint SpvRayFlags_SkipAABBsKHRMask = 0x00000200;
+const uint SpvRayFlags_SkipTrianglesKHR = 0x00000100;
+const uint SpvRayFlags_SkipAABBsKHR = 0x00000200;
 const uint SpvRayFlags_ForceOpacityMicromap2StateEXTMask = 0x00000400;
 
 #define has_multiple_flags(masked_flags) (((masked_flags) & ((masked_flags) - 1)) != 0)
 
 
-bool inst_trace_ray_comp(const uint inst_offset,
+bool inst_trace_ray(const uint inst_offset,
                          const uint rayFlags)
 {
     uint error = 0u;
     uint param_0 = 0u;
     uint param_1 = 0u;
 
-    const uint triangles_flags_mask = SpvRayFlags_SkipTrianglesKHRMask | SpvRayFlags_CullBackFacingTrianglesKHRMask | SpvRayFlags_CullFrontFacingTrianglesKHRMask;
-    const uint opaque_flags_mask = SpvRayFlags_OpaqueKHRMask | SpvRayFlags_NoOpaqueKHRMask | SpvRayFlags_CullOpaqueKHRMask | SpvRayFlags_CullNoOpaqueKHRMask;
+    const uint triangles_flags_mask = SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_CullBackFacingTrianglesKHR | SpvRayFlags_CullFrontFacingTrianglesKHR;
+    const uint opaque_flags_mask = SpvRayFlags_OpaqueKHR | SpvRayFlags_NoOpaqueKHR | SpvRayFlags_CullOpaqueKHR | SpvRayFlags_CullNoOpaqueKHR;
 
     if (has_multiple_flags(rayFlags & triangles_flags_mask)) {
         error = kErrorSubCode_TraceRay_TrianglesFlags;
@@ -67,5 +67,109 @@ bool inst_trace_ray_comp(const uint inst_offset,
         return false;
     }
 
+    return true;
+}
+
+// From SPIRV-Headers
+const uint OpHitObjectTraceReorderExecuteEXT = 5311;
+const uint OpHitObjectTraceMotionReorderExecuteEXT = 5312;
+const uint OpHitObjectTraceRayEXT = 5316;
+const uint OpHitObjectTraceRayMotionEXT = 5317;
+
+// Pipeline flags
+const uint kPipelineHasSkipAABBs = 0x1;
+const uint kPipelineHasSkipTriangles = 0x2;
+
+
+// Validation for VK_EXT_ray_tracing_invocation_reorder hit object operations:
+//
+// pipeline_flags:
+//      bit 0 = pipeline has SKIP_AABBS
+//      bit 1 = pipeline has SKIP_TRIANGLES
+// time:
+//    motion time parameter (only valid for opcode_type "Motion" opcodes, pass 0.0 for others)
+bool inst_ray_hit_object(const uint inst_offset, const uint opcode_type, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax, const uint pipeline_flags, const float time)
+{
+    uint error = 0u;
+    uint param_0 = 0u;
+    uint param_1 = 0u;
+
+    const bool is_motion_opcode = (opcode_type == OpHitObjectTraceRayMotionEXT || opcode_type == OpHitObjectTraceMotionReorderExecuteEXT);
+
+    if (is_motion_opcode && (time < 0.0f || time > 1.0f)) {
+        error = kErrorSubCode_RayHitObject_TimeOutOfRange;
+    } else if (isnan(ray_tmin)) {
+        error = kErrorSubCode_RayHitObject_MinNaN;
+    } else if (isnan(ray_tmax)) {
+        error = kErrorSubCode_RayHitObject_MaxNaN;
+    } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
+        error = kErrorSubCode_RayHitObject_OriginNaN;
+    } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
+        error = kErrorSubCode_RayHitObject_DirectionNaN;
+    } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
+        error = kErrorSubCode_RayHitObject_OriginFinite;
+    } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
+        error = kErrorSubCode_RayHitObject_DirectionFinite;
+    } else if (ray_tmin < 0.0f) {
+        error = kErrorSubCode_RayHitObject_NegativeMin;
+        param_0 = floatBitsToUint(ray_tmin);
+    } else if (ray_tmax < 0.0f) {
+        error = kErrorSubCode_RayHitObject_NegativeMax;
+        param_0 = floatBitsToUint(ray_tmax);
+    } else if (ray_tmax < ray_tmin) {
+        error = kErrorSubCode_RayHitObject_MinMax;
+        param_0 = floatBitsToUint(ray_tmin);
+        param_1 = floatBitsToUint(ray_tmax);
+    } else {
+        const uint both_skip = SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_SkipAABBsKHR;
+        uint skip_cull_mask = ray_flags & (SpvRayFlags_SkipTrianglesKHR | SpvRayFlags_CullBackFacingTrianglesKHR | SpvRayFlags_CullFrontFacingTrianglesKHR);
+        uint opaque_mask = ray_flags & (SpvRayFlags_OpaqueKHR | SpvRayFlags_NoOpaqueKHR | SpvRayFlags_CullOpaqueKHR | SpvRayFlags_CullNoOpaqueKHR);
+
+        if ((ray_flags & both_skip) == both_skip) {
+            error = kErrorSubCode_RayHitObject_BothSkip;
+            param_0 = ray_flags;
+        } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
+            error = kErrorSubCode_RayHitObject_SkipCull;
+            param_0 = ray_flags;
+        } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
+            error = kErrorSubCode_RayHitObject_Opaque;
+            param_0 = ray_flags;
+        } else if ((ray_flags & SpvRayFlags_SkipTrianglesKHR) != 0 && (pipeline_flags & kPipelineHasSkipAABBs) != 0) {
+            // SkipTriangles ray flag with pipeline SKIP_AABBS flag
+            error = kErrorSubCode_RayHitObject_SkipTrianglesWithPipelineSkipAABBs;
+            param_0 = ray_flags;
+        } else if ((ray_flags & SpvRayFlags_SkipAABBsKHR) != 0 && (pipeline_flags & kPipelineHasSkipTriangles) != 0) {
+            // SkipAABBs ray flag with pipeline SKIP_TRIANGLES flag
+            error = kErrorSubCode_RayHitObject_SkipAABBsWithPipelineSkipTriangles;
+            param_0 = ray_flags;
+        }
+    }
+
+    if (0u != error) {
+         error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
+                            param_0,
+                            param_1,
+                            opcode_type
+                        );
+        return false;
+    }
+
+    return true;
+}
+
+bool inst_ray_hit_object_sbt_index_check(const uint inst_offset, const uint sbt_index, const uint max_sbt_index)
+{
+    if (sbt_index > max_sbt_index) {
+        error_payload = ErrorPayload(
+            inst_offset,
+            SpecConstantLinkShaderId | (kErrorGroup_TraceRay << kErrorGroup_Shift) | (kErrorSubCode_RayHitObject_SBTIndexExceedsLimit << kErrorSubCode_Shift),
+            sbt_index,
+            max_sbt_index,
+            0
+        );
+        return false;
+    }
     return true;
 }
