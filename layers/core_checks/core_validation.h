@@ -1733,8 +1733,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo& attachment_info,
                                               const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
     bool ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
-                                                  const VkRenderingAttachmentInfo& attachment_info, VkImageAspectFlags aspect_mask,
-                                                  const Location& loc, const char* vuid) const;
+                                                  const VkRenderingAttachmentInfo& attachment_info, const Location& loc) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
