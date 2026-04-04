@@ -1373,3 +1373,50 @@ TEST_F(PositiveImageLayout, CopyColorToDepthOnTransferQueue) {
 
     vk::CmdCopyImage(cb, src_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
+
+TEST_F(PositiveImageLayout, DynamicRenderingDepthAttachmentResolveLayout) {
+    TEST_DESCRIPTION("Depth resolve attachment layout");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_properties);
+    if ((depth_stencil_resolve_properties.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT) == 0) {
+        GTEST_SKIP() << "VK_RESOLVE_MODE_MIN_BIT not supported";
+    }
+
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        128, 128, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.resolveMode = VK_RESOLVE_MODE_MIN_BIT;
+    depth_attachment.resolveImageView = resolve_image_view;
+    depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    VkClearDepthStencilValue clear_value{};
+    VkImageSubresourceRange clear_subresource{VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdClearDepthStencilImage(m_command_buffer, resolve_image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &clear_subresource);
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

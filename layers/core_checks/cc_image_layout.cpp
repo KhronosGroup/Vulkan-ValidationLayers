@@ -751,15 +751,6 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuff
         return skip;
     }
 
-    const char* attachment_vuid = attachment_loc.field == Field::pDepthAttachment ? "VUID-vkCmdBeginRendering-pRenderingInfo-09588"
-                                  : attachment_loc.field == Field::pStencilAttachment
-                                      ? "VUID-vkCmdBeginRendering-pRenderingInfo-09590"
-                                      : "VUID-vkCmdBeginRendering-pRenderingInfo-09592";
-    const char* resolve_vuid = attachment_loc.field == Field::pDepthAttachment ? "VUID-vkCmdBeginRendering-pRenderingInfo-09589"
-                               : attachment_loc.field == Field::pStencilAttachment
-                                   ? "VUID-vkCmdBeginRendering-pRenderingInfo-09591"
-                                   : "VUID-vkCmdBeginRendering-pRenderingInfo-09593";
-
     for (const bool resolve : {false, true}) {
         if (resolve && attachment_info.resolveMode == VK_RESOLVE_MODE_NONE) {
             continue;
@@ -772,13 +763,26 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuff
         const auto image_layout_map = cb_state.GetImageLayoutMap(image_state.VkHandle());
         if (!image_layout_map) {
             continue;
+        };
+
+        const char* vuid = nullptr;
+        VkImageAspectFlags aspect_mask = 0;
+        switch (attachment_loc.field) {
+            case Field::pDepthAttachment:
+                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09589" : "VUID-vkCmdBeginRendering-pRenderingInfo-09588";
+                aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                break;
+
+            case Field::pStencilAttachment:
+                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09591" : "VUID-vkCmdBeginRendering-pRenderingInfo-09590";
+                aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                break;
+
+            default:
+                vuid = resolve ? "VUID-vkCmdBeginRendering-pRenderingInfo-09593" : "VUID-vkCmdBeginRendering-pRenderingInfo-09592";
+                aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+                break;
         }
-
-        const char* vuid = resolve ? resolve_vuid : attachment_vuid;
-
-        const VkImageAspectFlags aspect_mask = attachment_loc.field == Field::pDepthAttachment     ? VK_IMAGE_ASPECT_DEPTH_BIT
-                                               : attachment_loc.field == Field::pStencilAttachment ? VK_IMAGE_ASPECT_STENCIL_BIT
-                                                                                                   : VK_IMAGE_ASPECT_COLOR_BIT;
 
         // Cannot use view_state->range_generator directly since we need to modify aspectMask
         VkImageSubresourceRange image_layout_range = image_view_state->GetRangeGeneratorRange(device_state->extensions);
