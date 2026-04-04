@@ -4106,8 +4106,7 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer&
         const VkRenderingAttachmentInfo& color_attachment = rendering_info.pColorAttachments[i];
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
         skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, color_attachment, color_attachment_loc);
-        skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, color_attachment, VK_IMAGE_ASPECT_COLOR_BIT,
-                                                         color_attachment_loc, "VUID-vkCmdBeginRendering-pRenderingInfo-09592");
+        skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, color_attachment, color_attachment_loc);
 
         if (color_attachment.imageView != VK_NULL_HANDLE) {
             auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
@@ -4268,8 +4267,7 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer&
     const VkRenderingAttachmentInfo& depth_attachment = *rendering_info.pDepthAttachment;
     const Location depth_attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
     skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, depth_attachment, depth_attachment_loc);
-    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, depth_attachment, VK_IMAGE_ASPECT_DEPTH_BIT, depth_attachment_loc,
-                                                     "VUID-vkCmdBeginRendering-pRenderingInfo-09588");
+    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, depth_attachment, depth_attachment_loc);
 
     if (depth_attachment.imageView != VK_NULL_HANDLE) {
         auto depth_view_state = Get<vvl::ImageView>(depth_attachment.imageView);
@@ -4356,8 +4354,7 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
     const VkRenderingAttachmentInfo& stencil_attachment = *rendering_info.pStencilAttachment;
     const Location stencil_attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
     skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, stencil_attachment, stencil_attachment_loc);
-    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, stencil_attachment, VK_IMAGE_ASPECT_STENCIL_BIT,
-                                                     stencil_attachment_loc, "VUID-vkCmdBeginRendering-pRenderingInfo-09590");
+    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, stencil_attachment, stencil_attachment_loc);
 
     if (stencil_attachment.imageView != VK_NULL_HANDLE) {
         auto stencil_view_state = Get<vvl::ImageView>(stencil_attachment.imageView);
