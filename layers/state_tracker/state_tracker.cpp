@@ -5650,14 +5650,7 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
                                                                const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
                                                                const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
-    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        cb_state->RecordDraw(record_obj.location);
-    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-        cb_state->RecordDispatch(record_obj.location);
-    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-        cb_state->RecordTraceRay(record_obj.location.function);
-    }
+    cb_state->RecordExecuteGeneratedCommands(*pGeneratedCommandsInfo, record_obj.location);
 }
 
 void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,

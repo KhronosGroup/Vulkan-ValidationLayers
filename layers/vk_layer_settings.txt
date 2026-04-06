@@ -65,6 +65,11 @@ khronos_validation.gpu_dump_copy_memory_indirect = false
 # Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays
 khronos_validation.gpu_dump_descriptors = false
 
+# Dump VK_EXT_device_generated_commands
+# =====================
+# Dump VK_EXT_device_generated_commands information
+khronos_validation.gpu_dump_device_generated_commands = false
+
 # Redirect all GPU Dump to stdout
 # =====================
 # Instead of using the debug callback with information severity, redirect to stdout instead.

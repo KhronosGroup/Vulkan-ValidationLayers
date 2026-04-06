@@ -34,7 +34,7 @@ git add -u .
 git commit
 ```
 
-## Commit Messsage
+## Commit Message
 
 Some basic rules (enforced by CI)
 

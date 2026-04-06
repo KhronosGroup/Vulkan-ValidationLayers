@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <vulkan/vulkan_core.h>
 #include <memory>
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
@@ -700,6 +701,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordDispatch(const Location &loc);
     void RecordTraceRay(const Location &loc);
 
+    void RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, const Location& loc);
+
     void RecordStateCmd(CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport *viewports);
@@ -867,6 +870,9 @@ class CommandBufferSubState {
     virtual void RecordActionCommand(LastBound &last_bound, const Location &loc) {}
     virtual void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {}
     virtual void UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {}
+
+    virtual void RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
+                                                const Location& loc) {}
 
     virtual void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count) {}
     virtual void RecordSetViewportWithCount(uint32_t viewport_count) {}

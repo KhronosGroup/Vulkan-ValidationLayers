@@ -1293,6 +1293,14 @@
                             "default": false
                         },
                         {
+                            "key": "gpu_dump_device_generated_commands",
+                            "label": "Dump VK_EXT_device_generated_commands",
+                            "view": "DEBUG",
+                            "description": "Dump VK_EXT_device_generated_commands information",
+                            "type": "BOOL",
+                            "default": false
+                        },
+                        {
                             "key": "gpu_dump_to_stdout",
                             "label": "Redirect all GPU Dump to stdout",
                             "view": "DEBUG",
