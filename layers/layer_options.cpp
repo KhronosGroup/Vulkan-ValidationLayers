@@ -250,6 +250,7 @@ const char* VK_LAYER_REPORT_FLAGS = "report_flags";
 // Used for working with VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap
 // Every draw/dispatch/traceRays dump out information about the bound descriptor buffer/heap
 const char* VK_LAYER_GPU_DUMP_DESCRIPTORS = "gpu_dump_descriptors";
+const char* VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT = "gpu_dump_copy_memory_indirect";
 // Print to stdout
 const char* VK_LAYER_GPU_DUMP_TO_STDOUT = "gpu_dump_to_stdout";
 
@@ -1224,6 +1225,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     GpuDumpSettings& gpu_dump_settings = *settings_data->gpu_dump_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_DESCRIPTORS)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_DESCRIPTORS, gpu_dump_settings.descriptors);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPU_DUMP_COPY_MEMORY_INDIRECT, gpu_dump_settings.copy_memory_indirect);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPU_DUMP_TO_STDOUT)) {

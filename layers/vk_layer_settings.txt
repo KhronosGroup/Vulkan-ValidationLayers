@@ -55,6 +55,11 @@ khronos_validation.enable_message_limit = true
 # Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.
 khronos_validation.fine_grained_locking = true
 
+# Dump VK_KHR_copy_memory_indirect
+# =====================
+# Dump VK_KHR_copy_memory_indirect information
+khronos_validation.gpu_dump_copy_memory_indirect = false
+
 # Dump Descriptors
 # =====================
 # Dump VK_EXT_descriptor_buffer/VK_EXT_descriptor_heap descriptor information for draw/dispatch/traceRays

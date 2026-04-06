@@ -731,6 +731,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordCopyMemoryToImage(vvl::Image& dst_image_state, uint32_t region_count, const VkDeviceMemoryImageCopyKHR* regions,
                                  const Location& loc);
     void RecordCopyMemory(uint32_t region_count, const VkDeviceMemoryCopyKHR* regions, const Location& loc);
+    void RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc);
+    void RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc);
     void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions, const Location &loc);
     void RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
@@ -897,6 +899,8 @@ class CommandBufferSubState {
                                          const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {}
     virtual void RecordCopyMemoryToImage(vvl::Image& dst_image_state, uint32_t region_count,
                                          const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {}
+    virtual void RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) {}
+    virtual void RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) {}
     virtual void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                  VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
                                  const Location &loc) {}

@@ -31,4 +31,16 @@ void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Loc
     }
 }
 
+void CommandBufferSubState::RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) {
+    if (dev_data.gpu_dump_settings.copy_memory_indirect) {
+        DumpCopyMemoryIndirect(info, loc);
+    }
+}
+
+void CommandBufferSubState::RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) {
+    if (dev_data.gpu_dump_settings.copy_memory_indirect) {
+        DumpCopyMemoryToImageIndirect(info, loc);
+    }
+}
+
 }  // namespace gpudump

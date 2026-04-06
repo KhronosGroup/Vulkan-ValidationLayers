@@ -107,7 +107,7 @@ void CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - No VkBuffer found at " << std::hex << address << "\n";
+            ss << "    - No VkBuffer found at 0x" << std::hex << address << "\n";
         }
     }
 
@@ -318,7 +318,7 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             ss << "  - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "  - No VkBuffer found at " << std::hex << cb_state.descriptor_heap.resource_range.begin << "\n";
+            ss << "  - No VkBuffer found at 0x" << std::hex << cb_state.descriptor_heap.resource_range.begin << "\n";
         }
     }
     if (!cb_state.descriptor_heap.sampler_range.empty()) {
@@ -335,7 +335,7 @@ void CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             ss << "  - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "  - No VkBuffer found at " << std::hex << cb_state.descriptor_heap.sampler_range.begin << "\n";
+            ss << "  - No VkBuffer found at 0x" << std::hex << cb_state.descriptor_heap.sampler_range.begin << "\n";
         }
     }
 

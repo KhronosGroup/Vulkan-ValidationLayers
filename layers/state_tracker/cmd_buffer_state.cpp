@@ -2036,6 +2036,20 @@ void CommandBuffer::RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst
     }
 }
 
+void CommandBuffer::RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordCopyMemoryIndirect(info, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) {
+    RecordCommand(loc);
+    for (auto& item : sub_states_) {
+        item.second->RecordCopyMemoryToImageIndirect(info, loc);
+    }
+}
+
 void CommandBuffer::RecordBlitImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
                                      VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2* regions,
                                      const Location& loc) {
