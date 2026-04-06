@@ -21,7 +21,7 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
-layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorSetType {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
     // struct glsl::DescriptorState {
     //   x: id
     //   y: extra data depending on the descriptor type
@@ -31,17 +31,17 @@ layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorSe
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer UnusedInitializedStatus;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsSSBO {
     UnusedInitializedStatus unused_initialized_status;
-    DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
+    DescriptorEncodings descriptor_encodings[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
 // Matches the vvl::DescriptorClass::TexelBuffer
 void inst_descriptor_class_texel_buffer(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
-    DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
     const uint global_descriptor_index = binding_layout_offset + desc_index;
     // check that the offset is in bounds
-    uint resource_size = descriptor_set_type.data[global_descriptor_index].y;
+    uint resource_size = descriptor_encodings.data[global_descriptor_index].y;
     if (byte_offset >= resource_size) {
         error_payload = ErrorPayload(
                             inst_offset,

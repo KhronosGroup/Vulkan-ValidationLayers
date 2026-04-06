@@ -1,7 +1,7 @@
-/* Copyright (c) 2018-2025 The Khronos Group Inc.
- * Copyright (c) 2018-2025 Valve Corporation
- * Copyright (c) 2018-2025 LunarG, Inc.
- * Copyright (c) 2025 Arm Limited.
+/* Copyright (c) 2018-2026 The Khronos Group Inc.
+ * Copyright (c) 2018-2026 Valve Corporation
+ * Copyright (c) 2018-2026 LunarG, Inc.
+ * Copyright (c) 2026 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ namespace glsl {
 
 // Every descriptor set has various BDA pointers to data from the CPU
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
-struct BoundDescriptorSetsStateSSBO {
+struct BoundDescriptorSetsSSBO {
     // Used to know if descriptors are initialized or not
     VkDeviceAddress descriptor_init_status;
-    VkDeviceAddress descriptor_set_types[kDebugInputBindlessMaxDescSets];
+    VkDeviceAddress descriptor_encodings[kDebugInputBindlessMaxDescSets];
 };
 
 // Outputs
@@ -62,9 +62,9 @@ struct PostProcessDescriptorIndexSlot {
 };
 
 // Represented as a uvec2 in the shader
-struct DescriptorState {
-    DescriptorState() : id(0), extra_data(0) {}
-    DescriptorState(vvl::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
+struct DescriptorEncoding {
+    DescriptorEncoding() : id(0), extra_data(0) {}
+    DescriptorEncoding(vvl::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
         : id(ClassToShaderBits(dc) | id_), extra_data(extra_data_) {}
     uint32_t id;
     uint32_t extra_data;
