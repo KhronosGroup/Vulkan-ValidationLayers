@@ -65,6 +65,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
         {vvl::Extension::_VK_MESA_image_alignment_control, "d3demulation"},
         {vvl::Extension::_VK_ARM_performance_counters_by_region, "devtools"},
         {vvl::Extension::_VK_ARM_shader_instrumentation, "devtools"},
+        {vvl::Extension::_VK_EXT_primitive_restart_index, "glemulation"},
     };
 
     auto it = special_use_extensions.find(extension_name);
@@ -1552,6 +1553,11 @@ void BestPractices::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectTyp
     PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
 }
 
+void BestPractices::PostCallRecordQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                       const RecordObject& record_obj) {
+    bp_state::LogResult(*this, queue, record_obj);
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
@@ -1691,7 +1697,7 @@ void BestPractices::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device,
     bp_state::LogResult(*this, device, record_obj);
 }
 
-void BestPractices::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+void BestPractices::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                            VkBaseOutStructure* pPipelineProperties,
                                                            const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
@@ -1896,6 +1902,13 @@ void BestPractices::PostCallRecordGetDataGraphPipelinePropertiesARM(VkDevice dev
 void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
+
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, VkBaseOutStructure* pProperties,
+    const RecordObject& record_obj) {
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 

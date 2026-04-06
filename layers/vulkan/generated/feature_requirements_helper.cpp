@@ -5250,6 +5250,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->presentWait, "VkPhysicalDevicePresentWaitFeaturesKHR::presentWait"};
         }
 
+        case Feature::primitiveRestartIndex: {
+            auto vk_struct = const_cast<VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->primitiveRestartIndex, "VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT::primitiveRestartIndex"};
+        }
+
         case Feature::primitiveTopologyListRestart: {
             auto vk_struct = const_cast<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT*>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>(*inout_pnext_chain));
@@ -5430,6 +5445,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                 }
             }
             return {&vk_struct->pushConstantBank, "VkPhysicalDevicePushConstantBankFeaturesNV::pushConstantBank"};
+        }
+
+        case Feature::queuePerfHint: {
+            auto vk_struct = const_cast<VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceQueuePerfHintFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceQueuePerfHintFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->queuePerfHint, "VkPhysicalDeviceQueuePerfHintFeaturesQCOM::queuePerfHint"};
         }
 
         case Feature::formatRgba10x6WithoutYCbCrSampler: {

@@ -1163,6 +1163,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->diagnosticsConfig |= enabled->diagnosticsConfig == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_PERF_HINT_FEATURES_QCOM: {
+                const VkPhysicalDeviceQueuePerfHintFeaturesQCOM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceQueuePerfHintFeaturesQCOM*>(pNext);
+                features->queuePerfHint |= enabled->queuePerfHint == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV: {
                 const VkPhysicalDeviceCudaKernelLaunchFeaturesNV* enabled =
@@ -1998,6 +2004,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->shaderMixedFloatDotProductBFloat16Acc |= enabled->shaderMixedFloatDotProductBFloat16Acc == VK_TRUE;
                 features->shaderMixedFloatDotProductFloat8AccFloat32 |=
                     enabled->shaderMixedFloatDotProductFloat8AccFloat32 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT: {
+                const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT*>(pNext);
+                features->primitiveRestartIndex |= enabled->primitiveRestartIndex == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

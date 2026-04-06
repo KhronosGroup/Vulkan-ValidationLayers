@@ -342,14 +342,14 @@ enum class Feature {
     externalMemoryRDMA,
     // VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX
     screenBufferImport,
-    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
+    // VkPhysicalDeviceFaultFeaturesKHR
     deviceFault,
-    // VkPhysicalDeviceFaultFeaturesEXT, VkPhysicalDeviceFaultFeaturesKHR
-    deviceFaultVendorBinary,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFaultDeviceLostOnMasked,
     // VkPhysicalDeviceFaultFeaturesKHR
     deviceFaultReportMasked,
+    // VkPhysicalDeviceFaultFeaturesKHR
+    deviceFaultVendorBinary,
     // VkPhysicalDeviceFeatures
     alphaToOne,
     // VkPhysicalDeviceFeatures
@@ -710,6 +710,8 @@ enum class Feature {
     presentWait2,
     // VkPhysicalDevicePresentWaitFeaturesKHR
     presentWait,
+    // VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT
+    primitiveRestartIndex,
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
     primitiveTopologyListRestart,
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
@@ -730,6 +732,8 @@ enum class Feature {
     transformFeedbackPreservesProvokingVertex,
     // VkPhysicalDevicePushConstantBankFeaturesNV
     pushConstantBank,
+    // VkPhysicalDeviceQueuePerfHintFeaturesQCOM
+    queuePerfHint,
     // VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT
     formatRgba10x6WithoutYCbCrSampler,
     // VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT

@@ -1048,7 +1048,7 @@ bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerati
                                                    const ErrorObject& error_obj) const override;
 bool PreCallValidateGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                  const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                 VkMemoryRequirements2KHR* pMemoryRequirements,
+                                                                 VkMemoryRequirements2* pMemoryRequirements,
                                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                       const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
@@ -1236,6 +1236,8 @@ bool PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, 
 bool PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                       VkPrivateDataSlot privateDataSlot, uint64_t* pData,
                                       const ErrorObject& error_obj) const override;
+bool PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                         const ErrorObject& error_obj) const override;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
@@ -1337,7 +1339,7 @@ bool PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, V
                                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                              VkRemoteAddressNV* pAddress, const ErrorObject& error_obj) const override;
-bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                              VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
                                                 const ErrorObject& error_obj) const override;
@@ -1398,6 +1400,8 @@ bool PreCallValidateCmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetDispatchParametersARM(VkCommandBuffer commandBuffer, const VkDispatchParametersARM* pDispatchParameters,
+                                                const ErrorObject& error_obj) const override;
 bool PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device,
                                                                const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
                                                                VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping,
@@ -1713,6 +1717,8 @@ bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
 bool PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                      const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,
