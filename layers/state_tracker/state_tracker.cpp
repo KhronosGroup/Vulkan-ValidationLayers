@@ -2854,7 +2854,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
 
     cb_state->RecordCommand(record_obj.location);
     for (const auto [i, info] : enumerate(pInfos, infoCount)) {
@@ -2872,7 +2871,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkComm
                                                                           const uint32_t* const* ppMaxPrimitiveCounts,
                                                                           const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
 
     cb_state->RecordCommand(record_obj.location);
     for (uint32_t i = 0; i < infoCount; i++) {
@@ -5766,7 +5764,7 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer 
                                                                 const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                 const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
+
     cb_state->RecordCommand(record_obj.location);
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
@@ -5783,7 +5781,6 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkComman
                                                                         const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                         const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
     cb_state->RecordCommand(record_obj.location);
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     if (!disabled[command_buffer_state]) {
@@ -5798,7 +5795,6 @@ void DeviceState::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComman
                                                                         const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                         const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
     cb_state->RecordCommand(record_obj.location);
     if (!disabled[command_buffer_state]) {
         auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
@@ -5815,8 +5811,7 @@ void DeviceState::PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer command
                                                          const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
                                                          const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
-    cb_state->RecordCommand(record_obj.location);
+    cb_state->RecordCopyMemoryIndirect(*pCopyMemoryIndirectInfo, record_obj.location);
     TrackDeviceAddressRange(*cb_state, pCopyMemoryIndirectInfo->copyAddressRange.address,
                             pCopyMemoryIndirectInfo->copyAddressRange.size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 }
@@ -5825,8 +5820,7 @@ void DeviceState::PostCallRecordCmdCopyMemoryToImageIndirectKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
     const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
-    cb_state->RecordCommand(record_obj.location);
+    cb_state->RecordCopyMemoryToImageIndirect(*pCopyMemoryToImageIndirectInfo, record_obj.location);
     TrackDeviceAddressRange(*cb_state, pCopyMemoryToImageIndirectInfo->copyAddressRange.address,
                             pCopyMemoryToImageIndirectInfo->copyAddressRange.size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 }
@@ -6822,7 +6816,6 @@ void DeviceState::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBu
 void DeviceState::PostCallRecordCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT* pPushDataInfo,
                                                const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
     cb_state->RecordCmdPushDataEXT(*pPushDataInfo, record_obj.location);
 
     cb_state->SetDescriptorMode(DescriptorModeHeap, record_obj.location.function);

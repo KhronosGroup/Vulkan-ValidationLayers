@@ -1285,6 +1285,14 @@
                             "default": false
                         },
                         {
+                            "key": "gpu_dump_copy_memory_indirect",
+                            "label": "Dump VK_KHR_copy_memory_indirect",
+                            "view": "DEBUG",
+                            "description": "Dump VK_KHR_copy_memory_indirect information",
+                            "type": "BOOL",
+                            "default": false
+                        },
+                        {
                             "key": "gpu_dump_to_stdout",
                             "label": "Redirect all GPU Dump to stdout",
                             "view": "DEBUG",

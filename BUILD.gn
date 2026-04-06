@@ -274,6 +274,7 @@ vvl_sources = [
   "layers/gpuav/spirv/spec_constant.cpp",
   "layers/gpu_dump/gpu_dump.h",
   "layers/gpu_dump/gpu_dump.cpp",
+  "layers/gpu_dump/gpu_dump_copy_memory_indirect.cpp",
   "layers/gpu_dump/gpu_dump_descriptor.cpp",
   "layers/gpu_dump/gpu_dump_settings.h",
   "layers/gpu_dump/gpu_dump_state.h",

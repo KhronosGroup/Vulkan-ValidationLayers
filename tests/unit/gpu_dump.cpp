@@ -78,3 +78,39 @@ TEST_F(NegativeGpuDump, DumpDescriptors) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeGpuDump, DumpCopyMemoryIndirect) {
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer src_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    const VkDeviceAddress src_address = src_buffer.Address();
+    const VkDeviceAddress dst_address = dst_buffer.Address();
+    VkCopyMemoryIndirectCommandKHR cmds[6] = {{src_address + 0, dst_address, 4},        {src_address + 32, dst_address + 32, 32},
+                                              {src_address + 0, dst_address + 64, 16},  {src_address + 64, dst_address + 128, 64},
+                                              {src_address + 0, dst_address + 256, 16}, {src_address + 128, dst_address + 512, 4}};
+    const VkDeviceSize indirect_buffer_size = sizeof(cmds);
+
+    vkt::Buffer indirect_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    void* indirect_buffer_data = indirect_buffer.Memory().Map();
+    memcpy(indirect_buffer_data, cmds, indirect_buffer_size);
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = indirect_buffer_size;
+    address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
+
+    VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 6;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
