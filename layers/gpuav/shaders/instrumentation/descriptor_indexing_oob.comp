@@ -21,7 +21,7 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
-layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorSetType {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
     // struct glsl::DescriptorState {
     //   x: id
     //   y: extra data depending on the descriptor type
@@ -34,9 +34,9 @@ layout(buffer_reference, buffer_reference_align = 8, scalar) buffer InitializedS
     uint data[];
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsSSBO {
     InitializedStatus descriptor_init_status;
-    DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
+    DescriptorEncodings descriptor_encodings[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
 // Unlike the bindless version, we don't need to check for Uninitialized and Destroyed descriptors.
@@ -68,11 +68,11 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint de
     if (desc_index >= binding_layout_size) {
         error = kErrorSubCode_DescriptorIndexing_Bounds;
     } else {
-        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+        DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
-        uint desc_id = descriptor_set_type.data[global_descriptor_index].x & kNullDescriptor;
+        uint desc_id = descriptor_encodings.data[global_descriptor_index].x & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCode_DescriptorIndexing_Uninitialized;
         } else if (desc_id != kNullDescriptor) {
@@ -107,12 +107,12 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
     if (desc_index >= binding_layout_size) {
         error = kErrorSubCode_DescriptorIndexing_Bounds;
     } else {
-        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+        DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
-        uvec2 descriptor_state = descriptor_set_type.data[global_descriptor_index];
-        uint desc_id = descriptor_state.x & kNullDescriptor;
+        uvec2 descriptor_encoding = descriptor_encodings.data[global_descriptor_index];
+        uint desc_id = descriptor_encoding.x & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCode_DescriptorIndexing_Uninitialized;
         } else if (desc_id != kNullDescriptor) {
@@ -125,10 +125,10 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
         }
 
         // If dealing with a combined image sampler, need to check the sampler as well
-        uint desc_type = (descriptor_state.x & ~kNullDescriptor) >> kDescBitShift;
+        uint desc_type = (descriptor_encoding.x & ~kNullDescriptor) >> kDescBitShift;
         if (desc_type == kImageSamplerDesc && error == 0) {
             // check sampler
-            desc_id = descriptor_state.y;
+            desc_id = descriptor_encoding.y;
             if (desc_id == 0u) {
                 error = kErrorSubCode_DescriptorIndexing_Uninitialized;
             } else if (desc_id != kNullDescriptor) {

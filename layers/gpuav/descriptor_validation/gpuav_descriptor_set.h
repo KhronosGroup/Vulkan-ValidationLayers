@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+/* Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
 
     void NotifyUpdate() override;
 
-    VkDeviceAddress GetTypeAddress(Validator &gpuav);
+    VkDeviceAddress GetDescriptorEncodingsAddress(Validator& gpuav);
 
     const std::vector<gpuav::spirv::BindingLayout> &GetBindingLayouts() const { return binding_layouts_; }
 
@@ -58,7 +58,7 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
     std::atomic<uint32_t> current_version_{0};
     // Set when created the last used state
     uint32_t last_used_version_{0};
-    vko::Buffer input_buffer_;
+    vko::Buffer descriptor_encodings_;
 
     mutable std::mutex state_lock_;
 };

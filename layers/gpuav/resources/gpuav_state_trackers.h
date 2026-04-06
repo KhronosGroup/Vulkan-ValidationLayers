@@ -184,7 +184,7 @@ class DescriptorSetBindings {
         // Those spots are updated at command buffer submission time.
         vko::BufferRange desc_set_binding_to_post_process_buffers_lut{};
 
-        vko::BufferRange descritpor_state_ssbo{};  // type BoundDescriptorSetsStateSSBO
+        vko::BufferRange bound_desc_sets_ssbo{};  // type BoundDescriptorSetsSSBO
 
         // The index into this vector will start from vkCmdBindDescriptorSets::firstSet
         // The vector size is vkCmdBindDescriptorSets::descriptorSetCount
