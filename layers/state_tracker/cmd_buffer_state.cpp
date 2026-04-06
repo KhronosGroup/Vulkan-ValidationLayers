@@ -1542,6 +1542,21 @@ void CommandBuffer::RecordTraceRay(const Location& loc) {
     }
 }
 
+void CommandBuffer::RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, const Location& loc) {
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(info.shaderStages);
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        RecordDraw(loc);
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        RecordDispatch(loc);
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        RecordTraceRay(loc);
+    }
+
+    for (auto& item : sub_states_) {
+        item.second->RecordExecuteGeneratedCommands(info, bind_point, loc);
+    }
+}
+
 void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
     BindLastBoundPipeline(ConvertToVvlBindPoint(bind_point), &pipeline);
 

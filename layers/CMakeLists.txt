@@ -359,6 +359,7 @@ target_sources(vvl PRIVATE
     gpu_dump/gpu_dump.cpp
     gpu_dump/gpu_dump_copy_memory_indirect.cpp
     gpu_dump/gpu_dump_descriptor.cpp
+    gpu_dump/gpu_dump_device_generated_commands.cpp
     gpu_dump/gpu_dump_settings.h
     gpu_dump/gpu_dump_state.h
     gpu_dump/gpu_dump_state.cpp

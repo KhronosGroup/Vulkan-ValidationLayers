@@ -31,6 +31,13 @@ void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Loc
     }
 }
 
+void CommandBufferSubState::RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
+                                                           const Location& loc) {
+    if (dev_data.gpu_dump_settings.device_generated_commands) {
+        DumpDeviceGeneratedCommands(info, bind_point, loc);
+    }
+}
+
 void CommandBufferSubState::RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) {
     if (dev_data.gpu_dump_settings.copy_memory_indirect) {
         DumpCopyMemoryIndirect(info, loc);

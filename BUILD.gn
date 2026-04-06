@@ -276,6 +276,7 @@ vvl_sources = [
   "layers/gpu_dump/gpu_dump.cpp",
   "layers/gpu_dump/gpu_dump_copy_memory_indirect.cpp",
   "layers/gpu_dump/gpu_dump_descriptor.cpp",
+  "layers/gpu_dump/gpu_dump_device_generated_commands.cpp",
   "layers/gpu_dump/gpu_dump_settings.h",
   "layers/gpu_dump/gpu_dump_state.h",
   "layers/gpu_dump/gpu_dump_state.cpp",

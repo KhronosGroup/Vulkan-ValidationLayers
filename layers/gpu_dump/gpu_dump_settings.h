@@ -21,10 +21,11 @@ struct GpuDumpSettings {
     // Main settings
     bool descriptors = false;
     bool copy_memory_indirect = false;
+    bool device_generated_commands = false;
 
     // Additional helpers
     bool to_stdout = false;
 
     // If any of the dump settings are turned on, we will enable the layer in the chassis
-    bool EnableLayer() const { return descriptors || copy_memory_indirect; }
+    bool EnableLayer() const { return descriptors || copy_memory_indirect || device_generated_commands; }
 };

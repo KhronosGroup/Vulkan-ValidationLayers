@@ -28,6 +28,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void RecordActionCommand(LastBound& last_bound, const Location& loc) final;
 
+    void RecordExecuteGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
+                                        const Location& loc) final;
+
     void RecordCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) final;
     void RecordCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) final;
 
@@ -40,6 +43,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       VkStridedDeviceAddressRangeKHR copy_address_range) const;
     void DumpCopyMemoryIndirect(const VkCopyMemoryIndirectInfoKHR& info, const Location& loc) const;
     void DumpCopyMemoryToImageIndirect(const VkCopyMemoryToImageIndirectInfoKHR& info, const Location& loc) const;
+
+    void DumpDeviceGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
+                                     const Location& loc) const;
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {

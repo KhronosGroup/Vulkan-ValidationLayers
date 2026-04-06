@@ -561,7 +561,7 @@ void CommandBufferSubState::DumpDescriptors(const LastBound& last_bound, const L
     if (dev_data.gpu_dump_settings.to_stdout) {
         std::cout << "GPU-DUMP " << ss.str() << '\n';
     } else {
-        // Don't provide a LogObjectList, embed it into the messsage instead to keep things cleaner
+        // Don't provide a LogObjectList, embed it into the message instead to keep things cleaner
         // (because the default callback will list them at the bottom)
         dev_data.debug_report->LogMessage(kInformationBit, "GPU-DUMP", {}, loc, ss.str().c_str());
     }
