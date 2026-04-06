@@ -19,6 +19,9 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void* layout_pnext,
                                          VkDescriptorPoolCreateFlags pool_flags, void* allocate_pnext, void* create_pool_pnext)
     : device_{device}, layout_(*device, bindings, layout_flags, layout_pnext) {
+    if (layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) {
+        return;
+    }
     std::vector<VkDescriptorPoolSize> pool_sizes;
     for (const auto& b : bindings) {
         pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
@@ -30,15 +33,15 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<
     pool_ci.poolSizeCount = pool_sizes.size();
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
-    if (err != VK_SUCCESS) return;
+    if (err != VK_SUCCESS) {
+        return;
+    }
 
-    if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) == 0) {
         VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);
         ds_alloc_info.descriptorPool = pool_;
         ds_alloc_info.descriptorSetCount = 1;
         ds_alloc_info.pSetLayouts = &layout_.handle();
         err = vk::AllocateDescriptorSets(device_->handle(), &ds_alloc_info, &set_);
-    }
 }
 
 OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device, const OneOffDescriptorIndexingSet::Bindings& bindings,
